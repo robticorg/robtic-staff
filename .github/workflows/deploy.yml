@@ -62,6 +62,10 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
   deploy:
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
     uses: robticorg/robtic-actions/.github/workflows/deploy.yml@main
     with:
       deploy-type: docker
