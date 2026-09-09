@@ -74,7 +74,7 @@ jobs:
       environment-url: 'https://robtic.org'
       server-label: 'core.robtic.org'
       dockerfile: 'Dockerfile'
-      image-name: ${{ env.IMAGE_NAME }}
+      image-name: ghcr.io/robticorg/robtic-staff
       compose-project-name: 'robtic-staff'
       compose-env-file: '/home/robtic/robtic-staff/.env'
       compose-pull-command: 'docker compose -f docker-compose.yml -p robtic-staff --env-file /home/robtic/robtic-staff/.env pull'
