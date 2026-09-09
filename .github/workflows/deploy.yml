@@ -73,7 +73,7 @@ jobs:
       image-name: 'ghcr.io/robticorg/robtic-staff'
       compose-project-name: 'robtic-staff'
       compose-env-file: '/home/robtic/robtic-staff/.env'
-      compose-pull-command: 'docker compose -f compose/docker-compose.yml -p robtic-staff --env-file /home/robtic/robtic-staff/.env pull'
-      compose-up-command: 'docker compose -f compose/docker-compose.yml -p robtic-staff --env-file /home/robtic/robtic-staff/.env up -d --remove-orphans'
+      compose-pull-command: 'docker compose -f docker-compose.yml -p robtic-staff --env-file /home/robtic/robtic-staff/.env pull'
+      compose-up-command: 'docker compose -f docker-compose.yml -p robtic-staff --env-file /home/robtic/robtic-staff/.env up -d --remove-orphans'
     secrets:
       DISCORD_WEBHOOK_DEPLOY: ${{ secrets.DISCORD_WEBHOOK_DEPLOY }}
