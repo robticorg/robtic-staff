@@ -83,7 +83,6 @@ src/
 
 ### Infrastructure libraries (`src/libs/`)
 
-
 `libs/` holds reusable, feature-agnostic infrastructure. Rules: a lib never
 imports a feature module; feature modules never import Discord event
 implementations.
