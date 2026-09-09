@@ -13,9 +13,6 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  IMAGE_NAME: ghcr.io/robticorg/robtic-staff
-
 jobs:
   build-and-push:
     name: Build & push image to GHCR
@@ -48,7 +45,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ghcr.io/robticorg/robtic-staff
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=long
