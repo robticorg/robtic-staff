@@ -1,0 +1,11 @@
+services:
+  staff-system:
+    image: ghcr.io/robticorg/staff-system:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - /home/robtic/robtic-staff/.env
+    environment:
+      NODE_ENV: production

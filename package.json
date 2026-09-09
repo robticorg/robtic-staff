@@ -1,0 +1,27 @@
+{
+  "name": "staff-system",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "build": "bun build src/index.ts --outdir dist --target bun --minify",
+    "start": "bun dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "register-commands": "bun run src/discord/register-commands.ts",
+    "example:data": "bun run src/examples/data-layer.example.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/luxon": "^3.7.5"
+  },
+  "peerDependencies": {
+    "typescript": "^7"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "luxon": "^3.7.2",
+    "mongoose": "^9.9.5"
+  }
+}

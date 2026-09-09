@@ -1,0 +1,27 @@
+node_modules
+**/node_modules
+dist
+out
+coverage
+*.lcov
+
+.git
+.github
+.gitignore
+
+.env
+.env.*
+!.env.example
+
+*.md
+.vscode
+.idea
+.DS_Store
+
+# Tests are never part of the runtime image.
+**/__tests__
+**/*.test.ts
+
+Dockerfile
+.dockerignore
+docker-compose*.yml
