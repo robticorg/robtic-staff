@@ -1171,4 +1171,3 @@ Discord IDs (guild / user / channel / role) are stored as **strings**. No
 `GuildMember` / `User` / `Role` objects are ever persisted. discord.js is used
 only for its types and, from the command phase on, the gateway client.
 # robtic-staff-2
-
