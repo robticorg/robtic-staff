@@ -61,23 +61,4 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-  deploy:
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-    uses: robticorg/robtic-actions/.github/workflows/deploy.yml@main
-    with:
-      deploy-type: docker
-      runner-labels: '["self-hosted", "robtic-deploy"]'
-      environment-name: 'Robtic Server'
-      environment-url: 'https://robtic.org'
-      server-label: 'core.robtic.org'
-      dockerfile: 'Dockerfile'
-      image-name: ghcr.io/robticorg/robtic-staff
-      compose-project-name: 'robtic-staff'
-      compose-env-file: '/home/robtic/robtic-staff/.env'
-      compose-pull-command: 'docker compose -f docker-compose.yml -p robtic-staff --env-file /home/robtic/robtic-staff/.env pull'
-      compose-up-command: 'docker compose -f docker-compose.yml -p robtic-staff --env-file /home/robtic/robtic-staff/.env up -d --remove-orphans'
-    secrets:
-      DISCORD_WEBHOOK_DEPLOY: ${{ secrets.DISCORD_WEBHOOK_DEPLOY }}
+
