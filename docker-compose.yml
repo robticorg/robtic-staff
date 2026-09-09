@@ -1,6 +1,6 @@
 services:
   staff-system:
-    image: ghcr.io/robticorg/staff-system:latest
+    image: ghcr.io/robticorg/robtic-staff:latest
     build:
       context: .
       dockerfile: Dockerfile

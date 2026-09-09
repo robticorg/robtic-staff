@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_NAME: ghcr.io/robticorg/staff-system
+  IMAGE_NAME: ghcr.io/robticorg/robtic-staff
 
 jobs:
   build-and-push:
