@@ -13,6 +13,9 @@ concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  IMAGE_NAME: ghcr.io/robticorg/staff-system
+
 jobs:
   build-and-push:
     name: Build & push image to GHCR
@@ -45,7 +48,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=long
@@ -74,7 +77,7 @@ jobs:
       environment-url: 'https://robtic.org'
       server-label: 'core.robtic.org'
       dockerfile: 'Dockerfile'
-      image-name: 'ghcr.io/robticorg/robtic-staff'
+      image-name: ${{ env.IMAGE_NAME }}
       compose-project-name: 'robtic-staff'
       compose-env-file: '/home/robtic/robtic-staff/.env'
       compose-pull-command: 'docker compose -f docker-compose.yml -p robtic-staff --env-file /home/robtic/robtic-staff/.env pull'
