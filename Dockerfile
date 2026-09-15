@@ -1,4 +1,3 @@
-
 FROM oven/bun:1.4.2 AS deps
 WORKDIR /app
 
@@ -13,5 +12,7 @@ ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json tsconfig.json ./
 COPY src ./src
+
+USER bun
 
 CMD ["bun", "src/index.ts"]
