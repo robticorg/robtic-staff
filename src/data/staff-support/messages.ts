@@ -58,7 +58,6 @@ export const staffSupportMessages = {
     cardLevel: (level: number) => `**المستوى:** ${level}`,
     cardTier: (tier: string) => `**التصنيف:** ${tier}`,
     cardReason: (reason: string) => `**السبب:**\n${reason}`,
-    cardTicket: (channelId: string) => `**روم الطلب:** <#${channelId}>`,
     statusPending: "-# بانتظار قرار الإدارة",
     statusDone: (managerId: string) => `-# تم فصل العضو بواسطة <@${managerId}>`,
 

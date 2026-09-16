@@ -26,7 +26,6 @@ type CardInput = Pick<
   | "status"
   | "snapshotLevel"
   | "snapshotTier"
-  | "ticketChannelId"
   | "handledBy"
 >;
 
@@ -49,11 +48,6 @@ export function buildDemissionCard(request: CardInput): BaseMessageOptions {
   if (request.snapshotTier) {
     const label = staffSupportMessages.tier[request.snapshotTier] ?? request.snapshotTier;
     container.addTextDisplayComponents(new TextDisplayBuilder().setContent(D.cardTier(label)));
-  }
-  if (request.ticketChannelId) {
-    container.addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(D.cardTicket(request.ticketChannelId)),
-    );
   }
 
   container.addSeparatorComponents((s) =>

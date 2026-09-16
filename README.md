@@ -552,18 +552,29 @@ panel** — it reuses the same deployment record, so an existing Break panel is
 edited in place and no orphan is left behind. Buttons: **دعم الستاف** ·
 **طلب إجازة** · **طلب استقالة**.
 
-| Workflow | Panel id | Goes to |
+| Workflow | Opens a ticket? | Goes to |
 |---|---|---|
-| دعم الستاف | `staff-support` | a ticket under the Staff Support category |
-| طلب إجازة | — | the **existing** `VacationService` modal + approval flow, untouched |
-| طلب استقالة | `demission-apply` | a ticket **and** a manager card in the existing Break requests channel |
+| دعم الستاف | **yes** — `staff-support` panel | a ticket channel under the Staff Support category |
+| طلب إجازة | no | the **existing** `VacationService` modal + approval flow, untouched |
+| طلب استقالة | no | a manager card in the existing Break requests channel |
 
-Both ticket panels are **`hidden: true`**: registered in `tickets.panels` so
-`TicketService` resolves them normally, but excluded from `listPublicPanels()`,
-so they never appear in the public ticket select — and a forged select value
-naming one is rejected. The category id lives in
+**Only Staff Support opens a channel.** Break and Demission are requests, not
+conversations: they post a card to the Break requests channel and are actioned
+from there, so no channel is created and nothing needs closing.
+
+The `staff-support` panel is **`hidden: true`**: registered in `tickets.panels`
+so `TicketService` resolves it normally, but excluded from `listPublicPanels()`,
+so it never appears in the public ticket select — and a forged select value
+naming it is rejected. The category id lives in
 `src/data/staff-support/config.ts` (`staffSupportCategoryId`), never inside a
 service, handler or command.
+
+### Gift claims are unlimited
+
+`giftClaimService.canCreate` no longer refuses a member who already has an open
+claim — a member may file as many gift claims as they like, and each one is an
+independent case. The gift-claim panel never opens a channel either
+(`createsChannel: false`), so there is no per-member ticket to collide with.
 
 ### Visibility — derived from the applicant's tier
 

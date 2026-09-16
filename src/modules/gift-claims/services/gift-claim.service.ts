@@ -27,10 +27,6 @@ export interface CanCreateResult {
   message?: string;
 }
 
-const OPEN_CLAIM_STATUSES: readonly GiftClaimStatus[] = [
-  GiftClaimStatus.PENDING,
-  GiftClaimStatus.APPROVED,
-];
 
 export interface CreateFromModalInput {
   guildId: GuildId;
@@ -72,13 +68,7 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
     return GiftClaimModel.find({ guildId, userId }).sort({ createdAt: -1 }).exec();
   }
 
-  async canCreate(guildId: GuildId, userId: UserId): Promise<CanCreateResult> {
-    const open = await GiftClaimModel.findOne({
-      guildId,
-      userId,
-      status: { $in: OPEN_CLAIM_STATUSES as GiftClaimStatus[] },
-    }).exec();
-    if (open) return { ok: false, message: M.create.alreadyClaimed(open.status) };
+  async canCreate(_guildId: GuildId, _userId: UserId): Promise<CanCreateResult> {
     return { ok: true };
   }
 

@@ -30,9 +30,6 @@ export interface StaffSupportRequest extends Timestamps {
 
   reason: string;
 
-  ticketId?: string;
-  ticketChannelId?: ChannelId;
-
   channelId?: ChannelId;
   messageId?: string;
 
@@ -60,9 +57,6 @@ const schema = new Schema<StaffSupportRequest>(
     },
 
     reason: { type: String, required: true, trim: true, maxlength: 2000 },
-
-    ticketId: { type: String },
-    ticketChannelId: { type: String },
 
     channelId: { type: String },
     messageId: { type: String },

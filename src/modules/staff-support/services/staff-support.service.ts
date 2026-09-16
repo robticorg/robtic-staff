@@ -65,7 +65,6 @@ export interface CreateSupportResult {
 
 export interface CreateDemissionResult {
   request: StaffSupportRequestDocument;
-  ticketChannelId: ChannelId;
 }
 
 export type DemissionFireOutcome =
@@ -182,28 +181,7 @@ export class StaffSupportService {
     }
 
     const channel = await this.requestsChannel(guild);
-
-    const panel = ticketConfigService.getPanel(StaffSupportWorkflow.DEMISSION_APPLY);
-    if (!panel) {
-      throw new StaffSupportError("DEMISSION_PANEL_MISSING", M.support.categoryMissing);
-    }
-
     const visibility = await this.getSupportVisibility(member);
-
-    const { ticket, channel: ticketChannel } = await ticketService.createTicket({
-      guild,
-      panel,
-      member,
-      answers: [],
-      additionalRoleIds: visibility.roleIds,
-      duplicateScope: "PANEL",
-      metadata: {
-        workflow: StaffSupportWorkflow.DEMISSION_APPLY,
-        staffLevel: visibility.level,
-        staffTier: visibility.tier,
-        reason: reason.slice(0, staffSupportConfig.maxReasonLength),
-      },
-    });
 
     const request = await StaffSupportRequestModel.create({
       guildId,
@@ -211,40 +189,24 @@ export class StaffSupportService {
       type: StaffSupportRequestType.DEMISSION_APPLY,
       status: StaffSupportRequestStatus.OPEN,
       reason: reason.slice(0, staffSupportConfig.maxReasonLength),
-      ticketId: ticket.ticketId,
-      ticketChannelId: ticketChannel.id,
       channelId: channel.id,
       snapshotLevel: visibility.level,
       snapshotTier: visibility.tier,
     });
 
-    const card = await channel
-      .send(buildDemissionCard(request))
-      .catch((err) => {
-        log.error("demission card post failed", err);
-        return null;
-      });
+    const card = await channel.send(buildDemissionCard(request)).catch((err) => {
+      log.error("demission card post failed", err);
+      return null;
+    });
 
     if (card) {
       request.messageId = card.id;
       await request.save().catch((err) => log.warn("storing demission messageId failed", err));
     }
 
-    await ticketChannel
-      .send(
-        buildSupportTicketMessage({
-          ticketId: ticket.ticketId,
-          userId: member.id,
-          reason,
-          audience: visibility.audience,
-          demission: true,
-        }),
-      )
-      .catch((err) => log.warn("demission ticket message failed", err));
-
     log.info(`demission request ${request.requestId} filed by ${member.id} in ${guildId}`);
 
-    return { request, ticketChannelId: ticketChannel.id };
+    return { request };
   }
 
   private async requestsChannel(guild: Guild): Promise<GuildTextBasedChannel> {

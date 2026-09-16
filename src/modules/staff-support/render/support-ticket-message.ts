@@ -22,22 +22,15 @@ export interface SupportTicketMessageInput {
   userId: string;
   reason: string;
   audience: SupportAudience;
-  demission?: boolean;
 }
 
 export function buildSupportTicketMessage(
   input: SupportTicketMessageInput,
 ): BaseMessageOptions {
-  const container = new ContainerBuilder().setAccentColor(
-    input.demission ? colors.warning : colors.primary,
-  );
+  const container = new ContainerBuilder().setAccentColor(colors.primary);
 
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(
-      input.demission
-        ? `# ${staffSupportMessages.demission.modalTitle} · \`${input.ticketId}\``
-        : S.channelHeader(input.ticketId),
-    ),
+    new TextDisplayBuilder().setContent(S.channelHeader(input.ticketId)),
   );
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(S.openedBy(input.userId)),
