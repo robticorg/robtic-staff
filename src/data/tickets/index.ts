@@ -1,7 +1,7 @@
 import type { TicketConfig, TicketPanelConfig } from "./types.ts";
 import { ticketMain } from "./main.ts";
-import { technicalPanel } from "./panels/technical.ts";
-import { accountPanel } from "./panels/account.ts";
+import { technicalPanel } from "./panels/verified.ts";
+import { accountPanel } from "./panels/support.ts";
 import { giftClaimPanel } from "./panels/gift-claim.ts";
 
 export * from "./types.ts";

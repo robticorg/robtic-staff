@@ -5,9 +5,11 @@ import ticketSetupCommand from "./ticket-setup/index.ts";
 import faqCommand from "./faq/index.ts";
 import fastAccessCommand from "./fast-access/index.ts";
 import vacationSetupCommand from "./vacation-setup/index.ts";
+import scanCommand from "./scan/index.ts";
 
 export const commands: SlashCommand[] = [
   roleCommand,
+  scanCommand,
   channelsCommand,
   ticketSetupCommand,
   faqCommand,

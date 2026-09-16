@@ -40,8 +40,7 @@ describe.skipIf(!hasDb)("atomic claim + point idempotency (MongoDB)", () => {
       StaffModel.deleteMany({ guildId: GUILD }),
       StaffPointTransactionModel.deleteMany({ reason: /itest/ }),
       StaffActivityModel.deleteMany({ metadata: { $exists: true } }),
-    ]);
-    await mongoose.disconnect();
+    ]);
   });
 
   async function freshCase(): Promise<string> {

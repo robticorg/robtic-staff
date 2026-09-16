@@ -4,9 +4,9 @@ import { GIFT_CLAIM_PANEL_ID } from "../../gift-claim/config.ts";
 
 export const giftClaimPanel: TicketPanelConfig = {
   id: GIFT_CLAIM_PANEL_ID,
-  name: "استلام هدية",
+  name: "اسـتـلام الـهـديـة",
   description: "استلم هدية أو مكافأة فزت فيها.",
-  emoji: "🎁",
+  emoji: "<:white_money_nc:1486103487979978823>",
 
   supportRoleId: "1545812169525035132",
   categoryId: "1545812173807157389",

@@ -14,6 +14,7 @@ export const RoleConfigType = {
   VACATION: "VACATION",
   APPEAL_MANAGER: "APPEAL_MANAGER",
   GIFT_MANAGER: "GIFT_MANAGER",
+  TAG: "TAG",
 } as const;
 export type RoleConfigType = (typeof RoleConfigType)[keyof typeof RoleConfigType];
 export const ROLE_CONFIG_TYPE_VALUES = Object.values(RoleConfigType);
@@ -39,6 +40,31 @@ export const SINGLETON_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.VACATION,
   RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
+  RoleConfigType.TAG,
+];
+
+/**
+ * Staff hierarchy tiers. A tier is never stored on a member — it is derived
+ * from the member's numbered level and the configured boundary roles, so
+ * there are no hard-coded level ranges anywhere.
+ */
+export const StaffTier = {
+  STAFF: "STAFF",
+  HIGHSTAFF: "HIGHSTAFF",
+  OWNER: "OWNER",
+  SHIP: "SHIP",
+} as const;
+export type StaffTier = (typeof StaffTier)[keyof typeof StaffTier];
+export const STAFF_TIER_VALUES = Object.values(StaffTier);
+
+/**
+ * Tiers that are opened by a configured boundary role, ordered low → high.
+ * STAFF is excluded: it is the implicit floor starting at the START role.
+ */
+export const STAFF_TIER_BOUNDARIES: readonly StaffTier[] = [
+  StaffTier.HIGHSTAFF,
+  StaffTier.OWNER,
+  StaffTier.SHIP,
 ];
 
 export const ChannelConfigType = {
@@ -54,6 +80,7 @@ export const ChannelConfigType = {
   VACATION_REQUESTS: "VACATION_REQUESTS",
   GIFT_CLAIMS: "GIFT_CLAIMS",
   SUPPORT: "SUPPORT",
+  SERVER_TAG_LOG: "SERVER_TAG_LOG",
 } as const;
 export type ChannelConfigType = (typeof ChannelConfigType)[keyof typeof ChannelConfigType];
 export const CHANNEL_CONFIG_TYPE_VALUES = Object.values(ChannelConfigType);

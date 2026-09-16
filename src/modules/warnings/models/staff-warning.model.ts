@@ -27,6 +27,13 @@ export interface StaffWarning {
   sourceVerbalWarningIds?: Types.ObjectId[];
   convertedToWarningId?: Types.ObjectId;
 
+  /**
+   * Id of the message posted to the Staff Warns channel for a REAL warning.
+   * Kept so the log can later be linked or edited. It is never deleted when a
+   * warning is revoked or appealed — the history stays visible.
+   */
+  staffWarnMessageId?: string;
+
   createdAt: Date;
   updatedAt: Date;
   removedAt?: Date;
@@ -66,6 +73,7 @@ const staffWarningSchema = new Schema<StaffWarning>(
     source: { type: String, enum: STAFF_WARNING_REAL_SOURCE_VALUES },
     sourceVerbalWarningIds: { type: [Schema.Types.ObjectId], default: undefined },
     convertedToWarningId: { type: Schema.Types.ObjectId },
+    staffWarnMessageId: { type: String },
 
     removedAt: { type: Date },
     removedBy: { type: String },

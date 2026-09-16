@@ -46,8 +46,7 @@ describe.skipIf(!hasDb)("Punishment persistence + concurrency (MongoDB)", () => 
       PunishmentAuditModel.deleteMany({ punishmentId: /./ }),
       ModmailCaseModel.deleteMany({ guildId: GUILD }),
       CounterModel.deleteMany({ _id: `modmail:${GUILD}` }),
-    ]);
-    await mongoose.disconnect();
+    ]);
   });
 
   it("createPunishment persists a PENDING record + CREATED audit row", async () => {

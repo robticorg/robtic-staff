@@ -27,6 +27,7 @@ export const CHANNEL_SLOT_META: Record<ChannelConfigType, ChannelSlotMeta> = {
   [ChannelConfigType.APPEALS]: { label: "الاستئنافات", group: "الاستئنافات" },
   [ChannelConfigType.GIFT_CLAIMS]: { label: "طلبات الهدايا", group: "المكافآت" },
   [ChannelConfigType.SUPPORT]: { label: "الدعم", group: "الدعم" },
+  [ChannelConfigType.SERVER_TAG_LOG]: { label: "لوق تاق السيرفر", group: "الستاف" },
 };
 
 export const CHANNEL_GROUP_ORDER: readonly string[] = [

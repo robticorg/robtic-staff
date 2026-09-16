@@ -187,8 +187,7 @@ describe.skipIf(!hasDb)("Appeal system (MongoDB + Discord fakes)", () => {
   afterAll(async () => {
     await cleanup();
     await RoleConfigModel.deleteMany({ guildId: GUILD });
-    await ChannelConfigModel.deleteMany({ guildId: GUILD });
-    await mongoose.disconnect();
+    await ChannelConfigModel.deleteMany({ guildId: GUILD });
   });
 
   beforeEach(async () => {

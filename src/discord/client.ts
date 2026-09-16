@@ -12,6 +12,11 @@ export function createClient(): Client {
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.DirectMessages,
       GatewayIntentBits.MessageContent,
+      // PRIVILEGED. Server Tag changes reach us as GUILD_MEMBER_UPDATE, which
+      // discord.js turns into `userUpdate`; without this intent that dispatch
+      // never arrives and the Server Tag system is silently inert. Also powers
+      // `guildMemberAdd` for restriction reconciliation on rejoin.
+      GatewayIntentBits.GuildMembers,
     ],
     partials: [Partials.Channel, Partials.Message],
   });

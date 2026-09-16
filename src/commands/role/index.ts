@@ -8,8 +8,13 @@ import {
 import { defineCommand } from "../../discord/command.ts";
 import {
   RoleConfigType,
+  StaffTier,
   roleConfigService,
 } from "../../modules/configuration/index.ts";
+import { getHierarchy } from "../../modules/configuration/utils/staff-levels.ts";
+import { DomainError } from "../../shared/utils/errors.ts";
+import { STAFF_TIER_LABELS, hierarchyMessages } from "../../data/messages/hierarchy.ts";
+import { buildRoleCheckView } from "./check.ts";
 import {
   CommandName,
   CommandOption,
@@ -36,6 +41,7 @@ const NON_NUMBERED_TYPES = [
   RoleConfigType.VACATION,
   RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
+  RoleConfigType.TAG,
 ] as const;
 
 const copy = commandCopy.role;
@@ -140,7 +146,81 @@ const data = new SlashCommandBuilder()
       .addRoleOption((o) =>
         o.setName(CommandOption.ROLE).setDescription(copy.sub.giftmanager.option).setRequired(true),
       ),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName(RoleSubcommand.TAG)
+      .setDescription(copy.sub.tag.description)
+      .addRoleOption((o) =>
+        o.setName(CommandOption.ROLE).setDescription(copy.sub.tag.option).setRequired(true),
+      ),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName(RoleSubcommand.HIGHSTAFF)
+      .setDescription(copy.sub.highstaff.description)
+      .addRoleOption((o) =>
+        o.setName(CommandOption.ROLE).setDescription(copy.sub.highstaff.option).setRequired(true),
+      ),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName(RoleSubcommand.OWNER)
+      .setDescription(copy.sub.owner.description)
+      .addRoleOption((o) =>
+        o.setName(CommandOption.ROLE).setDescription(copy.sub.owner.option).setRequired(true),
+      ),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName(RoleSubcommand.SHIP)
+      .setDescription(copy.sub.ship.description)
+      .addRoleOption((o) =>
+        o.setName(CommandOption.ROLE).setDescription(copy.sub.ship.option).setRequired(true),
+      ),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName(RoleSubcommand.CHECK)
+      .setDescription(copy.sub.check.description)
+      .addRoleOption((o) =>
+        o.setName(CommandOption.ROLE).setDescription(copy.sub.check.option).setRequired(true),
+      ),
   );
+
+async function handleBoundary(
+  interaction: ChatInputCommandInteraction,
+  tier: StaffTier,
+): Promise<void> {
+  const guild = requireGuild(interaction);
+  const role = interaction.options.getRole(CommandOption.ROLE, true);
+  try {
+    await roleConfigService.setBoundary(guild.id, role.id, tier);
+  } catch (err) {
+    if (err instanceof DomainError && err.message === "BOUNDARY_NOT_ON_LADDER") {
+      throw new CommandError(hierarchyMessages.boundary.notOnLadder);
+    }
+    throw err;
+  }
+  await replySuccess(
+    interaction,
+    hierarchyMessages.boundary.configured(STAFF_TIER_LABELS[tier]),
+    configMessages.role.roleLine(role.id),
+    hierarchyMessages.boundary.note,
+  );
+}
+
+/** §22 — thin: load the shared hierarchy, render, reply. */
+async function handleCheck(interaction: ChatInputCommandInteraction): Promise<void> {
+  const guild = requireGuild(interaction);
+  const role = interaction.options.getRole(CommandOption.ROLE, true);
+
+  const hierarchy = await getHierarchy(guild.id);
+  const view = buildRoleCheckView(hierarchy, role.id);
+
+  if (!view.ok) throw new CommandError(view.lines.join("\n"));
+  await replySuccess(interaction, hierarchyMessages.roleCheck.title, ...view.lines);
+}
 
 async function handleStart(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = requireGuild(interaction);
@@ -290,6 +370,16 @@ export default defineCommand({
         return handleSingleton(interaction, RoleConfigType.APPEAL_MANAGER);
       case RoleSubcommand.GIFT_MANAGER:
         return handleSingleton(interaction, RoleConfigType.GIFT_MANAGER);
+      case RoleSubcommand.TAG:
+        return handleSingleton(interaction, RoleConfigType.TAG);
+      case RoleSubcommand.HIGHSTAFF:
+        return handleBoundary(interaction, StaffTier.HIGHSTAFF);
+      case RoleSubcommand.OWNER:
+        return handleBoundary(interaction, StaffTier.OWNER);
+      case RoleSubcommand.SHIP:
+        return handleBoundary(interaction, StaffTier.SHIP);
+      case RoleSubcommand.CHECK:
+        return handleCheck(interaction);
       case RoleSubcommand.WARN:
         return handleWarn(interaction);
       default:

@@ -25,6 +25,7 @@ import { VacationModel } from "../modules/vacation/models/vacation.model.ts";
 import { VacationPanelDeploymentModel } from "../modules/vacation/models/vacation-panel-deployment.model.ts";
 import { GiftClaimModel } from "../modules/gift-claims/models/gift-claim.model.ts";
 import { GiftClaimAuditModel } from "../modules/gift-claims/models/gift-claim-audit.model.ts";
+import { StaffTagRestrictionModel } from "../modules/server-tag/models/staff-tag-restriction.model.ts";
 import { CounterModel } from "../shared/sequence.ts";
 import { logger } from "../shared/utils/logger.ts";
 
@@ -55,6 +56,7 @@ export const ALL_MODELS: Model<any>[] = [
   VacationPanelDeploymentModel,
   GiftClaimModel,
   GiftClaimAuditModel,
+  StaffTagRestrictionModel,
   CounterModel,
 ];
 

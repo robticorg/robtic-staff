@@ -1,4 +1,20 @@
-import { emojis } from "../emojis/index.ts";
+import { customEmojis, emojis } from "../emojis/index.ts";
+
+/**
+ * The Staff Warns channel message. The format is fixed by spec — four bold
+ * lines, no embed, no extra fields, no timestamp, no issuer. The spacing
+ * around each colon is part of the format.
+ */
+export const staffWarnChannelMessage = {
+  heading: (level: number) => `**Staff Warn ${level} ${customEmojis.attention}**`,
+  mention: (userId: string) => `**منشن : <@${userId}>**`,
+  reason: (reason: string) => `**السبب : ${reason}**`,
+  proof: (proof: string) => `**الدليل : ${proof}**`,
+  noProof: "لا يوجد",
+  proofSeparator: " ",
+  /** Appended only if the proof list had to be trimmed to fit Discord's limit. */
+  truncated: "…",
+} as const;
 
 export const warningMessages = {
   user: {

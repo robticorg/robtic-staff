@@ -8,6 +8,8 @@ import {
   ROLE_CONFIG_TYPE_VALUES,
   RoleConfigType,
   SINGLETON_ROLE_TYPES,
+  STAFF_TIER_BOUNDARIES,
+  type StaffTier,
 } from "../types/enums.ts";
 
 export interface StaffRoleLevel {
@@ -27,9 +29,17 @@ export interface SetRoleInput {
 const staffLevelsCache = new TtlCache<StaffRoleLevel[]>({ defaultTtlMs: CONFIG_CACHE_TTL_MS });
 const generalStaffRoleCache = new TtlCache<RoleId | null>({ defaultTtlMs: CONFIG_CACHE_TTL_MS });
 
+/** Listeners fired whenever any role configuration for a guild changes. */
+const invalidationListeners = new Set<(guildId: GuildId) => void>();
+
+export function onRoleConfigInvalidated(listener: (guildId: GuildId) => void): void {
+  invalidationListeners.add(listener);
+}
+
 function invalidateRoleConfig(guildId: GuildId): void {
   staffLevelsCache.delete(guildId);
   generalStaffRoleCache.delete(guildId);
+  for (const listener of invalidationListeners) listener(guildId);
 }
 
 export class RoleConfigService extends BaseRepository<RoleConfig> {
@@ -161,6 +171,53 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
       .select({ roleId: 1 })
       .exec();
     return row?.roleId ?? null;
+  }
+
+  /**
+   * Marks a numbered ladder role as the first rung of a tier. The role must
+   * already carry a level — a boundary that is not on the ladder cannot be
+   * turned into one, it would silently produce wrong tiers.
+   */
+  async setBoundary(
+    guildId: GuildId,
+    roleId: RoleId,
+    tier: StaffTier,
+  ): Promise<HydratedDocument<RoleConfig>> {
+    if (!STAFF_TIER_BOUNDARIES.includes(tier)) {
+      throw new ValidationError("Unknown staff tier boundary", { tier });
+    }
+    const row = await this.get(guildId, roleId);
+    if (!row || row.level === undefined || row.level === null) {
+      throw new ValidationError("BOUNDARY_NOT_ON_LADDER", { guildId, roleId, tier });
+    }
+
+    await this.model
+      .updateMany({ guildId, boundary: tier, roleId: { $ne: roleId } }, { $unset: { boundary: "" } })
+      .exec();
+    const doc = await this.model
+      .findOneAndUpdate({ guildId, roleId }, { $set: { boundary: tier } }, { returnDocument: "after" })
+      .exec();
+    invalidateRoleConfig(guildId);
+    return doc as HydratedDocument<RoleConfig>;
+  }
+
+  async unsetBoundary(guildId: GuildId, tier: StaffTier): Promise<number> {
+    const result = await this.model
+      .updateMany({ guildId, boundary: tier }, { $unset: { boundary: "" } })
+      .exec();
+    invalidateRoleConfig(guildId);
+    return result.modifiedCount ?? 0;
+  }
+
+  /** Configured boundary roles for a guild, keyed by tier. */
+  async getBoundaryRoles(guildId: GuildId): Promise<Partial<Record<StaffTier, RoleConfig>>> {
+    const rows = await this.model
+      .find({ guildId, boundary: { $exists: true } })
+      .select({ roleId: 1, level: 1, boundary: 1, type: 1 })
+      .exec();
+    const out: Partial<Record<StaffTier, RoleConfig>> = {};
+    for (const row of rows) if (row.boundary) out[row.boundary] = row;
+    return out;
   }
 
   getStartRole(guildId: GuildId): Promise<HydratedDocument<RoleConfig> | null> {

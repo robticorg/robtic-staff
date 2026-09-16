@@ -98,8 +98,7 @@ async function cleanup(): Promise<void> {
 describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
   beforeAll(seed);
   afterAll(async () => {
-    await cleanup();
-    await mongoose.disconnect();
+    await cleanup();
   });
 
   it("!accept assigns roles 0..level + general Staff and sets ACTIVE status", async () => {

@@ -21,6 +21,7 @@ import { StaffWarningModel } from "../models/staff-warning.model.ts";
 import { UserWarningModel, type UserWarningDocument } from "../models/user-warning.model.ts";
 import type { StaffWarningDocument } from "../models/staff-warning.model.ts";
 import { staffWarningService, warningTypeOf } from "./staff-warning.service.ts";
+import { staffWarningLogService } from "./staff-warning-log.service.ts";
 import { userWarningService } from "./user-warning.service.ts";
 import {
   STAFF_WARNING_FIRE_LEVEL,
@@ -276,6 +277,14 @@ export class WarningActionService {
       convertedFrom: claimed.length,
       evidence: [],
       warningId: real._id.toString(),
+    });
+
+    // §9 / §10 — only a REAL warning is announced, and only after it is
+    // persisted. The service never throws, so a Discord failure cannot undo it.
+    await staffWarningLogService.send({
+      guild: input.guild,
+      warningId: real._id,
+      targetId: input.target.id,
     });
 
     if (fired) {

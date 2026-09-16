@@ -2,35 +2,35 @@ import type { TicketPanelConfig } from "../types.ts";
 import { colors } from "../../config/colors.ts";
 
 export const accountPanel: TicketPanelConfig = {
-  id: "account",
+  id: "support-account",
   name: "الـدعـم الـفـنـي",
-  description: "استرجاع حسابك أو إدارته.",
-  emoji: "👤",
+  description: "تواصل مع فريق الدعم الفني لحل مشاكل الخاصة بك.",
+  emoji: "<a:736257973906571306:1485939519642537994>",
 
-  supportRoleId: "1545812169525035132",
-  categoryId: "1545812173807157389",
+  supportRoleId: "1538209900919005204",
+  categoryId: "1536249080924348447",
   logChannelId: "1545812173362700294",
 
   questions: {
     enabled: true,
     items: [
       {
-        id: "account",
-        label: "اسم الحساب / الإيميل المسجّل",
-        placeholder: "لا تكتب كلمة السر أبداً",
+        id: "user",
+        label: "ما هو اسم المستخدم؟",
+        placeholder: "اكتب اسم المستخدم هنا",
         style: "SHORT",
         required: true,
         minLength: 3,
-        maxLength: 200,
+        maxLength: 100,
       },
       {
-        id: "request",
-        label: "وش تحتاج مساعدة فيه؟",
-        placeholder: "مثال: ما أقدر أسجّل دخول، أبي أغيّر الإيميل…",
+        id: "problem",
+        label: "ما هي المشكلة؟",
+        placeholder: "اشرح مشكلتك بالتفصيل…",
         style: "PARAGRAPH",
         required: true,
-        minLength: 10,
-        maxLength: 1000,
+        minLength: 3,
+        maxLength: 300,
       },
     ],
   },
@@ -47,7 +47,7 @@ export const accountPanel: TicketPanelConfig = {
     delete: true,
   },
 
-  faq: { enabled: false },
+  faq: { enabled: true },
 
   ticketMessage: {
     accentColor: colors.warning,

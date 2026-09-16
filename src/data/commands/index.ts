@@ -7,6 +7,7 @@ export const CommandName = {
   FAQ: "faq",
   FAST_ACCESS: "fast-access",
   VACATION_SETUP: "vacation-setup",
+  SCAN: "scan",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -24,6 +25,11 @@ export const RoleSubcommand = {
   VACATION: "vacation",
   APPEAL_MANAGER: "appealmanager",
   GIFT_MANAGER: "giftmanager",
+  TAG: "tag",
+  CHECK: "check",
+  HIGHSTAFF: "highstaff",
+  OWNER: "owner",
+  SHIP: "ship",
 } as const;
 export type RoleSubcommand = (typeof RoleSubcommand)[keyof typeof RoleSubcommand];
 
@@ -121,7 +127,30 @@ export const commandCopy = {
         description: "ضبط الرتبة اللي تقدر تراجع طلبات الهدايا وتسلّمها",
         option: "رتبة مانجر الهدايا",
       },
+      tag: {
+        description: "ضبط الرتبة اللي تنعطى تلقائياً لكل عضو يستخدم تاق السيرفر",
+        option: "رتبة التاق",
+      },
+      check: {
+        description: "عرض مستوى الرتبة وتصنيفها في سلّم الستاف",
+        option: "الرتبة اللي تبي تفحصها",
+      },
+      highstaff: {
+        description: "تحديد أول رتبة في تصنيف الهاي ستاف (لازم تكون ضمن السلّم المرقّم)",
+        option: "أول رتبة هاي ستاف",
+      },
+      owner: {
+        description: "تحديد أول رتبة في تصنيف الأونر (لازم تكون ضمن السلّم المرقّم)",
+        option: "أول رتبة أونر",
+      },
+      ship: {
+        description: "تحديد أول رتبة في تصنيف الشيب (لازم تكون ضمن السلّم المرقّم)",
+        option: "أول رتبة شيب",
+      },
     },
+  },
+  scan: {
+    description: "فحص السيرفر واستيراد أعضاء الستاف الموجودين ومزامنة مستوياتهم",
   },
   channels: {
     description: `ضبط الرومات اللي يستخدمها نظام ستاف ${branding.botName}`,
