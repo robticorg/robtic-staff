@@ -264,6 +264,58 @@ The command layer resolves/orders Discord roles (by position, minus IGNORE / the
 general STAFF role) and passes plain ids to the service — services stay
 Discord-free.
 
+### The ladder follows Discord's role order automatically
+
+The ladder **is** the role order between START and END — it is derived, never
+typed in. `orderLadderRoles` (`configuration/utils/ladder-order.ts`) is the one
+pure function behind both `/role start|end` and the live sync, so they can never
+disagree. `LadderSyncService` re-derives the band on `roleCreate` / `roleUpdate`
+(position only) / `roleDelete`, and on every boot:
+
+- a role **created** inside the band becomes a rung;
+- a role **dragged into** the band joins, one dragged out leaves;
+- a **deleted** rung disappears and everything above it renumbers;
+- excluded slots (IGNORE, ACCESS, `@Staff`, TAG, WARN_*, STAFF_TYPE, …) and
+  integration-managed roles stay off the ladder even inside the band;
+- START/END are always rungs, even if also configured as something else.
+
+A drag in the Discord UI emits one `roleUpdate` per shifted role, so writes are
+debounced (`configurationConfig.ladderSyncDebounceMs`, 3s) into a single rebuild,
+and the rebuild only runs when the computed order actually differs — a rename or
+colour change ends in `UNCHANGED` without touching MongoDB. A half-configured
+hierarchy (no START or no END) is skipped rather than guessed at.
+
+---
+
+## Server Tag — role reconciliation
+
+Live `userUpdate` / `guildMemberAdd` events remain the fast path. `ServerTagAuditService`
+is the catch-up for everything the gateway could not report — a tag role handed
+out by hand, a tag toggled while the process was down, a member who joined before
+the role was configured. It runs **once on every boot** (`serverTagConfig
+.auditIntervalMs` > 0 also schedules it periodically) and decides from state
+alone via the pure `decideAuditAction`:
+
+| tag | tag role | staff | → |
+|---|---|---|---|
+| on | missing | — | grant the role (and lift an active restriction) |
+| on | held | — | nothing, unless a restriction is still running → lift it |
+| off | held | — | remove the role (+ the restriction path, for staff) |
+| off | missing | yes | the restriction path — 3 days, snapshot + DM |
+| off | missing | no | nothing |
+
+Consistent members are never written to and never logged, so a sweep over a full
+guild is silent. Real writes are spaced by `auditActionDelayMs` (250ms) so a
+first run cannot burst into the rate limiter.
+
+**The destructive half requires proof.** discord.js reports both "no tag" and
+"the payload never carried `primary_guild`" as `primaryGuild: null`, so a member
+chunk missing that field would otherwise read as "tag off" and strip a staff
+member's roles. Before any revoke the audit re-asks the API
+(`users.fetch(id, { force: true })`); if the fetch fails or disagrees, the member
+is counted `unverified` and left alone — the same rule `detectTagState` already
+applies to unverified DISABLED edges.
+
 ---
 
 ## Warnings — two separate systems
@@ -561,9 +613,25 @@ wins. Winner gets exactly **+1** via `StaffPointService.add` (unique
 `TICKET_CLAIM` `StaffActivity`, a `ticketsClaimed` bump. Then overwrites flip:
 **support role → no-view**, claimer keeps view, creator keeps view.
 
+### Transfer (claimer → another staff member)
+
+`[Transfer]` in Options, only on panels with `claimer.transferable: true` and only
+once the ticket is **CLAIMED** — a modal with a single **User select** + a
+**required reason**. The receiver must be guild staff (`staffPermissionService
+.isStaff`) or an Administrator; bots, the current claimer and the ticket's own
+opener are refused. The write is atomic on
+`{ status: CLAIMED, claimedByDiscordId: <current> }`, so two simultaneous
+transfers can't both land. Then overwrites flip: **previous claimer keeps
+view/history but loses `SendMessages`**, new claimer gets full access (the opener
+is never demoted, even if they were somehow the claimer). The receiver gets a
+**plain DM (no embed) with a link button** to the channel, the ticket channel gets
+a transfer note, and `TICKET_TRANSFERRED` is logged with from / to / reason. **No
+claim point is awarded** — the +1 stays with whoever claimed first — but
+completion credit at close follows the new claimer (`claimedBy` moved).
+
 ### Options (ephemeral, staff only)
 
-`[Close] [Add User] [Remove User]`. **Add User** = a modal with a multi-value
+`[Close] [Add User] [Remove User] [Rename] [Transfer]`. **Add User** = a modal with a multi-value
 **User select** + **Role select** (both optional; ≥1 required) → grants access,
 saves `addedUsers` / `addedRoles`. **Remove User** = a String select limited to
 currently-added principals; owner / claimer / support role are **never**
@@ -573,8 +641,8 @@ neither?) — `DELETED` keeps the DB record, only the channel goes.
 ### Services (`TicketService`, spec §32)
 
 `createTicket · getTicket · getTicketByChannel · getTicketById · claimTicket ·
-closeTicket · deleteTicket · renameTicket · addUser · removeUser · addRole ·
-removeRole` + `ticketConfigService.getPanel/getPanelConfig`. `renameTicket`,
+transferTicket · closeTicket · deleteTicket · renameTicket · addUser ·
+removeUser · addRole · removeRole` + `ticketConfigService.getPanel/getPanelConfig`. `renameTicket`,
 `closeTicket`, `deleteTicket` and `TranscriptService.generate` are ready for the
 later `!rename / !close / !delete / !transcript` prefix phase (not built now).
 `TranscriptService.generate()` already exports messages + attachments +

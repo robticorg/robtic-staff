@@ -34,6 +34,11 @@ export function buildTicketOptionsUi(ticketId: string): InteractionReplyOptions 
           .setCustomId(TicketCustomId.optRename(ticketId))
           .setLabel(M.renameButton)
           .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(TicketCustomId.optTransfer(ticketId))
+          .setLabel(M.transferButton)
+          .setEmoji(emojis.transfer)
+          .setStyle(ButtonStyle.Primary),
       ),
     ],
   };

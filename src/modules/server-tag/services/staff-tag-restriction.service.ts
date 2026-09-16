@@ -63,6 +63,14 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
     return this.count({ guildId, isActive: true });
   }
 
+  /** Every staff id with a running restriction — one query for a whole sweep. */
+  async listActiveStaffIds(guildId: GuildId): Promise<Set<UserId>> {
+    const rows = await StaffTagRestrictionModel.find({ guildId, isActive: true })
+      .select({ staffId: 1 })
+      .exec();
+    return new Set(rows.map((r) => r.staffId));
+  }
+
   /**
    * §20 — the partial unique index is the arbiter. Two concurrent tag-remove
    * events race here and exactly one wins; the loser reports `already-active`

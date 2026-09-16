@@ -11,6 +11,7 @@ export const emojis = {
   report: "🚨",
   staff: "🛡️",
   user: "👤",
+  transfer: "🔁",
 
   attachment: "📎",
   inbound: "📨",

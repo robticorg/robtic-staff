@@ -25,4 +25,12 @@ export {
   serverTagExpirationService,
   type TagExpiryOutcome,
 } from "./server-tag-expiration.service.ts";
+export {
+  ServerTagAuditService,
+  serverTagAuditService,
+  decideAuditAction,
+  TagAuditAction,
+  type AuditMemberInput,
+  type AuditTally,
+} from "./server-tag-audit.service.ts";
 export { ServerTagLogService, serverTagLogService } from "./server-tag-log.service.ts";

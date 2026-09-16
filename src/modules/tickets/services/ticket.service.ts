@@ -20,6 +20,7 @@ import {
 import { toObjectId } from "../../../shared/utils/id.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { nextSequence } from "../../../shared/sequence.ts";
+import { limits } from "../../../data/config/limits.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import { panelIsAdminOnly, type TicketPanelConfig } from "../../../data/tickets/index.ts";
 import { StaffActivityType, staffActivityService, staffService } from "../../staff/index.ts";
@@ -31,7 +32,7 @@ import {
   assertTicketTransition,
 } from "../types/enums.ts";
 import { applyTicketClaimCredit } from "./ticket-claim-credit.ts";
-import { canClaimTicket } from "./ticket-permissions.ts";
+import { canClaimTicket, canTransferTicket } from "./ticket-permissions.ts";
 import { protectedTicketPrincipals } from "./ticket-permissions.ts";
 import { ticketLogService } from "./ticket-log.service.ts";
 import { transcriptService } from "./transcript.service.ts";
@@ -63,6 +64,20 @@ export interface CreateTicketResult {
 export interface ClaimTicketResult {
   ticket: TicketDoc;
   pointAwarded: boolean;
+}
+
+export interface TransferTicketInput {
+  ticketId: string;
+  actor: GuildMember;
+  target: GuildMember;
+  panel: TicketPanelConfig;
+  reason: string;
+}
+
+export interface TransferTicketResult {
+  ticket: TicketDoc;
+  previousClaimerId: UserId;
+  reason: string;
 }
 
 export interface CloseTicketResult {
@@ -293,6 +308,87 @@ export class TicketService extends BaseRepository<Ticket> {
       AttachFiles: true,
       EmbedLinks: true,
     });
+  }
+
+  /**
+   * Hands a claimed ticket over to another staff member. The previous claimer
+   * keeps read access but loses the ability to write; the new claimer gets full
+   * access. No claim point is awarded — the +1 belongs to whoever claimed
+   * first — but completion credit at close follows the new claimer.
+   */
+  async transferTicket(input: TransferTicketInput): Promise<TransferTicketResult> {
+    const { ticketId, actor, target, panel } = input;
+    const ticket = await this.getTicketOrThrow(ticketId);
+
+    const gate = await canTransferTicket(actor, target, panel, ticket);
+    if (!gate.ok) throw transferError(gate.reason);
+
+    const reason = input.reason.trim().slice(0, limits.reasonMaxLength);
+    if (!reason) throw new ValidationError(M.transfer.reasonMissing);
+
+    const previousClaimerId = ticket.claimedByDiscordId as UserId;
+    const staff = await staffService.ensure(target.id, ticket.guildId);
+
+    // Filtered on the claimer we gated against, so two simultaneous transfers
+    // can't both win and leave the loser's handover silently applied.
+    const transferred = await this.model
+      .findOneAndUpdate(
+        { ticketId, status: TicketStatus.CLAIMED, claimedByDiscordId: previousClaimerId },
+        {
+          $set: {
+            claimedBy: staff._id,
+            claimedByDiscordId: target.id,
+            claimedAt: new Date(),
+            transferredFrom: previousClaimerId,
+            transferredAt: new Date(),
+            transferReason: reason,
+          },
+        },
+        { returnDocument: "after" },
+      )
+      .exec();
+    if (!transferred) throw new ConflictError(M.transfer.raced, { ticketId });
+
+    await this.applyTransferOverwrites(
+      actor.guild,
+      transferred,
+      previousClaimerId,
+      target.id,
+    ).catch((err) => log.warn("transfer overwrite update failed", err));
+
+    await ticketLogService.record(TicketLogAction.TICKET_TRANSFERRED, {
+      guild: actor.guild,
+      panel,
+      ticketId,
+      actorId: actor.id,
+      fromId: previousClaimerId,
+      targetId: target.id,
+      reason,
+    });
+
+    return { ticket: transferred, previousClaimerId, reason };
+  }
+
+  /** Previous claimer: still reads, can no longer write. New claimer: full access. */
+  private async applyTransferOverwrites(
+    guild: Guild,
+    ticket: Ticket,
+    previousClaimerId: UserId,
+    newClaimerId: UserId,
+  ): Promise<void> {
+    const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
+    if (!channel || !("permissionOverwrites" in channel)) return;
+
+    await channel.permissionOverwrites.edit(newClaimerId, GRANT_ACCESS);
+    // The opener keeps their own access — never demote them by transferring.
+    if (previousClaimerId !== ticket.userId) {
+      await channel.permissionOverwrites.edit(previousClaimerId, {
+        ViewChannel: true,
+        ReadMessageHistory: true,
+        SendMessages: false,
+        AddReactions: false,
+      });
+    }
   }
 
   async addUser(
@@ -575,6 +671,25 @@ export class TicketService extends BaseRepository<Ticket> {
       throw new DomainError("TICKET_PANEL_GONE", M.create.unknownPanel, { panelId: ticket.panelId });
     }
     return panel;
+  }
+}
+
+function transferError(reason?: string): DomainError {
+  switch (reason) {
+    case "NOT_TRANSFERABLE":
+      return new ValidationError(M.transfer.notTransferable);
+    case "NOT_CLAIMED":
+      return new ValidationError(M.transfer.notClaimed);
+    case "NOT_ALLOWED":
+      return new ValidationError(M.transfer.notAllowed);
+    case "TARGET_IS_BOT":
+      return new ValidationError(M.transfer.targetIsBot);
+    case "TARGET_IS_CLAIMER":
+      return new ValidationError(M.transfer.targetIsClaimer);
+    case "TARGET_IS_OWNER":
+      return new ValidationError(M.transfer.targetIsOwner);
+    default:
+      return new ValidationError(M.transfer.targetNotStaff);
   }
 }
 

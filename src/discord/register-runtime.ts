@@ -8,6 +8,8 @@ import { attachGiftClaimClient } from "../modules/gift-claims/index.ts";
 import { attachServerTagClient } from "../modules/server-tag/index.ts";
 import { vacationExpirationService } from "../modules/vacation/services/vacation-expiration.service.ts";
 import { serverTagExpirationService } from "../modules/server-tag/services/server-tag-expiration.service.ts";
+import { serverTagAuditService } from "../modules/server-tag/services/server-tag-audit.service.ts";
+import { ladderSyncService } from "../modules/configuration/services/ladder-sync.service.ts";
 
 export function attachModuleClients(client: Client): void {
   attachModmailClient(client);
@@ -28,4 +30,6 @@ export function startModuleRuntime(): void {
 export function stopModuleRuntime(): void {
   vacationExpirationService.stop();
   serverTagExpirationService.stop();
+  serverTagAuditService.stop();
+  ladderSyncService.stop();
 }

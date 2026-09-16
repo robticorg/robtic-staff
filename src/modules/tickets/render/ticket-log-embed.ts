@@ -12,6 +12,8 @@ function titleFor(action: TicketLogAction): string | null {
       return L.titleCreated;
     case TicketLogAction.TICKET_CLAIMED:
       return L.titleClaimed;
+    case TicketLogAction.TICKET_TRANSFERRED:
+      return L.titleTransferred;
     case TicketLogAction.TICKET_RENAMED:
       return L.titleRenamed;
     case TicketLogAction.TICKET_CLOSED:
@@ -44,6 +46,7 @@ function colorFor(action: TicketLogAction): "success" | "error" | "warning" | "i
     case TicketLogAction.TICKET_CLOSED:
       return "warning";
     case TicketLogAction.TICKET_CLAIMED:
+    case TicketLogAction.TICKET_TRANSFERRED:
       return "info";
     default:
       return "primary";
@@ -72,6 +75,11 @@ export function buildTicketLogEmbed(
     case TicketLogAction.USER_ADDED:
     case TicketLogAction.USER_REMOVED:
       if (ctx.targetId) fields.push({ name: L.member, value: `<@${ctx.targetId}>`, inline: true });
+      break;
+    case TicketLogAction.TICKET_TRANSFERRED:
+      if (ctx.fromId) fields.push({ name: L.from, value: `<@${ctx.fromId}>`, inline: true });
+      if (ctx.targetId) fields.push({ name: L.to, value: `<@${ctx.targetId}>`, inline: true });
+      fields.push({ name: L.reason, value: ctx.reason ?? "—" });
       break;
     case TicketLogAction.ROLE_ADDED:
     case TicketLogAction.ROLE_REMOVED:

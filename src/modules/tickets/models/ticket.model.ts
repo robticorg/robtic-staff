@@ -26,6 +26,11 @@ export interface Ticket extends Timestamps {
   addedUsers: UserId[];
   addedRoles: RoleId[];
 
+  /** Last transfer only — the claim point stays with whoever claimed first. */
+  transferredFrom?: UserId;
+  transferredAt?: Date;
+  transferReason?: string;
+
   claimedAt?: Date;
   closedAt?: Date;
   closedBy?: UserId;
@@ -69,6 +74,10 @@ const ticketSchema = new Schema<Ticket>(
 
     addedUsers: { type: [String], default: [] },
     addedRoles: { type: [String], default: [] },
+
+    transferredFrom: { type: String },
+    transferredAt: { type: Date },
+    transferReason: { type: String },
 
     claimedAt: { type: Date },
     closedAt: { type: Date },

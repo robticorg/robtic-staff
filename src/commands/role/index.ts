@@ -9,6 +9,7 @@ import { defineCommand } from "../../discord/command.ts";
 import {
   RoleConfigType,
   StaffTier,
+  ladderSyncService,
   roleConfigService,
 } from "../../modules/configuration/index.ts";
 import { getHierarchy } from "../../modules/configuration/utils/staff-levels.ts";
@@ -364,21 +365,9 @@ async function rebuildFromConfig(
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   }
 
-  const [ignored, access, generalStaff, others] = await Promise.all([
-    roleConfigService.getIgnoredRoleIds(guild.id),
-    // Access Roles must never become ladder rungs, exactly like ignored roles.
-    roleConfigService.getAccessRoleIds(guild.id),
-    roleConfigService.getGeneralStaffRole(guild.id),
-    Promise.all(
-      NON_NUMBERED_TYPES.filter((t) => t !== RoleConfigType.STAFF).map((t) =>
-        roleConfigService.listByType(guild.id, t),
-      ),
-    ),
-  ]);
-
-  const excluded = new Set<string>([...ignored, ...access]);
-  if (generalStaff) excluded.add(generalStaff.roleId);
-  for (const list of others) for (const cfg of list) excluded.add(cfg.roleId);
+  // Ignored roles, Access Roles, the @Staff marker and every other configured
+  // slot are off the ladder — the same set the automatic role-event sync uses.
+  const excluded = await ladderSyncService.excludedRoleIds(guild.id);
 
   const ordered = buildStaffLadder({
     guild,

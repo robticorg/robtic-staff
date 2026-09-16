@@ -12,6 +12,21 @@ export const serverTagConfig = {
 
   sweepIntervalMs: 60_000,
   sweepBatchSize: 25,
+
+  /**
+   * Full-guild reconciliation of the Tag Role. Runs once on every boot, which
+   * is what catches drift accumulated while the process was down (a role handed
+   * out by hand, a tag toggled with the bot offline). Set a positive interval to
+   * also re-run it periodically; 0 means boot-only.
+   */
+  auditIntervalMs: 0,
+
+  /**
+   * Pause between two members the audit actually writes to. Unchanged members
+   * cost nothing, so this only throttles real role writes — without it a first
+   * run over a large guild would burst straight into Discord's rate limiter.
+   */
+  auditActionDelayMs: 250,
 } as const;
 
 /**

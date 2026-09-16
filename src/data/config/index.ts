@@ -1,10 +1,12 @@
 import { branding } from "./branding.ts";
 import { colors } from "./colors.ts";
+import { configurationConfig } from "./configuration.ts";
 import { limits } from "./limits.ts";
 import { punishmentConfig } from "./punishment.ts";
 
 export { branding, type Branding } from "./branding.ts";
 export { colors, type ColorName, type Colors } from "./colors.ts";
+export { configurationConfig, type ConfigurationConfig } from "./configuration.ts";
 export { limits, type Limits } from "./limits.ts";
 export { punishmentConfig, EVIDENCE_WINDOW_MS } from "./punishment.ts";
 
@@ -12,6 +14,7 @@ export const appData = {
   branding,
   colors,
   limits,
+  configuration: configurationConfig,
   punishment: punishmentConfig,
 
   caseIdPrefix: "RPT-",

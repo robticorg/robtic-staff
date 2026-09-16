@@ -14,6 +14,9 @@ export interface TicketLogContext {
   targetId?: string;
   roleId?: string;
   name?: string;
+  /** Transfer only — the claimer the ticket was handed over from. */
+  fromId?: string;
+  reason?: string;
 }
 
 export class TicketLogService {

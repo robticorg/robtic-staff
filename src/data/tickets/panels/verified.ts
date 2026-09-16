@@ -20,7 +20,7 @@ export const verifiedPanel: TicketPanelConfig = {
     supportRoleCanClaim: true,
     managersCanClaim: true,
     onlyOnce: true,
-    transferable: false,
+    transferable: true,
   },
 
   close: {

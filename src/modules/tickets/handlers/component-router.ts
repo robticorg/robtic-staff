@@ -12,10 +12,12 @@ import {
   handleOptionsOpen,
   handleOptionsRemoveUser,
   handleOptionsRename,
+  handleOptionsTransfer,
 } from "./options.handler.ts";
 import { handleAddUserModal } from "./add-user.handler.ts";
 import { handleRemoveUserModal } from "./remove-user.handler.ts";
 import { handleRenameModal } from "./rename-modal.handler.ts";
+import { handleTransferModal } from "./transfer.handler.ts";
 import { handleFaqSelect } from "./faq-select.handler.ts";
 
 const log = logger.child("tickets:components");
@@ -58,6 +60,7 @@ async function dispatch(
     if (action === "addUserModal") return handleAddUserModal(interaction, args[0] ?? "");
     if (action === "removeUserModal") return handleRemoveUserModal(interaction, args[0] ?? "");
     if (action === "renameModal") return handleRenameModal(interaction, args[0] ?? "");
+    if (action === "transferModal") return handleTransferModal(interaction, args[0] ?? "");
     return;
   }
 
@@ -77,6 +80,8 @@ async function dispatch(
         return handleOptionsRemoveUser(interaction, args[0] ?? "");
       case "optRename":
         return handleOptionsRename(interaction, args[0] ?? "");
+      case "optTransfer":
+        return handleOptionsTransfer(interaction, args[0] ?? "");
       default:
         return;
     }

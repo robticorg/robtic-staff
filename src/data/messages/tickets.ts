@@ -71,7 +71,40 @@ export const ticketMessages = {
     addUserButton: "إضافة عضو",
     removeUserButton: "إزالة عضو",
     renameButton: "تغيير الاسم",
+    transferButton: "تحويل",
     notAllowed: `${E.error} ما عندك صلاحية تدير هذا التكت — لازم تستلمه أول.`,
+  },
+
+  transfer: {
+    modalTitle: "تحويل التكت",
+    targetLabel: "العضو اللي تبي تحوّل له التكت",
+    reasonLabel: "سبب التحويل",
+    reasonPlaceholder: "اكتب سبب تحويل التكت…",
+
+    notTransferable: `${E.error} قسم التكت هذا ما يسمح بتحويل التكتات.`,
+    notClaimed: `${E.error} لازم يكون التكت مستلَم قبل ما ينحوّل.`,
+    notAllowed: `${E.error} ما عندك صلاحية تحوّل هذا التكت — لازم تكون المستلِم.`,
+    targetMissing: `${E.error} اختر عضو واحد عشان تحوّل له التكت.`,
+    reasonMissing: `${E.error} سبب التحويل مطلوب.`,
+    targetNotInGuild: `${E.error} هذا العضو مو موجود في السيرفر.`,
+    targetIsBot: `${E.error} ما تقدر تحوّل التكت لبوت.`,
+    targetIsClaimer: `${E.error} هذا العضو مستلِم التكت أصلاً.`,
+    targetIsOwner: `${E.error} ما تقدر تحوّل التكت لصاحب التكت.`,
+    targetNotStaff: `${E.error} لازم يكون العضو من الستاف أو أدمن.`,
+    raced: `${E.error} تغيّر مستلِم التكت قبل شوي — افتح الخيارات مرة ثانية.`,
+
+    done: (ticketId: string, userId: string) =>
+      `${E.success} تم تحويل \`${ticketId}\` إلى <@${userId}>.`,
+    dmFailed: (userId: string) =>
+      `${E.warning} ما قدرت أرسل رسالة خاصة لـ <@${userId}> — خاصه مغلق.`,
+    channelNote: (fromUserId: string, toUserId: string, reason: string) =>
+      `${E.transfer} تم تحويل التكت من <@${fromUserId}> إلى <@${toUserId}>.\n**سبب التحويل:** ${reason}`,
+
+    dm: {
+      body: (ticketId: string, reason: string) =>
+        `لقد تم تحويل التكت رقم \`${ticketId}\` اليك يرجى توجه للتكت حالا\nسبب تحويل : ${reason}`,
+      button: "الذهاب للتكت",
+    },
   },
 
   renameTicket: {
@@ -119,6 +152,7 @@ export const ticketMessages = {
   log: {
     titleCreated: `${E.report} تم فتح تكت`,
     titleClaimed: `${E.staff} تم استلام تكت`,
+    titleTransferred: `${E.transfer} تم تحويل تكت`,
     titleRenamed: "✏️ تم تغيير اسم تكت",
     titleClosed: "🔒 تم إغلاق تكت",
     titleDeleted: `${E.error} تم حذف تكت`,
@@ -133,6 +167,9 @@ export const ticketMessages = {
     newName: "الاسم الجديد",
     member: "العضو",
     role: "الرتبة",
+    from: "من",
+    to: "إلى",
+    reason: "السبب",
   },
 
   faq: {

@@ -30,7 +30,7 @@ export const supportPanel: TicketPanelConfig = {
     supportRoleCanClaim: true,
     managersCanClaim: true,
     onlyOnce: true,
-    transferable: false,
+    transferable: true,
   },
 
   close: {

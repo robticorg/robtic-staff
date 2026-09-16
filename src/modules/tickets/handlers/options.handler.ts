@@ -9,6 +9,7 @@ import type { TicketDocument } from "../models/ticket.model.ts";
 import { buildTicketOptionsUi } from "../render/options-ui.ts";
 import { buildAddUserModal, buildRemoveUserModal } from "../render/add-remove-modals.ts";
 import { buildRenameModal } from "../render/rename-modal.ts";
+import { buildTransferModal } from "../render/transfer-modal.ts";
 import { ticketConfigService } from "../services/ticket-config.service.ts";
 import { canManageTicket } from "../services/ticket-permissions.ts";
 import { ticketService } from "../services/ticket.service.ts";
@@ -136,4 +137,23 @@ export async function handleOptionsRename(
   const resolved = await resolve(interaction, ticketId);
   if (!resolved) return;
   await interaction.showModal(buildRenameModal(ticketId));
+}
+
+export async function handleOptionsTransfer(
+  interaction: ButtonInteraction,
+  ticketId: string,
+): Promise<void> {
+  const resolved = await resolve(interaction, ticketId);
+  if (!resolved) return;
+
+  // Cheap rejections before the modal — a modal can't be answered with an error.
+  if (!resolved.panel.claimer.transferable) {
+    await reject(interaction, M.transfer.notTransferable);
+    return;
+  }
+  if (!resolved.ticket.claimedByDiscordId) {
+    await reject(interaction, M.transfer.notClaimed);
+    return;
+  }
+  await interaction.showModal(buildTransferModal(ticketId));
 }

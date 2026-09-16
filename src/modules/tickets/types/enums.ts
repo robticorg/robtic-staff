@@ -38,6 +38,7 @@ export function assertTicketTransition(from: TicketStatus, to: TicketStatus): vo
 export const TicketLogAction = {
   TICKET_CREATED: "TICKET_CREATED",
   TICKET_CLAIMED: "TICKET_CLAIMED",
+  TICKET_TRANSFERRED: "TICKET_TRANSFERRED",
   TICKET_RENAMED: "TICKET_RENAMED",
   TICKET_CLOSED: "TICKET_CLOSED",
   TICKET_DELETED: "TICKET_DELETED",

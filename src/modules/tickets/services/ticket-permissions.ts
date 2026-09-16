@@ -1,6 +1,7 @@
 import { PermissionFlagsBits, type GuildMember } from "discord.js";
 import type { TicketClaimerConfig, TicketPanelConfig } from "../../../data/tickets/index.ts";
 import { isUnsetId, panelIsAdminOnly, ticketMain } from "../../../data/tickets/index.ts";
+import { staffPermissionService } from "../../staff/index.ts";
 import type { Ticket } from "../models/ticket.model.ts";
 import { TicketStatus } from "../types/enums.ts";
 
@@ -39,6 +40,37 @@ export function decideClaimEligibility(input: ClaimContextInput): Decision {
   if (!eligibleRole) return { ok: false, reason: "NOT_ELIGIBLE" };
   if (input.ticketStatus !== TicketStatus.OPEN) return { ok: false, reason: "NOT_OPEN" };
   if (input.alreadyClaimed) return { ok: false, reason: "ALREADY_CLAIMED" };
+  return { ok: true };
+}
+
+export interface TransferContextInput {
+  /** Panel flag — a panel with `transferable: false` never allows a handover. */
+  transferable: boolean;
+  ticketStatus: TicketStatus;
+  ticketIsClaimed: boolean;
+  /** Only the current claimer (or an administrator) hands a ticket over. */
+  actorIsClaimer: boolean;
+  actorIsAdministrator: boolean;
+  targetIsBot: boolean;
+  targetIsCurrentClaimer: boolean;
+  /** The opener must never end up owning their own ticket as staff. */
+  targetIsTicketOwner: boolean;
+  /** The receiver has to be real staff — a guild staff role or Administrator. */
+  targetIsStaffOrAdministrator: boolean;
+}
+
+export function decideTransferEligibility(input: TransferContextInput): Decision {
+  if (!input.transferable) return { ok: false, reason: "NOT_TRANSFERABLE" };
+  if (!input.ticketIsClaimed || input.ticketStatus !== TicketStatus.CLAIMED) {
+    return { ok: false, reason: "NOT_CLAIMED" };
+  }
+  if (!input.actorIsClaimer && !input.actorIsAdministrator) {
+    return { ok: false, reason: "NOT_ALLOWED" };
+  }
+  if (input.targetIsBot) return { ok: false, reason: "TARGET_IS_BOT" };
+  if (input.targetIsCurrentClaimer) return { ok: false, reason: "TARGET_IS_CLAIMER" };
+  if (input.targetIsTicketOwner) return { ok: false, reason: "TARGET_IS_OWNER" };
+  if (!input.targetIsStaffOrAdministrator) return { ok: false, reason: "TARGET_NOT_STAFF" };
   return { ok: true };
 }
 
@@ -95,6 +127,31 @@ export function canClaimTicket(
     ticketStatus: ticket.status,
     alreadyClaimed: ticket.claimedBy != null,
     panelIsAdminOnly: panelIsAdminOnly(panel),
+  });
+}
+
+/** A transfer target must be guild staff (any staff role) or an Administrator. */
+export async function memberCanReceiveTickets(member: GuildMember): Promise<boolean> {
+  if (memberIsAdministrator(member)) return true;
+  return staffPermissionService.isStaff(member);
+}
+
+export async function canTransferTicket(
+  actor: GuildMember,
+  target: GuildMember,
+  panel: TicketPanelConfig,
+  ticket: Pick<Ticket, "status" | "claimedByDiscordId" | "userId">,
+): Promise<Decision> {
+  return decideTransferEligibility({
+    transferable: panel.claimer.transferable,
+    ticketStatus: ticket.status,
+    ticketIsClaimed: !!ticket.claimedByDiscordId,
+    actorIsClaimer: ticket.claimedByDiscordId === actor.id,
+    actorIsAdministrator: memberIsAdministrator(actor),
+    targetIsBot: target.user.bot,
+    targetIsCurrentClaimer: ticket.claimedByDiscordId === target.id,
+    targetIsTicketOwner: target.id === ticket.userId,
+    targetIsStaffOrAdministrator: await memberCanReceiveTickets(target),
   });
 }
 
