@@ -12,7 +12,7 @@ const log = logger.child("server-tag:expiry");
 const M = serverTagMessages;
 
 export type TagExpiryOutcome =
-  | "restored"
+  | "staff-removed"
   | "blocked"
   | "already"
   | "member-absent"
@@ -24,7 +24,7 @@ export class ServerTagExpirationService {
 
   async sweep(now: Date = new Date()): Promise<Record<TagExpiryOutcome, number>> {
     const tally: Record<TagExpiryOutcome, number> = {
-      restored: 0,
+      "staff-removed": 0,
       blocked: 0,
       already: 0,
       "member-absent": 0,
@@ -45,7 +45,7 @@ export class ServerTagExpirationService {
 
     if (due.length > 0) {
       log.info(
-        `sweep: ${tally.restored} restored, ${tally.blocked} blocked, ` +
+        `sweep: ${tally["staff-removed"]} removed from staff, ${tally.blocked} blocked, ` +
           `${tally["member-absent"]} absent, ${tally["guild-absent"]} no-guild, ${tally.already} already`,
       );
     }
@@ -76,14 +76,9 @@ export class ServerTagExpirationService {
       return "member-absent";
     }
 
-    const outcome = await serverTagService.restoreRestriction(
-      member,
-      restriction,
-      StaffTagRestrictionStatus.EXPIRED,
-      StaffTagRestorationReason.DURATION_EXPIRED,
-    );
+    const outcome = await serverTagService.removeStaffPermanently(member, restriction);
 
-    if (outcome === "restored") return "restored";
+    if (outcome === "staff-removed") return "staff-removed";
     if (outcome === "already") return "already";
     return "blocked";
   }

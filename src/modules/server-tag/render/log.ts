@@ -27,6 +27,12 @@ export type ServerTagLogEvent =
       blockedRoleIds: readonly RoleId[];
       failed: boolean;
     }
+  | {
+      kind: "REMOVED";
+      userId: UserId;
+      removedRoleIds: readonly RoleId[];
+      pointsWiped: number;
+    }
   | { kind: "BLOCKED"; userId: UserId; staffStatus: string }
   | { kind: "PROBLEM"; userId?: UserId; detail: string };
 
@@ -63,6 +69,16 @@ export function buildServerTagLog(event: ServerTagLogEvent): string {
         lines.push(L.line(LB.blockedRoles, L.roles(event.blockedRoleIds)));
       }
       return lines.join("\n");
+    }
+
+    case "REMOVED": {
+      return [
+        L.headings.removed,
+        L.line(LB.member, L.target(event.userId)),
+        L.line(LB.reason, L.reasons.DURATION_EXPIRED),
+        L.line(LB.removedRoles, L.roles(event.removedRoleIds)),
+        L.line(LB.pointsWiped, String(event.pointsWiped)),
+      ].join("\n");
     }
 
     case "RESTORED": {

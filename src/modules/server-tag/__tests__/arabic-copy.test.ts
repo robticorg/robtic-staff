@@ -70,7 +70,7 @@ describe("Arabic copy hygiene", () => {
     const dmStrings = [
       M.dm.restricted(3 * DAY, new Date()),
       M.dm.restoredByTag,
-      M.dm.restoredByExpiry,
+      M.dm.removedByExpiry,
       M.dm.partialRestoreNote,
     ];
     for (const text of dmStrings) {

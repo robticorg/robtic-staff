@@ -413,7 +413,7 @@ alone via the pure `decideAuditAction`:
 | on | missing | — | grant the role (and lift an active restriction) |
 | on | held | — | nothing, unless a restriction is still running → lift it |
 | off | held | — | remove the role (+ the restriction path, for staff) |
-| off | missing | yes | the restriction path — 3 days, snapshot + DM |
+| off | missing | yes | the restriction path — 3-day deadline, snapshot + DM |
 | off | missing | no | nothing |
 
 Consistent members are never written to and never logged, so a sweep over a full
@@ -427,6 +427,34 @@ member's roles. Before any revoke the audit re-asks the API
 (`users.fetch(id, { force: true })`); if the fetch fails or disagrees, the member
 is counted `unverified` and left alone — the same rule `detectTagState` already
 applies to unverified DISABLED edges.
+
+### The 3-day window is a deadline, not a pause
+
+A staff member who removes the server tag has their Staff roles snapshotted and
+stripped for 3 days, and is DMed the deadline.
+
+- **Tag comes back inside the window** → `restoreRestriction(TAG_REAPPLIED)`
+  hands every saved role back, exactly as before.
+- **Window runs out** → `removeStaffPermanently`: the snapshot is **never
+  restored**, the Staff record is **fired** and the **points balance is zeroed**.
+  Getting back in means applying again.
+
+The removal is deliberately terminal and deliberately *not* a blacklist —
+dropping the tag is not a punishable offence, so `fire(..., blacklist: false)`
+is used and the Blacklist role is never added. The restriction row is claimed
+atomically (`ACTIVE → EXPIRED`) before anything is written, so two concurrent
+sweeps can never fire or wipe twice. `rolesRestored` is recorded as `false`, and
+because the closed row is no longer `isActive`, re-adding the tag later only
+grants the tag role — it cannot resurrect the staff position.
+
+Points are zeroed through the same `staffPointService.resetToZero` that
+`/points reset` uses: it posts a compensating transaction, so the balance lands
+at 0 while the historical transaction rows survive for audit. The wiped amount
+is reported in the log embed.
+
+The same rule applies on rejoin: `reconcileMember` finds a restriction that is
+already past due and removes the member rather than restoring them, so being
+offline past the deadline is not an escape.
 
 ---
 

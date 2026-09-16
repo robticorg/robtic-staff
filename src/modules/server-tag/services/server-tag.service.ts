@@ -3,6 +3,12 @@ import type { GuildId, UserId } from "../../../shared/types/index.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { serverTagMessages } from "../../../data/server-tag/messages.ts";
 import { staffPermissionService } from "../../staff/services/staff-permissions.service.ts";
+import { staffService } from "../../staff/services/staff.service.ts";
+import { staffPointService } from "../../staff/services/staff-point.service.ts";
+import {
+  SYSTEM_ACTOR,
+  staffManagementService,
+} from "../../staff/services/staff-management.service.ts";
 import type { StaffTagRestrictionDocument } from "../models/staff-tag-restriction.model.ts";
 import {
   StaffTagRestorationReason,
@@ -50,6 +56,7 @@ export type ServerTagOutcome =
   | "removed"
   | "restricted"
   | "restored"
+  | "staff-removed"
   | "noop"
   | "member-gone"
   | "already"
@@ -287,16 +294,78 @@ export class ServerTagService {
     });
 
     const note = outcome.missing.length > 0 ? `\n\n${M.dm.partialRestoreNote}` : "";
-    await serverTagLogService.dm(
-      member.id,
-      (byTag ? M.dm.restoredByTag : M.dm.restoredByExpiry) + note,
-    );
+    await serverTagLogService.dm(member.id, M.dm.restoredByTag + note);
 
     log.info(
       `restriction ${claimed.restrictionId} closed as ${status} (${reason}) — ` +
         `${outcome.restored.length} role(s) restored, ${outcome.missing.length} missing`,
     );
     return "restored";
+  }
+
+  async removeStaffPermanently(
+    member: GuildMember,
+    restriction: StaffTagRestrictionDocument,
+  ): Promise<ServerTagOutcome> {
+    const guildId = restriction.guildId;
+
+    const staff = await staffService.get(member.id, guildId);
+    if (!staff) {
+      const cancelled = await staffTagRestrictionService.claimForClosure({
+        restriction,
+        status: StaffTagRestrictionStatus.CANCELLED,
+        reason: StaffTagRestorationReason.STAFF_LIFECYCLE,
+        restoredBy: BOT_ACTOR,
+      });
+      if (cancelled) await staffTagRestrictionService.markRolesRestored(cancelled, false);
+      log.warn(`restriction ${restriction.restrictionId} due but ${member.id} has no staff record`);
+      return "blocked";
+    }
+
+    const claimed = await staffTagRestrictionService.claimForClosure({
+      restriction,
+      status: StaffTagRestrictionStatus.EXPIRED,
+      reason: StaffTagRestorationReason.DURATION_EXPIRED,
+      restoredBy: BOT_ACTOR,
+    });
+    if (!claimed) return "already";
+
+    const savedRoleIds = [...claimed.savedRoleIds];
+    const pointsBefore = await staffPointService.getAllTimePoints(staff._id);
+
+    await staffTagRestrictionService.markRolesRestored(claimed, false);
+
+    try {
+      await staffManagementService.fire(member, SYSTEM_ACTOR, false);
+    } catch (err) {
+      log.error(
+        `PERMANENT REMOVAL INCOMPLETE for ${member.id} in ${guildId} — ` +
+          `the staff record may still need a manual !fire`,
+        err,
+      );
+    }
+
+    const wipe = await staffPointService
+      .resetToZero(staff._id, BOT_ACTOR)
+      .catch((err) => {
+        log.error(`points wipe failed for ${member.id} in ${guildId}`, err);
+        return { reset: false, previousBalance: pointsBefore };
+      });
+
+    await serverTagLogService.post(guildId, {
+      kind: "REMOVED",
+      userId: member.id,
+      removedRoleIds: savedRoleIds,
+      pointsWiped: wipe.previousBalance,
+    });
+    await serverTagLogService.dm(member.id, M.dm.removedByExpiry);
+
+    log.info(
+      `restriction ${claimed.restrictionId} expired — ${member.id} removed from staff ` +
+        `permanently in ${guildId} (${savedRoleIds.length} role(s) lost, ` +
+        `${wipe.previousBalance} point(s) wiped)`,
+    );
+    return "staff-removed";
   }
 
   async reconcileMember(member: GuildMember, now: Date = new Date()): Promise<ServerTagOutcome> {
@@ -310,12 +379,7 @@ export class ServerTagService {
     if (!restriction) return usingTag ? "granted" : "noop";
 
     if (restriction.expiresAt.getTime() <= now.getTime()) {
-      return this.restoreRestriction(
-        member,
-        restriction,
-        StaffTagRestrictionStatus.EXPIRED,
-        StaffTagRestorationReason.DURATION_EXPIRED,
-      );
+      return this.removeStaffPermanently(member, restriction);
     }
 
     if (usingTag) {

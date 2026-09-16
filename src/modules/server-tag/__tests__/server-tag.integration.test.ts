@@ -6,7 +6,8 @@ import { RoleConfigModel } from "../../configuration/models/role-config.model.ts
 import { ChannelConfigModel } from "../../configuration/models/channel-config.model.ts";
 import { ChannelConfigType, RoleConfigType } from "../../configuration/types/enums.ts";
 import { StaffModel } from "../../staff/models/staff.model.ts";
-import { StaffStatus } from "../../staff/types/enums.ts";
+import { StaffPointTransactionType, StaffStatus } from "../../staff/types/enums.ts";
+import { staffPointService } from "../../staff/services/staff-point.service.ts";
 import { StaffTagRestrictionModel } from "../models/staff-tag-restriction.model.ts";
 import {
   StaffTagRestorationReason,
@@ -367,27 +368,66 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(member.roles.cache.has(R_START)).toBe(false);
   });
 
-  it("restores automatically after 3 days without the tag coming back", async () => {
+  it("removes the member from staff for good after 3 days without the tag", async () => {
     const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_WARN1, R_TAG]);
+    const staff = await StaffModel.create({
+      guildId: GUILD,
+      userId: member.id,
+      status: StaffStatus.ACTIVE,
+      currentRoleLevel: 1,
+    });
+    await staffPointService.add({
+      staffId: staff._id,
+      amount: 7,
+      type: StaffPointTransactionType.MANUAL_ADJUSTMENT,
+      reason: "itest seed",
+    });
+
     await serverTagService.handleTagRemoved(guild as never, member.id);
     dmCount = 0;
 
-    expect((await serverTagExpirationService.sweep(new Date())).restored).toBe(0);
+    expect((await serverTagExpirationService.sweep(new Date()))["staff-removed"]).toBe(0);
     expect(member.roles.cache.has(R_STAFF)).toBe(false);
 
     const afterWindow = new Date(Date.now() + 3 * 86_400_000 + 1000);
     const tally = await serverTagExpirationService.sweep(afterWindow);
 
-    expect(tally.restored).toBe(1);
+    expect(tally["staff-removed"]).toBe(1);
+
     for (const roleId of [R_STAFF, R_START, R_WARN1]) {
-      expect(member.roles.cache.has(roleId)).toBe(true);
+      expect(member.roles.cache.has(roleId)).toBe(false);
     }
+
+    const after = await StaffModel.findOne({ guildId: GUILD, userId: member.id }).exec();
+    expect(after!.status).toBe(StaffStatus.FIRED);
+    expect(await staffPointService.getAllTimePoints(staff._id)).toBe(0);
+
+    expect(member.roles.cache.has(R_BLACKLIST)).toBe(false);
 
     const closed = await StaffTagRestrictionModel.findOne({ staffId: member.id }).exec();
     expect(closed!.status).toBe(StaffTagRestrictionStatus.EXPIRED);
     expect(closed!.restorationReason).toBe(StaffTagRestorationReason.DURATION_EXPIRED);
-    expect(closed!.rolesRestored).toBe(true);
+    expect(closed!.rolesRestored).toBe(false);
     expect(dmCount).toBe(1);
+  });
+
+  it("fires only once when two sweeps race the same expiry", async () => {
+    const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_TAG]);
+    await StaffModel.create({
+      guildId: GUILD,
+      userId: member.id,
+      status: StaffStatus.ACTIVE,
+      currentRoleLevel: 1,
+    });
+    await serverTagService.handleTagRemoved(guild as never, member.id);
+
+    const afterWindow = new Date(Date.now() + 3 * 86_400_000 + 1000);
+    const [a, b] = await Promise.all([
+      serverTagExpirationService.sweep(afterWindow),
+      serverTagExpirationService.sweep(afterWindow),
+    ]);
+
+    expect(a["staff-removed"] + b["staff-removed"]).toBe(1);
   });
 
   it("survives a restart mid-restriction and keeps the restriction running", async () => {
@@ -421,9 +461,9 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
 
     const tally = await serverTagExpirationService.sweep(new Date());
 
-    expect(tally.restored).toBe(1);
-    expect(back.roles.cache.has(R_STAFF)).toBe(true);
-    expect(back.roles.cache.has(R_START)).toBe(true);
+    expect(tally["staff-removed"]).toBe(1);
+    expect(back.roles.cache.has(R_STAFF)).toBe(false);
+    expect(back.roles.cache.has(R_START)).toBe(false);
   });
 
   it("keeps the restriction when the member leaves the server", async () => {
