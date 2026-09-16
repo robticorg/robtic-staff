@@ -8,6 +8,9 @@ import { resolvePrimaryGuild } from "../runtime.ts";
 import { dmSessionStore } from "../session/dm-session-store.ts";
 import { modmailService } from "../services/modmail.service.ts";
 import { buildDetailsModal, buildTargetModal } from "./modals.ts";
+import { buildReportTransferModal } from "../render/transfer-modal.ts";
+import { modmailCaseService } from "../services/modmail-case.service.ts";
+import { reportPermissionService } from "../services/report-permissions.service.ts";
 import { parseCustomId } from "./component-ids.ts";
 
 const log = logger.child("modmail:button");
@@ -32,6 +35,8 @@ export async function handleModmailButton(interaction: ButtonInteraction): Promi
       return claim(interaction, parsed.args[0]);
     case "info":
       return reporterInfo(interaction, parsed.args[0]);
+    case "transfer":
+      return openTransfer(interaction, parsed.args[0]);
     case "status":
       return changeStatus(interaction, parsed.args[0], parsed.args[1]);
     case "pickCase":
@@ -100,6 +105,31 @@ async function claim(interaction: ButtonInteraction, caseId?: string): Promise<v
   } catch (err) {
     await interaction.editReply(friendlyError(err, M.errors.claimFailed));
   }
+}
+
+async function openTransfer(
+  interaction: ButtonInteraction,
+  caseId?: string,
+): Promise<void> {
+  if (!caseId) return;
+  const member = await fetchMember(interaction);
+  if (!member) return;
+
+  const kase = await modmailCaseService.getByCaseId(caseId);
+  if (!kase) {
+    await interaction.reply({ content: `${emojis.error} ${M.errors.caseGone}`, ...EPHEMERAL });
+    return;
+  }
+  if (!kase.claimedByDiscordId) {
+    await interaction.reply({ content: M.transfer.notClaimed, ...EPHEMERAL });
+    return;
+  }
+  if (kase.claimedByDiscordId !== member.id && !reportPermissionService.isAdministrator(member)) {
+    await interaction.reply({ content: M.transfer.notAllowed, ...EPHEMERAL });
+    return;
+  }
+
+  await interaction.showModal(buildReportTransferModal(caseId));
 }
 
 async function reporterInfo(interaction: ButtonInteraction, caseId?: string): Promise<void> {

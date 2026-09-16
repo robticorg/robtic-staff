@@ -39,38 +39,27 @@ export function buildThreadOpener(
   ];
   return {
     content: lines.join("\n"),
-    components: [buildInfoRow(kase.caseId), buildStatusRow(kase.caseId, kase.status)],
+    components: [buildActionRow(kase.caseId, kase.status)],
     allowedMentions: { parse: [] },
   };
 }
 
-export function buildInfoRow(caseId: string): ActionRowBuilder<ButtonBuilder> {
+export function buildActionRow(
+  caseId: string,
+  status: ModmailCase["status"],
+): ActionRowBuilder<ButtonBuilder> {
+  const closed = status === ModmailCaseStatus.CLOSED;
   return new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder()
       .setCustomId(CustomId.info(caseId))
       .setLabel(T.infoButton)
       .setEmoji(emojis.locked)
       .setStyle(ButtonStyle.Secondary),
-  );
-}
-
-export function buildStatusRow(
-  caseId: string,
-  status: ModmailCase["status"],
-): ActionRowBuilder<ButtonBuilder> {
-  const btn = (to: string, label: string, style: ButtonStyle, disabled: boolean) =>
     new ButtonBuilder()
-      .setCustomId(CustomId.status(caseId, to))
-      .setLabel(label)
-      .setStyle(style)
-      .setDisabled(disabled);
-
-  const closed = status === ModmailCaseStatus.CLOSED;
-  return new ActionRowBuilder<ButtonBuilder>().addComponents(
-    btn(ModmailCaseStatus.INVESTIGATING, T.statusButtons.investigating, ButtonStyle.Primary, closed),
-    btn(ModmailCaseStatus.WAITING_USER, T.statusButtons.waitingUser, ButtonStyle.Secondary, closed),
-    btn(ModmailCaseStatus.RESOLVED, T.statusButtons.resolve, ButtonStyle.Success, closed),
-    btn(ModmailCaseStatus.CLOSED, T.statusButtons.close, ButtonStyle.Danger, closed),
+      .setCustomId(CustomId.status(caseId, ModmailCaseStatus.CLOSED))
+      .setLabel(T.statusButtons.close)
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(closed),
   );
 }
 

@@ -48,6 +48,30 @@ export function decideManageAccess(input: ManageAccessInput): boolean {
   return input.memberIsClaimer || input.memberIsStaffManager;
 }
 
+export interface ReportTransferInput {
+  caseIsOpen: boolean;
+  caseIsClaimed: boolean;
+  actorIsHandler: boolean;
+  actorIsAdministrator: boolean;
+  targetIsBot: boolean;
+  targetIsCurrentHandler: boolean;
+  targetIsReportedUser: boolean;
+  targetIsStaffOrAdministrator: boolean;
+}
+
+export function decideTransferEligibility(input: ReportTransferInput): Decision {
+  if (!input.caseIsOpen) return { ok: false, reason: "CLOSED" };
+  if (!input.caseIsClaimed) return { ok: false, reason: "NOT_CLAIMED" };
+  if (!input.actorIsHandler && !input.actorIsAdministrator) {
+    return { ok: false, reason: "NOT_ALLOWED" };
+  }
+  if (input.targetIsBot) return { ok: false, reason: "TARGET_IS_BOT" };
+  if (input.targetIsCurrentHandler) return { ok: false, reason: "TARGET_IS_HANDLER" };
+  if (input.targetIsReportedUser) return { ok: false, reason: "TARGET_IS_REPORTED" };
+  if (!input.targetIsStaffOrAdministrator) return { ok: false, reason: "TARGET_NOT_STAFF" };
+  return { ok: true };
+}
+
 export function decideReporterInfoAccess(input: { isAdministrator: boolean }): boolean {
   return input.isAdministrator;
 }
@@ -92,6 +116,28 @@ export class ReportPermissionService {
       memberIsReportedUser: member.id === kase.reportedUserId,
       caseStatus: kase.status,
       alreadyClaimed: kase.claimedBy != null,
+    });
+  }
+
+  async canReceiveReport(member: GuildMember): Promise<boolean> {
+    if (this.isAdministrator(member)) return true;
+    return this.isStaffMember(member);
+  }
+
+  async canTransferReport(
+    actor: GuildMember,
+    target: GuildMember,
+    kase: Pick<ModmailCase, "status" | "claimedByDiscordId" | "reportedUserId">,
+  ): Promise<Decision> {
+    return decideTransferEligibility({
+      caseIsOpen: kase.status !== ModmailCaseStatus.CLOSED,
+      caseIsClaimed: !!kase.claimedByDiscordId,
+      actorIsHandler: kase.claimedByDiscordId === actor.id,
+      actorIsAdministrator: this.isAdministrator(actor),
+      targetIsBot: target.user.bot,
+      targetIsCurrentHandler: kase.claimedByDiscordId === target.id,
+      targetIsReportedUser: target.id === kase.reportedUserId,
+      targetIsStaffOrAdministrator: await this.canReceiveReport(target),
     });
   }
 

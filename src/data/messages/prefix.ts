@@ -56,6 +56,7 @@ export const prefixMessages = {
     notAllowed: `${E.error} أنت مو مسؤول عن هذا البلاغ.`,
     alreadyClosed: `${E.error} هذا البلاغ مغلق أصلاً.`,
     claimFirst: `${E.warning} استلم البلاغ قبل ما تنهي التحقيق.`,
+    closed: (caseId: string) => `${E.success} تم إقفال البلاغ \`${caseId}\`.`,
     ended: (caseId: string) =>
       `${E.success} تم إنهاء التحقيق في \`${caseId}\` وتحديده كـ **RESOLVED**. خطوة العقوبة / الحل راح يتكفل فيها نظام الحلول لاحقاً.`,
   },

@@ -210,6 +210,10 @@ export class ResolutionService {
       punishmentId,
       resolvedBy: member.id,
     });
+
+    await modmailService.closeAfterDecision(caseId, member).catch((err) => {
+      log.warn(`closing ${caseId} after the decision failed`, err);
+    });
   }
 
   async dmPunishedUser(punishment: Punishment): Promise<void> {

@@ -85,9 +85,52 @@ export const modmailMessages = {
     reasonFallback: NOT_PROVIDED,
     claimButton: "استلام",
     claimedButton: "مُستلَم",
+    transferButton: "تحويل",
+    handlerLabel: "المسؤول:",
+    handlerNone: "—",
+    closedLabel: "مقفل",
+  },
+
+  transfer: {
+    modalTitle: "تحويل البلاغ",
+    targetLabel: "العضو اللي تبي تحوّل له البلاغ",
+    reasonLabel: "سبب التحويل",
+    reasonPlaceholder: "اكتب سبب تحويل البلاغ…",
+
+    notClaimed: `${emojis.error} لازم يكون البلاغ مُستلَم قبل ما ينحوّل.`,
+    notAllowed: `${emojis.error} ما عندك صلاحية تحوّل هذا البلاغ — لازم تكون المستلِم.`,
+    closed: `${emojis.error} هذا البلاغ مقفل.`,
+    targetMissing: `${emojis.error} اختر عضو واحد عشان تحوّل له البلاغ.`,
+    reasonMissing: `${emojis.error} سبب التحويل مطلوب.`,
+    targetNotInGuild: `${emojis.error} هذا العضو مو موجود في السيرفر.`,
+    targetIsBot: `${emojis.error} ما تقدر تحوّل البلاغ لبوت.`,
+    targetIsHandler: `${emojis.error} هذا العضو مستلِم البلاغ أصلاً.`,
+    targetIsReported: `${emojis.error} ما تقدر تحوّل البلاغ للعضو المُبلَّغ عنه.`,
+    targetNotStaff: `${emojis.error} لازم يكون العضو من الستاف أو أدمن.`,
+    raced: `${emojis.error} تغيّر مستلِم البلاغ قبل شوي — جرب مرة ثانية.`,
+
+    done: (caseId: string, userId: string) =>
+      `${emojis.success} تم تحويل البلاغ \`${caseId}\` إلى <@${userId}>.`,
+    threadNote: (fromId: string, toId: string, reason: string) =>
+      `${emojis.transfer} تم تحويل البلاغ من <@${fromId}> إلى <@${toId}>.
+**سبب التحويل:** ${reason}`,
+    dmFailed: (userId: string) =>
+      `${emojis.warning} ما قدرت أرسل رسالة خاصة لـ <@${userId}> — خاصه مغلق.`,
+
+    dm: {
+      body: (caseId: string, reason: string) =>
+        `لقد تم تحويل البلاغ رقم \`${caseId}\` اليك يرجى توجه للبلاغ حالا
+سبب تحويل : ${reason}`,
+      button: "الذهاب للبلاغ",
+    },
   },
 
   thread: {
+    closedAfterDecision: `${emojis.lock} تم إقفال البلاغ بعد صدور القرار النهائي.`,
+    onlyHandlerMayReply: (handlerMention?: string) =>
+      handlerMention
+        ? `${emojis.lock} هذا البلاغ مُستلَم من ${handlerMention} — هو بس اللي يقدر يرد فيه.`
+        : `${emojis.lock} لازم تستلم البلاغ أول عشان ترد فيه.`,
     openerHeading: (caseId: string, isStaffReport: boolean) =>
       `**${isStaffReport ? "بلاغ على ستاف" : "بلاغ"} \`${caseId}\`**`,
     reportedLine: (reportedUserId: string) => `المُبلَّغ عنه: <@${reportedUserId}>`,
@@ -102,9 +145,6 @@ export const modmailMessages = {
     infoButton: "معلومات المُبلِّغ (أدمن)",
 
     statusButtons: {
-      investigating: "قيد التحقيق",
-      waitingUser: "بانتظار العضو",
-      resolve: "إنهاء",
       close: "إغلاق",
     },
 

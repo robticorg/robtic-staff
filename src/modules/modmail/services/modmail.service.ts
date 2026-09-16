@@ -37,6 +37,7 @@ import type { ReportDraft } from "../session/dm-session-store.ts";
 
 const log = logger.child("modmail");
 const M = modmailMessages;
+const TM = modmailMessages.transfer;
 
 type ThreadParent = TextChannel | NewsChannel;
 
@@ -160,6 +161,57 @@ export class ModmailService {
     return { case: claimed, pointAwarded };
   }
 
+  async transferReport(input: {
+    caseId: string;
+    actor: GuildMember;
+    target: GuildMember;
+    reason: string;
+  }): Promise<{ case: ModmailCaseDocument; previousHandlerId: UserId; reason: string }> {
+    const { actor, target } = input;
+    const kase = await modmailCaseService.getByCaseIdOrThrow(input.caseId);
+
+    const gate = await reportPermissionService.canTransferReport(actor, target, kase);
+    if (!gate.ok) throw new ValidationError(transferDenial(gate.reason));
+
+    const reason = input.reason.trim().slice(0, limits.reasonMaxLength);
+    if (!reason) throw new ValidationError(TM.reasonMissing);
+
+    const previousHandlerId = kase.claimedByDiscordId as UserId;
+    const staff = await staffService.ensure(target.id, kase.guildId);
+
+    const transferred = await modmailCaseService.transferAtomic(
+      input.caseId,
+      previousHandlerId,
+      staff._id,
+      target.id,
+    );
+    if (!transferred) throw new ConflictError(TM.raced);
+
+    await modmailAuditService.record({
+      caseId: input.caseId,
+      action: ModmailAuditAction.CASE_CLAIMED,
+      actorType: ModmailActorType.STAFF,
+      actorId: actor.id,
+      metadata: { transferredFrom: previousHandlerId, transferredTo: target.id, reason },
+    });
+
+    await this.refreshReportMessage(transferred, `<@${target.id}>`);
+
+    const thread = await this.ensureThread(transferred).catch(() => null);
+    if (thread) {
+      await thread
+        .send({
+          content: renderSystemNote(
+            TM.threadNote(previousHandlerId, target.id, reason),
+          ),
+          allowedMentions: { users: [target.id] },
+        })
+        .catch(() => undefined);
+    }
+
+    return { case: transferred, previousHandlerId, reason };
+  }
+
   async relayStaffToUser(params: {
     caseId: string;
     member: GuildMember;
@@ -175,6 +227,20 @@ export class ModmailService {
       return;
     }
     if (!(await reportPermissionService.canManageReport(params.member, kase))) {
+      await params.thread.messages
+        .fetch(params.sourceMessageId)
+        .then((m) => m.delete())
+        .catch(() => undefined);
+      await params.thread
+        .send({
+          content: renderSystemNote(
+            M.thread.onlyHandlerMayReply(
+              kase.claimedByDiscordId ? `<@${kase.claimedByDiscordId}>` : undefined,
+            ),
+          ),
+          allowedMentions: { parse: [] },
+        })
+        .catch(() => undefined);
       return;
     }
 
@@ -282,6 +348,34 @@ export class ModmailService {
         .changeStatus(kase.caseId, ModmailCaseStatus.INVESTIGATING)
         .catch(() => undefined);
     }
+  }
+
+  async closeAfterDecision(
+    caseId: string,
+    member: GuildMember,
+  ): Promise<ModmailCaseDocument> {
+    const kase = await modmailCaseService.getByCaseIdOrThrow(caseId);
+    if (kase.status === ModmailCaseStatus.CLOSED) return kase;
+
+    const closed = await this.transition(caseId, member, ModmailCaseStatus.CLOSED);
+
+    await this.refreshReportMessage(
+      closed,
+      closed.claimedByDiscordId ? `<@${closed.claimedByDiscordId}>` : "",
+    );
+
+    const thread = await this.ensureThread(closed).catch(() => null);
+    if (thread) {
+      await thread
+        .send({
+          content: renderSystemNote(M.thread.closedAfterDecision),
+          allowedMentions: { parse: [] },
+        })
+        .catch(() => undefined);
+      await thread.setArchived(true, `report ${caseId} closed`).catch(() => undefined);
+    }
+
+    return closed;
   }
 
   async transition(caseId: string, member: GuildMember, to: CaseStatus): Promise<ModmailCaseDocument> {
@@ -500,3 +594,22 @@ export class ModmailService {
 }
 
 export const modmailService = new ModmailService();
+
+function transferDenial(reason?: string): string {
+  switch (reason) {
+    case "CLOSED":
+      return TM.closed;
+    case "NOT_CLAIMED":
+      return TM.notClaimed;
+    case "NOT_ALLOWED":
+      return TM.notAllowed;
+    case "TARGET_IS_BOT":
+      return TM.targetIsBot;
+    case "TARGET_IS_HANDLER":
+      return TM.targetIsHandler;
+    case "TARGET_IS_REPORTED":
+      return TM.targetIsReported;
+    default:
+      return TM.targetNotStaff;
+  }
+}

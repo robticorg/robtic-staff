@@ -120,6 +120,32 @@ export class ModmailCaseService extends BaseRepository<ModmailCase> {
     return this.updateOne({ caseId }, { $inc: { evidenceCount: by } });
   }
 
+  async transferAtomic(
+    caseId: string,
+    currentHandlerId: UserId,
+    staffId: IdLike,
+    staffDiscordId: UserId,
+  ): Promise<HydratedDocument<ModmailCase> | null> {
+    return this.model
+      .findOneAndUpdate(
+        {
+          caseId,
+          claimedByDiscordId: currentHandlerId,
+          status: { $ne: ModmailCaseStatus.CLOSED },
+        },
+        {
+          $set: {
+            claimedBy: toObjectId(staffId),
+            claimedByDiscordId: staffDiscordId,
+            transferredFrom: currentHandlerId,
+            transferredAt: new Date(),
+          },
+        },
+        { returnDocument: "after" },
+      )
+      .exec();
+  }
+
   async claimAtomic(
     caseId: string,
     staffId: IdLike,

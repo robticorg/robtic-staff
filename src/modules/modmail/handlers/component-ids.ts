@@ -17,9 +17,17 @@ export const CustomId = {
 
   info: (caseId: string) => `${MM_NS}:info:${caseId}`,
 
+  transfer: (caseId: string) => `${MM_NS}:transfer:${caseId}`,
+  transferModal: (caseId: string) => `${MM_NS}:transferModal:${caseId}`,
+
   status: (caseId: string, to: string) => `${MM_NS}:status:${caseId}:${to}`,
 
   pickCase: (caseId: string) => `${MM_NS}:pickCase:${caseId}`,
+} as const;
+
+export const ModmailModalField = {
+  transferTarget: "transferTarget",
+  transferReason: "transferReason",
 } as const;
 
 export interface ParsedCustomId {

@@ -27,7 +27,6 @@ export interface CanCreateResult {
   message?: string;
 }
 
-
 export interface CreateFromModalInput {
   guildId: GuildId;
   member: GuildMember;

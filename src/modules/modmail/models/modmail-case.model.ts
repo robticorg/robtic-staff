@@ -20,6 +20,8 @@ export interface ModmailCase extends Timestamps {
   claimedBy?: Types.ObjectId;
 
   claimedByDiscordId?: UserId;
+  transferredFrom?: UserId;
+  transferredAt?: Date;
 
   threadId?: string;
   reportMessageId?: string;
@@ -61,6 +63,8 @@ const modmailCaseSchema = new Schema<ModmailCase>(
 
     claimedBy: { type: Schema.Types.ObjectId, ref: "Staff", index: true },
     claimedByDiscordId: { type: String },
+    transferredFrom: { type: String },
+    transferredAt: { type: Date },
 
     threadId: { type: String, index: true, sparse: true },
     reportMessageId: { type: String },

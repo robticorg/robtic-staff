@@ -540,6 +540,38 @@ matches a missing field), so no historical warning is reinterpreted or lost.
 
 ---
 
+## Reports — handler-owned, transferable, closed on decision
+
+The `#reports` card is a **Components V2 container** (accent follows state:
+amber pending → green claimed → neutral closed), carrying **استلام** and, once
+claimed, **تحويل**. A closed report keeps its card as a record with no buttons
+left to press. The reporter is still never named on it — `privacy.test.ts` now
+walks the nested TextDisplay components to prove that.
+
+**Only the handler may reply.** A message in the thread from anyone who is not
+the claimer (or an administrator) is **deleted** and answered with a system note
+naming who owns the report. Previously the relay simply returned, so the message
+stayed visible in the thread and looked delivered when it was not.
+
+**Transfer** (`canTransferReport` → `decideTransferEligibility`): handler or
+administrator, report open and claimed, target must be staff/admin and not a
+bot, the current handler, or the reported user. The write is atomic on
+`{ claimedByDiscordId: <current>, status: { $ne: CLOSED } }`, so two simultaneous
+transfers cannot both land. The new handler gets a DM with a link button to the
+thread, the thread gets a note, and the card refreshes.
+
+**Closing.** `!end` (the decision prompt) and the thread's **إغلاق** button both
+end at `CLOSED` now: once the final decision is recorded, `finaliseReport` calls
+`closeAfterDecision`, which transitions to CLOSED, refreshes the card, posts a
+closing note and archives the thread. `!close` also works inside a report thread
+— it closes the report and leaves ticket behaviour untouched everywhere else.
+
+The thread action row is down to **معلومات المُبلِّغ** and **إغلاق**; the
+intermediate status buttons (قيد التحقيق / بانتظار العضو / إنهاء) are gone, since
+the lifecycle is now claim → work → decide → closed.
+
+---
+
 ## Staff Support (`/staff-setup`)
 
 One panel, three workflows, **built on the existing ticket system** — there is no

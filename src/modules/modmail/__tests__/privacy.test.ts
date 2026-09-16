@@ -18,8 +18,21 @@ const kase = {
   status: ModmailCaseStatus.PENDING,
 };
 
-function textOf(options: { content?: string }): string {
-  return options.content ?? "";
+function textOf(options: { content?: string; components?: readonly unknown[] }): string {
+  const parts: string[] = [];
+  if (options.content) parts.push(options.content);
+
+  const walk = (node: unknown): void => {
+    if (!node || typeof node !== "object") return;
+    const data = (node as { data?: Record<string, unknown> }).data ?? node;
+    const content = (data as { content?: unknown }).content;
+    if (typeof content === "string") parts.push(content);
+    const children = (node as { components?: unknown[] }).components;
+    if (Array.isArray(children)) for (const child of children) walk(child);
+  };
+  for (const component of options.components ?? []) walk(component);
+
+  return parts.join("\n");
 }
 
 describe("reporter privacy in staff-facing output", () => {
