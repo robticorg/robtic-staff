@@ -188,7 +188,28 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
     }
     const row = await this.get(guildId, roleId);
     if (!row || row.level === undefined || row.level === null) {
+      // Management markers, ignored roles and the Staff marker all live off the
+      // ladder, so they have no level and are rejected here by construction.
       throw new ValidationError("BOUNDARY_NOT_ON_LADDER", { guildId, roleId, tier });
+    }
+
+    // §23 — HIGHSTAFF < OWNER < SHIP, compared by calculated level and never by
+    // role name or Discord position.
+    const existing = await this.getBoundaryRoles(guildId);
+    const order = [...STAFF_TIER_BOUNDARIES];
+    const index = order.indexOf(tier);
+    for (let i = 0; i < order.length; i += 1) {
+      if (i === index) continue;
+      const other = existing[order[i] as StaffTier];
+      if (!other || other.roleId === roleId) continue;
+      if (other.level === undefined || other.level === null) continue;
+      const mustBeBelow = i < index;
+      if (mustBeBelow && other.level >= row.level) {
+        throw new ValidationError("BOUNDARY_OUT_OF_ORDER", { tier, roleId, conflict: order[i] });
+      }
+      if (!mustBeBelow && other.level <= row.level) {
+        throw new ValidationError("BOUNDARY_OUT_OF_ORDER", { tier, roleId, conflict: order[i] });
+      }
     }
 
     await this.model

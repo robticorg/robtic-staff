@@ -7,12 +7,12 @@ export const ticketMain: TicketMainConfig = {
 
   managerRoleId: "1545812169495552019",
 
-  selectPlaceholder: "اختر قسم…",
+  selectPlaceholder: "اختر القسم اللي يناسب مشكلتك",
 
   content: {
     accentColor: colors.primary,
     text: [
-      `# دعم ${branding.communityName}`,
+      `## دعم ${branding.communityName}`,
       "تحتاج مساعدة؟ اختر القسم اللي يناسب مشكلتك من تحت وراح ينفتح لك تكت.",
     ],
     footer: branding.footers.support,

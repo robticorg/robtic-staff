@@ -32,6 +32,7 @@ const NON_NUMBERED_TYPES = [
   RoleConfigType.STAFF,
   RoleConfigType.BLACKLIST,
   RoleConfigType.STAFF_MANAGER,
+  RoleConfigType.OWNER_MANAGER,
   RoleConfigType.WARN_1,
   RoleConfigType.WARN_2,
   RoleConfigType.WARN_3,
@@ -153,6 +154,17 @@ const data = new SlashCommandBuilder()
       .setDescription(copy.sub.tag.description)
       .addRoleOption((o) =>
         o.setName(CommandOption.ROLE).setDescription(copy.sub.tag.option).setRequired(true),
+      ),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName(RoleSubcommand.OWNER_MANAGER)
+      .setDescription(copy.sub.ownermanager.description)
+      .addRoleOption((o) =>
+        o
+          .setName(CommandOption.ROLE)
+          .setDescription(copy.sub.ownermanager.option)
+          .setRequired(true),
       ),
   )
   .addSubcommand((s) =>
@@ -358,6 +370,8 @@ export default defineCommand({
         return handleSingleton(interaction, RoleConfigType.BLACKLIST);
       case RoleSubcommand.STAFF_MANAGER:
         return handleSingleton(interaction, RoleConfigType.STAFF_MANAGER);
+      case RoleSubcommand.OWNER_MANAGER:
+        return handleSingleton(interaction, RoleConfigType.OWNER_MANAGER);
       case RoleSubcommand.MUTE:
         return handleSingleton(interaction, RoleConfigType.MUTE);
       case RoleSubcommand.JAIL:

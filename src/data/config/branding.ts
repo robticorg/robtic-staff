@@ -1,7 +1,7 @@
 export const branding = {
   botName: "Robtic",
 
-  communityName: "مجتمع Robtic",
+  communityName: "RobTic",
 
   moderationTitle: "إدارة Robtic",
 

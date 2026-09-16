@@ -5,3 +5,5 @@ export * from "./staff-history.service.ts";
 export * from "./staff-permissions.service.ts";
 export * from "./staff-level-math.ts";
 export * from "./staff-management.service.ts";
+export * from "./staff-management-authorization.service.ts";
+export * from "./staff-scan.service.ts";

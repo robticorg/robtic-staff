@@ -60,6 +60,7 @@ export const hierarchyMessages = {
   boundary: {
     configured: (label: string) => `تم ضبط بداية مستوى ${label}.`,
     notOnLadder: `${E.error} لازم تكون الرتبة ضمن سلّم رتب الستاف المرقّمة. اضبط السلّم عن طريق \`/role start\` و \`/role end\` أول.`,
+    outOfOrder: `${E.error} رتبة الشيب لازم تكون بعد رتبة الأونر وقبل نهاية مستويات الستاف، والهاي ستاف قبلهم.`,
     note: "هذي الرتبة تظل رتبة ستاف عادية — بس صارت أول رتبة في هذا التصنيف.",
   },
 

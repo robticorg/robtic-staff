@@ -1,6 +1,9 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
-import { staffManagementService } from "../../../modules/staff/services/staff-management.service.ts";
+import {
+  memberActor,
+  staffManagementService,
+} from "../../../modules/staff/services/staff-management.service.ts";
 import { requireStaffManager } from "../_shared/guards.ts";
 import { requireTargetMember } from "../_shared/target.ts";
 
@@ -14,7 +17,7 @@ export default definePrefixCommand({
     const target = await requireTargetMember(ctx, prefixMessages.staff.fireUsage);
     const blacklist = ctx.args.some((a) => BLACKLIST_FLAGS.has(a.toLowerCase()));
 
-    await staffManagementService.fire(target, ctx.member.id, blacklist);
+    await staffManagementService.fire(target, memberActor(ctx.member), blacklist);
     await ctx.reply(
       blacklist
         ? prefixMessages.staff.blacklisted(`<@${target.id}>`)

@@ -18,6 +18,7 @@ export const RoleSubcommand = {
   IGNORE: "ignore",
   BLACKLIST: "blacklist",
   STAFF_MANAGER: "staffmanager",
+  OWNER_MANAGER: "ownermanager",
   WARN: "warn",
   MUTE: "mute",
   JAIL: "jail",
@@ -94,6 +95,10 @@ export const commandCopy = {
       staffmanager: {
         description: "ضبط الرتبة اللي تعطي صلاحيات مانجر الستاف",
         option: "رتبة مانجر الستاف",
+      },
+      ownermanager: {
+        description: "ضبط رتبة مانجر الأونر (صلاحية أعلى من مانجر الستاف، وما توصل الشيب)",
+        option: "رتبة مانجر الأونر",
       },
       warn: {
         description: "ضبط رتب تحذيرات الستاف الثلاث (للستاف بس، مو تحذيرات الأعضاء)",

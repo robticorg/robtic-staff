@@ -12,7 +12,7 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   accept: ["قبول", "قبل"],
   fire: ["فصل", "طرد", "اقالة"],
   prompt: ["ترقية", "رفع"],
-  demote: ["تنزيل", "خفض"],
+  demote: ["تنزيل", "خفض", "تخفيض"],
   warn: ["تحذير", "وارن", "انذار"],
   unwarn: ["الغاء-تحذير", "إلغاء-تحذير", "حذف-تحذير"],
   warnings: ["التحذيرات", "تحذيرات-العضو"],

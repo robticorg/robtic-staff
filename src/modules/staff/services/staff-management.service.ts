@@ -2,6 +2,7 @@ import type { GuildMember } from "discord.js";
 import { DomainError } from "../../../shared/utils/errors.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
+import { staffMessages } from "../../../data/messages/staff.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { staffService } from "./staff.service.ts";
@@ -10,15 +11,42 @@ import { staffHistoryService } from "./staff-history.service.ts";
 import { StaffActivityType, StaffHistoryAction, StaffStatus } from "../types/enums.ts";
 import {
   maxLadderLevel,
+  rawDemoteLevel,
   resolveAcceptLevel,
-  resolveDemoteLevel,
   resolvePromoteLevel,
   rolesAbove,
   rolesUpTo,
   type LadderRung,
 } from "./staff-level-math.ts";
+import {
+  staffManagementAuthorizationService,
+  type AuthorizationDecision,
+} from "./staff-management-authorization.service.ts";
 
 const log = logger.child("staff-mgmt");
+
+/**
+ * Who is performing a Staff management action. Made explicit so an internal
+ * caller (the warning escalation fire) cannot accidentally skip authorization
+ * by passing a bare id string.
+ */
+export type StaffActor =
+  | { kind: "MEMBER"; member: GuildMember }
+  | { kind: "SYSTEM"; id: string };
+
+export function memberActor(member: GuildMember): StaffActor {
+  return { kind: "MEMBER", member };
+}
+
+export const SYSTEM_ACTOR: StaffActor = { kind: "SYSTEM", id: "SYSTEM" };
+
+function actorId(actor: StaffActor): string {
+  return actor.kind === "MEMBER" ? actor.member.id : actor.id;
+}
+
+function enforce(decision: AuthorizationDecision): void {
+  if (!decision.allowed) throw new StaffAdminError(decision.message);
+}
 
 export interface AcceptResult {
   level: number;
@@ -62,7 +90,7 @@ async function applyRoles(
 export class StaffManagementService {
   async accept(
     member: GuildMember,
-    actorId: string,
+    actor: StaffActor,
     requestedLevel: number | null,
   ): Promise<AcceptResult> {
     const guildId = member.guild.id;
@@ -74,6 +102,13 @@ export class StaffManagementService {
       throw new StaffAdminError(prefixMessages.staff.levelOutOfRange(maxLadderLevel(ladder)));
     }
 
+    // §20 / §24 — authorize the resolved level, immediately before any write.
+    if (actor.kind === "MEMBER") {
+      enforce(
+        await staffManagementAuthorizationService.canAccept(actor.member, member, level),
+      );
+    }
+
     const existing = await staffService.get(member.id, guildId);
     const staff = existing ?? (await staffService.ensure(member.id, guildId));
     const previousLevel = existing?.currentRoleLevel ?? 0;
@@ -81,7 +116,7 @@ export class StaffManagementService {
     await staffService.update(staff._id, {
       status: StaffStatus.ACTIVE,
       currentRoleLevel: level,
-      acceptedBy: actorId,
+      acceptedBy: actorId(actor),
       acceptedAt: new Date(),
     });
 
@@ -93,12 +128,12 @@ export class StaffManagementService {
       ...rolesAbove(ladder, level),
       ...(blacklistRole ? [blacklistRole.roleId] : []),
     ];
-    await applyRoles(member, add, remove, `Accepted as staff by ${actorId}`);
+    await applyRoles(member, add, remove, `Accepted as staff by ${actorId(actor)}`);
 
     await staffHistoryService.record({
       staffId: staff._id,
       action: StaffHistoryAction.ACCEPT,
-      performedBy: actorId,
+      performedBy: actorId(actor),
       previousRoleLevel: previousLevel,
       newRoleLevel: level,
     });
@@ -112,10 +147,21 @@ export class StaffManagementService {
     return { level, previousLevel };
   }
 
-  async fire(member: GuildMember, actorId: string, blacklist: boolean): Promise<FireResult> {
+  async fire(member: GuildMember, actor: StaffActor, blacklist: boolean): Promise<FireResult> {
     const guildId = member.guild.id;
     const staff = await staffService.get(member.id, guildId);
     if (!staff) throw new StaffAdminError(prefixMessages.staff.notStaffMember(`<@${member.id}>`));
+
+    // §21 — firing routes through the same central authority as demotion.
+    if (actor.kind === "MEMBER") {
+      enforce(
+        await staffManagementAuthorizationService.canFire(
+          actor.member,
+          member,
+          staff.currentRoleLevel,
+        ),
+      );
+    }
 
     const ladder = await ladderFor(guildId);
     const general = await roleConfigService.getGeneralStaffRoleId(guildId);
@@ -136,17 +182,17 @@ export class StaffManagementService {
       ...(!blacklist && blacklistRole ? [blacklistRole.roleId] : []),
     ];
     const add = blacklist && blacklistRole ? [blacklistRole.roleId] : [];
-    await applyRoles(member, add, remove, `Fired by ${actorId}`);
+    await applyRoles(member, add, remove, `Fired by ${actorId(actor)}`);
 
     await staffService.update(staff._id, {
       status: blacklist ? StaffStatus.BLACKLISTED : StaffStatus.FIRED,
-      firedBy: actorId,
+      firedBy: actorId(actor),
       firedAt: new Date(),
     });
     await staffHistoryService.record({
       staffId: staff._id,
       action: blacklist ? StaffHistoryAction.BLACKLIST : StaffHistoryAction.FIRE,
-      performedBy: actorId,
+      performedBy: actorId(actor),
       previousRoleLevel: staff.currentRoleLevel,
       newRoleLevel: 0,
     });
@@ -162,23 +208,23 @@ export class StaffManagementService {
 
   async promote(
     member: GuildMember,
-    actorId: string,
+    actor: StaffActor,
     amount: number | null,
   ): Promise<LevelChangeResult> {
-    return this.changeLevel(member, actorId, "promote", amount);
+    return this.changeLevel(member, actor, "promote", amount);
   }
 
   async demote(
     member: GuildMember,
-    actorId: string,
+    actor: StaffActor,
     amount: number | null,
   ): Promise<LevelChangeResult> {
-    return this.changeLevel(member, actorId, "demote", amount);
+    return this.changeLevel(member, actor, "demote", amount);
   }
 
   private async changeLevel(
     member: GuildMember,
-    actorId: string,
+    actor: StaffActor,
     direction: "promote" | "demote",
     amount: number | null,
   ): Promise<LevelChangeResult> {
@@ -194,20 +240,36 @@ export class StaffManagementService {
     const to =
       direction === "promote"
         ? resolvePromoteLevel(from, amount, ladder)
-        : resolveDemoteLevel(from, amount);
+        : rawDemoteLevel(from, amount);
+
+    // §24 — the final decision happens here, on freshly resolved levels, and
+    // before a single Discord role or database field is touched.
+    if (actor.kind === "MEMBER") {
+      enforce(
+        direction === "promote"
+          ? await staffManagementAuthorizationService.canPromote(actor.member, member, to, from)
+          : await staffManagementAuthorizationService.canDemote(actor.member, member, to, from),
+      );
+    }
+
+    // Demotion never becomes an implicit fire: below level 0 is refused rather
+    // than clamped, and the Staff marker role is left untouched.
+    if (direction === "demote" && to < 0) {
+      throw new StaffAdminError(staffMessages.authorization.BELOW_MIN_LEVEL);
+    }
 
     if (to === from) return { from, to, changed: false };
 
     const general = await roleConfigService.getGeneralStaffRoleId(guildId);
     const add = [...rolesUpTo(ladder, to), ...(general ? [general] : [])];
     const remove = rolesAbove(ladder, to);
-    await applyRoles(member, add, remove, `${direction} by ${actorId}`);
+    await applyRoles(member, add, remove, `${direction} by ${actorId(actor)}`);
 
     await staffService.setRoleLevel(staff._id, to);
     await staffHistoryService.record({
       staffId: staff._id,
       action: direction === "promote" ? StaffHistoryAction.PROMOTE : StaffHistoryAction.DEMOTE,
-      performedBy: actorId,
+      performedBy: actorId(actor),
       previousRoleLevel: from,
       newRoleLevel: to,
     });

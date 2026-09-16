@@ -16,7 +16,10 @@ import {
   staffService,
 } from "../../staff/index.ts";
 import { StaffStatus } from "../../staff/types/enums.ts";
-import { staffManagementService } from "../../staff/services/staff-management.service.ts";
+import {
+  SYSTEM_ACTOR,
+  staffManagementService,
+} from "../../staff/services/staff-management.service.ts";
 import { StaffWarningModel } from "../models/staff-warning.model.ts";
 import { UserWarningModel, type UserWarningDocument } from "../models/user-warning.model.ts";
 import type { StaffWarningDocument } from "../models/staff-warning.model.ts";
@@ -288,7 +291,9 @@ export class WarningActionService {
     });
 
     if (fired) {
-      await staffManagementService.fire(input.target, "SYSTEM", true);
+      // Automatic fire from warning escalation — an internal actor, so it is
+      // deliberately not subject to manager authorization.
+      await staffManagementService.fire(input.target, SYSTEM_ACTOR, true);
       return {
         realWarningId: real._id.toString(),
         level,

@@ -15,7 +15,10 @@ import { StaffPointTransactionModel } from "../../../modules/staff/models/staff-
 import { StaffActivityModel } from "../../../modules/staff/models/staff-activity.model.ts";
 import { StaffHistoryModel } from "../../../modules/staff/models/staff-history.model.ts";
 import { StaffStatus, StaffPointTransactionType, staffService } from "../../../modules/staff/index.ts";
-import { staffManagementService } from "../../../modules/staff/services/staff-management.service.ts";
+import {
+  SYSTEM_ACTOR,
+  staffManagementService,
+} from "../../../modules/staff/services/staff-management.service.ts";
 import { UserWarningModel } from "../../../modules/warnings/models/user-warning.model.ts";
 import { StaffWarningModel } from "../../../modules/warnings/models/staff-warning.model.ts";
 import { warningActionService } from "../../../modules/warnings/services/warning-actions.service.ts";
@@ -98,12 +101,12 @@ async function cleanup(): Promise<void> {
 describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
   beforeAll(seed);
   afterAll(async () => {
-    await cleanup();
+    await cleanup();
   });
 
   it("!accept assigns roles 0..level + general Staff and sets ACTIVE status", async () => {
     const member = fakeMember("staff-accept-1");
-    const result = await staffManagementService.accept(member as never, "manager-1", 2);
+    const result = await staffManagementService.accept(member as never, SYSTEM_ACTOR, 2);
 
     expect(result.level).toBe(2);
     expect([...member.roles.cache.keys()].sort()).toEqual(["r0", "r1", "r2", GENERAL].sort());
@@ -115,26 +118,31 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
 
   it("!prompt / !demote move the level and never exceed END or go below 0", async () => {
     const member = fakeMember("staff-move-1");
-    await staffManagementService.accept(member as never, "m", 0);
+    await staffManagementService.accept(member as never, SYSTEM_ACTOR, 0);
 
-    const up = await staffManagementService.promote(member as never, "m", 5);
+    const up = await staffManagementService.promote(member as never, SYSTEM_ACTOR, 5);
     expect(up.to).toBe(3);
     expect(member.roles.cache.has("r3")).toBe(true);
 
-    const down = await staffManagementService.demote(member as never, "m", 2);
+    const down = await staffManagementService.demote(member as never, SYSTEM_ACTOR, 2);
     expect(down.to).toBe(1);
     expect(member.roles.cache.has("r3")).toBe(false);
     expect(member.roles.cache.has("r1")).toBe(true);
 
-    const floor = await staffManagementService.demote(member as never, "m", 9);
-    expect(floor.to).toBe(0);
+    // Demotion past level 0 is now refused rather than clamped, so it can
+    // never quietly act as a fire. The staff marker is left in place.
+    await expect(
+      staffManagementService.demote(member as never, SYSTEM_ACTOR, 9),
+    ).rejects.toThrow();
+    const staff = await StaffModel.findOne({ guildId: GUILD, userId: member.id }).exec();
+    expect(staff!.currentRoleLevel).toBe(1);
     expect(member.roles.cache.has(GENERAL)).toBe(true);
   });
 
   it("!fire (normal) strips staff roles, gives NO blacklist and NO break, sets FIRED", async () => {
     const member = fakeMember("staff-fire-1");
-    await staffManagementService.accept(member as never, "m", 3);
-    await staffManagementService.fire(member as never, "m", false);
+    await staffManagementService.accept(member as never, SYSTEM_ACTOR, 3);
+    await staffManagementService.fire(member as never, SYSTEM_ACTOR, false);
 
     expect(member.roles.cache.has(BLACKLIST)).toBe(false);
     expect([...member.roles.cache.keys()].some((r) => LADDER.includes(r))).toBe(false);
@@ -145,8 +153,8 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
 
   it("!fire = / blacklist strips staff roles and adds the Blacklist role, sets BLACKLISTED", async () => {
     const member = fakeMember("staff-fire-bl");
-    await staffManagementService.accept(member as never, "m", 2);
-    await staffManagementService.fire(member as never, "m", true);
+    await staffManagementService.accept(member as never, SYSTEM_ACTOR, 2);
+    await staffManagementService.fire(member as never, SYSTEM_ACTOR, true);
 
     expect(member.roles.cache.has(BLACKLIST)).toBe(true);
     expect([...member.roles.cache.keys()].some((r) => LADDER.includes(r))).toBe(false);
@@ -190,7 +198,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
 
   it("normal staff: 3 verbal warnings convert into Real Warning #1 + Warn 1 role, no fire", async () => {
     const target = fakeMember("staff-verbal-1");
-    await staffManagementService.accept(target as never, "m", 2);
+    await staffManagementService.accept(target as never, SYSTEM_ACTOR, 2);
     const manager = fakeMember("manager-sw");
 
     let last = await verbal(target, manager, "1");
@@ -221,7 +229,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
 
   it("normal staff: 9 verbal warnings escalate to Warn 3 then Fire + Blacklist", async () => {
     const target = fakeMember("staff-verbal-9");
-    await staffManagementService.accept(target as never, "m", 2);
+    await staffManagementService.accept(target as never, SYSTEM_ACTOR, 2);
     const manager = fakeMember("manager-sw9");
 
     let last;
@@ -238,7 +246,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
 
   it("new staff (level 0): first real warning fires + blacklists immediately, no Break", async () => {
     const target = fakeMember("staff-new-0");
-    await staffManagementService.accept(target as never, "m", 0);
+    await staffManagementService.accept(target as never, SYSTEM_ACTOR, 0);
     const manager = fakeMember("manager-new");
 
     let last;
@@ -254,7 +262,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
 
   it("!unwarn on a real warning marks it REMOVED (never deletes) and recalculates the warn role", async () => {
     const target = fakeMember("staff-unwarn-1");
-    await staffManagementService.accept(target as never, "m", 2);
+    await staffManagementService.accept(target as never, SYSTEM_ACTOR, 2);
     const manager = fakeMember("manager-uw");
 
     let last;
@@ -282,7 +290,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
 
   it("!unwarn on a verbal warning marks it REVOKED and it no longer counts toward conversion", async () => {
     const target = fakeMember("staff-unwarn-v");
-    await staffManagementService.accept(target as never, "m", 2);
+    await staffManagementService.accept(target as never, SYSTEM_ACTOR, 2);
     const manager = fakeMember("manager-uwv");
 
     const v1 = await verbal(target, manager, "keep-1");

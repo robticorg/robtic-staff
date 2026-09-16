@@ -1,6 +1,9 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
-import { staffManagementService } from "../../../modules/staff/services/staff-management.service.ts";
+import {
+  memberActor,
+  staffManagementService,
+} from "../../../modules/staff/services/staff-management.service.ts";
 import { requireStaffManager } from "../_shared/guards.ts";
 import { parseCount } from "../_shared/parse.ts";
 import { requireTargetMember } from "../_shared/target.ts";
@@ -15,7 +18,7 @@ export default definePrefixCommand({
     const levelArg = ctx.args.find((a) => /^\d+$/.test(a));
     const level = parseCount(levelArg);
 
-    const result = await staffManagementService.accept(target, ctx.member.id, level);
+    const result = await staffManagementService.accept(target, memberActor(ctx.member), level);
     await ctx.reply(prefixMessages.staff.accepted(`<@${target.id}>`, result.level));
   },
 });
