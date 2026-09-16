@@ -192,7 +192,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
       target: target as never,
       reason,
       issuer: manager as never,
-      evidence: [],
+      evidence: ["https://cdn.discordapp.com/proof.png"],
     });
   }
 
@@ -322,7 +322,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
       target: target as never,
       reason: "مخالفة مباشرة",
       issuer: manager as never,
-      evidence: [],
+      evidence: ["https://cdn.discordapp.com/proof.png"],
     });
 
     expect(result.level).toBe(1);
@@ -353,7 +353,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
         target: target as never,
         reason: `مخالفة ${i}`,
         issuer: manager as never,
-        evidence: [],
+        evidence: ["https://cdn.discordapp.com/proof.png"],
       });
     }
 
@@ -375,7 +375,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
       target: target as never,
       reason: "مخالفة",
       issuer: manager as never,
-      evidence: [],
+      evidence: ["https://cdn.discordapp.com/proof.png"],
     });
 
     expect(result.level).toBe(1);

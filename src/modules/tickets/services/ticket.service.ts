@@ -382,7 +382,10 @@ export class TicketService extends BaseRepository<Ticket> {
 
   async renameTicket(ticketId: string, newName: string, actor: GuildMember): Promise<TicketDoc> {
     const ticket = await this.getTicketOrThrow(ticketId);
-    const clean = newName.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").slice(0, 90) || ticketId;
+    // \p{L}/\p{N} keep any script's letters and digits (Arabic included) —
+    // a plain a-z0-9 filter used to strip non-Latin names down to nothing.
+    const clean =
+      newName.trim().toLowerCase().replace(/[^\p{L}\p{N}-]+/gu, "-").slice(0, 90) || ticketId;
     const channel = await actor.guild.channels.fetch(ticket.channelId).catch(() => null);
     if (channel && "setName" in channel) {
       await channel.setName(clean, `renamed by ${actor.id}`).catch((err) => log.warn("rename failed", err));

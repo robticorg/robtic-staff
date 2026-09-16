@@ -49,6 +49,7 @@ export default definePrefixCommand({
     // issued directly as a REAL one.
     const { reason, isVerbal } = splitVerbalMarker(rawReason);
     if (!reason) throw new PrefixAbort(prefixMessages.warn.reasonRequired);
+    if (evidence.length === 0) throw new PrefixAbort(prefixMessages.warn.proofRequired);
 
     const mention = `<@${target.id}>`;
 

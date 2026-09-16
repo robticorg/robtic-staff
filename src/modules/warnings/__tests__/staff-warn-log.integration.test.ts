@@ -162,7 +162,7 @@ async function issueVerbals(
 
 const threeVerbals = (tag: string) => [
   { reason: `سبب ${tag} أول`, evidence: [`https://cdn.discordapp.com/${tag}-1.png`] },
-  { reason: `سبب ${tag} ثاني`, evidence: [] },
+  { reason: `سبب ${tag} ثاني`, evidence: [`https://cdn.discordapp.com/${tag}-2.png`] },
   { reason: `سبب ${tag} ثالث`, evidence: [`https://cdn.discordapp.com/${tag}-3.png`] },
 ];
 
@@ -197,7 +197,7 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
 
   it("posts a Staff Warn شفوي message for a verbal warning", async () => {
     await issueVerbals(guild, target, manager, [
-      { reason: "تأخير", evidence: [] },
+      { reason: "تأخير", evidence: ["https://cdn.discordapp.com/proof.png"] },
     ]);
 
     expect(sent).toHaveLength(1);
@@ -267,22 +267,27 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
     expect(real.content).toContain("https://cdn.discordapp.com/a-3.png");
   });
 
-  it("shows لا يوجد on the real warning when no verbal warning carried proof", async () => {
-    await issueVerbals(guild, target, manager, [
-      { reason: "أول", evidence: [] },
-      { reason: "ثاني", evidence: [] },
-      { reason: "ثالث", evidence: [] },
-    ]);
+  it("refuses a verbal staff warning with no proof attached", async () => {
+    await expect(
+      warningActionService.issueVerbalStaffWarning({
+        guild: guild as never,
+        target: target as never,
+        reason: "بدون دليل",
+        issuer: manager as never,
+        evidence: [],
+      }),
+    ).rejects.toThrow();
 
-    const real = sent.find((s) => /^\*\*Staff Warn \d/.test(s.content))!;
-    expect(real.content).toContain("**الدليل : لا يوجد**");
+    expect(
+      await StaffWarningModel.countDocuments({ guildId: GUILD, type: StaffWarningType.VERBAL }),
+    ).toBe(0);
   });
 
   it("pings only the warned member, never @everyone from a crafted reason", async () => {
     await issueVerbals(guild, target, manager, [
-      { reason: "@everyone انتبهوا", evidence: [] },
-      { reason: "ثاني", evidence: [] },
-      { reason: "ثالث", evidence: [] },
+      { reason: "@everyone انتبهوا", evidence: ["https://cdn.discordapp.com/1.png"] },
+      { reason: "ثاني", evidence: ["https://cdn.discordapp.com/2.png"] },
+      { reason: "ثالث", evidence: ["https://cdn.discordapp.com/3.png"] },
     ]);
 
     const verbalMsg = sent[0]!;
@@ -347,7 +352,9 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
   });
 
   it("refuses to log a verbal warning even if asked directly", async () => {
-    await issueVerbals(guild, target, manager, [{ reason: "تأخير", evidence: [] }]);
+    await issueVerbals(guild, target, manager, [
+      { reason: "تأخير", evidence: ["https://cdn.discordapp.com/proof.png"] },
+    ]);
     const verbal = await StaffWarningModel.findOne({
       guildId: GUILD,
       type: StaffWarningType.VERBAL,

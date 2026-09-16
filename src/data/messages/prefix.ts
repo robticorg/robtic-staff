@@ -105,6 +105,7 @@ export const prefixMessages = {
   warn: {
     userWarnUsage: `${E.warning} الطريقة: \`!تحذير @عضو <السبب>\``,
     reasonRequired: `${E.warning} لازم تكتب سبب للتحذير.`,
+    proofRequired: `${E.warning} لازم ترفق دليل (صورة/سكرين) مع تحذير الستاف — بدون دليل ما ينسجّل.`,
     userWarned: (userMention: string, reason: string) =>
       `${E.warning} تم تحذير ${userMention}.\n**السبب:** ${reason}`,
 

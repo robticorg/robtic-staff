@@ -7,7 +7,7 @@ import {
 import { DomainError } from "../../../shared/utils/errors.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
-import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
+import { isUnsetId, panelIsAdminOnly, type TicketPanelConfig } from "../../../data/tickets/index.ts";
 import type { Ticket, TicketAnswer } from "../models/ticket.model.ts";
 import type { HydratedDocument } from "mongoose";
 import { buildTicketMessage } from "../render/ticket-message.ts";
@@ -42,8 +42,19 @@ export async function runCreateTicket(
 
     const faqEntries = panel.faq.enabled ? await faqService.list(member.guild.id) : [];
 
+    // Admin-only panels have no support role configured — isUnsetId guards
+    // against pinging the placeholder id.
+    const pingSupportRole = !panelIsAdminOnly(panel) && !isUnsetId(panel.supportRoleId);
     await channel
-      .send({ content: `<@${member.id}>`, allowedMentions: { users: [member.id] } })
+      .send({
+        content: pingSupportRole
+          ? `<@${member.id}> <@&${panel.supportRoleId}>`
+          : `<@${member.id}>`,
+        allowedMentions: {
+          users: [member.id],
+          roles: pingSupportRole ? [panel.supportRoleId] : [],
+        },
+      })
       .catch(() => undefined);
     await channel
       .send(buildTicketMessage(panel, ticket, faqEntries))

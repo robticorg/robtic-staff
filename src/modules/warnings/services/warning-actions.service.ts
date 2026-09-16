@@ -175,6 +175,7 @@ export class WarningActionService {
   }): Promise<IssueVerbalStaffWarnResult> {
     const guildId = params.guild.id;
     if (!params.reason?.trim()) throw new WarnError(prefixMessages.warn.reasonRequired);
+    if (!params.evidence?.length) throw new WarnError(prefixMessages.warn.proofRequired);
 
     const targetStaff = await staffService.get(params.target.id, guildId);
     if (!targetStaff) {
@@ -247,6 +248,7 @@ export class WarningActionService {
   }): Promise<IssueDirectRealStaffWarnResult> {
     const guildId = params.guild.id;
     if (!params.reason?.trim()) throw new WarnError(prefixMessages.warn.reasonRequired);
+    if (!params.evidence?.length) throw new WarnError(prefixMessages.warn.proofRequired);
 
     const targetStaff = await staffService.get(params.target.id, guildId);
     if (!targetStaff) {

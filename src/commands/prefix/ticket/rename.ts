@@ -4,8 +4,6 @@ import { canManageTicket } from "../../../modules/tickets/services/ticket-permis
 import { ticketService } from "../../../modules/tickets/services/ticket.service.ts";
 import { PrefixAbort, resolveTicketContext } from "../_shared/guards.ts";
 
-const NAME_PATTERN = /[a-z0-9]/i;
-
 export default definePrefixCommand({
   name: "rename",
   category: "ticket",
@@ -15,8 +13,10 @@ export default definePrefixCommand({
       throw new PrefixAbort(prefixMessages.ticket.notAllowed);
     }
 
+    // Any non-blank name is valid — Arabic (or any other script) names must
+    // not be rejected just because they carry no Latin letters or digits.
     const newName = ctx.rest.trim();
-    if (!newName || !NAME_PATTERN.test(newName)) {
+    if (!newName) {
       throw new PrefixAbort(prefixMessages.ticket.renameUsage);
     }
 
