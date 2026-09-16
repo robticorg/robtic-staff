@@ -101,7 +101,6 @@ function makeGuild(id = GUILD): FakeGuild {
       permissions: { has: () => botHasManageRoles },
       roles: {
         highest: {
-          // Positive => bot outranks the role. Negative => hierarchy blocked.
           comparePositionTo: (role) => (guild.unmanageable.has(role.id) ? -1 : 1),
         },
       },
@@ -229,8 +228,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     ]);
   });
 
-  // ── Tag Role, normal members (§2, §5, §18) ────────────────────────────────
-
   it("grants the Tag Role to a normal member who enables the Server Tag", async () => {
     const member = addMember(guild, "u-normal", [R_COMMUNITY]);
 
@@ -249,7 +246,7 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(outcome).toBe("removed");
     expect(member.roles.cache.has(R_TAG)).toBe(false);
     expect(member.roles.cache.has(R_COMMUNITY)).toBe(true);
-    // §6 — no restriction is created for a non-staff member.
+
     expect(await activeRestriction(member.id)).toBeNull();
   });
 
@@ -262,8 +259,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(member.roles.cache.has(R_STAFF)).toBe(true);
     expect(member.roles.cache.has(R_START)).toBe(true);
   });
-
-  // ── Staff restriction (§6, §7, §8, §9, §13, §16, §17) ─────────────────────
 
   it("snapshots and strips staff roles, DMs the member, and opens a 3-day restriction", async () => {
     const member = addMember(guild, "u-staff", [
@@ -285,30 +280,26 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(restriction).not.toBeNull();
     expect(restriction!.status).toBe(StaffTagRestrictionStatus.ACTIVE);
 
-    // §7 — the exact ids, including the staff warning role (§17).
     expect([...restriction!.savedRoleIds].sort()).toEqual(
       [R_STAFF, R_START, R_WARN1, R_MANAGER].sort(),
     );
-    // §16 — blacklist is never captured.
+
     expect(restriction!.savedRoleIds).not.toContain(R_BLACKLIST);
-    // §6.6 — unrelated community roles are never captured.
+
     expect(restriction!.savedRoleIds).not.toContain(R_COMMUNITY);
 
-    // Roles actually gone from Discord.
     for (const roleId of [R_STAFF, R_START, R_WARN1, R_MANAGER]) {
       expect(member.roles.cache.has(roleId)).toBe(false);
     }
-    // §16 / §6.6 / §18 — blacklist and community kept, tag role dropped.
+
     expect(member.roles.cache.has(R_BLACKLIST)).toBe(true);
     expect(member.roles.cache.has(R_COMMUNITY)).toBe(true);
     expect(member.roles.cache.has(R_TAG)).toBe(false);
 
-    // §9 — three days.
     const windowMs = restriction!.expiresAt.getTime() - restriction!.startedAt.getTime();
     expect(windowMs).toBe(3 * 86_400_000);
     expect(restriction!.startedAt.getTime()).toBeGreaterThanOrEqual(before);
 
-    // §13 — warning DM in Arabic.
     expect(dmCount).toBe(1);
   });
 
@@ -340,8 +331,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(member.roles.cache.has(R_BLACKLIST)).toBe(true);
   });
 
-  // ── Restoration by re-adding the tag (§10, §19) ───────────────────────────
-
   it("restores the exact saved roles when the tag comes back", async () => {
     const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_WARN1, R_TAG]);
     await serverTagService.handleTagRemoved(guild as never, member.id);
@@ -353,7 +342,7 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     for (const roleId of [R_STAFF, R_START, R_WARN1]) {
       expect(member.roles.cache.has(roleId)).toBe(true);
     }
-    // §10 — the Tag Role stays assigned.
+
     expect(member.roles.cache.has(R_TAG)).toBe(true);
 
     expect(await activeRestriction(member.id)).toBeNull();
@@ -370,7 +359,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     await serverTagService.handleTagRemoved(guild as never, member.id);
     await serverTagService.handleTagAdded(guild as never, member.id);
 
-    // Strip the roles by hand, then re-enable the tag: nothing should come back.
     await member.roles.remove([R_STAFF, R_START]);
     const outcome = await serverTagService.handleTagAdded(guild as never, member.id);
 
@@ -379,14 +367,11 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(member.roles.cache.has(R_START)).toBe(false);
   });
 
-  // ── Expiration (§11, §26) ─────────────────────────────────────────────────
-
   it("restores automatically after 3 days without the tag coming back", async () => {
     const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_WARN1, R_TAG]);
     await serverTagService.handleTagRemoved(guild as never, member.id);
     dmCount = 0;
 
-    // Nothing is due yet.
     expect((await serverTagExpirationService.sweep(new Date())).restored).toBe(0);
     expect(member.roles.cache.has(R_STAFF)).toBe(false);
 
@@ -409,7 +394,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_TAG]);
     await serverTagService.handleTagRemoved(guild as never, member.id);
 
-    // Simulate a restart: fresh client, fresh in-memory state, same MongoDB.
     const rebooted = makeGuild();
     const rejoined = addMember(rebooted, member.id, [R_COMMUNITY]);
     attachFakeClient(rebooted);
@@ -426,7 +410,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_TAG]);
     await serverTagService.handleTagRemoved(guild as never, member.id);
 
-    // Backdate as though the process was offline past the deadline.
     await StaffTagRestrictionModel.updateOne(
       { staffId: member.id, isActive: true },
       { $set: { expiresAt: new Date(Date.now() - 60_000) } },
@@ -443,8 +426,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(back.roles.cache.has(R_START)).toBe(true);
   });
 
-  // ── Leaving and rejoining (§12) ───────────────────────────────────────────
-
   it("keeps the restriction when the member leaves the server", async () => {
     const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_TAG]);
     await serverTagService.handleTagRemoved(guild as never, member.id);
@@ -454,7 +435,7 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     const tally = await serverTagExpirationService.sweep(afterWindow);
 
     expect(tally["member-absent"]).toBe(1);
-    // §12 — never deleted, never silently closed.
+
     const still = await activeRestriction(member.id);
     expect(still).not.toBeNull();
     expect(still!.status).toBe(StaffTagRestrictionStatus.ACTIVE);
@@ -510,13 +491,10 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(closed!.rolesRestored).toBe(false);
   });
 
-  // ── Hierarchy and deleted roles (§22) ─────────────────────────────────────
-
   it("skips a saved role that was deleted and still restores the rest", async () => {
     const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_WARN1, R_TAG]);
     await serverTagService.handleTagRemoved(guild as never, member.id);
 
-    // The warning role is deleted from the guild while the restriction runs.
     guild.roles.cache.delete(R_WARN1);
 
     await serverTagService.handleTagAdded(guild as never, member.id);
@@ -537,7 +515,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
 
     await serverTagService.handleTagRemoved(guild as never, member.id);
 
-    // Captured (it is a managed slot) but not removable — no crash, no rollback.
     const restriction = await activeRestriction(member.id);
     expect(restriction!.savedRoleIds).toContain(R_MANAGER);
     expect(member.roles.cache.has(R_STAFF)).toBe(false);
@@ -568,8 +545,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(member.roles.cache.has(R_STAFF)).toBe(false);
   });
 
-  // ── Concurrency and idempotency (§20) ─────────────────────────────────────
-
   it("creates exactly one restriction when two tag-remove events race", async () => {
     const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_WARN1, R_TAG]);
 
@@ -581,7 +556,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(results.filter((r) => r === "restricted")).toHaveLength(1);
     expect(await StaffTagRestrictionModel.countDocuments({ staffId: member.id })).toBe(1);
 
-    // §20 — the loser must not have taken a second (now-empty) snapshot.
     const restriction = await activeRestriction(member.id);
     expect([...restriction!.savedRoleIds].sort()).toEqual([R_STAFF, R_START, R_WARN1].sort());
   });
@@ -611,8 +585,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(member.roles.cache.has(R_TAG)).toBe(true);
     expect(await StaffTagRestrictionModel.countDocuments({ staffId: member.id })).toBe(0);
   });
-
-  // ── Handler routing (§4, §28) ─────────────────────────────────────────────
 
   it("ignores userUpdate events that do not change the tag state", async () => {
     const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_TAG]);
@@ -675,8 +647,6 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(outcome).toBe("member-gone");
     expect(await activeRestriction("ghost")).toBeNull();
   });
-
-  // ── Service-level guarantees ──────────────────────────────────────────────
 
   it("exposes exactly one ACTIVE restriction per guild+staff", async () => {
     const member = addMember(guild, "u-staff", [R_STAFF, R_START, R_TAG]);

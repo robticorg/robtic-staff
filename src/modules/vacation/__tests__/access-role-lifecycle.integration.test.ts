@@ -137,7 +137,6 @@ describe.skipIf(!hasDb)("Access Roles through the Staff lifecycle", () => {
     ]);
   });
 
-  /** Staff at level 1 holding only the Event Team access role. */
   async function staffOnBreak(userId = "u-1") {
     const member = addMember(guild, userId, [MARKER, "al-l0", "al-l1", EVENT, COMMUNITY]);
     await StaffModel.create({
@@ -163,7 +162,6 @@ describe.skipIf(!hasDb)("Access Roles through the Staff lifecycle", () => {
     expect(vacation!.savedAccessRoleIds).toEqual([EVENT]);
     expect(vacation!.snapshotRoleLevel).toBe(1);
 
-    // Staff + access stripped, vacation role applied, unrelated role kept.
     for (const id of [MARKER, "al-l0", "al-l1", EVENT]) {
       expect(member.roles.cache.has(id)).toBe(false);
     }
@@ -182,7 +180,7 @@ describe.skipIf(!hasDb)("Access Roles through the Staff lifecycle", () => {
     });
 
     expect(member.roles.cache.has(EVENT)).toBe(true);
-    // Configured but never held — must not be granted.
+
     expect(member.roles.cache.has(CONTENT)).toBe(false);
     expect(member.roles.cache.has(PARTNER)).toBe(false);
     for (const id of [MARKER, "al-l0", "al-l1"]) {
@@ -234,7 +232,7 @@ describe.skipIf(!hasDb)("Access Roles through the Staff lifecycle", () => {
     for (const id of [MARKER, "al-l0", "al-l1", EVENT, CONTENT]) {
       expect(member.roles.cache.has(id)).toBe(false);
     }
-    // Unrelated roles survive; no blacklist was requested.
+
     expect(member.roles.cache.has(COMMUNITY)).toBe(true);
   });
 
@@ -249,7 +247,6 @@ describe.skipIf(!hasDb)("Access Roles through the Staff lifecycle", () => {
     expect(vacation!.savedRoleIds).toEqual([]);
     expect(vacation!.savedAccessRoleIds).toEqual([]);
 
-    // The expiry sweeper must find nothing to restore, now or later.
     const tally = await vacationExpirationService.sweep(
       new Date(Date.now() + 10 * 86_400_000),
     );
@@ -270,7 +267,7 @@ describe.skipIf(!hasDb)("Access Roles through the Staff lifecycle", () => {
     });
 
     expect(member.roles.cache.has(EVENT)).toBe(false);
-    // Everything else still came back.
+
     expect(member.roles.cache.has("al-l1")).toBe(true);
     expect(member.roles.cache.has(MARKER)).toBe(true);
   });

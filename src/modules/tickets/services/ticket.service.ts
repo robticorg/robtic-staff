@@ -129,8 +129,6 @@ export class TicketService extends BaseRepository<Ticket> {
     return this.model.find(filter).sort({ createdAt: -1 }).exec();
   }
 
-  /** Channel ids of every still-open ticket, across every guild — used to
-   * re-arm the transcript cache after a bot restart. */
   async listAllActiveChannelIds(): Promise<string[]> {
     const rows = await this.model
       .find({ status: { $in: ACTIVE_TICKET_STATUSES as TicketStatus[] } }, { channelId: 1 })
@@ -157,8 +155,6 @@ export class TicketService extends BaseRepository<Ticket> {
       });
     }
 
-    // Only channel-opening panels reach here; a missing category is still fatal
-    // for them, but the field is now optional on panels that never create one.
     const category = panel.categoryId
       ? await guild.channels.fetch(panel.categoryId).catch(() => null)
       : null;
@@ -176,8 +172,6 @@ export class TicketService extends BaseRepository<Ticket> {
       reason: `Ticket ${ticketId} (${panel.id}) for ${member.id}`,
     });
 
-    // Real-time transcript capture starts the moment the channel exists, so
-    // every message (including the bot's own) is caught as it happens.
     transcriptCache.track(channel.id);
 
     let ticket: TicketDoc;
@@ -216,9 +210,7 @@ export class TicketService extends BaseRepository<Ticket> {
   ): OverwriteResolvable[] {
     return [
       { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
-      // With no support role the panel is administrator-only. Administrators
-      // bypass overwrites, so they still see the channel; writing the unset
-      // placeholder id here would make Discord reject the whole channel create.
+
       ...(panelIsAdminOnly(panel)
         ? []
         : [
@@ -310,12 +302,6 @@ export class TicketService extends BaseRepository<Ticket> {
     });
   }
 
-  /**
-   * Hands a claimed ticket over to another staff member. The previous claimer
-   * keeps read access but loses the ability to write; the new claimer gets full
-   * access. No claim point is awarded — the +1 belongs to whoever claimed
-   * first — but completion credit at close follows the new claimer.
-   */
   async transferTicket(input: TransferTicketInput): Promise<TransferTicketResult> {
     const { ticketId, actor, target, panel } = input;
     const ticket = await this.getTicketOrThrow(ticketId);
@@ -329,8 +315,6 @@ export class TicketService extends BaseRepository<Ticket> {
     const previousClaimerId = ticket.claimedByDiscordId as UserId;
     const staff = await staffService.ensure(target.id, ticket.guildId);
 
-    // Filtered on the claimer we gated against, so two simultaneous transfers
-    // can't both win and leave the loser's handover silently applied.
     const transferred = await this.model
       .findOneAndUpdate(
         { ticketId, status: TicketStatus.CLAIMED, claimedByDiscordId: previousClaimerId },
@@ -369,7 +353,6 @@ export class TicketService extends BaseRepository<Ticket> {
     return { ticket: transferred, previousClaimerId, reason };
   }
 
-  /** Previous claimer: still reads, can no longer write. New claimer: full access. */
   private async applyTransferOverwrites(
     guild: Guild,
     ticket: Ticket,
@@ -380,7 +363,7 @@ export class TicketService extends BaseRepository<Ticket> {
     if (!channel || !("permissionOverwrites" in channel)) return;
 
     await channel.permissionOverwrites.edit(newClaimerId, GRANT_ACCESS);
-    // The opener keeps their own access — never demote them by transferring.
+
     if (previousClaimerId !== ticket.userId) {
       await channel.permissionOverwrites.edit(previousClaimerId, {
         ViewChannel: true,
@@ -494,8 +477,7 @@ export class TicketService extends BaseRepository<Ticket> {
 
   async renameTicket(ticketId: string, newName: string, actor: GuildMember): Promise<TicketDoc> {
     const ticket = await this.getTicketOrThrow(ticketId);
-    // \p{L}/\p{N} keep any script's letters and digits (Arabic included) —
-    // a plain a-z0-9 filter used to strip non-Latin names down to nothing.
+
     const clean =
       newName.trim().toLowerCase().replace(/[^\p{L}\p{N}-]+/gu, "-").slice(0, 90) || ticketId;
     const channel = await actor.guild.channels.fetch(ticket.channelId).catch(() => null);
@@ -570,9 +552,6 @@ export class TicketService extends BaseRepository<Ticket> {
     const ticket = await this.getTicketOrThrow(ticketId);
     const resolvedPanel = panel ?? (await this.panelFor(ticket));
 
-    // A ticket deleted directly (never closed first) still needs its
-    // transcript captured — fetch and generate it before the channel, and
-    // whatever the cache has, is gone for good.
     const channel = (await guild.channels.fetch(ticket.channelId).catch(() => null)) as
       | GuildTextBasedChannel
       | null;
@@ -610,12 +589,6 @@ export class TicketService extends BaseRepository<Ticket> {
     return updated ?? ticket;
   }
 
-  /**
-   * Generates (once) and posts the transcript for a ticket that doesn't have
-   * one yet. A no-op if the ticket was already transcripted — this lets
-   * `closeTicket` → `deleteTicket` chain without double-generating or
-   * double-posting.
-   */
   private async ensureTranscript(
     ticket: Ticket,
     guild: Guild,

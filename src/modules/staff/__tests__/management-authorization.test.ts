@@ -31,7 +31,6 @@ const R_APPLY_MANAGER = "r-apply-manager";
 const R_IGNORE = "r-ignore";
 const R_BLACKLIST = "r-blacklist";
 
-/** level → roleId for the numbered ladder (0..12). */
 const rung = (level: number) => `r-lvl-${level}`;
 const HIGHSTAFF_LEVEL = 4;
 const OWNER_LEVEL = 7;
@@ -45,11 +44,6 @@ class RoleCache extends Map<string, { id: string }> {
   }
 }
 
-/**
- * The Staff Manager role is deliberately given a Discord position *above* most
- * numbered roles by sitting late in the cache — nothing in the authorization
- * path may read position, so it must make no difference.
- */
 function member(id: string, roleIds: string[], administrator = false, guildId = GUILD) {
   const cache = new RoleCache();
   for (const r of roleIds) cache.set(r, { id: r });
@@ -114,8 +108,6 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
     await RoleConfigModel.deleteMany({ guildId: OTHER_GUILD });
   });
 
-  // ── Authority resolution (§1, §6) ─────────────────────────────────────────
-
   it("resolves authority from configured roles, never Discord position", async () => {
     expect((await auth.getAuthority(administrator())).kind).toBe(
       ManagementAuthority.ADMINISTRATOR,
@@ -131,7 +123,7 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
 
   it("caps a Staff Manager at min(own level, last level before Ship) (§6)", async () => {
     expect(await auth.getPromotionLimit(staffManagerAt(5))).toBe(5);
-    // Own level is above Ship, so the Ship boundary still caps them.
+
     expect(await auth.getPromotionLimit(staffManagerAt(11))).toBe(SHIP_LEVEL - 1);
   });
 
@@ -144,7 +136,6 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
   });
 
   it("gives a Staff Manager sitting above numbered roles no extra power (§1)", async () => {
-    // Same manager, one holding many high numbered roles in its cache.
     const positioned = member("sm-high", [
       R_STAFF_MARKER,
       R_STAFF_MANAGER,
@@ -154,8 +145,6 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
     ]);
     expect(await auth.getPromotionLimit(positioned)).toBe(5);
   });
-
-  // ── Promotion (§3, §12, §15, §16, §17) ────────────────────────────────────
 
   it("lets a Staff Manager promote inside their range (§3)", async () => {
     const sm = staffManagerAt(5);
@@ -230,8 +219,6 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
     expect((decision as { reason: string }).reason).toBe(DenyReason.ACTOR_NOT_STAFF);
   });
 
-  // ── Demotion (§19 + demotion spec) ────────────────────────────────────────
-
   it("stops a Staff Manager demoting themselves", async () => {
     const sm = staffManagerAt(5, "same");
     const decision = await auth.canDemote(sm, sm, 4, 5);
@@ -287,8 +274,6 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
     expect((decision as { reason: string }).reason).toBe(DenyReason.NOT_A_MANAGER_DEMOTE);
   });
 
-  // ── Accept (§20) ──────────────────────────────────────────────────────────
-
   it("lets an Administrator accept at any level, including Ship", async () => {
     expect(
       (await auth.canAccept(administrator(), plainStaff(0, "t"), SHIP_LEVEL)).allowed,
@@ -328,8 +313,6 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
     expect((await auth.canAccept(om, om, 0)).allowed).toBe(false);
   });
 
-  // ── Fire (§21) ────────────────────────────────────────────────────────────
-
   it("blocks a Staff Manager from firing anyone at all, regardless of level", async () => {
     const decision = await auth.canFire(staffManagerAt(5), plainStaff(4, "t"), 4);
     expect(decision.allowed).toBe(false);
@@ -351,8 +334,6 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
     expect((await auth.canFire(administrator(), plainStaff(OWNER_LEVEL, "t"), OWNER_LEVEL)).allowed).toBe(true);
   });
 
-  // ── Configuration edge cases (§21–§25 of the test list) ───────────────────
-
   it("treats management and ignored roles as consuming no level (§10, §14, §15)", async () => {
     const withNoise = member("sm-noise", [
       R_STAFF_MARKER,
@@ -362,14 +343,14 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
       R_BLACKLIST,
       rung(3),
     ]);
-    // Level comes solely from the numbered rung.
+
     expect((await auth.getAuthority(withNoise)).actorLevel).toBe(3);
   });
 
   it("falls back to the END level when no Ship boundary is configured (§24)", async () => {
     await seed(GUILD, { ship: false });
     expect(await auth.getPromotionLimit(ownerManagerAt(2))).toBe(END_LEVEL);
-    // Without a Ship tier nothing can be "in Ship", so the top is reachable.
+
     expect(
       (await auth.canPromote(ownerManagerAt(2), plainStaff(9, "t"), END_LEVEL, 9)).allowed,
     ).toBe(true);
@@ -394,7 +375,6 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
   it("reflects configuration changes immediately after invalidation (§25)", async () => {
     expect(await auth.getPromotionLimit(ownerManagerAt(2))).toBe(SHIP_LEVEL - 1);
 
-    // Move the Ship boundary down; the new ceiling must apply at once.
     await RoleConfigModel.updateOne(
       { guildId: GUILD, roleId: rung(SHIP_LEVEL) },
       { $unset: { boundary: "" } },

@@ -28,7 +28,6 @@ const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .setContexts(InteractionContextType.Guild);
 
-/** §10 — the summary is ephemeral, so only the executor sees member ids. */
 function buildSummary(report: ScanReport): (string | undefined)[] {
   const lines: (string | undefined)[] = [
     M.found(report.found),
@@ -57,13 +56,11 @@ export default defineCommand({
   async execute(interaction) {
     const guild = requireGuild(interaction);
 
-    // §9 — reuse the existing Staff Manager permission system (admins included).
     const member = await requireMember(interaction);
     if (!(await staffPermissionService.isStaffManager(member))) {
       throw new CommandError(commonMessages.errors.needAdministrator);
     }
 
-    // A full member fetch on a large guild easily outlives the 3s ack window.
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     try {

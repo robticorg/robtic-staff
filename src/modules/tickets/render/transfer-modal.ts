@@ -23,7 +23,7 @@ export function buildTransferModal(ticketId: string): ModalBuilder {
           .setMinValues(1)
           .setMaxValues(1),
       ),
-      // The reason is mandatory — it goes into the DM the receiver gets.
+
       new LabelBuilder().setLabel(M.reasonLabel).setTextInputComponent(
         new TextInputBuilder()
           .setCustomId(TicketModalField.transferReason)

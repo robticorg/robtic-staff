@@ -15,12 +15,9 @@ import { StaffTier } from "../../../modules/configuration/types/enums.ts";
 const USER = "123456789012345678";
 const MENTION = `<@${USER}>`;
 
-/** Mirrors how the runtime splits a prefix message body. */
 const args = (line: string) => line.trim().split(/\s+/).filter(Boolean);
 
 describe("parseAcceptArguments", () => {
-  // ── The existing behaviour must not change ────────────────────────────────
-
   it("keeps plain acceptance working", () => {
     expect(parseAcceptArguments(args(MENTION), USER)).toEqual({
       level: null,
@@ -40,8 +37,6 @@ describe("parseAcceptArguments", () => {
   it("reads level 0 rather than treating it as absent", () => {
     expect(parseAcceptArguments(args(`${MENTION} 0`), USER).level).toBe(0);
   });
-
-  // ── Types ────────────────────────────────────────────────────────────────
 
   it("reads an English type keyword", () => {
     expect(parseAcceptArguments(args(`${MENTION} max`), USER)).toEqual({
@@ -64,8 +59,6 @@ describe("parseAcceptArguments", () => {
       );
     }
   });
-
-  // ── Level + type, either order ───────────────────────────────────────────
 
   it("accepts type then level", () => {
     expect(parseAcceptArguments(args(`${MENTION} max 3`), USER)).toEqual({
@@ -106,8 +99,6 @@ describe("parseAcceptArguments", () => {
     });
   });
 
-  // ── Target forms ─────────────────────────────────────────────────────────
-
   it("ignores the target in every mention form", () => {
     for (const form of [MENTION, `<@!${USER}>`, USER]) {
       expect(parseAcceptArguments(args(`${form} 3`), USER)).toEqual({
@@ -119,7 +110,6 @@ describe("parseAcceptArguments", () => {
   });
 
   it("does not mistake a bare target id for a level", () => {
-    // The pre-existing `args.find(/^\d+$/)` approach read the snowflake as a level.
     expect(parseAcceptArguments([USER], USER).level).toBeNull();
   });
 
@@ -130,8 +120,6 @@ describe("parseAcceptArguments", () => {
       tier: null,
     });
   });
-
-  // ── Rejection ────────────────────────────────────────────────────────────
 
   it("rejects an unknown keyword instead of ignoring it", () => {
     const result = parseAcceptArguments(args(`${MENTION} something`), USER);
@@ -157,8 +145,6 @@ describe("parseAcceptArguments", () => {
   it("tolerates the same type twice", () => {
     expect(parseAcceptArguments(args(`${MENTION} max ماكس`), USER).staffType).toBe(StaffType.MAX);
   });
-
-  // ── Tiers ────────────────────────────────────────────────────────────────
 
   it("reads the English tier keywords", () => {
     expect(parseAcceptArguments(args(`${MENTION} ship`), USER).tier).toBe(StaffTier.SHIP);

@@ -25,7 +25,6 @@ const data = new SlashCommandBuilder()
     o.setName(CommandOption.TIME).setDescription(commandCopy.sleep.options.time),
   );
 
-/** Same service as `!sleep`; only the input surface differs. */
 export default defineCommand({
   data,
   async execute(interaction) {

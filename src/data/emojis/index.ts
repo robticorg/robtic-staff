@@ -19,11 +19,6 @@ export const emojis = {
   system: "⚙️",
 } as const;
 
-/**
- * Guild-specific custom emoji. These are raw Discord emoji tokens, so the id
- * must match an emoji the bot can actually see, and the exact literal matters —
- * the Staff Warn channel message is specified down to this token.
- */
 export const customEmojis = {
   attention: "<:Attention:1486103485756870726>",
 } as const;

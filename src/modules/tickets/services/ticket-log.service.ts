@@ -14,10 +14,10 @@ export interface TicketLogContext {
   targetId?: string;
   roleId?: string;
   name?: string;
-  /** Transfer only — the claimer the ticket was handed over from. */
+
   fromId?: string;
   reason?: string;
-  /** Sleep only — when the ticket auto-closes if nobody replies. */
+
   dueAt?: Date;
 }
 
@@ -27,8 +27,6 @@ export class TicketLogService {
     if (!embed) return;
 
     try {
-      // Panels that never open a channel (gift-claim) have no log channel; they
-      // also never reach this service, but the field is optional either way.
       const logChannelId = ctx.panel.logChannelId;
       if (!logChannelId) return;
 

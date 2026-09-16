@@ -41,26 +41,16 @@ export interface Vacation extends Timestamps {
   endedBy?: string;
   endedAt?: Date;
 
-  /** Numbered ladder rungs + the general Staff marker held before the break. */
   savedRoleIds: RoleId[];
-  /** Access Roles held before the break — restored only if they were present. */
+
   savedAccessRoleIds: RoleId[];
-  /**
-   * Accepted Staff Role held before the break. Restored only if it was held
-   * AND the member is still eligible under the current configuration.
-   */
+
   savedAcceptedRoleIds: RoleId[];
-  /**
-   * Level-driven assignment roles held before the break. Recorded for audit;
-   * restoration re-derives them from the current configuration.
-   */
+
   savedAssignedRoleIds: RoleId[];
-  /**
-   * Staff Type role held before the break. Restored verbatim on return — the
-   * type is never re-derived, and returning never grants a new one.
-   */
+
   savedTypeRoleIds: RoleId[];
-  /** Hierarchy level at snapshot time; Access Roles never contribute to it. */
+
   snapshotRoleLevel?: number;
   rolesRestored?: boolean;
   restoreDeferredAt?: Date;

@@ -16,7 +16,7 @@ export const AcceptedRoleProblem = {
   EVERYONE: "EVERYONE",
   MANAGED: "MANAGED",
   UNMANAGEABLE: "UNMANAGEABLE",
-  /** The role already fills another Staff configuration slot. */
+
   RESERVED: "RESERVED",
   FROM_NOT_NUMBERED: "FROM_NOT_NUMBERED",
   TO_NOT_NUMBERED: "TO_NOT_NUMBERED",
@@ -36,7 +36,7 @@ export class AcceptedRoleError extends ValidationError {
 
 export interface AcceptedRoleConfig {
   roleId: RoleId;
-  /** null on both = every accepted Staff member qualifies. */
+
   fromLevel: number | null;
   toLevel: number | null;
 }
@@ -50,13 +50,6 @@ export interface ConfigureInput {
 
 export type SyncOutcome = "added" | "removed" | "unchanged" | "not-configured";
 
-/**
- * Owns the Accepted Staff Role: a single configured role handed out on
- * acceptance, optionally limited to a numbered-level window.
- *
- * It is its own role type. It never carries a level, never appears on the
- * ladder, and never influences hierarchy, tiers or management authority.
- */
 export class StaffAcceptedRoleService {
   async getConfig(guildId: GuildId): Promise<AcceptedRoleConfig | null> {
     const row = await roleConfigService.getByType(guildId, RoleConfigType.ACCEPTED);
@@ -68,7 +61,6 @@ export class StaffAcceptedRoleService {
     };
   }
 
-  /** §Validation — every rule is enforced here, never in the command. */
   async configure(input: ConfigureInput): Promise<AcceptedRoleConfig> {
     const { guild, role, fromRole, toRole } = input;
     const guildId = guild.id;
@@ -85,8 +77,6 @@ export class StaffAcceptedRoleService {
       throw new AcceptedRoleError(AcceptedRoleProblem.UNMANAGEABLE, { roleId: role.id });
     }
 
-    // RoleConfig is unique per (guild, role): re-typing an existing slot would
-    // delete it, so a role already in use elsewhere is refused outright.
     const current = await roleConfigService.get(guildId, role.id);
     if (current && current.type !== RoleConfigType.ACCEPTED) {
       throw new AcceptedRoleError(AcceptedRoleProblem.RESERVED, {
@@ -99,8 +89,6 @@ export class StaffAcceptedRoleService {
     let toLevel: number | null = null;
 
     if (fromRole && toRole) {
-      // §Hierarchy — levels come from the hierarchy service, never from
-      // Discord role positions.
       const hierarchy = await getHierarchy(guildId);
       const resolvedFrom = hierarchy.levelByRoleId.get(fromRole.id);
       const resolvedTo = hierarchy.levelByRoleId.get(toRole.id);
@@ -123,7 +111,6 @@ export class StaffAcceptedRoleService {
       toLevel = resolvedTo;
     }
 
-    // Singleton: only one Accepted Role per guild.
     await RoleConfigModel.deleteMany({
       guildId,
       type: RoleConfigType.ACCEPTED,
@@ -133,7 +120,6 @@ export class StaffAcceptedRoleService {
     await RoleConfigModel.findOneAndUpdate(
       { guildId, roleId: role.id },
       {
-        // No `level` is ever written — this role holds no hierarchy rank.
         $set: {
           type: RoleConfigType.ACCEPTED,
           ...(fromLevel === null ? {} : { rangeFromLevel: fromLevel }),
@@ -157,10 +143,6 @@ export class StaffAcceptedRoleService {
     return { roleId: role.id, fromLevel, toLevel };
   }
 
-  /**
-   * §Mode 1 / §Mode 2 — no range means every level qualifies; a range is
-   * inclusive on both ends.
-   */
   isLevelInRange(config: AcceptedRoleConfig, level: number): boolean {
     if (config.fromLevel === null || config.toLevel === null) return true;
     return level >= config.fromLevel && level <= config.toLevel;
@@ -172,7 +154,6 @@ export class StaffAcceptedRoleService {
     return this.isLevelInRange(config, level);
   }
 
-  /** Spec alias for `shouldHaveAcceptedRole`. */
   isEligibleForAcceptedRole(guildId: GuildId, level: number): Promise<boolean> {
     return this.shouldHaveAcceptedRole(guildId, level);
   }
@@ -218,10 +199,6 @@ export class StaffAcceptedRoleService {
     }
   }
 
-  /**
-   * §Promotion — after any level change, the role is added or removed to match
-   * the configured window. Never treated as a promotion role itself.
-   */
   async syncAcceptedRole(
     member: GuildMember,
     level: number,

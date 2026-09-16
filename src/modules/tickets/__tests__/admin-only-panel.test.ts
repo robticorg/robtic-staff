@@ -63,7 +63,6 @@ describe("administrator-only panel (no support role configured)", () => {
   });
 
   it("blocks someone who happens to hold the placeholder role", () => {
-    // Defence in depth: even if a stray overwrite existed, admin-only wins.
     expect(decideClaimEligibility({ ...base, memberHasSupportRole: true }).ok).toBe(false);
   });
 

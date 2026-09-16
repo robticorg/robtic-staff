@@ -9,7 +9,7 @@ export interface Faq extends Timestamps {
   question: string;
   answer: string;
   createdBy: UserId;
-  /** Ticket panel ids this FAQ shows up on. Empty/absent = every panel. */
+
   panelIds: string[];
 }
 

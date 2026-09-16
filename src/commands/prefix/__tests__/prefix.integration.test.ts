@@ -129,8 +129,6 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
     expect(member.roles.cache.has("r3")).toBe(false);
     expect(member.roles.cache.has("r1")).toBe(true);
 
-    // Demotion past level 0 is now refused rather than clamped, so it can
-    // never quietly act as a fire. The staff marker is left in place.
     await expect(
       staffManagementService.demote(member as never, SYSTEM_ACTOR, 9),
     ).rejects.toThrow();

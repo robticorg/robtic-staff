@@ -13,11 +13,10 @@ export interface ComeDmInput {
   reason: string;
   guildId: string;
   channelId: string;
-  /** The `!come` message itself — the button jumps straight to it. */
+
   messageId: string;
 }
 
-/** Plain text plus a link button to where the call was made — no embed. */
 export function buildComeDm(input: ComeDmInput): BaseMessageOptions {
   return {
     content: M.dm.body(input.callerId, input.reason),

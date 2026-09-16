@@ -23,7 +23,6 @@ function describe(err: AcceptedRoleError): string {
   return P[err.problem];
 }
 
-/** §Command — validation and persistence both live in the service. */
 export async function handleAssign(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = requireGuild(interaction);
 

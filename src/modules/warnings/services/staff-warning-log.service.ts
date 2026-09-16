@@ -21,7 +21,7 @@ const log = logger.child("staff-warn-log");
 export interface SendStaffWarningLogInput {
   guild: Guild;
   warningId: IdLike;
-  /** Saves a lookup when the caller already knows the warned member. */
+
   targetId?: UserId;
 }
 
@@ -39,16 +39,6 @@ export interface StaffWarningLogResult {
   messageId?: string;
 }
 
-/**
- * Posts the plain four-line Staff Warn announcement into STAFF_WARN_ANNOUNCE
- * — `send()` for a REAL warning (§1–§8), `sendVerbal()` for a VERBAL one.
- * Never STAFF_WARNS (where warnings are issued) and never WARNING_LOG (which
- * keeps its own embed audit trail).
- *
- * This is a reporting side-effect only: it never throws, never mutates warning
- * state beyond stamping the message id, and a Discord failure must never undo
- * a warning that is already persisted (§15).
- */
 export class StaffWarningLogService {
   async send(input: SendStaffWarningLogInput): Promise<StaffWarningLogResult> {
     try {
@@ -58,7 +48,6 @@ export class StaffWarningLogService {
         return { outcome: "not-found" };
       }
 
-      // §3 / §9 — verbal warnings are DB-only and never produce this message.
       if ((warning.type ?? StaffWarningType.REAL) !== StaffWarningType.REAL) {
         return { outcome: "not-real" };
       }
@@ -68,10 +57,6 @@ export class StaffWarningLogService {
         ChannelConfigType.STAFF_WARN_ANNOUNCE,
       );
       if (!channelId) {
-        // §1 — configuration gap must not interrupt the warning workflow.
-        // Deliberately no fallback to STAFF_WARNS: that is the channel managers
-        // issue warnings in, and announcing into it is exactly what this slot
-        // exists to avoid.
         log.warn(
           `STAFF_WARN_ANNOUNCE channel is not configured for guild ${input.guild.id} — ` +
             `staff warn ${warning._id.toString()} was stored but not announced`,
@@ -105,14 +90,11 @@ export class StaffWarningLogService {
         return { outcome: "channel-unavailable" };
       }
 
-      // §4 — the warned member must actually be pinged, but a reason containing
-      // @everyone/@here or a stray role mention must not broadcast.
       const message = await channel.send({
         content,
         allowedMentions: { users: [targetId] },
       });
 
-      // §11 — kept for later linking/editing; failure here is not fatal.
       await StaffWarningModel.updateOne(
         { _id: warning._id },
         { $set: { staffWarnMessageId: message.id } },
@@ -125,19 +107,11 @@ export class StaffWarningLogService {
       );
       return { outcome: "sent", messageId: message.id };
     } catch (err) {
-      // §15 — the warning stays stored; logging failure is contained here.
       log.error("staff warn log post failed", err);
       return { outcome: "send-failed" };
     }
   }
 
-  /**
-   * Posts the plain four-line "Staff Warn شفوي" message for a VERBAL staff
-   * warning into the STAFF_WARNS channel where it was issued.
-   *
-   * Same reporting-side-effect guarantees as `send()`: never throws, never
-   * mutates warning state beyond stamping the message id.
-   */
   async sendVerbal(input: SendStaffWarningLogInput): Promise<StaffWarningLogResult> {
     try {
       const warning = await StaffWarningModel.findById(toObjectId(input.warningId)).exec();
@@ -212,12 +186,6 @@ export class StaffWarningLogService {
     return staff?.userId ?? null;
   }
 
-  /**
-   * A real warning produced by escalating three verbal warnings carries its
-   * own generic reason ("حصل على 3 تحذيرات شفوية") — never the verbal
-   * managers' individual wording. Their attached proof is still worth
-   * surfacing, so it is merged in here without touching the reason.
-   */
   private async resolveEvidence(warning: {
     evidence?: string[];
     source?: string;

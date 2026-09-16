@@ -14,7 +14,7 @@ const log = logger.child("staff:assignments");
 
 export interface StaffRoleAssignment {
   roleId: RoleId;
-  /** null on both ends = applies to every numbered level. */
+
   fromLevel: number | null;
   toLevel: number | null;
 }
@@ -26,14 +26,6 @@ export interface ConfigureAssignmentInput {
   toRole?: Role | null;
 }
 
-/**
- * Extra Discord roles driven by the Staff level — many rules per guild, each
- * with its own window.
- *
- * Depends on the hierarchy for level resolution but never writes to it: an
- * assignment row carries a *range*, never a `level`, so it can never become a
- * ladder rung.
- */
 export class StaffRoleAssignmentService {
   async getAssignments(guildId: GuildId): Promise<StaffRoleAssignment[]> {
     const rows = await RoleConfigModel.find({ guildId, type: RoleConfigType.ASSIGN })
@@ -46,7 +38,6 @@ export class StaffRoleAssignmentService {
     }));
   }
 
-  /** Every role id this system manages, applicable or not. */
   async getManagedRoleIds(guildId: GuildId): Promise<RoleId[]> {
     return (await this.getAssignments(guildId)).map((a) => a.roleId);
   }
@@ -63,7 +54,6 @@ export class StaffRoleAssignmentService {
     return (await this.getAssignments(guildId)).filter((a) => this.appliesToLevel(a, level));
   }
 
-  /** Role ids a member at `level` must hold. */
   async getRequiredRolesForLevel(guildId: GuildId, level: number): Promise<RoleId[]> {
     return (await this.getAssignmentsForLevel(guildId, level)).map((a) => a.roleId);
   }
@@ -73,7 +63,6 @@ export class StaffRoleAssignmentService {
     return assignment ? this.appliesToLevel(assignment, level) : false;
   }
 
-  /** Reuses the Accepted Role validation vocabulary — the rules are identical. */
   async configureAssignment(input: ConfigureAssignmentInput): Promise<StaffRoleAssignment> {
     const { guild, role, fromRole, toRole } = input;
     const guildId = guild.id;
@@ -90,7 +79,6 @@ export class StaffRoleAssignmentService {
       throw new AcceptedRoleError(AcceptedRoleProblem.UNMANAGEABLE, { roleId: role.id });
     }
 
-    // Unique per (guild, role): re-typing an existing slot would delete it.
     const current = await roleConfigService.get(guildId, role.id);
     if (current && current.type !== RoleConfigType.ASSIGN) {
       throw new AcceptedRoleError(AcceptedRoleProblem.RESERVED, {
@@ -161,10 +149,6 @@ export class StaffRoleAssignmentService {
     return removed;
   }
 
-  /**
-   * Which managed roles a member at `level` should gain and lose. Roles this
-   * system does not manage are never mentioned, so unrelated roles survive.
-   */
   async resolveForLevel(
     guildId: GuildId,
     level: number,
@@ -179,7 +163,6 @@ export class StaffRoleAssignmentService {
     return { add, remove };
   }
 
-  /** Convenience wrapper for callers holding a member rather than a level. */
   async syncAssignedRoles(
     member: GuildMember,
     level: number,

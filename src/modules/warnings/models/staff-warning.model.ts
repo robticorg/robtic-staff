@@ -27,12 +27,6 @@ export interface StaffWarning {
   sourceVerbalWarningIds?: Types.ObjectId[];
   convertedToWarningId?: Types.ObjectId;
 
-  /**
-   * Id of the announcement message posted to STAFF_WARN_ANNOUNCE for this
-   * warning (REAL or VERBAL). Kept so the log can later be linked or edited.
-   * It is never deleted when a warning is revoked or appealed — the history
-   * stays visible.
-   */
   staffWarnMessageId?: string;
 
   createdAt: Date;

@@ -24,21 +24,20 @@ export interface ScanInput {
 
 export interface ScanReport {
   guildId: GuildId;
-  /** Members holding the configured Staff role. */
+
   found: number;
   created: number;
   updated: number;
   unchanged: number;
-  /** Staff role but no usable numbered role — never guessed (§7). */
+
   invalid: number;
   errors: number;
   invalidMembers: UserId[];
-  /** Members whose level-driven assignment roles were brought back in line. */
+
   assignmentsFixed: number;
   staffRoleId: RoleId;
 }
 
-/** §12 — one scan per guild at a time within this process. */
 const inFlight = new Set<GuildId>();
 
 interface Candidate {
@@ -47,16 +46,6 @@ interface Candidate {
   member: GuildMember;
 }
 
-/**
- * Imports and re-synchronises Staff members that already exist in Discord.
- *
- * This is a synchronisation pass, never a reset: it writes only the current
- * hierarchy state (`currentRoleLevel`, and `status` on insert) and leaves
- * counters, points, history, activities and warnings untouched (§4).
- *
- * All level maths is delegated to the hierarchy service (§23) — nothing here
- * inspects role names, ids or array positions.
- */
 export class StaffScanService {
   async scan(input: ScanInput): Promise<ScanReport> {
     const guildId = input.guild.id;
@@ -75,7 +64,6 @@ export class StaffScanService {
   private async run(input: ScanInput): Promise<ScanReport> {
     const guildId = input.guild.id;
 
-    // §20 — loaded once, reused for every member below.
     const hierarchy = await getHierarchy(guildId);
 
     const issues = validateHierarchy(hierarchy);
@@ -95,10 +83,8 @@ export class StaffScanService {
     const candidates: Candidate[] = [];
     const invalidMembers: UserId[] = [];
     for (const member of members) {
-      // §2 / §8 — highest numbered role wins; §3 — ignored roles skipped.
       const level = highestLevelFromRoleIds(hierarchy, member.roles.cache.keys());
       if (level === null) {
-        // §7 — Staff role but no numbered role: never guess, never default to 0.
         invalidMembers.push(member.id);
         continue;
       }
@@ -136,22 +122,12 @@ export class StaffScanService {
     };
   }
 
-  /**
-   * Brings level-driven assignment roles into line with the configuration.
-   *
-   * Deliberately narrower than `syncStaffRoles`: the scan treats Discord as
-   * authoritative for the hierarchy (§5 / §24), so the ladder and the Staff
-   * marker are read, never written. Only roles this system owns are touched,
-   * and only for members whose set actually diverges — unrelated roles and
-   * hand-granted Access Roles are never involved.
-   */
   private async reconcileAssignedRoles(
     guildId: GuildId,
     candidates: Candidate[],
   ): Promise<number> {
     if (candidates.length === 0) return 0;
 
-    // One read for the whole guild; guilds without assignments cost nothing.
     const assignments = await staffRoleAssignmentService.getAssignments(guildId);
     if (assignments.length === 0) return 0;
 
@@ -161,8 +137,6 @@ export class StaffScanService {
       const remove: RoleId[] = [];
 
       for (const assignment of assignments) {
-        // A configured role that no longer exists in the guild is skipped
-        // rather than sent to Discord, which would reject the whole edit.
         if (!member.guild.roles.cache.has(assignment.roleId)) continue;
 
         const applies = staffRoleAssignmentService.appliesToLevel(assignment, level);
@@ -178,7 +152,6 @@ export class StaffScanService {
         if (remove.length > 0) await member.roles.remove(remove, "Staff scan: assignment sync");
         fixed += 1;
       } catch (err) {
-        // One member's missing permissions must not abort the whole scan.
         log.warn(`scan ${guildId}: assignment sync failed for ${member.id}`, err);
       }
     }
@@ -186,27 +159,18 @@ export class StaffScanService {
     return fixed;
   }
 
-  /**
-   * §11 — never assume the member cache is warm. One `fetch()` populates it for
-   * the whole guild; filtering then happens in memory.
-   */
   private async fetchStaffMembers(guild: Guild, staffRoleId: RoleId): Promise<GuildMember[]> {
     const collection = await guild.members.fetch();
     const out: GuildMember[] = [];
     for (const member of collection.values()) {
       if (member.user?.bot) continue;
-      // §25 — only members who actually hold the Staff role are imported, so a
-      // fired or blacklisted member without it is never resurrected.
+
       if (!member.roles.cache.has(staffRoleId)) continue;
       out.push(member);
     }
     return out;
   }
 
-  /**
-   * §11 / §12 — one read for the whole guild and one unordered bulk write,
-   * upserting on the unique (guildId, userId) identity.
-   */
   private async synchronise(
     guildId: GuildId,
     candidates: Candidate[],
@@ -239,10 +203,8 @@ export class StaffScanService {
         updateOne: {
           filter: { guildId, userId: candidate.userId },
           update: {
-            // §5 / §24 — Discord is authoritative for the CURRENT level only.
             $set: { currentRoleLevel: candidate.level },
-            // §6 / §26 — status is seeded on import and never re-stamped, so an
-            // existing FIRED / BLACKLISTED record is not flipped back to ACTIVE.
+
             $setOnInsert: {
               status: StaffStatus.ACTIVE,
               points: 0,
@@ -266,8 +228,6 @@ export class StaffScanService {
     try {
       await StaffModel.bulkWrite(operations as never, { ordered: false });
     } catch (err) {
-      // A concurrent scan can win the upsert race; the unique index rejects the
-      // duplicate, which means the record exists — not a failure worth surfacing.
       const writeErrors = (err as { writeErrors?: unknown[] }).writeErrors ?? [];
       const duplicates = writeErrors.filter((e) => isDuplicateKeyError(e)).length;
       errors = Math.max(0, writeErrors.length - duplicates);

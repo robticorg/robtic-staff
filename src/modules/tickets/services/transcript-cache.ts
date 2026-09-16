@@ -12,17 +12,6 @@ export interface CachedTranscriptMessage {
   createdAt: string;
 }
 
-/**
- * Real-time per-ticket-channel message buffer. Messages are captured as they
- * arrive (bot messages included — the embeds a bot posts are part of the
- * conversation too), so the transcript no longer depends on paginating
- * channel history at close time, which misses embeds and is capped.
- *
- * In-memory only: `track()` is re-run for every still-open ticket on bot
- * startup (see events/ready.ts) so a restart doesn't leave a channel silently
- * untracked — `generate()` falls back to a live history fetch regardless if
- * the cache ever comes up empty.
- */
 class TranscriptCache {
   private readonly byChannel = new Map<string, CachedTranscriptMessage[]>();
 
@@ -58,7 +47,6 @@ class TranscriptCache {
     if (list.length > limits.transcriptMessageCap) list.shift();
   }
 
-  /** Returns and stops tracking a channel's buffered messages. */
   flush(channelId: string): CachedTranscriptMessage[] {
     const list = this.byChannel.get(channelId) ?? [];
     this.untrack(channelId);

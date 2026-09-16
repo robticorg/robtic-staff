@@ -37,9 +37,8 @@ describe("isUsingGuildTag", () => {
   });
 
   it("ignores the visible tag string — tags are not globally unique", () => {
-    // Same 4-character tag, different server: must NOT count as ours.
     expect(isUsingGuildTag(using(THEIRS, "ROBT"), OURS)).toBe(false);
-    // Different visible tag but our guild id: still ours.
+
     expect(isUsingGuildTag(using(OURS, "ZZZZ"), OURS)).toBe(true);
   });
 
@@ -65,7 +64,6 @@ describe("detectTagState", () => {
   });
 
   it("reports UNCHANGED for unrelated profile updates", () => {
-    // §4 — an avatar or username change must not re-trigger role writes.
     expect(detect(using(OURS), using(OURS))).toBe(TagTransition.UNCHANGED);
     expect(detect(noIdentity(), noIdentity())).toBe(TagTransition.UNCHANGED);
     expect(detect(notUsing(OURS), notUsing(OURS))).toBe(TagTransition.UNCHANGED);
@@ -85,10 +83,9 @@ describe("detectTagState", () => {
   });
 
   it("never infers the destructive edge from an unknown previous state", () => {
-    // A partial/uncached old user must not cost a staff member their roles.
     expect(detect(unknown(), noIdentity())).toBe(TagTransition.UNCHANGED);
     expect(detect(null, noIdentity())).toBe(TagTransition.UNCHANGED);
-    // The additive edge is safe, so it is still allowed.
+
     expect(detect(unknown(), using(OURS))).toBe(TagTransition.ENABLED);
     expect(detect(null, using(OURS))).toBe(TagTransition.ENABLED);
   });

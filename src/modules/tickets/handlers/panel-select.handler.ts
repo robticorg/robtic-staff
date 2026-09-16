@@ -14,12 +14,6 @@ import { buildQuestionModal } from "../render/question-modal.ts";
 const M = ticketMessages;
 const log = logger.child("tickets:panel-select");
 
-/**
- * A String Select Menu keeps showing the picked option as "selected" in the
- * viewer's client until the message is re-rendered. Re-editing it back to its
- * own (unchanged) content right after handling the pick resets that state —
- * cheap, immediate, and only runs on actual use instead of polling forever.
- */
 async function resetPanelMenu(interaction: StringSelectMenuInteraction): Promise<void> {
   try {
     if (!interaction.message.editable) return;

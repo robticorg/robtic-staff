@@ -24,14 +24,12 @@ export const limits = {
 
   transcriptMessageCap: 500,
 
-  /** How long the "closing in..." confirmation stays up before a ticket close actually runs. */
   ticketCloseConfirmSeconds: 5,
 
-  /** `!sleep` — how long an idle ticket waits for a reply before auto-closing. */
   ticketSleepDefaultMs: 6 * 3_600_000,
   ticketSleepMinMs: 60_000,
   ticketSleepMaxMs: 7 * 86_400_000,
-  /** How often due sleeping tickets are swept and closed. */
+
   ticketSleepSweepIntervalMs: 60_000,
   ticketSleepSweepBatch: 25,
 } as const;

@@ -129,8 +129,6 @@ describe.skipIf(!hasDb)("Staff Types", () => {
     ]);
   });
 
-  // ── Configuration ─────────────────────────────────────────────────────────
-
   it("stores a type role with no level and keeps it off the ladder", async () => {
     await types.configureRole(guild as never, StaffType.MAX, role(guild, MAX_ROLE));
 
@@ -153,15 +151,13 @@ describe.skipIf(!hasDb)("Staff Types", () => {
 
     expect(await attempt(GUILD)).toBe(StaffTypeProblem.EVERYONE);
     expect(await attempt("st-managed")).toBe(StaffTypeProblem.MANAGED);
-    // A numbered rung, the Staff marker and the blacklist role are all taken.
+
     expect(await attempt("st-l1")).toBe(StaffTypeProblem.RESERVED);
     expect(await attempt(MARKER)).toBe(StaffTypeProblem.RESERVED);
     expect(await attempt(BLACKLIST)).toBe(StaffTypeProblem.RESERVED);
   });
 
   it("accepts a role that was marked ignored", async () => {
-    // Ignoring a role keeps it off the ladder — a deliberate reason to pick it
-    // as a type role ("nobody gets promoted into this"). It must not be refused.
     await roleConfigService.setRole({
       guildId: GUILD,
       roleId: DEV_ROLE,
@@ -174,7 +170,7 @@ describe.skipIf(!hasDb)("Staff Types", () => {
     const row = await roleConfigService.get(GUILD, DEV_ROLE);
     expect(row!.type).toBe(RoleConfigType.STAFF_TYPE);
     expect(row!.staffType).toBe(StaffType.DEV);
-    // Still not a ladder rung, which is what being ignored protected.
+
     expect(await roleConfigService.getStaffLevel(GUILD, DEV_ROLE)).toBeNull();
     expect((await roleConfigService.getStaffRoleLevels(GUILD)).map((r) => r.roleId)).toEqual(
       LADDER,
@@ -188,8 +184,6 @@ describe.skipIf(!hasDb)("Staff Types", () => {
     expect(await types.getConfiguredRole(GUILD, StaffType.MAX)).toBe(COMMUNITY);
     expect(await roleConfigService.get(GUILD, MAX_ROLE)).toBeNull();
   });
-
-  // ── Acceptance ────────────────────────────────────────────────────────────
 
   it("does not assign a type role on a normal acceptance", async () => {
     await types.configureRole(guild as never, StaffType.MAX, role(guild, MAX_ROLE));
@@ -229,8 +223,6 @@ describe.skipIf(!hasDb)("Staff Types", () => {
     );
   });
 
-  // ── Replacement ───────────────────────────────────────────────────────────
-
   it("replaces an existing type rather than stacking both", async () => {
     await types.configureRole(guild as never, StaffType.MAX, role(guild, MAX_ROLE));
     await types.configureRole(guild as never, StaffType.DEV, role(guild, DEV_ROLE));
@@ -245,8 +237,6 @@ describe.skipIf(!hasDb)("Staff Types", () => {
     expect(member.roles.cache.has(MAX_ROLE)).toBe(false);
     expect(await types.getType(GUILD, member.id)).toBe(StaffType.DEV);
   });
-
-  // ── Independence from the hierarchy ───────────────────────────────────────
 
   it("never changes the type on promotion or demotion", async () => {
     await types.configureRole(guild as never, StaffType.MAX, role(guild, MAX_ROLE));
@@ -275,8 +265,6 @@ describe.skipIf(!hasDb)("Staff Types", () => {
     expect(snapshot.staffRoleIds).not.toContain(MAX_ROLE);
   });
 
-  // ── History ───────────────────────────────────────────────────────────────
-
   it("records the type in acceptance history, null when there is none", async () => {
     await types.configureRole(guild as never, StaffType.DEV, role(guild, DEV_ROLE));
 
@@ -295,8 +283,6 @@ describe.skipIf(!hasDb)("Staff Types", () => {
     expect((await byStaff("u-hist-plain"))!.metadata?.staffType).toBeNull();
   });
 
-  // ── Fire ──────────────────────────────────────────────────────────────────
-
   it("removes the type role on fire and keeps unrelated roles", async () => {
     await types.configureRole(guild as never, StaffType.MAX, role(guild, MAX_ROLE));
     const member = addMember(guild, "u-fire", [UNRELATED]);
@@ -309,8 +295,6 @@ describe.skipIf(!hasDb)("Staff Types", () => {
     expect(member.roles.cache.has(UNRELATED)).toBe(true);
     expect(await types.getType(GUILD, member.id)).toBeNull();
   });
-
-  // ── Service surface ───────────────────────────────────────────────────────
 
   it("resolves keywords in both languages and rejects unknown ones", () => {
     expect(types.resolveKeyword("max")).toBe(StaffType.MAX);

@@ -13,8 +13,6 @@ export default definePrefixCommand({
       throw new PrefixAbort(prefixMessages.ticket.notAllowed);
     }
 
-    // Any non-blank name is valid — Arabic (or any other script) names must
-    // not be rejected just because they carry no Latin letters or digits.
     const newName = ctx.rest.trim();
     if (!newName) {
       throw new PrefixAbort(prefixMessages.ticket.renameUsage);

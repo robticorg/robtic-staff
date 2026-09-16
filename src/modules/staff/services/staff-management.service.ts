@@ -30,11 +30,6 @@ import type { StaffType } from "../types/enums.ts";
 
 const log = logger.child("staff-mgmt");
 
-/**
- * Who is performing a Staff management action. Made explicit so an internal
- * caller (the warning escalation fire) cannot accidentally skip authorization
- * by passing a bare id string.
- */
 export type StaffActor =
   | { kind: "MEMBER"; member: GuildMember }
   | { kind: "SYSTEM"; id: string };
@@ -53,10 +48,6 @@ function enforce(decision: AuthorizationDecision): void {
   if (!decision.allowed) throw new StaffAdminError(decision.message);
 }
 
-/**
- * Closes any open vacation and empties its saved snapshot. Imported lazily to
- * avoid a cycle: the vacation service already depends on staff management.
- */
 async function cancelOpenVacationSnapshot(
   guildId: string,
   staffId: string,
@@ -90,7 +81,7 @@ async function cancelOpenVacationSnapshot(
 export interface AcceptResult {
   level: number;
   previousLevel: number;
-  /** The type the member was accepted as, or null for a normal acceptance. */
+
   staffType: StaffType | null;
 }
 export interface FireResult {
@@ -144,7 +135,6 @@ export class StaffManagementService {
       throw new StaffAdminError(prefixMessages.staff.levelOutOfRange(maxLadderLevel(ladder)));
     }
 
-    // §20 / §24 — authorize the resolved level, immediately before any write.
     if (actor.kind === "MEMBER") {
       enforce(
         await staffManagementAuthorizationService.canAccept(actor.member, member, level),
@@ -160,20 +150,14 @@ export class StaffManagementService {
       currentRoleLevel: level,
       acceptedBy: actorId(actor),
       acceptedAt: new Date(),
-      // Accepting without a type leaves an existing one alone — a type changes
-      // only when one is explicitly named.
+
       ...(staffType ? { staffType } : {}),
     });
 
-    // One centralized sync covers the ladder, the Staff marker, level-driven
-    // assignments and the Accepted Role — no duplicated role maths here.
     await syncStaffRoles(member, level, `Accepted as staff by ${actorId(actor)}`, {
       clearBlacklist: true,
     });
 
-    // Staff Type is applied separately and never by the level sync, so it stays
-    // fully independent of the hierarchy. Replacement of a previous type is
-    // handled inside the service, not here.
     if (staffType) {
       await staffTypeService.assignType(
         member,
@@ -188,7 +172,7 @@ export class StaffManagementService {
       performedBy: actorId(actor),
       previousRoleLevel: previousLevel,
       newRoleLevel: level,
-      // §History — null on a normal acceptance; never a fake promotion entry.
+
       metadata: { staffType: staffType ?? null },
     });
     await staffActivityService.create({
@@ -206,7 +190,6 @@ export class StaffManagementService {
     const staff = await staffService.get(member.id, guildId);
     if (!staff) throw new StaffAdminError(prefixMessages.staff.notStaffMember(`<@${member.id}>`));
 
-    // §21 — firing routes through the same central authority as demotion.
     if (actor.kind === "MEMBER") {
       enforce(
         await staffManagementAuthorizationService.canFire(
@@ -229,8 +212,6 @@ export class StaffManagementService {
       roleConfigService.getByType(guildId, RoleConfigType.WARN_3),
     ]);
 
-    // Access Roles are part of the Staff cleanup even though they carry no
-    // level — only the ones the member actually holds are touched.
     const accessRoleIds = await roleConfigService.getAccessRoleIds(guildId);
     const acceptedConfig = await staffAcceptedRoleService.getConfig(guildId);
 
@@ -239,9 +220,9 @@ export class StaffManagementService {
       ...(general ? [general] : []),
       ...accessRoleIds,
       ...(acceptedConfig ? [acceptedConfig.roleId] : []),
-      // Only roles this system manages — never arbitrary member roles.
+
       ...(await staffRoleAssignmentService.getManagedRoleIds(guildId)),
-      // §Fire — the Staff Type role goes with the rest of the Staff identity.
+
       ...(await staffTypeService.getManagedRoleIds(guildId)),
       ...warnRoles.filter((r): r is NonNullable<typeof r> => !!r).map((r) => r.roleId),
       ...(!blacklist && blacklistRole ? [blacklistRole.roleId] : []),
@@ -253,7 +234,7 @@ export class StaffManagementService {
       status: blacklist ? StaffStatus.BLACKLISTED : StaffStatus.FIRED,
       firedBy: actorId(actor),
       firedAt: new Date(),
-      // The role is gone, so the recorded type must go with it.
+
       staffType: null,
     });
     await staffHistoryService.record({
@@ -270,8 +251,6 @@ export class StaffManagementService {
       metadata: { blacklist },
     });
 
-    // Fired while on break: void the saved snapshot so the vacation sweeper
-    // can never hand the Staff and Access roles back later.
     await cancelOpenVacationSnapshot(guildId, member.id, actorId(actor));
 
     return { blacklist };
@@ -313,8 +292,6 @@ export class StaffManagementService {
         ? resolvePromoteLevel(from, amount, ladder)
         : rawDemoteLevel(from, amount);
 
-    // §24 — the final decision happens here, on freshly resolved levels, and
-    // before a single Discord role or database field is touched.
     if (actor.kind === "MEMBER") {
       enforce(
         direction === "promote"
@@ -323,16 +300,12 @@ export class StaffManagementService {
       );
     }
 
-    // Demotion never becomes an implicit fire: below level 0 is refused rather
-    // than clamped, and the Staff marker role is left untouched.
     if (direction === "demote" && to < 0) {
       throw new StaffAdminError(staffMessages.authorization.BELOW_MIN_LEVEL);
     }
 
     if (to === from) return { from, to, changed: false };
 
-    // Assignments and the Accepted Role are re-evaluated against the new level
-    // by the same centralized sync used on accept.
     await syncStaffRoles(member, to, `${direction} by ${actorId(actor)}`);
 
     await staffService.setRoleLevel(staff._id, to);

@@ -24,14 +24,10 @@ export interface RestoreOutcome {
 }
 
 export interface RestoreOptions {
-  /** Access Roles the member held before the break. */
   accessRoleIds?: readonly RoleId[];
-  /** Staff Type role held before the break, restored verbatim. */
+
   typeRoleIds?: readonly RoleId[];
-  /**
-   * Level to re-derive level-driven roles at (assignments + Accepted Role).
-   * Null skips that pass entirely.
-   */
+
   restoredLevel?: number | null;
 }
 
@@ -46,20 +42,11 @@ export class VacationRoleService {
     return staffPermissionService.staffRoleIds(guildId);
   }
 
-  /**
-   * Legacy shape — numbered + marker roles only. Kept for callers that only
-   * need the hierarchy half; new code should use `fullSnapshot`.
-   */
   async snapshot(member: GuildMember, guildId: GuildId): Promise<RoleId[]> {
     const staffIds = await this.staffRoleIds(guildId);
     return [...staffIds].filter((id) => member.roles.cache.has(id));
   }
 
-  /**
-   * Staff roles *and* Access Roles the member currently holds, captured before
-   * anything is stripped. Access Roles are kept in their own list so they can
-   * never leak into level maths.
-   */
   fullSnapshot(member: GuildMember, guildId: GuildId): Promise<StaffRoleSnapshot> {
     return captureStaffRoleSnapshot(member, guildId);
   }
@@ -146,10 +133,6 @@ export class VacationRoleService {
       .catch((err) => log.warn("vacation role removal failed", err));
   }
 
-  /**
-   * Restores exactly the ids that were saved — never "every configured Access
-   * Role". Deleted or unmanageable roles are skipped and logged.
-   */
   async restoreSavedRoles(
     member: GuildMember,
     savedRoleIds: readonly RoleId[],
@@ -162,19 +145,12 @@ export class VacationRoleService {
       restoredLevel = null,
     } = options;
 
-    // Hierarchy, Access and Staff Type roles come straight back from the
-    // snapshot — they are exactly what the member had, and none of them is
-    // derived from a level. Returning never grants a type the member lacked.
     const outcome = await restoreSnapshotRoles(
       member,
       [...savedRoleIds, ...accessRoleIds, ...typeRoleIds],
       reason,
     );
 
-    // Level-driven roles (assignments + Accepted Role) are deliberately NOT
-    // replayed from the snapshot. They are re-derived from the *current*
-    // configuration, so a rule that changed during the break is honoured and a
-    // role that no longer applies is not handed back.
     if (restoredLevel !== null) {
       const synced = await syncStaffRoles(member, restoredLevel, reason);
       outcome.restored.push(...synced.added);

@@ -24,10 +24,9 @@ export function attachModuleClients(client: Client): void {
 
 export function startModuleRuntime(): void {
   vacationExpirationService.start();
-  // Sweeps immediately on start — this is the Server Tag restart recovery.
+
   serverTagExpirationService.start();
-  // Same idea: tickets whose sleep window elapsed while the bot was down are
-  // closed on the first sweep.
+
   ticketSleepService.start();
 }
 

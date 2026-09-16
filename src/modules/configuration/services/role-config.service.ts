@@ -29,7 +29,6 @@ export interface SetRoleInput {
 const staffLevelsCache = new TtlCache<StaffRoleLevel[]>({ defaultTtlMs: CONFIG_CACHE_TTL_MS });
 const generalStaffRoleCache = new TtlCache<RoleId | null>({ defaultTtlMs: CONFIG_CACHE_TTL_MS });
 
-/** Listeners fired whenever any role configuration for a guild changes. */
 const invalidationListeners = new Set<(guildId: GuildId) => void>();
 
 export function onRoleConfigInvalidated(listener: (guildId: GuildId) => void): void {
@@ -94,10 +93,7 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
         type: input.type,
         roleId: { $ne: input.roleId },
       };
-      // `type: STAFF` is overloaded: it marks the general @Staff role AND every
-      // middle rung of the numbered ladder (rebuildLadder stamps them STAFF).
-      // Only the unlevelled general marker is a singleton — without this guard
-      // `/role staff` deletes the whole middle of the ladder.
+
       if (input.type === RoleConfigType.STAFF && level === undefined) {
         filter.level = { $exists: false };
       }
@@ -120,7 +116,6 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
     return doc as HydratedDocument<RoleConfig>;
   }
 
-  /** Drops every cached view of this guild's role configuration (§Cache). */
   async touchGuild(guildId: GuildId): Promise<void> {
     invalidateRoleConfig(guildId);
   }
@@ -175,11 +170,6 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
     return row?.level ?? null;
   }
 
-  /**
-   * The general @Staff marker — the STAFF row that carries no level.
-   * Use this instead of `getByType(guildId, STAFF)`, which can return a
-   * numbered ladder rung because those share the STAFF type.
-   */
   getGeneralStaffRole(guildId: GuildId): Promise<HydratedDocument<RoleConfig> | null> {
     return this.findOne({ guildId, type: RoleConfigType.STAFF, level: { $exists: false } });
   }
@@ -197,11 +187,6 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
     return row?.roleId ?? null;
   }
 
-  /**
-   * Marks a numbered ladder role as the first rung of a tier. The role must
-   * already carry a level — a boundary that is not on the ladder cannot be
-   * turned into one, it would silently produce wrong tiers.
-   */
   async setBoundary(
     guildId: GuildId,
     roleId: RoleId,
@@ -212,13 +197,9 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
     }
     const row = await this.get(guildId, roleId);
     if (!row || row.level === undefined || row.level === null) {
-      // Management markers, ignored roles and the Staff marker all live off the
-      // ladder, so they have no level and are rejected here by construction.
       throw new ValidationError("BOUNDARY_NOT_ON_LADDER", { guildId, roleId, tier });
     }
 
-    // §23 — HIGHSTAFF < OWNER < SHIP, compared by calculated level and never by
-    // role name or Discord position.
     const existing = await this.getBoundaryRoles(guildId);
     const order = [...STAFF_TIER_BOUNDARIES];
     const index = order.indexOf(tier);
@@ -254,7 +235,6 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
     return result.modifiedCount ?? 0;
   }
 
-  /** Configured boundary roles for a guild, keyed by tier. */
   async getBoundaryRoles(guildId: GuildId): Promise<Partial<Record<StaffTier, RoleConfig>>> {
     const rows = await this.model
       .find({ guildId, boundary: { $exists: true } })
@@ -273,7 +253,6 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
     return this.getByType(guildId, RoleConfigType.END);
   }
 
-  /** Staff Access roles — Staff-related, but never part of the hierarchy. */
   getAccessRoleIds(guildId: GuildId): Promise<RoleId[]> {
     return this.model
       .find({ guildId, type: RoleConfigType.ACCESS })

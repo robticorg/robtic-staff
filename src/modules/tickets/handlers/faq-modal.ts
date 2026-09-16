@@ -11,7 +11,6 @@ const M = ticketMessages.faq;
 const FAQ_NS = "faq:addModal";
 
 export const FaqAddModal = {
-  /** `panelId` empty means "show on every panel". */
   id: (panelId: string) => `${FAQ_NS}:${panelId}`,
   parsePanelId: (customId: string): string | null => {
     if (!customId.startsWith(`${FAQ_NS}:`)) return null;

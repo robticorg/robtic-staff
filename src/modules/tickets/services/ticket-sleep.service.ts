@@ -26,15 +26,11 @@ export interface SleepResult {
   ticket: TicketDoc;
   dueAt: Date;
   durationMs: number;
-  /** Arabic rendering of the duration, reused by the caller's reply. */
+
   duration: string;
   dmDelivered: boolean;
 }
 
-/**
- * Resolves a user-typed duration (`6h`, `30m`, `90`) to milliseconds, or throws
- * with the allowed window. `null`/empty means "use the default".
- */
 export function resolveSleepDuration(input: string | null | undefined): number {
   if (!input || input.trim().length === 0) return limits.ticketSleepDefaultMs;
 
@@ -50,14 +46,6 @@ export function resolveSleepDuration(input: string | null | undefined): number {
   return parsed;
 }
 
-/**
- * `!sleep` — the ticket is waiting on its opener.
- *
- * The staff member handling a ticket marks it asleep; the opener is DMed a
- * deadline, and the ticket closes itself (transcript included, through the
- * normal close path) unless they reply first. Any message from the opener in
- * the channel cancels it — that *is* the reply the deadline was about.
- */
 export class TicketSleepService {
   private timer: ReturnType<typeof setInterval> | null = null;
   private running = false;
@@ -137,16 +125,9 @@ export class TicketSleepService {
     }
   }
 
-  /**
-   * Any message from the ticket's own opener wakes it. Staff messages do not —
-   * the deadline is about the *opener* answering.
-   */
   async handleTicketMessage(message: Message): Promise<void> {
     if (!message.inGuild() || message.author.bot) return;
 
-    // This runs on every message in the guild, so the O(1) in-memory check for
-    // "is this even a ticket channel?" comes before any database work. The
-    // cache is re-armed for every open ticket on boot, so it never goes stale.
     if (!transcriptCache.isTracked(message.channelId)) return;
 
     const ticket = await TicketModel.findOne({
@@ -179,7 +160,6 @@ export class TicketSleepService {
     log.info(`ticket ${ticket.ticketId} woke up — its opener replied`);
   }
 
-  /** Clears the deadline. Returns false when someone else already cleared it. */
   private async clearSleep(ticketId: string): Promise<boolean> {
     const result = await TicketModel.updateOne(
       { ticketId, sleepDueAt: { $exists: true, $ne: null } },
@@ -188,7 +168,6 @@ export class TicketSleepService {
     return (result.modifiedCount ?? 0) > 0;
   }
 
-  /** Every ticket whose deadline has passed, oldest first. */
   private listDue(now: Date): Promise<TicketDoc[]> {
     return TicketModel.find({
       sleepDueAt: { $lte: now },
@@ -217,10 +196,6 @@ export class TicketSleepService {
     return { closed, failed };
   }
 
-  /**
-   * Closes through `ticketService.closeTicket`, so the transcript, the log entry
-   * and the completion credit all behave exactly as a manual close.
-   */
   private async closeExpired(ticket: TicketDoc): Promise<boolean> {
     const { getTicketClient } = await import("../runtime.ts");
     const client = getTicketClient();
@@ -233,13 +208,11 @@ export class TicketSleepService {
     }
     const panel = ticketConfigService.getPanel(ticket.panelId);
     if (!panel) {
-      // Unknown panel: clear the deadline rather than retrying it every minute.
       await this.clearSleep(ticket.ticketId);
       log.warn(`ticket ${ticket.ticketId} is due but its panel "${ticket.panelId}" is gone`);
       return false;
     }
 
-    // Claimed first so a slow close cannot be started twice by two sweeps.
     if (!(await this.clearSleep(ticket.ticketId))) return false;
 
     const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
@@ -249,8 +222,6 @@ export class TicketSleepService {
         .catch(() => undefined);
     }
 
-    // Attributed to whoever set the deadline — the close is the outcome they
-    // asked for. Falls back to the claimer, then to the bot itself.
     const closedBy: UserId =
       ticket.sleepStartedBy ?? ticket.claimedByDiscordId ?? client.user?.id ?? "SYSTEM";
     const result = await ticketService.closeTicket(ticket.ticketId, closedBy, panel, guild);

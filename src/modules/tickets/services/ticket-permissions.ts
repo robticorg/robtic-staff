@@ -14,23 +14,18 @@ export interface ClaimContextInput {
   memberHasSupportRole: boolean;
   memberIsManager: boolean;
   memberIsAdministrator: boolean;
-  /** The ticket's own opener — never allowed to claim it, no exceptions. */
+
   memberIsOwner: boolean;
   claimer: TicketClaimerConfig;
   ticketStatus: TicketStatus;
   alreadyClaimed: boolean;
-  /** Panel has no support role configured — Administrators only. */
+
   panelIsAdminOnly?: boolean;
 }
 
 export function decideClaimEligibility(input: ClaimContextInput): Decision {
-  // Checked first and unconditionally — a staff member who opened this
-  // ticket must not be able to claim (and credit) their own request, even as
-  // an administrator or the ticket's manager/support role holder.
   if (input.memberIsOwner) return { ok: false, reason: "IS_OWNER" };
 
-  // With no support role configured the panel is administrator-only: managers
-  // and the (non-existent) support role grant nothing.
   const eligibleRole = input.panelIsAdminOnly
     ? input.memberIsAdministrator
     : input.memberIsAdministrator ||
@@ -44,18 +39,17 @@ export function decideClaimEligibility(input: ClaimContextInput): Decision {
 }
 
 export interface TransferContextInput {
-  /** Panel flag — a panel with `transferable: false` never allows a handover. */
   transferable: boolean;
   ticketStatus: TicketStatus;
   ticketIsClaimed: boolean;
-  /** Only the current claimer (or an administrator) hands a ticket over. */
+
   actorIsClaimer: boolean;
   actorIsAdministrator: boolean;
   targetIsBot: boolean;
   targetIsCurrentClaimer: boolean;
-  /** The opener must never end up owning their own ticket as staff. */
+
   targetIsTicketOwner: boolean;
-  /** The receiver has to be real staff — a guild staff role or Administrator. */
+
   targetIsStaffOrAdministrator: boolean;
 }
 
@@ -76,8 +70,7 @@ export function decideTransferEligibility(input: TransferContextInput): Decision
 
 export interface ManageContextInput {
   memberIsAdministrator: boolean;
-  /** Whoever actually claimed the ticket — nobody else may manage it, not
-   * even the support role or a ticket manager, until they claim it first. */
+
   memberIsClaimer: boolean;
 }
 
@@ -90,7 +83,7 @@ export function protectedTicketPrincipals(
   panel: Pick<TicketPanelConfig, "supportRoleId">,
 ): Set<string> {
   const ids = new Set<string>([ticket.userId]);
-  // An unset support role is a placeholder id, not a principal to protect.
+
   if (!isUnsetId(panel.supportRoleId)) ids.add(panel.supportRoleId);
   if (ticket.claimedByDiscordId) ids.add(ticket.claimedByDiscordId);
   return ids;
@@ -130,7 +123,6 @@ export function canClaimTicket(
   });
 }
 
-/** A transfer target must be guild staff (any staff role) or an Administrator. */
 export async function memberCanReceiveTickets(member: GuildMember): Promise<boolean> {
   if (memberIsAdministrator(member)) return true;
   return staffPermissionService.isStaff(member);

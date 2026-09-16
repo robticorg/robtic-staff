@@ -24,7 +24,6 @@ export default definePrefixCommand({
     const result = await ticketService.closeTicket(ticket.ticketId, ctx.member.id, panel, ctx.guild);
     await ticketService.recordCompletionCredit(result.ticket).catch(() => undefined);
 
-    // The channel is gone once close deleted it — nothing left to reply into.
     if (!result.deleted) {
       await ctx.reply(
         result.transcriptId

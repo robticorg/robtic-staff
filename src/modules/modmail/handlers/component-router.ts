@@ -23,4 +23,3 @@ export async function routeModmailComponent(interaction: Interaction): Promise<b
   }
   return true;
 }
-

@@ -17,7 +17,6 @@ const log = logger.child("server-tag");
 const M = serverTagMessages;
 const BOT_ACTOR = "BOT";
 
-/** The shape we need off a discord.js `User` — keeps the logic unit-testable. */
 export interface PrimaryGuildLike {
   identityEnabled?: boolean | null;
   identityGuildId?: string | null;
@@ -28,18 +27,12 @@ export interface TagUserLike {
   primaryGuild?: PrimaryGuildLike | null;
 }
 
-/**
- * §Intro — the single source of truth. `primaryGuild.tag` is deliberately
- * unused: Server Tags are not globally unique, so only the guild id proves the
- * identity belongs to *this* server.
- */
 export function isUsingGuildTag(user: TagUserLike | null | undefined, guildId: GuildId): boolean {
   const pg = user?.primaryGuild;
   if (!pg) return false;
   return pg.identityEnabled === true && pg.identityGuildId === guildId;
 }
 
-/** Guild ids implicated by a tag change — old identity, new identity, or both. */
 export function affectedGuildIds(
   oldUser: TagUserLike | null | undefined,
   newUser: TagUserLike | null | undefined,
@@ -63,14 +56,6 @@ export type ServerTagOutcome =
   | "blocked";
 
 export class ServerTagService {
-  /**
-   * §4 — compare the two states and act only on a real edge.
-   *
-   * When the previous state is unknown (`oldUser` was a partial, or the cached
-   * user never carried `primary_guild`) we only ever report ENABLED. Acting on
-   * an unverified DISABLED would strip a staff member's roles on a spurious
-   * profile update, so the destructive edge requires proof.
-   */
   detectTagState(
     oldUser: TagUserLike | null | undefined,
     newUser: TagUserLike | null | undefined,
@@ -86,7 +71,6 @@ export class ServerTagService {
     return after ? TagTransition.ENABLED : TagTransition.DISABLED;
   }
 
-  /** §5 / §19 — grant the Tag Role, and lift an ACTIVE restriction if present. */
   async handleTagAdded(guild: Guild, userId: UserId): Promise<ServerTagOutcome> {
     const member = await guild.members.fetch(userId).catch(() => null);
     if (!member) {
@@ -115,7 +99,6 @@ export class ServerTagService {
     return outcome === "restored" ? "restored" : outcome;
   }
 
-  /** §6 / §18 — always drop the Tag Role; apply the Staff restriction only to staff. */
   async handleTagRemoved(guild: Guild, userId: UserId): Promise<ServerTagOutcome> {
     const member = await guild.members.fetch(userId).catch(() => null);
     if (!member) {
@@ -137,7 +120,6 @@ export class ServerTagService {
     return this.applyStaffRestriction(member, tagRoleId);
   }
 
-  /** Returns the tag role id when it was actually granted, else null. */
   async grantTagRole(member: GuildMember): Promise<string | null> {
     const tagRoleId = await roleSnapshotService.getTagRoleId(member.guild.id);
     if (!tagRoleId) return null;
@@ -158,7 +140,6 @@ export class ServerTagService {
     return added ? tagRoleId : null;
   }
 
-  /** Returns the tag role id when it was actually removed, else null. */
   async removeTagRole(member: GuildMember): Promise<string | null> {
     const tagRoleId = await roleSnapshotService.getTagRoleId(member.guild.id);
     if (!tagRoleId) return null;
@@ -170,10 +151,6 @@ export class ServerTagService {
     return removed ? tagRoleId : null;
   }
 
-  /**
-   * §6, §7, §8, §9, §14 — snapshot, persist, strip, DM. Explicitly *not* a
-   * Staff fire: no history event, no blacklist, no points, no status change.
-   */
   private async applyStaffRestriction(
     member: GuildMember,
     tagRoleId: string | null,
@@ -207,7 +184,6 @@ export class ServerTagService {
       savedRoleIds: snapshot,
     });
 
-    // §20: a concurrent event already took the snapshot — do not take a second.
     if (created.outcome === "already-active") {
       log.debug(`restriction already active for ${member.id} in ${guildId}`);
       return "already";
@@ -243,11 +219,6 @@ export class ServerTagService {
     return "restricted";
   }
 
-  /**
-   * §10 / §11 — shared close path for both "tag came back" and "3 days are up".
-   * The status flip is claimed atomically first, so duplicate events cannot
-   * restore twice.
-   */
   async restoreRestriction(
     member: GuildMember,
     restriction: StaffTagRestrictionDocument,
@@ -256,7 +227,6 @@ export class ServerTagService {
   ): Promise<ServerTagOutcome> {
     const guildId = restriction.guildId;
 
-    // §12: a member fired or blacklisted mid-restriction does not get roles back.
     const lifecycle = await staffTagRestrictionService.canRestoreStaffRoles(
       guildId,
       restriction.staffId,
@@ -288,7 +258,7 @@ export class ServerTagService {
       reason,
       restoredBy: BOT_ACTOR,
     });
-    // §20: someone else already closed this restriction — do not restore twice.
+
     if (!claimed) return "already";
 
     const outcome = await roleSnapshotService.restoreStaffRoles(
@@ -329,10 +299,6 @@ export class ServerTagService {
     return "restored";
   }
 
-  /**
-   * §12 — called on rejoin. Reconciles the Tag Role and settles any restriction
-   * that is already due or already satisfied by an active tag.
-   */
   async reconcileMember(member: GuildMember, now: Date = new Date()): Promise<ServerTagOutcome> {
     const guildId = member.guild.id;
     const usingTag = isUsingGuildTag(member.user, guildId);
@@ -361,7 +327,6 @@ export class ServerTagService {
       );
     }
 
-    // Still restricted and still untagged — leave it running until it expires.
     return "noop";
   }
 }

@@ -18,7 +18,7 @@ export interface CreateRestrictionInput {
   guildId: GuildId;
   staffId: UserId;
   savedRoleIds: readonly RoleId[];
-  /** Defaults to `serverTagConfig.restrictionDurationMs`. */
+
   durationMs?: number;
   now?: Date;
 }
@@ -44,7 +44,6 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
     return this.findOne({ restrictionId });
   }
 
-  /** §19 — only an ACTIVE restriction may trigger an early restore. */
   getActiveRestriction(
     guildId: GuildId,
     staffId: UserId,
@@ -63,7 +62,6 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
     return this.count({ guildId, isActive: true });
   }
 
-  /** Every staff id with a running restriction — one query for a whole sweep. */
   async listActiveStaffIds(guildId: GuildId): Promise<Set<UserId>> {
     const rows = await StaffTagRestrictionModel.find({ guildId, isActive: true })
       .select({ staffId: 1 })
@@ -71,11 +69,6 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
     return new Set(rows.map((r) => r.staffId));
   }
 
-  /**
-   * §20 — the partial unique index is the arbiter. Two concurrent tag-remove
-   * events race here and exactly one wins; the loser reports `already-active`
-   * and must not take a second snapshot.
-   */
   async createRestriction(input: CreateRestrictionInput): Promise<CreateRestrictionResult> {
     const now = input.now ?? new Date();
     const durationMs = input.durationMs ?? serverTagConfig.restrictionDurationMs;
@@ -101,10 +94,6 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
     }
   }
 
-  /**
-   * Atomically claim an ACTIVE restriction so only one caller performs the
-   * Discord role writes. Returns null when someone else already closed it.
-   */
   async claimForClosure(input: CloseRestrictionInput): Promise<StaffTagRestrictionDocument | null> {
     const now = input.now ?? new Date();
     return StaffTagRestrictionModel.findOneAndUpdate(
@@ -142,11 +131,6 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
     ).exec();
   }
 
-  /**
-   * §12 — a restriction may only hand roles back if the Staff lifecycle still
-   * allows it. A member fired or blacklisted mid-restriction must not get
-   * their Staff roles back just because a timer elapsed.
-   */
   async canRestoreStaffRoles(
     guildId: GuildId,
     staffId: UserId,
@@ -155,8 +139,7 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
       .select({ status: 1 })
       .exec();
     if (!staff) return { allowed: true, status: null };
-    // A member who handed their position to someone else must never have their
-    // Staff roles restored by a tag restriction expiring afterwards.
+
     const blocked: string[] = [
       StaffStatus.FIRED,
       StaffStatus.BLACKLISTED,
@@ -165,7 +148,6 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
     return { allowed: !blocked.includes(staff.status), status: staff.status };
   }
 
-  /** Used when the tag role config disappears, or for operator cleanup. */
   async cancelRestriction(
     restriction: StaffTagRestrictionDocument,
     restoredBy: string,

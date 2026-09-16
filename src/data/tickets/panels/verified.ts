@@ -10,7 +10,7 @@ export const verifiedPanel: TicketPanelConfig = {
   supportRoleId: "1536248969611452476",
   categoryId: "1536249080924348447",
   logChannelId: "1536249123265581056",
-  
+
   questions: {
     enabled: false,
     items: [],

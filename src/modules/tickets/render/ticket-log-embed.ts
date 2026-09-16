@@ -108,7 +108,6 @@ export function buildTicketLogEmbed(
       break;
   }
 
-  // The add/remove logs need a real target to mean anything.
   if (
     (action === TicketLogAction.USER_ADDED || action === TicketLogAction.USER_REMOVED) &&
     !ctx.targetId

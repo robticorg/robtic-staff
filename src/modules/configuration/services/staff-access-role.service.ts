@@ -14,7 +14,7 @@ export const AccessRoleRejection = {
   UNMANAGEABLE: "UNMANAGEABLE",
   MISSING: "MISSING",
   ALREADY_CONFIGURED: "ALREADY_CONFIGURED",
-  /** The role already occupies another Staff configuration slot. */
+
   RESERVED: "RESERVED",
 } as const;
 export type AccessRoleRejection =
@@ -23,7 +23,7 @@ export type AccessRoleRejection =
 export interface RejectedRole {
   roleId: RoleId;
   reason: AccessRoleRejection;
-  /** The conflicting slot, when the reason is RESERVED. */
+
   conflict?: RoleConfigType;
 }
 
@@ -33,11 +33,6 @@ export interface AccessRoleUpdate {
   total: number;
 }
 
-/**
- * Owns the Access Role configuration: Staff-adjacent roles that grant access
- * but carry no hierarchy level. Kept deliberately separate from the numbered
- * ladder — nothing here ever writes a `level`.
- */
 export class StaffAccessRoleService {
   getAccessRoles(guildId: GuildId): Promise<RoleId[]> {
     return roleConfigService.getAccessRoleIds(guildId);
@@ -48,10 +43,6 @@ export class StaffAccessRoleService {
     return row?.type === RoleConfigType.ACCESS;
   }
 
-  /**
-   * Every role between two boundaries by Discord position, inclusive. Order of
-   * the two arguments does not matter — the lower position is the floor.
-   */
   resolveRoleRange(guild: Guild, fromRoleId: RoleId, toRoleId: RoleId): Role[] {
     const from = guild.roles.cache.get(fromRoleId);
     const to = guild.roles.cache.get(toRoleId);
@@ -68,11 +59,6 @@ export class StaffAccessRoleService {
       .sort((a, b) => a.position - b.position);
   }
 
-  /**
-   * Validates and persists. A role that already fills another Staff slot is
-   * refused rather than overwritten — RoleConfig is unique per (guild, role),
-   * so silently re-typing a ladder rung would delete it from the hierarchy.
-   */
   async addAccessRoles(guild: Guild, roles: readonly Role[]): Promise<AccessRoleUpdate> {
     const guildId = guild.id;
     const unique = new Map<RoleId, Role>();
@@ -120,15 +106,14 @@ export class StaffAccessRoleService {
         added.map((roleId) => ({
           updateOne: {
             filter: { guildId, roleId },
-            // No `level` is ever written — Access Roles hold no hierarchy rank.
+
             update: { $set: { type: RoleConfigType.ACCESS }, $unset: { level: "", boundary: "" } },
             upsert: true,
           },
         })) as never,
         { ordered: false },
       );
-      // Reuses the existing invalidation path, which also drops the hierarchy
-      // snapshot through its listener.
+
       await roleConfigService.touchGuild(guildId);
       log.info(`added ${added.length} access role(s) in ${guildId}`);
     }

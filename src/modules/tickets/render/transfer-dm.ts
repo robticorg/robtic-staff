@@ -15,7 +15,6 @@ export interface TransferDmInput {
   reason: string;
 }
 
-/** Plain text (no embed) plus one link button straight into the ticket channel. */
 export function buildTransferDm(input: TransferDmInput): BaseMessageOptions {
   return {
     content: M.dm.body(input.ticketId, input.reason),

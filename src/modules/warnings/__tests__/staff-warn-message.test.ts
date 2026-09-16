@@ -83,7 +83,7 @@ describe("Staff Warn channel message format", () => {
       evidence: [],
     });
     expect(message).toContain(`<@${USER}>`);
-    // The bare id must only ever appear inside the mention.
+
     expect(message.split(`<@${USER}>`).join("")).not.toContain(USER);
   });
 
@@ -138,7 +138,7 @@ describe("Staff Warn channel message format", () => {
     expect(message.length).toBeLessThanOrEqual(DISCORD_MESSAGE_LIMIT);
     expect(message.split("\n")).toHaveLength(4);
     expect(message).toContain("…");
-    // The first proof is always kept.
+
     expect(message).toContain(many[0] as string);
   });
 });

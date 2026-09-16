@@ -3,23 +3,12 @@ export const StaffStatus = {
   BREAK: "BREAK",
   FIRED: "FIRED",
   BLACKLISTED: "BLACKLISTED",
-  /**
-   * Handed their Staff position to someone else via `!transfer`. Deliberately
-   * not FIRED: the record keeps its history and statistics, it simply no longer
-   * represents an active staff member.
-   */
+
   TRANSFERRED: "TRANSFERRED",
 } as const;
 export type StaffStatus = (typeof StaffStatus)[keyof typeof StaffStatus];
 export const STAFF_STATUS_VALUES = Object.values(StaffStatus);
 
-/**
- * Staff Type — the flavour of staff a member was accepted as (MAX, DEV, …).
- *
- * Deliberately orthogonal to the hierarchy: a type never carries a level and
- * never influences one. New types are added here plus a row in
- * STAFF_TYPE_DEFINITIONS; nothing in the acceptance flow needs to change.
- */
 export const StaffType = {
   MAX: "MAX",
   DEV: "DEV",
@@ -39,7 +28,7 @@ export const StaffActivityType = {
   DEMOTE: "DEMOTE",
   ACCEPT: "ACCEPT",
   FIRE: "FIRE",
-  /** Staff position handed over — recorded on both sides of the transfer. */
+
   TRANSFER: "TRANSFER",
   PUNISHMENT_REQUEST: "PUNISHMENT_REQUEST",
   PUNISHMENT_APPROVED: "PUNISHMENT_APPROVED",
@@ -84,7 +73,7 @@ export const StaffHistoryAction = {
   DEMOTE: "DEMOTE",
   FIRE: "FIRE",
   BLACKLIST: "BLACKLIST",
-  /** Its own lifecycle event — never recorded as a fake ACCEPT/PROMOTE/FIRE. */
+
   TRANSFER: "TRANSFER",
   BREAK: "BREAK",
   RETURN_FROM_BREAK: "RETURN_FROM_BREAK",

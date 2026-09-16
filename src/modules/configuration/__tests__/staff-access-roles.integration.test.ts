@@ -34,7 +34,6 @@ const OTHER_GUILD = "access-itest-other";
 const MARKER = "r-staff-marker";
 const LADDER = ["r-l0", "r-l1", "r-l2", "r-l3"];
 
-/** Positions ascend: community(1) < A(2) < B(3) < C(4) < D(5) < top(6). */
 const POSITIONS: Record<string, number> = {
   "r-community": 1,
   "r-a": 2,
@@ -67,7 +66,7 @@ function makeGuild(id = GUILD, botPosition = 100) {
   for (const [roleId, position] of Object.entries(POSITIONS)) {
     cache.set(roleId, { id: roleId, position, managed: roleId === "r-managed" });
   }
-  cache.set(id, { id, position: 0, managed: false }); // @everyone
+  cache.set(id, { id, position: 0, managed: false });
   return {
     id,
     roles: { cache },
@@ -111,8 +110,6 @@ describe.skipIf(!hasDb)("Staff Access Roles", () => {
     await RoleConfigModel.deleteMany({ guildId: OTHER_GUILD });
   });
 
-  // ── Configuration ─────────────────────────────────────────────────────────
-
   it("adds a single role without giving it a level", async () => {
     const result = await access.addAccessRole(guild as never, role(guild, "r-a"));
 
@@ -154,10 +151,8 @@ describe.skipIf(!hasDb)("Staff Access Roles", () => {
     expect(await roleConfigService.getGeneralStaffRoleId(GUILD)).toBe(MARKER);
   });
 
-  // ── Validation ────────────────────────────────────────────────────────────
-
   it("refuses @everyone, managed roles and roles above the bot", async () => {
-    const lowBot = makeGuild(GUILD, 3); // bot sits below r-c/r-d
+    const lowBot = makeGuild(GUILD, 3);
     const result = await access.addAccessRoles(lowBot as never, [
       role(lowBot, GUILD),
       role(lowBot, "r-managed"),
@@ -181,10 +176,6 @@ describe.skipIf(!hasDb)("Staff Access Roles", () => {
     expect(await RoleConfigModel.countDocuments({ guildId: GUILD, roleId: "r-a" })).toBe(1);
   });
 
-  /**
-   * Critical: RoleConfig is unique per (guild, role). Re-typing a ladder rung
-   * as ACCESS would delete it from the hierarchy, so it must be refused.
-   */
   it("refuses a role that already fills another Staff slot", async () => {
     const result = await access.addAccessRoles(guild as never, [
       role(guild, "r-l1"),
@@ -196,13 +187,11 @@ describe.skipIf(!hasDb)("Staff Access Roles", () => {
       AccessRoleRejection.RESERVED,
       AccessRoleRejection.RESERVED,
     ]);
-    // The ladder survived untouched.
+
     const levels = await roleConfigService.getStaffRoleLevels(GUILD);
     expect(levels.map((r) => r.level)).toEqual([0, 1, 2, 3]);
     expect((await roleConfigService.get(GUILD, "r-l1"))!.type).toBe(RoleConfigType.STAFF);
   });
-
-  // ── Detection helpers ─────────────────────────────────────────────────────
 
   it("exposes access roles through the hierarchy service", async () => {
     await access.addAccessRoleRange(guild as never, "r-a", "r-b");
@@ -221,7 +210,6 @@ describe.skipIf(!hasDb)("Staff Access Roles", () => {
     await access.addAccessRoleRange(guild as never, "r-a", "r-d");
     const hierarchy = await getHierarchy(GUILD);
 
-    // Staff + level 3 + four access roles is still level 3.
     const held = [MARKER, "r-l3", "r-a", "r-b", "r-c", "r-d"];
     expect(highestLevelFromRoleIds(hierarchy, held)).toBe(3);
   });
@@ -238,7 +226,7 @@ describe.skipIf(!hasDb)("Staff Access Roles", () => {
     expect(await getAccessRoles(GUILD)).toEqual([]);
 
     await access.addAccessRole(guild as never, role(guild, "r-a"));
-    // No manual invalidation here — the service must have done it.
+
     expect(await getAccessRoles(GUILD)).toEqual(["r-a"]);
 
     await access.removeAccessRole(GUILD, "r-a");
@@ -254,8 +242,6 @@ describe.skipIf(!hasDb)("Staff Access Roles", () => {
     expect((await roleConfigService.getStaffRoleLevels(GUILD)).length).toBe(4);
   });
 
-  // ── Snapshot ──────────────────────────────────────────────────────────────
-
   it("captures staff and access roles into separate lists", async () => {
     await access.addAccessRoleRange(guild as never, "r-a", "r-d");
     const member = memberWith(guild, [MARKER, "r-l0", "r-l1", "r-a", "r-c", "r-community"]);
@@ -265,7 +251,7 @@ describe.skipIf(!hasDb)("Staff Access Roles", () => {
     expect(snapshot.staffRoleIds.sort()).toEqual([MARKER, "r-l0", "r-l1"].sort());
     expect(snapshot.accessRoleIds.sort()).toEqual(["r-a", "r-c"]);
     expect(snapshot.currentRoleLevel).toBe(1);
-    // Unrelated roles are never captured.
+
     expect(snapshot.staffRoleIds).not.toContain("r-community");
     expect(snapshot.accessRoleIds).not.toContain("r-community");
   });
@@ -276,7 +262,6 @@ describe.skipIf(!hasDb)("Staff Access Roles", () => {
 
     const snapshot = await captureStaffRoleSnapshot(member, GUILD);
 
-    // Configured: a, b, c, d — held: only b.
     expect(snapshot.accessRoleIds).toEqual(["r-b"]);
   });
 });

@@ -10,7 +10,7 @@ export interface AddFaqInput {
   question: string;
   answer: string;
   createdBy: UserId;
-  /** Omit or leave empty to show this FAQ on every ticket panel. */
+
   panelIds?: string[];
 }
 
@@ -32,7 +32,6 @@ export class FaqService extends BaseRepository<Faq> {
     });
   }
 
-  /** With `panelId`, only FAQs scoped to it (or scoped to nothing — every panel) come back. */
   async list(guildId: GuildId, panelId?: string): Promise<HydratedDocument<Faq>[]> {
     const all = await this.model.find({ guildId }).sort({ createdAt: 1 }).exec();
     if (!panelId) return all;
@@ -60,7 +59,6 @@ export class FaqService extends BaseRepository<Faq> {
     return matched.slice(0, limits.faqAutocompleteResults);
   }
 
-  /** Sets this FAQ to show on exactly one panel, or on every panel when `panelId` is omitted. */
   async assignPanel(
     guildId: GuildId,
     faqId: string,

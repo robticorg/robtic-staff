@@ -8,10 +8,6 @@ export const staffMessages = {
     ticketClaimReason: (ticketId: string) => `استلام التكت ${ticketId}`,
   },
 
-  /**
-   * Denial copy for the central Staff management authorization service.
-   * Every string is keyed by a DenyReason so the service never formats text.
-   */
   authorization: {
     NOT_A_MANAGER: `${E.error} ما عندك صلاحية تستخدم أوامر إدارة الستاف.`,
     NOT_A_MANAGER_DEMOTE: `${E.error} ما عندك صلاحية تستخدم أمر الديموت.`,
@@ -39,7 +35,6 @@ export const staffMessages = {
     TRANSFER_SAME_MEMBER: `${E.error} ما تقدر تحوّل عضوية الستاف لنفس العضو.`,
   },
 
-  /** `!come` — summon a member to where the command was typed. */
   come: {
     usage: `${E.warning} الطريقة: \`!come @العضو السبب\``,
     reasonRequired: `${E.error} لازم تكتب سبب النداء.`,
@@ -56,10 +51,6 @@ export const staffMessages = {
     },
   },
 
-  /**
-   * `!transfer` copy. Keyed by TransferProblem so the transfer service never
-   * formats text, exactly like the authorization block above.
-   */
   transfer: {
     usage: `${E.warning} الطريقة: \`!transfer @من @إلى\``,
     roleWriteFailed: `${E.error} فشلت عملية الرتب — تم التراجع عن التحويل وما تغيّر شيء في قاعدة البيانات.`,

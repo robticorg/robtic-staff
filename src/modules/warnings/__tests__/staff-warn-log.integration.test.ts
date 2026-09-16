@@ -138,7 +138,6 @@ async function cleanup(): Promise<void> {
   ]);
 }
 
-/** Issues `count` verbal warnings, each with its own reason and proof. */
 async function issueVerbals(
   guild: ReturnType<typeof makeGuild>,
   target: ReturnType<typeof makeMember>,
@@ -225,7 +224,6 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
     expect(escalation).toBeDefined();
     expect(escalation!.level).toBe(1);
 
-    // 3 verbal announcements + 1 real announcement.
     expect(sent).toHaveLength(4);
     const lines = sent.at(-1)!.content.split("\n");
     expect(lines).toHaveLength(4);
@@ -292,7 +290,7 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
 
     const verbalMsg = sent[0]!;
     expect(verbalMsg.allowedMentions).toEqual({ users: [target.id] });
-    // The text is preserved verbatim; only the mention policy neutralises it.
+
     expect(verbalMsg.content).toContain("@everyone انتبهوا");
   });
 
@@ -367,7 +365,7 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
     });
 
     expect(result.outcome).toBe("not-real");
-    // send() must refuse the verbal warning outright — no extra message.
+
     expect(sent).toHaveLength(sentBefore);
   });
 
@@ -389,7 +387,6 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
       reason: "استئناف مقبول",
     });
 
-    // No new message posted by the revoke.
     expect(sent).toHaveLength(4);
     const after = await StaffWarningModel.findById(real!._id).exec();
     expect(after!.status).toBe(WarningStatus.REMOVED);
@@ -409,7 +406,7 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
     });
 
     expect(again.outcome).toBe("sent");
-    // No second warning row was created for the log.
+
     expect(
       await StaffWarningModel.countDocuments({ guildId: GUILD, type: StaffWarningType.REAL }),
     ).toBe(1);

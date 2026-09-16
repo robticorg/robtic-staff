@@ -14,7 +14,6 @@ export interface StaffTagRestriction extends Timestamps {
   guildId: GuildId;
   staffId: UserId;
 
-  /** Exact role ids held at capture time — the only source for restoration. */
   savedRoleIds: RoleId[];
 
   startedAt: Date;
@@ -22,19 +21,14 @@ export interface StaffTagRestriction extends Timestamps {
 
   status: StaffTagRestrictionStatus;
 
-  /**
-   * Mirrors `status === ACTIVE`. Kept as a separate field so a partial unique
-   * index can enforce one live restriction per guild+staff.
-   */
   isActive: boolean;
 
   restoredAt?: Date;
   restoredBy?: string;
   restorationReason?: StaffTagRestorationReason;
 
-  /** False when the restriction closed without the roles actually going back. */
   rolesRestored?: boolean;
-  /** Saved roles that no longer existed at restore time. */
+
   missingRoleIds?: RoleId[];
 
   metadata?: Record<string, unknown>;
@@ -77,8 +71,6 @@ const staffTagRestrictionSchema = new Schema<StaffTagRestriction>(
 staffTagRestrictionSchema.index({ guildId: 1, staffId: 1, createdAt: -1 });
 staffTagRestrictionSchema.index({ isActive: 1, expiresAt: 1 });
 
-// §20: exactly one ACTIVE restriction per guild + staff member. Duplicate
-// tag-remove events collide here instead of creating a second snapshot.
 staffTagRestrictionSchema.index(
   { guildId: 1, staffId: 1 },
   {

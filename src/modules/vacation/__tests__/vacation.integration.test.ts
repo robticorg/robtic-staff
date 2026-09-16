@@ -155,7 +155,7 @@ describe.skipIf(!hasDb)("Vacation system (MongoDB + Discord fakes)", () => {
   afterAll(async () => {
     await cleanup();
     await RoleConfigModel.deleteMany({ guildId: GUILD });
-    await ChannelConfigModel.deleteMany({ guildId: GUILD });
+    await ChannelConfigModel.deleteMany({ guildId: GUILD });
   });
 
   beforeEach(async () => {

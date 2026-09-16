@@ -42,8 +42,6 @@ export async function runCreateTicket(
 
     const faqEntries = panel.faq.enabled ? await faqService.list(member.guild.id, panel.id) : [];
 
-    // Admin-only panels have no support role configured — isUnsetId guards
-    // against pinging the placeholder id.
     const pingSupportRole = !panelIsAdminOnly(panel) && !isUnsetId(panel.supportRoleId);
     await channel
       .send({

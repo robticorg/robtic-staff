@@ -8,10 +8,6 @@ import { resolveTicketContext } from "../_shared/guards.ts";
 
 const M = ticketMessages.sleep;
 
-/**
- * `!sleep [duration]` — mark the ticket as waiting on its opener. All the rules
- * (who may, what it does, when it closes) live in TicketSleepService.
- */
 export default definePrefixCommand({
   name: "sleep",
   category: "ticket",
@@ -33,7 +29,6 @@ export default definePrefixCommand({
 
     await ctx.reply(lines.join("\n"));
 
-    // Visible in the channel too, so the opener sees it even with DMs closed.
     await ctx.channel
       .send({
         content: M.channelNote(ticket.userId, result.duration),

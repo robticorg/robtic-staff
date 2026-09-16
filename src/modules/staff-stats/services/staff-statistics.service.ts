@@ -78,7 +78,6 @@ export interface LeaderboardEntry {
 }
 
 export class StaffStatisticsService {
-
   async getStaffStats(input: {
     guildId: GuildId;
     staffId: UserId;

@@ -37,8 +37,7 @@ export default definePrefixCommand({
         isStaffManager: await staffPermissionService.isStaffManager(ctx.member),
         reason,
       });
-      // The id could name a staff warning even from the member-warns channel —
-      // reply with the kind that was actually removed, not the channel's kind.
+
       const reply =
         result.kind === "STAFF_VERBAL"
           ? M.unwarnedVerbal(mention)
@@ -49,8 +48,6 @@ export default definePrefixCommand({
       return;
     }
 
-    // STAFF channel — manager-only, no warning id: removes the highest active
-    // REAL warning (the one carrying the current warn role), in order.
     if (!(await staffPermissionService.isStaffManager(ctx.member))) {
       throw new PrefixAbort(M.staffWarnManagerOnly);
     }

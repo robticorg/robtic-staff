@@ -18,11 +18,6 @@ export type TagExpiryOutcome =
   | "member-absent"
   | "guild-absent";
 
-/**
- * §11 / §26 — MongoDB is the source of truth, so a restart simply re-reads the
- * ACTIVE rows. `start()` sweeps immediately, which *is* the startup recovery:
- * anything that expired while the process was down is settled on boot.
- */
 export class ServerTagExpirationService {
   private timer: ReturnType<typeof setInterval> | null = null;
   private running = false;
@@ -57,9 +52,6 @@ export class ServerTagExpirationService {
     return tally;
   }
 
-  /**
-   * §11 — restoration after the window does NOT require the tag to come back.
-   */
   async expireRestriction(
     restriction: StaffTagRestrictionDocument,
   ): Promise<TagExpiryOutcome> {
@@ -73,8 +65,6 @@ export class ServerTagExpirationService {
 
     const member = await guild.members.fetch(restriction.staffId).catch(() => null);
     if (!member) {
-      // §12 — the member left. Keep the restriction so a rejoin can settle it;
-      // never delete it and never close it without handing the roles back.
       log.debug(
         `restriction ${restriction.restrictionId} due but ${restriction.staffId} is not in the guild`,
       );

@@ -128,8 +128,6 @@ async function handleReset(interaction: ChatInputCommandInteraction): Promise<vo
     return;
   }
 
-  // No member given — reset every staff record in the guild. Can outlive the
-  // 3s ack window on a large roster, so defer first.
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const summary = await staffPointService.resetAllForGuild(guild.id, interaction.user.id);
   await replySuccess(interaction, M.resetAll(summary.resetCount, summary.totalStaff));

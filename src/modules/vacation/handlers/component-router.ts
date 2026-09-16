@@ -38,4 +38,3 @@ export async function routeVacationComponent(interaction: Interaction): Promise<
   }
   return true;
 }
-

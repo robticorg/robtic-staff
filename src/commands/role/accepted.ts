@@ -21,10 +21,6 @@ function describe(err: AcceptedRoleError): string {
   return M.problems[err.problem];
 }
 
-/**
- * §Command — validates nothing beyond option presence; every business rule
- * lives in StaffAcceptedRoleService.
- */
 export async function handleAccepted(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = requireGuild(interaction);
 

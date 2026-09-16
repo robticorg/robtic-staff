@@ -29,20 +29,18 @@ export function getHighestStaffLevel(
   return roleConfigService.getHighestStaffLevel(guildId, roleIds);
 }
 
-// ── Hierarchy snapshot ──────────────────────────────────────────────────────
-
 export interface StaffHierarchy {
   guildId: GuildId;
-  /** Numbered ladder, ascending. Ignored roles are never present here. */
+
   levels: StaffRoleLevel[];
   levelByRoleId: Map<RoleId, number>;
   ignoredRoleIds: Set<RoleId>;
-  /** Staff-adjacent roles with no level — never used in level maths. */
+
   accessRoleIds: Set<RoleId>;
   generalStaffRoleId: RoleId | null;
   startLevel: number | null;
   endLevel: number | null;
-  /** First level of each configured tier. Absent tiers are null. */
+
   boundaryLevels: Record<StaffTierType, number | null>;
   boundaryRoleIds: Record<StaffTierType, RoleId | null>;
 }
@@ -64,8 +62,6 @@ export interface HierarchyIssue {
 
 const hierarchyCache = new TtlCache<StaffHierarchy>({ defaultTtlMs: CONFIG_CACHE_TTL_MS });
 
-// §20 — any role-config write (ladder rebuild, ignore, boundary, START/END)
-// funnels through invalidateRoleConfig, so the snapshot drops with it.
 onRoleConfigInvalidated((guildId) => hierarchyCache.delete(guildId));
 
 export function invalidateStaffHierarchy(guildId: GuildId): void {
@@ -107,7 +103,6 @@ async function loadHierarchy(guildId: GuildId): Promise<StaffHierarchy> {
     boundaryLevels[tier] = levelByRoleId.get(row.roleId) ?? null;
   }
 
-  // STAFF is the implicit floor — it opens at the START role.
   const startLevel = startRow ? (levelByRoleId.get(startRow.roleId) ?? null) : null;
   boundaryLevels[StaffTier.STAFF] = startLevel;
   boundaryRoleIds[StaffTier.STAFF] = startRow?.roleId ?? null;
@@ -126,13 +121,11 @@ async function loadHierarchy(guildId: GuildId): Promise<StaffHierarchy> {
   };
 }
 
-/** §20 — loaded once per guild and reused for every member of a scan. */
 export async function getHierarchy(guildId: GuildId): Promise<StaffHierarchy> {
   if (!CACHE_ENABLED) return loadHierarchy(guildId);
   return hierarchyCache.getOrSet(guildId, () => loadHierarchy(guildId));
 }
 
-/** §19 — everything that would make a calculated level untrustworthy. */
 export function validateHierarchy(hierarchy: StaffHierarchy): HierarchyIssue[] {
   const issues: HierarchyIssue[] = [];
 
@@ -150,8 +143,6 @@ export function validateHierarchy(hierarchy: StaffHierarchy): HierarchyIssue[] {
 
     const level = hierarchy.boundaryLevels[tier];
     if (level === null) {
-      // Configured, but the role is no longer a numbered rung (deleted or
-      // dropped from the ladder) — calculating tiers from it would be wrong.
       issues.push({ problem: HierarchyProblem.BOUNDARY_NOT_ON_LADDER, tier, roleId });
       continue;
     }
@@ -165,10 +156,6 @@ export function validateHierarchy(hierarchy: StaffHierarchy): HierarchyIssue[] {
   return issues;
 }
 
-/**
- * The tier a numbered level falls into. Ranges are never hard-coded: a level
- * belongs to the highest tier whose boundary it has reached.
- */
 export function getTierForLevel(hierarchy: StaffHierarchy, level: number): StaffTierType {
   for (let i = STAFF_TIER_BOUNDARIES.length - 1; i >= 0; i -= 1) {
     const tier = STAFF_TIER_BOUNDARIES[i] as StaffTierType;
@@ -189,16 +176,14 @@ export interface RoleTierInfo {
   kind: RoleKind;
   level: number | null;
   tier: StaffTierType | null;
-  /** Set when this exact role opens a tier. */
+
   opensTier: StaffTierType | null;
   isStart: boolean;
   isEnd: boolean;
 }
 
-/** §18 — the one calculation `/role check` and `/scan` both go through. */
 export function getTierForRole(hierarchy: StaffHierarchy, roleId: RoleId): RoleTierInfo {
   if (hierarchy.ignoredRoleIds.has(roleId)) {
-    // §3 / §15 — an ignored role never consumes a level and never has a tier.
     return {
       kind: RoleKind.IGNORED,
       level: null,
@@ -236,10 +221,6 @@ export function getTierForRole(hierarchy: StaffHierarchy, roleId: RoleId): RoleT
   };
 }
 
-/**
- * Highest numbered level among the given roles, computed from an already
- * loaded snapshot. §11 — no database round-trip per member.
- */
 export function highestLevelFromRoleIds(
   hierarchy: StaffHierarchy,
   roleIds: Iterable<RoleId>,
@@ -254,18 +235,10 @@ export function highestLevelFromRoleIds(
   return highest;
 }
 
-/** Every numbered ladder rung, ascending. Ignored roles are never included. */
 export function getNumberedStaffRoles(guildId: GuildId): Promise<StaffRoleLevel[]> {
   return getHierarchy(guildId).then((h) => h.levels.map((r) => ({ ...r })));
 }
 
-/**
- * The numbered level a tier opens at, or null when its boundary role is not
- * configured (or no longer sits on the ladder).
- *
- * This is what turns `!accept @user ship` into a level: the tier never carries
- * one of its own, it is read from the configured boundary role.
- */
 export async function getLevelForTier(
   guildId: GuildId,
   tier: StaffTierType,
@@ -273,15 +246,11 @@ export async function getLevelForTier(
   return (await getHierarchy(guildId)).boundaryLevels[tier] ?? null;
 }
 
-/** The ladder role that sits at a given level, if any. */
 export function getRoleForLevel(hierarchy: StaffHierarchy, level: number): RoleId | null {
   for (const rung of hierarchy.levels) if (rung.level === level) return rung.roleId;
   return null;
 }
 
-// ── Access roles ────────────────────────────────────────────────────────────
-
-/** Configured Access Roles — Staff-related, never level-bearing. */
 export async function getAccessRoles(guildId: GuildId): Promise<RoleId[]> {
   return [...(await getHierarchy(guildId)).accessRoleIds];
 }
@@ -290,11 +259,6 @@ export async function isAccessRole(roleId: RoleId, guildId: GuildId): Promise<bo
   return (await getHierarchy(guildId)).accessRoleIds.has(roleId);
 }
 
-/**
- * True for anything owned by the Staff system: a numbered rung, the general
- * Staff marker, or an Access Role. Deliberately broader than "has a level" —
- * callers that need hierarchy rank must use `getStaffLevel` instead.
- */
 export async function isStaffRelatedRole(roleId: RoleId, guildId: GuildId): Promise<boolean> {
   const hierarchy = await getHierarchy(guildId);
   return (
@@ -304,7 +268,6 @@ export async function isStaffRelatedRole(roleId: RoleId, guildId: GuildId): Prom
   );
 }
 
-/** Access Roles the member currently holds, from an already loaded snapshot. */
 export function accessRolesFromRoleIds(
   hierarchy: StaffHierarchy,
   roleIds: Iterable<RoleId>,
@@ -314,10 +277,6 @@ export function accessRolesFromRoleIds(
   return out;
 }
 
-/**
- * The single source of truth for Staff hierarchy questions. Grouped as a
- * service object the same way `vacationDurationService` wraps its helpers.
- */
 export const staffHierarchyService = {
   getStaffRoleLevels,
   getStaffLevel,

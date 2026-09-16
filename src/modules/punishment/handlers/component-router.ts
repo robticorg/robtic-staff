@@ -49,4 +49,3 @@ export async function routePunishmentComponent(interaction: Interaction): Promis
   }
   return true;
 }
-

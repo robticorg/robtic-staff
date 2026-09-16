@@ -12,11 +12,10 @@ import { staffTagRestrictionService } from "./staff-tag-restriction.service.ts";
 const log = logger.child("server-tag:audit");
 
 export const TagAuditAction = {
-  /** Tag is on but the Tag Role is missing — grant it (and lift a restriction). */
   GRANT: "GRANT",
-  /** Tag is off — drop the Tag Role and, for staff, run the restriction path. */
+
   REVOKE: "REVOKE",
-  /** Tag and role are both correct, but a restriction is still running. */
+
   LIFT: "LIFT",
   NONE: "NONE",
 } as const;
@@ -25,26 +24,18 @@ export type TagAuditAction = (typeof TagAuditAction)[keyof typeof TagAuditAction
 export interface AuditMemberInput {
   usingTag: boolean;
   hasTagRole: boolean;
-  /** Guild staff (any configured staff role) — decides who the 3 days apply to. */
+
   isStaff: boolean;
   hasActiveRestriction: boolean;
 }
 
-/**
- * The whole point of the audit: decide from *state alone*, because no event is
- * available to tell us what changed. Anything already consistent returns NONE
- * so a sweep over a full guild neither writes roles nor floods the log channel.
- */
 export function decideAuditAction(input: AuditMemberInput): TagAuditAction {
   if (input.usingTag) {
     if (!input.hasTagRole) return TagAuditAction.GRANT;
-    // Role and tag agree — but the "tag came back" event can have been missed
-    // while the bot was down, leaving their staff roles stripped for nothing.
+
     return input.hasActiveRestriction ? TagAuditAction.LIFT : TagAuditAction.NONE;
   }
 
-  // No tag. Either they still hold the role, or they are staff who owe the
-  // restriction — a non-staff member without the role is simply not our business.
   if (input.hasTagRole) return TagAuditAction.REVOKE;
   if (input.isStaff && !input.hasActiveRestriction) return TagAuditAction.REVOKE;
   return TagAuditAction.NONE;
@@ -56,7 +47,7 @@ export interface AuditTally {
   revoked: number;
   lifted: number;
   unchanged: number;
-  /** Looked untagged in the cache, but a fresh fetch did not confirm it. */
+
   unverified: number;
   failed: number;
 }
@@ -73,12 +64,6 @@ function emptyTally(): AuditTally {
   };
 }
 
-/**
- * Reconciles the Tag Role against the *actual* Server Tag for every member of a
- * guild. Live `userUpdate` events remain the fast path — this is the catch-up
- * for everything they could not see: roles assigned by hand, tags toggled while
- * the process was down, members who joined before the role was configured.
- */
 export class ServerTagAuditService {
   private timer: ReturnType<typeof setInterval> | null = null;
   private running = false;
@@ -96,8 +81,6 @@ export class ServerTagAuditService {
       return tally;
     }
 
-    // Both resolved once per guild: the per-member checks below must stay
-    // synchronous, otherwise a large guild pays a round-trip per member.
     const [staffRoleIds, restricted] = await Promise.all([
       staffPermissionService.staffRoleIds(guild.id),
       staffTagRestrictionService.listActiveStaffIds(guild.id),
@@ -152,13 +135,6 @@ export class ServerTagAuditService {
     return tally;
   }
 
-  /**
-   * The destructive half needs proof, exactly like `detectTagState` refuses to
-   * act on an unverified DISABLED. A cached user whose payload never carried
-   * `primary_guild` is indistinguishable from one who really has no tag — both
-   * read as `primaryGuild: null` — so a forced fetch re-asks the API before any
-   * staff member loses roles. No answer means no action.
-   */
   private async confirmUntagged(member: GuildMember): Promise<boolean> {
     const fresh = await member.client.users.fetch(member.id, { force: true }).catch(() => null);
     if (!fresh) {
@@ -172,11 +148,6 @@ export class ServerTagAuditService {
     return true;
   }
 
-  /**
-   * GRANT and LIFT are the same entry point: `handleTagAdded` grants the role
-   * when it is missing and closes an ACTIVE restriction when one exists, and it
-   * only writes the "tag enabled" log line when there was no restriction.
-   */
   private apply(guild: Guild, userId: string, action: TagAuditAction): Promise<unknown> {
     return action === TagAuditAction.REVOKE
       ? serverTagService.handleTagRemoved(guild, userId)
@@ -208,7 +179,6 @@ export class ServerTagAuditService {
     return total;
   }
 
-  /** Called once the gateway is ready — the boot-time catch-up. */
   start(): void {
     void this.tick();
     if (serverTagConfig.auditIntervalMs <= 0 || this.timer) return;
@@ -225,7 +195,6 @@ export class ServerTagAuditService {
   }
 
   private async tick(): Promise<void> {
-    // A sweep can outlive its own interval on a big guild — never overlap two.
     if (this.running) return;
     this.running = true;
     try {

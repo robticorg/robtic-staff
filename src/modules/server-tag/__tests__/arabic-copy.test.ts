@@ -19,7 +19,7 @@ describe("Arabic pluralisation", () => {
     expect(formatArabicDays(2)).toBe("يومين");
     expect(formatArabicDays(3)).toBe("3 أيام");
     expect(formatArabicDays(10)).toBe("10 أيام");
-    // 11+ reverts to the singular noun in Arabic.
+
     expect(formatArabicDays(11)).toBe("11 يوم");
   });
 
@@ -37,7 +37,7 @@ describe("Arabic pluralisation", () => {
     expect(formatArabicDuration(DAY)).toBe("يوم");
     expect(formatArabicDuration(2 * 3_600_000)).toBe("ساعتين");
     expect(formatArabicDuration(60_000)).toBe("دقيقة");
-    // Never renders a bare "0".
+
     expect(formatArabicDuration(0)).toBe("دقيقة");
   });
 });
@@ -46,7 +46,6 @@ describe("Arabic copy hygiene", () => {
   const collect = (value: unknown, out: string[] = []): string[] => {
     if (typeof value === "string") out.push(value);
     else if (typeof value === "function") {
-      // Message builders are exercised through the render tests below.
     } else if (value && typeof value === "object") {
       for (const v of Object.values(value)) collect(v, out);
     }
@@ -55,9 +54,7 @@ describe("Arabic copy hygiene", () => {
 
   it("contains no leftover English prose in user-facing strings", () => {
     const strings = collect(M);
-    // Latin is allowed in three places and nowhere else: code spans
-    // (`/role tag @role`), bold Discord permission names (**Manage Roles**),
-    // and the brand name itself.
+
     const offenders = strings.filter((s) => {
       const withoutCode = s
         .replace(/`[^`]*`/g, "")
@@ -101,7 +98,7 @@ describe("log card rendering", () => {
 
     const lines = card.split("\n");
     expect(lines[0]).toBe(M.log.headings.restricted);
-    // Every body line follows the house `**label:** value` shape.
+
     for (const line of lines.slice(1)) expect(line).toMatch(/^\*\*[^*]+:\*\* /);
 
     expect(card).toContain(`<@${USER}> (\`${USER}\`)`);

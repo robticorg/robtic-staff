@@ -18,10 +18,6 @@ const PROBLEM_MESSAGES: Record<LadderProblem, string> = {
   [LadderProblem.END_BELOW_START]: configMessages.role.endBelowStart,
 };
 
-/**
- * Command-facing wrapper: the range itself is derived by `orderLadderRoles`, so
- * `/role start|end` and the automatic role-event sync can never disagree.
- */
 export function buildStaffLadder(input: LadderInput): RoleId[] {
   const result = orderLadderRoles({
     roles: input.guild.roles.cache.values(),

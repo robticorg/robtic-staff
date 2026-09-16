@@ -1,10 +1,9 @@
 import type { RoleId } from "../../../shared/types/index.ts";
 
-/** The only role facts the ladder range cares about. */
 export interface LadderRoleLike {
   id: RoleId;
   position: number;
-  /** Integration-managed roles (bots, boosts) can never be a rung. */
+
   managed?: boolean;
 }
 
@@ -23,18 +22,12 @@ export interface LadderOrderInput {
   roles: Iterable<LadderRoleLike>;
   startRoleId: RoleId;
   endRoleId: RoleId;
-  /** @everyone — never a rung, and its position collides with the range floor. */
+
   everyoneRoleId?: RoleId;
-  /** Ignored / access / slot roles: inside the range but off the ladder. */
+
   excludedRoleIds?: Iterable<RoleId>;
 }
 
-/**
- * The ladder *is* the Discord role order between START and END — it is derived,
- * never typed in. Anything sitting in that band belongs to the ladder unless it
- * is explicitly excluded, so a role created or dragged into the band joins the
- * calculation and one dragged out of it leaves.
- */
 export function orderLadderRoles(input: LadderOrderInput): LadderOrderResult {
   const roles = [...input.roles];
   const start = roles.find((r) => r.id === input.startRoleId);
@@ -47,8 +40,6 @@ export function orderLadderRoles(input: LadderOrderInput): LadderOrderResult {
     return { ok: false, problem: LadderProblem.END_BELOW_START };
   }
 
-  // START and END are rungs by definition — being configured as something else
-  // must not drop them out of their own range.
   const excluded = new Set<RoleId>(input.excludedRoleIds ?? []);
   excluded.delete(start.id);
   excluded.delete(end.id);

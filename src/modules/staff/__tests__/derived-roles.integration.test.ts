@@ -36,7 +36,7 @@ try {
 
 const GUILD = "derived-itest-guild";
 const MARKER = "d-staff";
-/** Helper(0) Moderator(1) Admin(2) HeadAdmin(3) — the spec's example ladder. */
+
 const LADDER = ["d-l0", "d-l1", "d-l2", "d-l3"];
 const ACCEPTED = "d-accepted";
 const COMMUNITY = "d-community";
@@ -143,8 +143,6 @@ describe.skipIf(!hasDb)("Accepted Role and Staff Role Assignments", () => {
     ]);
   });
 
-  // ── Configuration ─────────────────────────────────────────────────────────
-
   it("stores an accepted role with no level and no ladder impact", async () => {
     await accepted.configure({ guild: guild as never, role: role(guild, ACCEPTED) });
 
@@ -196,11 +194,9 @@ describe.skipIf(!hasDb)("Accepted Role and Staff Role Assignments", () => {
         toRole: role(guild, "d-l0"),
       }),
     ).toBe(AcceptedRoleProblem.RANGE_INVERTED);
-    // Would overwrite a ladder rung's config row.
+
     expect(await attempt({ role: role(guild, "d-l1") })).toBe(AcceptedRoleProblem.RESERVED);
   });
-
-  // ── The spec's multi-assignment example ───────────────────────────────────
 
   it("resolves the spec's multi-assignment table exactly", async () => {
     await assign.configureAssignment({
@@ -239,8 +235,6 @@ describe.skipIf(!hasDb)("Accepted Role and Staff Role Assignments", () => {
     }
   });
 
-  // ── Centralized plan ──────────────────────────────────────────────────────
-
   it("plans hierarchy, assignments and the accepted role together", async () => {
     await accepted.configure({
       guild: guild as never,
@@ -263,8 +257,6 @@ describe.skipIf(!hasDb)("Accepted Role and Staff Role Assignments", () => {
     expect(atThree.add).toContain(SENIOR);
     expect(atThree.remove).toContain(ACCEPTED);
   });
-
-  // ── Accept ────────────────────────────────────────────────────────────────
 
   it("grants the accepted role and applicable assignments on accept", async () => {
     await accepted.configure({ guild: guild as never, role: role(guild, ACCEPTED) });
@@ -312,8 +304,6 @@ describe.skipIf(!hasDb)("Accepted Role and Staff Role Assignments", () => {
     expect(member.roles.cache.has(ACCEPTED)).toBe(false);
     expect(member.roles.cache.has("d-l3")).toBe(true);
   });
-
-  // ── Promote / demote ──────────────────────────────────────────────────────
 
   it("adds an assignment when promotion enters its window", async () => {
     await assign.configureAssignment({
@@ -384,8 +374,6 @@ describe.skipIf(!hasDb)("Accepted Role and Staff Role Assignments", () => {
     expect(snapshot.currentRoleLevel).toBe(2);
   });
 
-  // ── Fire ──────────────────────────────────────────────────────────────────
-
   it("removes derived roles on fire but keeps unrelated roles", async () => {
     await accepted.configure({ guild: guild as never, role: role(guild, ACCEPTED) });
     await assign.configureAssignment({ guild: guild as never, role: role(guild, COMMUNITY) });
@@ -402,8 +390,6 @@ describe.skipIf(!hasDb)("Accepted Role and Staff Role Assignments", () => {
     expect(member.roles.cache.has(BLACKLIST)).toBe(false);
   });
 
-  // ── Snapshot ──────────────────────────────────────────────────────────────
-
   it("captures assignment and accepted roles in their own snapshot lists", async () => {
     await accepted.configure({ guild: guild as never, role: role(guild, ACCEPTED) });
     await assign.configureAssignment({ guild: guild as never, role: role(guild, COMMUNITY) });
@@ -419,8 +405,6 @@ describe.skipIf(!hasDb)("Accepted Role and Staff Role Assignments", () => {
     expect(snapshot.assignedRoleIds).toEqual([COMMUNITY]);
     expect(snapshot.currentRoleLevel).toBe(1);
   });
-
-  // ── Cache ─────────────────────────────────────────────────────────────────
 
   it("reflects a changed assignment window immediately", async () => {
     await assign.configureAssignment({

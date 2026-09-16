@@ -41,4 +41,3 @@ export async function routeAppealComponent(interaction: Interaction): Promise<bo
   }
   return true;
 }
-

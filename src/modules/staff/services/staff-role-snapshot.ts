@@ -13,29 +13,15 @@ import { staffTypeService } from "./staff-type.service.ts";
 
 const log = logger.child("staff:snapshot");
 
-/**
- * The exact Staff-related roles a member held at a point in time. Used by every
- * temporary-removal flow so restoration logic is written once.
- */
 export interface StaffRoleSnapshot {
-  /** Numbered ladder rungs plus the general Staff marker. */
   staffRoleIds: RoleId[];
-  /** Access Roles — Staff-related, no hierarchy level. */
+
   accessRoleIds: RoleId[];
-  /**
-   * The Accepted Staff Role, if the member held it. Kept apart because its
-   * restoration is conditional on current eligibility, not just on presence.
-   */
+
   acceptedRoleIds: RoleId[];
-  /**
-   * Level-driven assignment roles held before the break. Like the Accepted
-   * Role, these are re-validated against the current configuration on restore.
-   */
+
   assignedRoleIds: RoleId[];
-  /**
-   * The Staff Type role (MAX / DEV / …) held before the break. Restored as-is
-   * on return — a type is chosen at acceptance, never re-derived from a level.
-   */
+
   typeRoleIds: RoleId[];
   currentRoleLevel: number | null;
   createdAt: Date;
@@ -53,7 +39,6 @@ export function emptySnapshot(): StaffRoleSnapshot {
   };
 }
 
-/** Every role id in the snapshot. */
 export function snapshotRoleIds(snapshot: StaffRoleSnapshot): RoleId[] {
   return [
     ...new Set([
@@ -66,10 +51,6 @@ export function snapshotRoleIds(snapshot: StaffRoleSnapshot): RoleId[] {
   ];
 }
 
-/**
- * Captures what the member holds right now. Access Roles are recorded
- * separately and never contribute to `currentRoleLevel`.
- */
 export async function captureStaffRoleSnapshot(
   member: GuildMember,
   guildId: GuildId = member.guild.id,
@@ -104,9 +85,9 @@ export async function captureStaffRoleSnapshot(
 
 export interface SnapshotRestoreOutcome {
   restored: RoleId[];
-  /** Saved ids whose role no longer exists in this guild. */
+
   missing: RoleId[];
-  /** Exists but sits above the bot, or is integration-managed. */
+
   blocked: RoleId[];
   failed: boolean;
 }
@@ -118,11 +99,6 @@ function botCanManage(member: GuildMember, roleId: RoleId): boolean {
   return me.roles.highest.comparePositionTo(role) > 0;
 }
 
-/**
- * Restores saved ids, skipping anything unsafe. Roles are resolved against the
- * member's own guild, so an id from elsewhere simply resolves to nothing and is
- * reported as missing rather than applied.
- */
 export async function restoreSnapshotRoles(
   member: GuildMember,
   roleIds: readonly RoleId[],

@@ -8,10 +8,6 @@ import { getServerTagClient } from "../runtime.ts";
 
 const log = logger.child("server-tag:log");
 
-/**
- * §23 — best-effort audit trail. Logging must never be able to fail a role
- * operation, so every path here swallows its errors.
- */
 export class ServerTagLogService {
   async post(guildId: GuildId, event: ServerTagLogEvent): Promise<void> {
     try {

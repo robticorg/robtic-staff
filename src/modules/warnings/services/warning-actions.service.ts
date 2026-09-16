@@ -234,11 +234,6 @@ export class WarningActionService {
     return { verbalWarningId: ref, verbalActiveCount, verbalConvertedCount, escalation };
   }
 
-  /**
-   * Issues a REAL staff warning directly — no verbal record, no triplet to
-   * accumulate. Used when `!warn` on a staff member carries a reason with no
-   * trailing "=" marker.
-   */
   async issueDirectRealStaffWarning(params: {
     guild: Guild;
     target: GuildMember;
@@ -317,9 +312,6 @@ export class WarningActionService {
     const fired = (targetStaff.currentRoleLevel ?? 0) === 0 || level >= STAFF_WARNING_FIRE_LEVEL;
 
     if (fired) {
-      // Reaching the fire threshold is a direct consequence of the warning
-      // itself, not a discretionary termination — bypass authorization the
-      // same way the automatic verbal-escalation fire does.
       await staffManagementService.fire(params.target, SYSTEM_ACTOR, true);
       return { realWarningId: ref, level, fired: true, blacklisted: true };
     }
@@ -381,8 +373,6 @@ export class WarningActionService {
       warningId: real._id.toString(),
     });
 
-    // §9 / §10 — only a REAL warning is announced, and only after it is
-    // persisted. The service never throws, so a Discord failure cannot undo it.
     await staffWarningLogService.send({
       guild: input.guild,
       warningId: real._id,
@@ -390,8 +380,6 @@ export class WarningActionService {
     });
 
     if (fired) {
-      // Automatic fire from warning escalation — an internal actor, so it is
-      // deliberately not subject to manager authorization.
       await staffManagementService.fire(input.target, SYSTEM_ACTOR, true);
       return {
         realWarningId: real._id.toString(),

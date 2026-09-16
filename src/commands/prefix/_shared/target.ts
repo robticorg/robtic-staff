@@ -19,17 +19,10 @@ export async function requireTargetMember(
   return resolveMember(ctx, id);
 }
 
-/**
- * Two ordered targets, as `!transfer @from @to` needs. Mentions come first (in
- * the order Discord reports them); raw ids in the arguments are the fallback so
- * the command works without pinging anyone.
- */
 export async function requireTwoTargetMembers(
   ctx: PrefixContext,
   usage: string,
 ): Promise<[GuildMember, GuildMember]> {
-  // The arguments carry the order the manager typed; the mention list is only a
-  // fallback (a reply-mention never appears in the text).
   const fromArgs = extractUserIds(ctx.args);
   const ids = fromArgs.length >= 2 ? fromArgs : ctx.mentionedUsers.map((user) => user.id);
   const [firstId, secondId] = ids;

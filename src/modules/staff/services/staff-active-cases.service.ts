@@ -15,15 +15,6 @@ export function totalActiveCases(counts: Omit<ActiveCaseCounts, "total">): numbe
   return counts.reports + counts.tickets + counts.appeals + counts.giftClaims;
 }
 
-/**
- * Work a Staff member currently *owns*. Ownership, not participation: a ticket
- * they claimed, a report they claimed, an appeal they claimed, a gift claim they
- * approved but have not fulfilled yet.
- *
- * Every model is imported lazily — the ticket, modmail, appeal and gift-claim
- * modules all depend on the Staff module, so a static import here would close a
- * cycle.
- */
 export class StaffActiveCasesService {
   async countForMember(guildId: GuildId, userId: UserId): Promise<ActiveCaseCounts> {
     const [reports, tickets, appeals, giftClaims] = await Promise.all([
@@ -84,10 +75,6 @@ export class StaffActiveCasesService {
     }
   }
 
-  /**
-   * A gift claim has no claimer — the open obligation is one this member
-   * approved and still owes the fulfilment for.
-   */
   private async countGiftClaims(guildId: GuildId, userId: UserId): Promise<number> {
     try {
       const [{ GiftClaimModel }, { GiftClaimStatus }] = await Promise.all([
@@ -104,10 +91,6 @@ export class StaffActiveCasesService {
     }
   }
 
-  /**
-   * A count we could not take is not proof of "none open". Reported as one
-   * blocking case so the transfer refuses rather than proceeding blind.
-   */
   private unavailable(kind: string, err: unknown): number {
     log.error(`active ${kind} lookup failed — treating as blocking`, err);
     return 1;

@@ -101,7 +101,6 @@ describe.skipIf(!hasDb)("Admin point management (MongoDB)", () => {
       type: StaffPointTransactionType.MANUAL_ADJUSTMENT,
       reason: "seed c",
     });
-    // b stays at 0 on purpose.
 
     const summary = await staffPointService.resetAllForGuild(GUILD, "admin-1");
     expect(summary.totalStaff).toBe(3);

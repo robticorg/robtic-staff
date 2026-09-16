@@ -114,7 +114,7 @@ export async function handleOptionsClose(
     await interaction.editReply(
       result.transcriptId ? M.close.withTranscript(ticketId) : M.close.done(ticketId),
     );
-    // The channel is gone once close deleted it — nothing left to post into.
+
     if (!result.deleted && channel?.isTextBased() && "send" in channel) {
       await channel
         .send({ content: M.close.done(ticketId), allowedMentions: { parse: [] } })
@@ -146,7 +146,6 @@ export async function handleOptionsTransfer(
   const resolved = await resolve(interaction, ticketId);
   if (!resolved) return;
 
-  // Cheap rejections before the modal — a modal can't be answered with an error.
   if (!resolved.panel.claimer.transferable) {
     await reject(interaction, M.transfer.notTransferable);
     return;

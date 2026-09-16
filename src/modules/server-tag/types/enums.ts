@@ -11,25 +11,18 @@ export type StaffTagRestrictionStatus =
 export const STAFF_TAG_RESTRICTION_STATUS_VALUES = Object.values(StaffTagRestrictionStatus);
 
 export const StaffTagRestorationReason = {
-  /** The member started using the Server Tag again before the window closed. */
   TAG_REAPPLIED: "TAG_REAPPLIED",
-  /** The 3-day window elapsed — restoration does not require the tag. */
+
   DURATION_EXPIRED: "DURATION_EXPIRED",
-  /** A Staff-lifecycle change (fired / blacklisted) voided the restriction. */
+
   STAFF_LIFECYCLE: "STAFF_LIFECYCLE",
-  /** Tag role configuration was removed, or an operator cancelled it. */
+
   MANUAL: "MANUAL",
 } as const;
 export type StaffTagRestorationReason =
   (typeof StaffTagRestorationReason)[keyof typeof StaffTagRestorationReason];
 export const STAFF_TAG_RESTORATION_REASON_VALUES = Object.values(StaffTagRestorationReason);
 
-/**
- * Whether the user is using *this* guild's Server Tag.
- *
- * `primaryGuild.tag` is deliberately ignored: Server Tags are not globally
- * unique, so the guild id is the only trustworthy signal.
- */
 export const TagTransition = {
   ENABLED: "ENABLED",
   DISABLED: "DISABLED",

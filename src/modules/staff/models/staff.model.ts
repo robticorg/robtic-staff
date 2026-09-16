@@ -15,11 +15,6 @@ export interface Staff extends Timestamps {
 
   currentRoleLevel: number;
 
-  /**
-   * Current Staff Type, for querying — the configured Discord role id stays in
-   * RoleConfig, which remains the source of truth for *which* role a type maps
-   * to. Null for a normally accepted member.
-   */
   staffType?: StaffType | null;
 
   points: number;
@@ -37,11 +32,6 @@ export interface Staff extends Timestamps {
   firedBy?: UserId;
   firedAt?: Date;
 
-  /**
-   * `!transfer` link between the two records. The source keeps its own history
-   * and statistics — these fields only say where the position went (or came
-   * from), never that the other user performed the past activity.
-   */
   transferredFrom?: Types.ObjectId;
   transferredTo?: Types.ObjectId;
   transferredAt?: Date;

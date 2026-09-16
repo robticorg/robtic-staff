@@ -17,16 +17,7 @@ export interface TagChangeResult {
   outcome: ServerTagOutcome;
 }
 
-/**
- * Sits between the generic `userUpdate` event and the Server Tag domain (§4).
- * The event file stays a thin adapter; all routing decisions live here.
- */
 export class ServerTagHandler {
-  /**
-   * A `userUpdate` fires for any profile change — username, avatar, banner.
-   * Only guilds named by the old or new primary-guild identity can be affected,
-   * and within those we act solely on a genuine state edge.
-   */
   async handleUserUpdate(
     oldUser: User | PartialUser | null,
     newUser: User,
@@ -40,7 +31,7 @@ export class ServerTagHandler {
 
     for (const guildId of affectedGuildIds(before, newUser)) {
       const guild = client.guilds.cache.get(guildId);
-      if (!guild) continue; // §28 — another server's tag is none of our business.
+      if (!guild) continue;
 
       const transition = serverTagService.detectTagState(before, newUser, guildId);
       if (transition === TagTransition.UNCHANGED) continue;
@@ -59,7 +50,6 @@ export class ServerTagHandler {
     return results;
   }
 
-  /** §12 — a returning member may have an ACTIVE restriction waiting for them. */
   async handleMemberJoin(member: GuildMember): Promise<ServerTagOutcome | null> {
     try {
       return await serverTagService.reconcileMember(member);

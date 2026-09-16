@@ -17,7 +17,6 @@ export default definePrefixCommand({
     await requireStaff(ctx);
     const target = await requireTargetMember(ctx, M.usage);
 
-    // Everything except the token naming the target is the reason.
     const reason = ctx.args
       .filter((arg) => !extractUserIds([arg]).includes(target.id))
       .join(" ")

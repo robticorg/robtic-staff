@@ -22,17 +22,10 @@ function describe(err: StaffTypeError): string {
   return M.problems[err.problem];
 }
 
-/**
- * `/role max @role`, `/role dev @role`, … — one handler for every Staff Type.
- *
- * The subcommand is resolved from the registry, so adding a type never touches
- * this file. All validation lives in StaffTypeService.
- */
 export async function handleStaffType(
   interaction: ChatInputCommandInteraction,
   definition: StaffTypeDefinition,
 ): Promise<void> {
-  // §Configuration — Administrators only.
   requireAdministrator(interaction);
   const guild = requireGuild(interaction);
 

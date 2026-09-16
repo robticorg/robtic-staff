@@ -11,22 +11,6 @@ import {
 } from "../../configuration/utils/staff-levels.ts";
 import { RoleConfigType, StaffTier } from "../../configuration/types/enums.ts";
 
-/**
- * The §28 example hierarchy.
- *
- *   Role2 START     level 0
- *   Role3           level 1
- *   Role4 IGNORE    — no level, consumes nothing
- *   Role5           level 2
- *   Role6 HIGHSTAFF level 3
- *   Role7           level 4
- *   Role8           level 5
- *   Role9 OWNER     level 6
- *   Role10          level 7
- *   Role11 SHIP     level 8
- *   Role12          level 9
- *   Role13 END      level 10
- */
 const LADDER: [string, number][] = [
   ["role2", 0],
   ["role3", 1],
@@ -176,7 +160,6 @@ describe("highestLevelFromRoleIds", () => {
   });
 
   it("ignores ignored roles entirely (§3)", () => {
-    // Role4 is IGNORE — present or not, the answer is Role5's level.
     expect(highestLevelFromRoleIds(h, ["role2", "role4", "role5"])).toBe(2);
     expect(highestLevelFromRoleIds(h, ["role4"])).toBeNull();
   });
@@ -191,7 +174,6 @@ describe("highestLevelFromRoleIds", () => {
   });
 
   it("never lets Access Roles contribute a level", () => {
-    // Staff + level 2 + two access roles is still level 2.
     expect(highestLevelFromRoleIds(h, ["role1", "role5", "role-event-team"])).toBe(2);
     expect(highestLevelFromRoleIds(h, ["role-event-team"])).toBeNull();
   });

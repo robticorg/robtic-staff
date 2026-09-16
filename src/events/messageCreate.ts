@@ -12,8 +12,6 @@ const log = logger.child("messageCreate");
 export default defineEvent({
   name: Events.MessageCreate,
   async execute(message: Message) {
-    // Captured before the bot-message skip below — a ticket transcript needs
-    // the bot's own embeds/replies too, not just what human members typed.
     if (!message.system) transcriptCache.record(message);
 
     if (message.author.bot || message.system) return;
@@ -25,8 +23,6 @@ export default defineEvent({
       }
       if (!message.inGuild()) return;
 
-      // Before the command dispatch: a sleeping ticket wakes on *any* message
-      // from its opener, including one that happens to be a command.
       await ticketSleepService.handleTicketMessage(message);
 
       if (await runFastAccess(message)) return;

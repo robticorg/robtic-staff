@@ -20,7 +20,7 @@ describe("resolveSleepDuration", () => {
     expect(resolveSleepDuration("5m")).toBe(5 * MIN);
     expect(resolveSleepDuration("1d")).toBe(24 * HOUR);
     expect(resolveSleepDuration("1h30m")).toBe(HOUR + 30 * MIN);
-    // A bare number means minutes.
+
     expect(resolveSleepDuration("90")).toBe(90 * MIN);
   });
 
@@ -33,7 +33,7 @@ describe("resolveSleepDuration", () => {
   it("enforces the configured window at both ends", () => {
     expect(() => resolveSleepDuration("30s")).toThrow(ValidationError);
     expect(() => resolveSleepDuration("30d")).toThrow(ValidationError);
-    // The bounds themselves are allowed.
+
     expect(resolveSleepDuration("1m")).toBe(limits.ticketSleepMinMs);
     expect(resolveSleepDuration("7d")).toBe(limits.ticketSleepMaxMs);
   });

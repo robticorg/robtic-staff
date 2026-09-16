@@ -8,7 +8,6 @@ import {
 
 const EVERYONE = "guild";
 
-/** positions ascend with power, exactly like Discord's own ordering. */
 const roles: LadderRoleLike[] = [
   { id: EVERYONE, position: 0 },
   { id: "below", position: 1 },

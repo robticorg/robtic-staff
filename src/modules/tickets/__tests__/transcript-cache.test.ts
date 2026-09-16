@@ -53,7 +53,6 @@ describe("transcriptCache", () => {
     transcriptCache.flush("chan-b");
     expect(transcriptCache.isTracked("chan-b")).toBe(false);
 
-    // A message arriving after flush (channel no longer tracked) is dropped.
     transcriptCache.record(fakeMessage("chan-b", "m2"));
     transcriptCache.track("chan-b");
     expect(transcriptCache.flush("chan-b")).toEqual([]);

@@ -5,7 +5,6 @@ import type { StaffTagRestorationReason } from "../../modules/server-tag/types/e
 
 const E = emojis;
 
-/** Exhaustive so a new reason cannot ship without Arabic copy. */
 const RESTORATION_REASON_LABELS: Record<StaffTagRestorationReason, string> = {
   TAG_REAPPLIED: "رجع يستخدم تاق السيرفر",
   DURATION_EXPIRED: "انتهت مدة التقييد",
@@ -24,7 +23,6 @@ function absolute(date: Date): string {
 export const serverTagMessages = {
   serverName: branding.communityName,
 
-  /** Plain text, no emoji — matches the DM style used across the project. */
   dm: {
     restricted: (durationMs: number, expiresAt: Date) =>
       [
@@ -43,10 +41,6 @@ export const serverTagMessages = {
       "ملاحظة: فيه رتب محفوظة ما عادت موجودة في السيرفر، فتم تجاوزها.",
   },
 
-  /**
-   * Log-channel copy. Same shape as the punishment / vacation cards:
-   * a heading followed by `**label:** value` lines.
-   */
   log: {
     headings: {
       tagEnabled: `${E.success} **تاق السيرفر — تفعيل**`,
@@ -81,7 +75,6 @@ export const serverTagMessages = {
       result: "النتيجة",
     },
 
-    /** Why a restriction closed. */
     reasons: RESTORATION_REASON_LABELS,
 
     staffStatus: {

@@ -684,10 +684,6 @@ export class VacationService extends BaseRepository<Vacation> {
     }
   }
 
-  /**
-   * The level the member is back at once the snapshot is restored. Used to
-   * re-check Accepted Role eligibility against the *current* configuration.
-   */
   private async restoredLevel(vacation: Vacation): Promise<number | null> {
     if (vacation.snapshotRoleLevel !== undefined) return vacation.snapshotRoleLevel;
     const staff = await staffService.get(vacation.staffId, vacation.guildId);

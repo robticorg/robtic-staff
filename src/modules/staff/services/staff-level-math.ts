@@ -40,11 +40,6 @@ export function resolveDemoteLevel(currentLevel: number, amount: number | null):
   return Math.max(currentLevel - step, 0);
 }
 
-/**
- * Demotion target *without* clamping, so a request that would fall below level
- * 0 can be rejected rather than silently turning into "stay at 0". Demotion
- * must never become an implicit fire.
- */
 export function rawDemoteLevel(currentLevel: number, amount: number | null): number {
   const step = amount === null || amount <= 0 ? 1 : amount;
   return currentLevel - step;

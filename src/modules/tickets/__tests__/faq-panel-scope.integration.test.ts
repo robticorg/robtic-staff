@@ -45,7 +45,7 @@ describe.skipIf(!hasDb)("FAQ panel scoping (MongoDB)", () => {
 
     expect((await faqService.list(GUILD, "support")).map((f) => f.question)).toEqual(["q2"]);
     expect((await faqService.list(GUILD, "minecraft")).map((f) => f.question)).toEqual([]);
-    // Unfiltered list still returns everything, for admin management.
+
     expect((await faqService.list(GUILD)).map((f) => f.question)).toEqual(["q2"]);
   });
 

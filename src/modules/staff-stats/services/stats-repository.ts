@@ -59,7 +59,6 @@ export class StatsRepository {
     const filter: Record<string, unknown> = { guildId };
     if (opts.excludeInactive) {
       filter.status = {
-        // A transferred record is a past identity, exactly like a fired one.
         $nin: [StaffStatus.FIRED, StaffStatus.BLACKLISTED, StaffStatus.TRANSFERRED],
       };
     }

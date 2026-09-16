@@ -22,11 +22,9 @@ export default definePrefixCommand({
     await requireApplyManager(ctx);
     const target = await requireTargetMember(ctx, "!accept @user [level|tier] [type]");
 
-    // §Parser — the command itself holds no parsing or Staff Type logic.
     const parsed = parseAcceptArguments(ctx.args, target.id);
     switch (parsed.problem) {
       case AcceptArgProblem.UNKNOWN_TOKEN: {
-        // Unknown words could be a type or a tier, so list both vocabularies.
         const available = [
           ...staffTypeService.getAvailableKeywords(),
           ...STAFF_TIER_KEYWORD_DEFINITIONS.map((d) => d.slug),
@@ -43,8 +41,6 @@ export default definePrefixCommand({
         throw new PrefixAbort(M.levelAndTier);
     }
 
-    // A tier names the level to accept at. StaffHierarchyService stays the only
-    // source of truth — the boundary role's own level is what gets used.
     let level = parsed.level;
     if (parsed.tier) {
       const tierLevel = await getLevelForTier(ctx.guild.id, parsed.tier);
@@ -57,8 +53,6 @@ export default definePrefixCommand({
       level = tierLevel;
     }
 
-    // A type with no configured role would accept the member and silently skip
-    // the role, so it is checked before anything is written.
     if (parsed.staffType) {
       const roleId = await staffTypeService.getConfiguredRole(ctx.guild.id, parsed.staffType);
       if (!roleId) {

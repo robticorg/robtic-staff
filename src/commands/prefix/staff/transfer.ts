@@ -6,11 +6,6 @@ import { requireTwoTargetMembers } from "../_shared/target.ts";
 
 const M = staffMessages.transfer;
 
-/**
- * Thin by design: resolve two members, hand them to the service, render the
- * result. Authorization, validation, role maths and persistence all live in
- * StaffTransferService — nothing here decides anything.
- */
 export default definePrefixCommand({
   name: "transfer",
   category: "staff",

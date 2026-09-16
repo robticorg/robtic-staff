@@ -60,7 +60,7 @@ function makeGuild(id = GUILD) {
     id,
     members: {
       _members: members,
-      /** Mirrors discord.js: fetch() with no args returns the full collection. */
+
       fetch: async () => members,
     },
   };
@@ -79,7 +79,6 @@ function addMember(
   return member;
 }
 
-/** The §28 hierarchy: IGNORE sits between rungs and consumes no level. */
 async function seedHierarchy(guildId = GUILD, withBoundaries = true): Promise<void> {
   await RoleConfigModel.deleteMany({ guildId });
   await RoleConfigModel.create([
@@ -196,7 +195,7 @@ describe.skipIf(!hasDb)("Staff scan (MongoDB + Discord fakes)", () => {
 
     const staff = await StaffModel.findOne({ guildId: GUILD, userId: "u-ignored-top" }).exec();
     expect(staff!.currentRoleLevel).toBe(2);
-    // The ignored-only member has no numbered role at all.
+
     expect(report.invalid).toBe(1);
     expect(report.invalidMembers).toEqual(["u-only-ignored"]);
   });
@@ -209,7 +208,7 @@ describe.skipIf(!hasDb)("Staff scan (MongoDB + Discord fakes)", () => {
     expect(report.found).toBe(1);
     expect(report.invalid).toBe(1);
     expect(report.created).toBe(0);
-    // Crucially: no record was invented at level 0.
+
     expect(await StaffModel.countDocuments({ guildId: GUILD, userId: "u-bare" })).toBe(0);
   });
 
@@ -233,7 +232,7 @@ describe.skipIf(!hasDb)("Staff scan (MongoDB + Discord fakes)", () => {
     expect(report.created).toBe(0);
     const after = await StaffModel.findById(created._id).exec();
     expect(after!.currentRoleLevel).toBe(3);
-    // Historical / accumulated data is untouched.
+
     expect(after!.points).toBe(120);
     expect(after!.reportsClaimed).toBe(7);
     expect(after!.ticketsCompleted).toBe(4);
@@ -341,7 +340,6 @@ describe.skipIf(!hasDb)("Staff scan (MongoDB + Discord fakes)", () => {
   });
 
   it("ignores a role that was deleted from the configuration", async () => {
-    // role7 is level 4; drop it from the ladder and the member falls back.
     await RoleConfigModel.deleteOne({ guildId: GUILD, roleId: R_L4 });
     invalidateStaffHierarchy(GUILD);
     addMember(guild, "u-1", [R_STAFF, R_L2, R_L4]);

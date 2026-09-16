@@ -53,7 +53,7 @@ const NON_NUMBERED_TYPES = [
   RoleConfigType.TAG,
   RoleConfigType.ACCEPTED,
   RoleConfigType.ASSIGN,
-  // A Staff Type role must never be swept into the numbered ladder.
+
   RoleConfigType.STAFF_TYPE,
 ] as const;
 
@@ -279,10 +279,6 @@ const data = new SlashCommandBuilder()
       ),
   );
 
-/**
- * `/role max`, `/role dev`, … are generated from the Staff Type registry, so a
- * new type needs no change here — only a STAFF_TYPE_DEFINITIONS entry.
- */
 for (const definition of STAFF_TYPE_DEFINITIONS) {
   data.addSubcommand((s) =>
     s
@@ -297,7 +293,6 @@ for (const definition of STAFF_TYPE_DEFINITIONS) {
   );
 }
 
-/** Subcommand name → Staff Type, for dispatch. */
 const STAFF_TYPE_SUBCOMMANDS = new Map(
   STAFF_TYPE_DEFINITIONS.map((definition) => [definition.slug, definition]),
 );
@@ -324,7 +319,6 @@ async function handleBoundary(
   );
 }
 
-/** §22 — thin: load the shared hierarchy, render, reply. */
 async function handleCheck(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = requireGuild(interaction);
   const role = interaction.options.getRole(CommandOption.ROLE, true);
@@ -377,8 +371,6 @@ async function rebuildFromConfig(
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   }
 
-  // Ignored roles, Access Roles, the @Staff marker and every other configured
-  // slot are off the ladder — the same set the automatic role-event sync uses.
   const excluded = await ladderSyncService.excludedRoleIds(guild.id);
 
   const ordered = buildStaffLadder({

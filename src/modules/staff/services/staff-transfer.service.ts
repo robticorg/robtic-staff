@@ -52,11 +52,11 @@ export interface TransferInput {
 export interface TransferResult {
   sourceLevel: number;
   staffType: StaffType | null;
-  /** Roles actually written to the target. */
+
   transferredRoleIds: RoleId[];
-  /** Roles actually taken off the source. */
+
   removedRoleIds: RoleId[];
-  /** Named but skipped by the safety gate (missing, managed, above the bot). */
+
   skippedRoleIds: RoleId[];
   sourceStaffId: string;
   targetStaffId: string;
@@ -65,33 +65,19 @@ export interface TransferResult {
 interface TransferPlan {
   level: number;
   staffType: StaffType | null;
-  /** What the target must gain. */
+
   grant: RoleId[];
   skipped: RoleId[];
-  /** Every Staff-managed role id, for the source cleanup. */
+
   managedRoleIds: RoleId[];
 }
 
-/**
- * Hands one member's Staff position to another.
- *
- * Deliberately *not* a role copier: only the five Staff-managed categories move
- * (marker, numbered ladder, Access Roles, level assignments, Staff Type), and
- * the level they are derived from comes from the hierarchy, never from whatever
- * roles happen to look staff-ish. Management, warning, vacation and blacklist
- * roles are never touched on either side, and unrelated Discord roles are never
- * even named.
- *
- * Validation is complete before the first write (§Atomicity); a failed Discord
- * write rolls the role changes back and leaves the database untouched.
- */
 export class StaffTransferService {
   async transfer(input: TransferInput): Promise<TransferResult> {
     const { actor, source, target } = input;
     const guild = actor.guild;
     const guildId = guild.id;
 
-    // ── 1. Actor authorization ────────────────────────────────────────────
     const decision = await staffManagementAuthorizationService.canTransfer(actor, source, target);
     if (!decision.allowed) {
       log.warn(
@@ -100,7 +86,6 @@ export class StaffTransferService {
       throw new StaffTransferError(TransferProblem.NOT_AUTHORIZED, decision.message);
     }
 
-    // ── 2-8. State validation, all of it, before anything is touched ──────
     const [sourceStaff, targetStaff, hierarchy, blacklistRow] = await Promise.all([
       staffService.get(source.id, guildId),
       staffService.get(target.id, guildId),
@@ -110,16 +95,12 @@ export class StaffTransferService {
 
     const [openVacation, activeCases] = await Promise.all([
       this.hasOpenVacation(guildId, source.id),
-      // Skipped only when there is no source record at all — validate() rejects
-      // that first anyway, and the lookup would be meaningless.
+
       sourceStaff
         ? staffActiveCasesService.countForMember(guildId, source.id)
         : Promise.resolve(emptyCounts()),
     ]);
 
-    // §Staff Level — the hierarchy is the source of truth. The stored level is
-    // only a fallback for a member whose ladder roles drifted, and a mismatch is
-    // worth knowing about.
     const levelFromRoles = highestLevelFromRoleIds(hierarchy, source.roles.cache.keys());
     if (
       sourceStaff &&
@@ -149,14 +130,11 @@ export class StaffTransferService {
     });
     if (problem) throw this.problemError(problem, source, target, activeCases);
 
-    // Narrowed by validateTransfer, which rejects a null source record / level.
     const staff = sourceStaff as HydratedDocument<Staff>;
     const sourceLevel = level as number;
 
-    // ── 9-10. Plan ────────────────────────────────────────────────────────
     const plan = await this.buildPlan(guild, source, sourceLevel);
 
-    // ── 11-12. Apply. Everything from here rolls back as one unit ─────────
     const added = await this.grantToTarget(target, plan, actor.id);
     let removed: RoleId[] = [];
     let targetStaffDoc: HydratedDocument<Staff>;
@@ -164,8 +142,6 @@ export class StaffTransferService {
     try {
       removed = await this.stripSource(source, plan, actor.id);
 
-      // Applied through its own service so the "one type at a time" replacement
-      // rule stays in one place.
       if (plan.staffType) {
         await staffTypeService.assignType(
           target,
@@ -186,9 +162,6 @@ export class StaffTransferService {
         transferredBy: actor.id,
       });
 
-      // Points, counters and every StaffPointTransaction / StaffActivity row
-      // stay exactly where they are: on the source record. The target starts as
-      // a new Staff identity.
       await staffService.update(staff._id, {
         status: StaffStatus.TRANSFERRED,
         currentRoleLevel: 0,
@@ -198,15 +171,11 @@ export class StaffTransferService {
         transferredBy: actor.id,
       });
     } catch (err) {
-      // Discord *or* MongoDB failed — put both members back the way they were
-      // so the two never disagree, and report failure.
       await this.rollbackRoles(source, target, added, removed, actor.id);
       log.error(`transfer ${source.id} → ${target.id} in ${guildId} failed — rolled back`, err);
       throw new StaffTransferError("ROLE_WRITE_FAILED", M.roleWriteFailed);
     }
 
-    // Last, and only once the transfer really happened: there is no such thing
-    // as a successful-transfer record for a transfer that did not complete.
     await this.recordHistory({
       staff,
       targetStaffDocId: targetStaffDoc._id,
@@ -216,7 +185,7 @@ export class StaffTransferService {
       sourceLevel,
       transferredRoleIds: added,
     }).catch((err) =>
-      // The position has already moved; failing the command now would be a lie.
+
       log.error(`transfer ${source.id} → ${target.id} succeeded but history failed`, err),
     );
 
@@ -238,11 +207,6 @@ export class StaffTransferService {
     };
   }
 
-  /**
-   * What the target must end up holding. Level-driven roles come from the same
-   * planner accept/promote use; Access Roles are intersected with what the
-   * source actually holds, never handed out wholesale.
-   */
   private async buildPlan(
     guild: Guild,
     source: GuildMember,
@@ -254,8 +218,6 @@ export class StaffTransferService {
     const levelPlan = await planStaffRoles(guildId, level);
     const heldAccess = [...hierarchy.accessRoleIds].filter((id) => source.roles.cache.has(id));
 
-    // The role is the truth for what to hand over; the record is the fallback
-    // when the role was removed by hand.
     const staffType =
       (await staffTypeService.getTypeFromRoles(source)) ??
       (await staffTypeService.getType(guildId, source.id));
@@ -274,9 +236,6 @@ export class StaffTransferService {
       log.warn(`transfer in ${guildId} skipped ${rejected.length} unsafe role(s)`, { rejected });
     }
 
-    // Everything this system owns, for the source-side cleanup. Deliberately
-    // wider than `wanted`: rungs above the level and out-of-range assignments
-    // are Staff-managed too, and must not be left behind on the source.
     const [assignmentRoleIds, typeRoleIds, acceptedConfig] = await Promise.all([
       staffRoleAssignmentService.getManagedRoleIds(guildId),
       staffTypeService.getManagedRoleIds(guildId),
@@ -325,10 +284,6 @@ export class StaffTransferService {
     }
   }
 
-  /**
-   * §Source Cleanup — Staff-managed roles only. Anything outside
-   * `managedRoleIds` is never named, so unrelated roles cannot be removed.
-   */
   private async stripSource(
     source: GuildMember,
     plan: TransferPlan,
@@ -342,12 +297,6 @@ export class StaffTransferService {
     return toRemove;
   }
 
-  /**
-   * Best-effort undo of both halves. Failures here are logged loudly rather
-   * than thrown: the caller is already reporting the transfer as failed, and a
-   * rollback error is an operator problem, not a second exception to swallow
-   * the first one.
-   */
   private async rollbackRoles(
     source: GuildMember,
     target: GuildMember,
@@ -398,8 +347,6 @@ export class StaffTransferService {
       performedBy: input.actorId,
     };
 
-    // One entry per record so both timelines read correctly. Neither is a fake
-    // ACCEPT/PROMOTE/DEMOTE — TRANSFER is its own lifecycle action.
     await staffHistoryService.record({
       staffId: input.staff._id,
       action: StaffHistoryAction.TRANSFER,
@@ -431,14 +378,12 @@ export class StaffTransferService {
     });
   }
 
-  /** Lazy import — the vacation module already depends on staff management. */
   private async hasOpenVacation(guildId: GuildId, userId: UserId): Promise<boolean> {
     try {
       const { VacationModel } = await import("../../vacation/models/vacation.model.ts");
       const open = await VacationModel.exists({ guildId, staffId: userId, isOpen: true }).exec();
       return !!open;
     } catch (err) {
-      // Same rule as the active-case counts: an unknown answer blocks.
       log.error(`open vacation lookup failed for ${userId} in ${guildId} — treating as open`, err);
       return true;
     }

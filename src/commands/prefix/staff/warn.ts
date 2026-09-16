@@ -45,8 +45,6 @@ export default definePrefixCommand({
       throw new PrefixAbort(prefixMessages.warn.staffWarnManagerOnly);
     }
 
-    // A trailing "=" word marks a VERBAL staff warning; with no "=" it is
-    // issued directly as a REAL one.
     const { reason, isVerbal } = splitVerbalMarker(rawReason);
     if (!reason) throw new PrefixAbort(prefixMessages.warn.reasonRequired);
     if (evidence.length === 0) throw new PrefixAbort(prefixMessages.warn.proofRequired);

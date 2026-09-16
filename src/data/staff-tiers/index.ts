@@ -1,19 +1,8 @@
 import { StaffTier } from "../../modules/configuration/types/enums.ts";
 
-/**
- * Localization for Staff Tier keywords accepted by `!accept`.
- *
- * A tier is not a level of its own — it is opened by a configured boundary role
- * (`/role highstaff`, `/role owner`, `/role ship`). These keywords resolve to
- * that boundary's numbered level through StaffHierarchyService, so nothing here
- * hard-codes a level.
- *
- * STAFF is deliberately absent: plain `!accept @user` already means the start
- * level, so a keyword for it would only add ambiguity.
- */
 export interface StaffTierKeywords {
   tier: StaffTier;
-  /** Canonical English keyword, used in error text. */
+
   slug: string;
   keywords: readonly string[];
 }

@@ -12,28 +12,22 @@ const log = logger.child("server-tag:roles");
 
 export interface RemoveOutcome {
   removed: RoleId[];
-  /** Present on the member but above the bot in the hierarchy — left alone. */
+
   blocked: RoleId[];
 }
 
 export interface RestoreOutcome {
   restored: RoleId[];
-  /** Saved ids whose role no longer exists in the guild. */
+
   missing: RoleId[];
-  /** Exists but the bot cannot assign it. */
+
   blocked: RoleId[];
-  /** True when Discord rejected the write outright. */
+
   failed: boolean;
 }
 
 export class RoleSnapshotService {
-  /**
-   * Every role id this system is allowed to strip: the numbered Staff ladder
-   * plus the managed slots, minus anything protected (BLACKLIST above all).
-   */
   async managedStaffRoleIds(guildId: GuildId): Promise<Set<RoleId>> {
-    // `getByType(STAFF)` can return a numbered rung, so the general marker is
-    // resolved through its own accessor.
     const managedSlots = STAFF_TAG_MANAGED_ROLE_TYPES.filter(
       (type) => type !== RoleConfigType.STAFF,
     );
@@ -53,7 +47,6 @@ export class RoleSnapshotService {
     return ids;
   }
 
-  /** Roles this system must never capture, remove, or restore (§16, §18). */
   async protectedRoleIds(guildId: GuildId): Promise<Set<RoleId>> {
     const rows = await Promise.all(
       STAFF_TAG_PROTECTED_ROLE_TYPES.map((type) => roleConfigService.listByType(guildId, type)),
@@ -69,10 +62,6 @@ export class RoleSnapshotService {
       .then((row) => row?.roleId ?? null);
   }
 
-  /**
-   * §7 — the exact role ids the member holds right now, restricted to the
-   * managed set. Never reconstructed from `currentRoleLevel`.
-   */
   async captureStaffRoles(member: GuildMember, guildId: GuildId): Promise<RoleId[]> {
     const managed = await this.managedStaffRoleIds(guildId);
     return [...managed].filter((id) => member.roles.cache.has(id));
@@ -90,9 +79,6 @@ export class RoleSnapshotService {
     return guild.members.me?.permissions.has(PermissionFlagsBits.ManageRoles) ?? false;
   }
 
-  /**
-   * §22 — skip what the bot cannot touch rather than failing the whole batch.
-   */
   async removeStaffRoles(
     member: GuildMember,
     roleIds: readonly RoleId[],
@@ -123,10 +109,6 @@ export class RoleSnapshotService {
     }
   }
 
-  /**
-   * §10.4 / §22 — additive and idempotent: roles already held are skipped,
-   * deleted roles are reported and skipped, the rest still go back.
-   */
   async restoreStaffRoles(
     member: GuildMember,
     savedRoleIds: readonly RoleId[],

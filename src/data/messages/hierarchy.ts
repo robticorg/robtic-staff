@@ -3,7 +3,6 @@ import { StaffTier } from "../../modules/configuration/types/enums.ts";
 
 const E = emojis;
 
-/** Arabic label for every tier — exhaustive so a new tier needs copy. */
 export const STAFF_TIER_LABELS: Record<StaffTier, string> = {
   [StaffTier.STAFF]: "ستاف",
   [StaffTier.HIGHSTAFF]: "هاي ستاف",
@@ -11,7 +10,6 @@ export const STAFF_TIER_LABELS: Record<StaffTier, string> = {
   [StaffTier.SHIP]: "شيب",
 };
 
-/** Shown when a role is the first rung of a tier (§17). */
 export const STAFF_TIER_OPENS_LABELS: Record<StaffTier, string> = {
   [StaffTier.STAFF]: "بداية مستوى الستاف",
   [StaffTier.HIGHSTAFF]: "بداية مستوى الهاي ستاف",

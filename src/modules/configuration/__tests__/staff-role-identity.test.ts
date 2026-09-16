@@ -50,12 +50,6 @@ describe.skipIf(!hasDb)("general @Staff marker vs numbered ladder rungs", () => 
     await RoleConfigModel.deleteMany({ guildId: GUILD });
   });
 
-  /**
-   * Regression: `rebuildLadder` stamps middle rungs with `type: STAFF`, the
-   * same type as the general marker. `/role staff` used to treat that type as
-   * a singleton and delete every other STAFF row — wiping the middle of the
-   * ladder and silently un-staffing everyone holding those roles.
-   */
   it("keeps the numbered ladder intact when /role staff runs afterwards", async () => {
     await roleConfigService.rebuildLadder(GUILD, LADDER);
     await setMarker();
@@ -75,7 +69,7 @@ describe.skipIf(!hasDb)("general @Staff marker vs numbered ladder rungs", () => 
     });
 
     expect(await roleConfigService.getGeneralStaffRoleId(GUILD)).toBe("r-new-marker");
-    // The old marker is gone, the ladder is untouched.
+
     expect(await RoleConfigModel.countDocuments({ guildId: GUILD, roleId: MARKER })).toBe(0);
     expect((await roleConfigService.getStaffRoleLevels(GUILD)).length).toBe(4);
   });
@@ -92,7 +86,6 @@ describe.skipIf(!hasDb)("general @Staff marker vs numbered ladder rungs", () => 
     await roleConfigService.rebuildLadder(GUILD, LADDER);
     await setMarker();
 
-    // This is the exact case that produced "ما عندك صلاحية تستخدم هذا" on !warn.
     expect(await staffPermissionService.isStaff(member([MARKER]))).toBe(true);
   });
 
@@ -105,12 +98,10 @@ describe.skipIf(!hasDb)("general @Staff marker vs numbered ladder rungs", () => 
   });
 
   it("gives the same answer regardless of configuration order", async () => {
-    // Marker first, then ladder.
     await setMarker();
     await roleConfigService.rebuildLadder(GUILD, LADDER);
     const first = [...(await staffPermissionService.staffRoleIds(GUILD))].sort();
 
-    // Ladder first, then marker.
     await RoleConfigModel.deleteMany({ guildId: GUILD });
     await roleConfigService.rebuildLadder(GUILD, LADDER);
     await setMarker();

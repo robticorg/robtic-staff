@@ -104,12 +104,6 @@ export class StaffPointService extends BaseRepository<StaffPointTransaction> {
     return this.add({ ...input, amount: -Math.abs(input.amount) });
   }
 
-  /**
-   * Zeroes a staff member's all-time balance by writing a compensating
-   * MANUAL_ADJUSTMENT transaction — the balance is a sum over transaction
-   * history everywhere it's displayed, so a bare `$set` on `staff.points`
-   * would leave the old total showing up in leaderboards and period stats.
-   */
   async resetToZero(
     staffId: IdLike,
     actorId: string,

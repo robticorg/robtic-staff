@@ -60,9 +60,9 @@ const deny = (reason: DenyReason): AuthorizationDecision => ({
 
 export interface ActorAuthority {
   kind: ManagementAuthority;
-  /** Calculated Staff level of the actor — never a Discord role position. */
+
   actorLevel: number | null;
-  /** Highest level this actor may ever target. `null` means unlimited. */
+
   maxTargetLevel: number | null;
   ownerStartLevel: number | null;
   shipStartLevel: number | null;
@@ -70,14 +70,6 @@ export interface ActorAuthority {
   canTargetSelf: boolean;
 }
 
-/**
- * The single decision point for "may this actor do this to that Staff member?".
- *
- * Authority is composed of the configured management role, the actor's
- * calculated Staff level and the configured tier boundaries. Discord role
- * position is never consulted — the Staff Manager role may sit anywhere in the
- * role list without changing what its holder is allowed to do.
- */
 export class StaffManagementAuthorizationService {
   isAdministrator(actor: GuildMember): boolean {
     const perms = actor.permissions;
@@ -100,7 +92,6 @@ export class StaffManagementAuthorizationService {
     return row ? actor.roles.cache.has(row.roleId) : false;
   }
 
-  /** Pure role check — no Administrator folding, unlike staffPermissionService.isApplyManager. */
   async isApplyManager(actor: GuildMember): Promise<boolean> {
     const row = await roleConfigService.getByType(
       actor.guild.id,
@@ -109,17 +100,12 @@ export class StaffManagementAuthorizationService {
     return row ? actor.roles.cache.has(row.roleId) : false;
   }
 
-  /**
-   * §6 — Administrator > Owner Manager > Staff Manager > none. Resolved from
-   * live Discord roles on every call; authorization is never cached.
-   */
   async getAuthority(actor: GuildMember, guildId: GuildId = actor.guild.id): Promise<ActorAuthority> {
     const hierarchy = await getHierarchy(guildId);
     const ownerStartLevel = hierarchy.boundaryLevels[StaffTier.OWNER];
     const shipStartLevel = hierarchy.boundaryLevels[StaffTier.SHIP];
     const endLevel = hierarchy.endLevel;
 
-    // A configured Ship tier is the hard ceiling for every non-administrator.
     const belowShip = shipStartLevel !== null ? shipStartLevel - 1 : endLevel;
 
     if (this.isAdministrator(actor)) {
@@ -149,8 +135,6 @@ export class StaffManagementAuthorizationService {
     }
 
     if (await this.isStaffManager(actor)) {
-      // §6 — min(actor level, last level before Ship). A Staff Manager with no
-      // numbered role has no promotion authority at all.
       const ceiling =
         actorLevel === null
           ? null
@@ -179,20 +163,14 @@ export class StaffManagementAuthorizationService {
     };
   }
 
-  /** §11 — the highest level this actor may promote or accept someone to. */
   async getPromotionLimit(actor: GuildMember): Promise<number | null> {
     return (await this.getAuthority(actor)).maxTargetLevel;
   }
 
   private hierarchyGuard(hierarchy: StaffHierarchy): AuthorizationDecision | null {
-    // §24 — refuse to authorize against a hierarchy that cannot be trusted.
     return validateHierarchy(hierarchy).length > 0 ? deny(DenyReason.HIERARCHY_INVALID) : null;
   }
 
-  /**
-   * Base check shared by demote and fire: may this actor touch a Staff member
-   * who is *currently* at `targetLevel`?
-   */
   private canTouch(
     authority: ActorAuthority,
     targetLevel: number,
@@ -210,7 +188,6 @@ export class StaffManagementAuthorizationService {
 
     if (authority.kind === ManagementAuthority.OWNER_MANAGER) return allow();
 
-    // Staff Manager from here down.
     if (authority.ownerStartLevel !== null && targetLevel >= authority.ownerStartLevel) {
       return deny(reasons.inOwner);
     }
@@ -219,7 +196,6 @@ export class StaffManagementAuthorizationService {
     return allow();
   }
 
-  /** §12 — validates the *requested* level, not just the current one. */
   async canPromote(
     actor: GuildMember,
     target: GuildMember,
@@ -235,8 +211,6 @@ export class StaffManagementAuthorizationService {
     if (actor.id === target.id && !authority.canTargetSelf) return deny(DenyReason.SELF_PROMOTE);
     if (authority.kind === ManagementAuthority.ADMINISTRATOR) return allow();
 
-    // §16 — a target already above the actor is untouchable, regardless of
-    // where the manager's role physically sits in Discord.
     if (
       authority.kind === ManagementAuthority.STAFF_MANAGER &&
       authority.actorLevel !== null &&
@@ -248,7 +222,6 @@ export class StaffManagementAuthorizationService {
       return deny(DenyReason.ACTOR_NOT_STAFF);
     }
 
-    // §17 — no manager may ever promote into Ship.
     if (authority.shipStartLevel !== null && requestedLevel >= authority.shipStartLevel) {
       return deny(DenyReason.LEVEL_IN_SHIP);
     }
@@ -262,10 +235,6 @@ export class StaffManagementAuthorizationService {
     return allow();
   }
 
-  /**
-   * §19 — deliberately stricter than promotion: a Staff Manager may not touch
-   * anyone already in the Owner tier, even downwards.
-   */
   async canDemote(
     actor: GuildMember,
     target: GuildMember,
@@ -290,20 +259,12 @@ export class StaffManagementAuthorizationService {
     });
     if (!touch.allowed) return touch;
 
-    // The resulting level must also sit inside the actor's authority.
     if (authority.maxTargetLevel !== null && requestedLevel > authority.maxTargetLevel) {
       return deny(DenyReason.LEVEL_ABOVE_AUTHORITY);
     }
     return allow();
   }
 
-  /**
-   * §20 — accepting is its own authority now, not a Staff/Owner Manager
-   * privilege: only an Administrator or the Apply Manager role may accept,
-   * and an Apply Manager may only bring someone in strictly below their own
-   * current tier — never at or above their own standing (an Owner-tier Apply
-   * Manager can never accept another Owner, for instance).
-   */
   async canAccept(
     actor: GuildMember,
     target: GuildMember,
@@ -327,7 +288,6 @@ export class StaffManagementAuthorizationService {
     return allow();
   }
 
-  /** Pure role check — the configuration row is the only source of authority. */
   async isTransferManager(actor: GuildMember): Promise<boolean> {
     const row = await roleConfigService.getByType(
       actor.guild.id,
@@ -336,15 +296,6 @@ export class StaffManagementAuthorizationService {
     return row ? actor.roles.cache.has(row.roleId) : false;
   }
 
-  /**
-   * Who may hand one member's Staff position to another.
-   *
-   * Administrator or the configured Transfer Manager role — nothing else, and
-   * no level maths: a Transfer Manager gains nothing by sitting higher in the
-   * Discord role list, and loses nothing by sitting lower. Everything about the
-   * *state* of the two members (staff, blacklist, break, active cases) is the
-   * transfer service's job, not this one's.
-   */
   async canTransfer(
     actor: GuildMember,
     source: GuildMember,
@@ -356,12 +307,6 @@ export class StaffManagementAuthorizationService {
     return deny(DenyReason.NOT_A_TRANSFER_MANAGER);
   }
 
-  /**
-   * §21 — firing is deliberately narrower than demoting: only an
-   * Administrator or an Owner Manager may fire anyone at all, and an Owner
-   * Manager may only fire someone strictly below the Owner tier — dismissing
-   * an Owner (or Ship) needs a real administrator.
-   */
   async canFire(
     actor: GuildMember,
     target: GuildMember,
@@ -383,7 +328,6 @@ export class StaffManagementAuthorizationService {
     return allow();
   }
 
-  /** Generic "may this actor manage this Staff member at all?" (§11). */
   async canManageStaff(
     actor: GuildMember,
     target: GuildMember,

@@ -6,7 +6,6 @@ import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { ticketConfigService } from "../../tickets/services/ticket-config.service.ts";
 
-
 export function decideGiftManager(input: {
   isAdministrator: boolean;
   hasPanelSupportRole: boolean;
@@ -18,7 +17,7 @@ export function decideGiftManager(input: {
 export class GiftClaimPermissionService {
   panelSupportRoleId(): string | null {
     const role = ticketConfigService.getPanel(GIFT_CLAIM_PANEL_ID)?.supportRoleId;
-    // Unset means the panel is administrator-only, so no role grants anything.
+
     return isUnsetId(role) ? null : (role ?? null);
   }
 

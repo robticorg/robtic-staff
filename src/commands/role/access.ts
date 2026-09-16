@@ -59,10 +59,6 @@ function summarise(update: AccessRoleUpdate): (string | undefined)[] {
   return lines;
 }
 
-/**
- * §Architecture — the command only validates input and delegates; all
- * persistence and role-safety rules live in StaffAccessRoleService.
- */
 export async function handleAccess(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = requireGuild(interaction);
 

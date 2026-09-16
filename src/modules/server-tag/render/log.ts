@@ -30,7 +30,6 @@ export type ServerTagLogEvent =
   | { kind: "BLOCKED"; userId: UserId; staffStatus: string }
   | { kind: "PROBLEM"; userId?: UserId; detail: string };
 
-/** Composes one log-channel card — heading plus labelled lines. */
 export function buildServerTagLog(event: ServerTagLogEvent): string {
   switch (event.kind) {
     case "TAG_ENABLED": {

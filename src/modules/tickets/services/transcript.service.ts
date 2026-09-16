@@ -60,10 +60,6 @@ export class TranscriptService {
       messages: [],
     };
 
-    // The live cache (captured message-by-message, embeds included) is the
-    // primary source — it survives the channel being deleted right after.
-    // A history fetch only runs as a fallback, e.g. after a bot restart
-    // dropped the tracked buffer for a still-open ticket.
     const cached = transcriptCache.flush(ticket.channelId);
     if (cached.length > 0) {
       payload.messages = cached;
@@ -92,11 +88,6 @@ export class TranscriptService {
     return TicketTranscriptModel.findOne({ transcriptId }).exec();
   }
 
-  /**
-   * Posts the transcript (a readable .txt rendering, plus a summary embed)
-   * into the channel configured at `ticketMain.transcriptChannelId`. A no-op
-   * when that's left as the unset placeholder.
-   */
   async sendToChannel(guild: Guild, transcript: TicketTranscriptDocument): Promise<void> {
     try {
       const main = ticketConfigService.getMainConfig();
@@ -109,9 +100,7 @@ export class TranscriptService {
       }
 
       const payload = JSON.parse(transcript.content) as TranscriptPayload;
-      // A leading UTF-8 BOM stops viewers that guess a text file's encoding
-      // from misdetecting Arabic (and other non-Latin) content as some other
-      // multi-byte charset (e.g. Thai) and rendering it as garbage.
+
       const text = "﻿" + renderTranscriptText(payload);
       const file = new AttachmentBuilder(Buffer.from(text, "utf-8"), {
         name: `${transcript.ticketId}-transcript.txt`,
