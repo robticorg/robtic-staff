@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   DISCORD_MESSAGE_LIMIT,
   formatStaffWarningMessage,
+  formatVerbalStaffWarningMessage,
 } from "../render/staff-warn-message.ts";
 
 const ATTENTION = "<:Attention:1486103485756870726>";
@@ -139,5 +140,33 @@ describe("Staff Warn channel message format", () => {
     expect(message).toContain("…");
     // The first proof is always kept.
     expect(message).toContain(many[0] as string);
+  });
+});
+
+describe("Verbal Staff Warn channel message format", () => {
+  it("uses the شفوي heading instead of a level", () => {
+    const message = formatVerbalStaffWarningMessage({
+      targetId: USER,
+      reason: "تأخير عن الشفت",
+      evidence: [],
+    });
+
+    expect(message).toBe(
+      [
+        `**Staff Warn شفوي ${ATTENTION}**`,
+        `**منشن : <@${USER}>**`,
+        "**السبب : تأخير عن الشفت**",
+        "**الدليل : لا يوجد**",
+      ].join("\n"),
+    );
+  });
+
+  it("keeps proof urls the same way the real-warning format does", () => {
+    const message = formatVerbalStaffWarningMessage({
+      targetId: USER,
+      reason: "تأخير",
+      evidence: ["https://example.com/proof.png"],
+    });
+    expect(message).toContain("**الدليل : https://example.com/proof.png**");
   });
 });

@@ -5,7 +5,12 @@ import { classifyWarnChannel } from "../../../modules/warnings/services/warn-cha
 import { warningActionService } from "../../../modules/warnings/services/warning-actions.service.ts";
 import { PrefixAbort } from "../_shared/guards.ts";
 import { requireTargetMember } from "../_shared/target.ts";
-import { evidenceUrls, loadWarnChannels, textAfterTarget } from "../_shared/warn-config.ts";
+import {
+  evidenceUrls,
+  loadWarnChannels,
+  splitVerbalMarker,
+  textAfterTarget,
+} from "../_shared/warn-config.ts";
 
 export default definePrefixCommand({
   name: "warn",
@@ -20,24 +25,45 @@ export default definePrefixCommand({
     }
 
     const target = await requireTargetMember(ctx, prefixMessages.warn.userWarnUsage);
-    const reason = textAfterTarget(ctx.rest);
-    if (!reason) throw new PrefixAbort(prefixMessages.warn.reasonRequired);
+    const rawReason = textAfterTarget(ctx.rest);
     const evidence = evidenceUrls(ctx.message);
 
     if (kind === "USER") {
+      if (!rawReason) throw new PrefixAbort(prefixMessages.warn.reasonRequired);
       await warningActionService.issueUserWarning({
         guildId: ctx.guild.id,
         targetId: target.id,
-        reason,
+        reason: rawReason,
         issuer: ctx.member,
         evidence,
       });
-      await ctx.reply(prefixMessages.warn.userWarned(`<@${target.id}>`, reason));
+      await ctx.reply(prefixMessages.warn.userWarned(`<@${target.id}>`, rawReason));
       return;
     }
 
     if (!(await staffPermissionService.isStaffManager(ctx.member))) {
       throw new PrefixAbort(prefixMessages.warn.staffWarnManagerOnly);
+    }
+
+    // A trailing "=" word marks a VERBAL staff warning; with no "=" it is
+    // issued directly as a REAL one.
+    const { reason, isVerbal } = splitVerbalMarker(rawReason);
+    if (!reason) throw new PrefixAbort(prefixMessages.warn.reasonRequired);
+
+    const mention = `<@${target.id}>`;
+
+    if (!isVerbal) {
+      const result = await warningActionService.issueDirectRealStaffWarning({
+        guild: ctx.guild,
+        target,
+        reason,
+        issuer: ctx.member,
+        evidence,
+      });
+      const lines = [prefixMessages.warn.realRecorded(mention, result.level)];
+      if (result.fired) lines.push(prefixMessages.warn.firedMaxWarnings(mention));
+      await ctx.reply(lines.join("\n"));
+      return;
     }
 
     const result = await warningActionService.issueVerbalStaffWarning({
@@ -48,7 +74,6 @@ export default definePrefixCommand({
       evidence,
     });
 
-    const mention = `<@${target.id}>`;
     const lines = [prefixMessages.warn.verbalRecorded(mention, reason)];
     if (result.escalation) {
       lines.push(prefixMessages.warn.convertedToReal(result.escalation.convertedVerbalCount));

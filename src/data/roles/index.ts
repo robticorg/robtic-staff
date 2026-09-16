@@ -28,5 +28,6 @@ export const ROLE_SLOT_LABELS: Record<RoleConfigType, string> = {
   [RoleConfigType.VACATION]: "رتبة الإجازة",
   [RoleConfigType.APPEAL_MANAGER]: "رتبة مانجر الاستئناف",
   [RoleConfigType.GIFT_MANAGER]: "رتبة مانجر الهدايا",
+  [RoleConfigType.APPLY_MANAGER]: "رتبة مانجر التقديم",
   [RoleConfigType.TAG]: "رتبة التاق",
 };

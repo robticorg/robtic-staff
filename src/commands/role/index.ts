@@ -47,6 +47,7 @@ const NON_NUMBERED_TYPES = [
   RoleConfigType.VACATION,
   RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
+  RoleConfigType.APPLY_MANAGER,
   RoleConfigType.TAG,
   RoleConfigType.ACCEPTED,
   RoleConfigType.ASSIGN,
@@ -155,6 +156,14 @@ const data = new SlashCommandBuilder()
       .setDescription(copy.sub.giftmanager.description)
       .addRoleOption((o) =>
         o.setName(CommandOption.ROLE).setDescription(copy.sub.giftmanager.option).setRequired(true),
+      ),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName(RoleSubcommand.APPLY_MANAGER)
+      .setDescription(copy.sub.applymanager.description)
+      .addRoleOption((o) =>
+        o.setName(CommandOption.ROLE).setDescription(copy.sub.applymanager.option).setRequired(true),
       ),
   )
   .addSubcommand((s) =>
@@ -466,6 +475,8 @@ export default defineCommand({
         return handleSingleton(interaction, RoleConfigType.APPEAL_MANAGER);
       case RoleSubcommand.GIFT_MANAGER:
         return handleSingleton(interaction, RoleConfigType.GIFT_MANAGER);
+      case RoleSubcommand.APPLY_MANAGER:
+        return handleSingleton(interaction, RoleConfigType.APPLY_MANAGER);
       case RoleSubcommand.TAG:
         return handleSingleton(interaction, RoleConfigType.TAG);
       case RoleSubcommand.HIGHSTAFF:

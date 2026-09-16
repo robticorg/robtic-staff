@@ -1,1 +1,1 @@
-export const prefixlessCommands: readonly string[] = ["warn"];
+export const prefixlessCommands: readonly string[] = ["warn", "unwarn"];

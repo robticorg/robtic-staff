@@ -28,9 +28,10 @@ export interface StaffWarning {
   convertedToWarningId?: Types.ObjectId;
 
   /**
-   * Id of the message posted to the Staff Warns channel for a REAL warning.
-   * Kept so the log can later be linked or edited. It is never deleted when a
-   * warning is revoked or appealed — the history stays visible.
+   * Id of the announcement message posted to STAFF_WARN_ANNOUNCE for this
+   * warning (REAL or VERBAL). Kept so the log can later be linked or edited.
+   * It is never deleted when a warning is revoked or appealed — the history
+   * stays visible.
    */
   staffWarnMessageId?: string;
 

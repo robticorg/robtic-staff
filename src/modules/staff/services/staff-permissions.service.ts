@@ -37,6 +37,19 @@ export class StaffPermissionService {
   canManageStaff(member: GuildMember): Promise<boolean> {
     return this.isStaffManager(member);
   }
+
+  /**
+   * Apply Manager reviews staff applications (`!accept`) without needing
+   * full Staff Manager rights — Staff Managers keep access too.
+   */
+  async isApplyManager(member: GuildMember): Promise<boolean> {
+    const applyRole = await roleConfigService.getByType(
+      member.guild.id,
+      RoleConfigType.APPLY_MANAGER,
+    );
+    if (applyRole && member.roles.cache.has(applyRole.roleId)) return true;
+    return this.isStaffManager(member);
+  }
 }
 
 export const staffPermissionService = new StaffPermissionService();

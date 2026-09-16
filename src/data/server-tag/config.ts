@@ -19,8 +19,9 @@ export const serverTagConfig = {
  * The numbered Staff ladder is added on top of this at runtime (it is stored
  * with a `level`, not a fixed type).
  *
- * STAFF_MANAGER / CHAT_MANAGER / APPEAL_MANAGER / GIFT_MANAGER are duty roles
- * that belong to the Staff configuration, so they follow the Staff roles.
+ * STAFF_MANAGER / CHAT_MANAGER / APPEAL_MANAGER / GIFT_MANAGER / APPLY_MANAGER
+ * are duty roles that belong to the Staff configuration, so they follow the
+ * Staff roles.
  */
 export const STAFF_TAG_MANAGED_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.START,
@@ -30,6 +31,7 @@ export const STAFF_TAG_MANAGED_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.CHAT_MANAGER,
   RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
+  RoleConfigType.APPLY_MANAGER,
   RoleConfigType.WARN_1,
   RoleConfigType.WARN_2,
   RoleConfigType.WARN_3,

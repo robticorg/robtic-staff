@@ -26,6 +26,12 @@ export async function requireStaffManager(ctx: PrefixContext): Promise<void> {
   }
 }
 
+export async function requireApplyManager(ctx: PrefixContext): Promise<void> {
+  if (!(await staffPermissionService.isApplyManager(ctx.member))) {
+    throw new PrefixAbort(prefixMessages.common.notApplyManager);
+  }
+}
+
 export interface TicketContext {
   ticket: TicketDocument;
   panel: TicketPanelConfig;

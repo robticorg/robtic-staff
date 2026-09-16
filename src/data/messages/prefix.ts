@@ -18,6 +18,7 @@ export const prefixMessages = {
     genericError: `${E.error} صار خطأ وأنا أنفذ الأمر.`,
     notStaff: `${E.error} ما عندك صلاحية تستخدم هذا.`,
     notStaffManager: `${E.error} هذا لمانجرات الستاف بس.`,
+    notApplyManager: `${E.error} هذا لمانجرات التقديم بس.`,
     usage: (usage: string) => `${E.warning} الطريقة: \`${usage}\``,
     needUserTarget: `${E.warning} منشن العضو أو حط الآيدي حقه.`,
   },
@@ -124,7 +125,10 @@ export const prefixMessages = {
     staffWarnRoleMissing: (level: number) =>
       `${E.error} رتبة تحذير الستاف ${level} مو مضبوطة (\`/role warn\`).`,
 
-    unwarnUsage: `${E.warning} الطريقة: \`!الغاء-تحذير @عضو <آيدي-التحذير>\``,
+    unwarnUsage: `${E.warning} الطريقة: \`!الغاء-تحذير @عضو\` (تحذير ستاف) أو \`!الغاء-تحذير @عضو <آيدي-التحذير>\` (تحذير عضو)`,
+    unwarnWarningIdRequired: `${E.warning} حط آيدي التحذير: \`!الغاء-تحذير @عضو <آيدي-التحذير>\``,
+    noActiveRealWarning: (userMention: string) =>
+      `${E.warning} ${userMention} ما عليه تحذير رسمي نشط نقدر نشيله.`,
     warningNotFound: `${E.error} ما فيه تحذير بهذا الآيدي.`,
     warningWrongUser: `${E.error} هذا التحذير مو حق هذا العضو.`,
     warningAlreadyInactive: `${E.warning} هذا التحذير ملغي / محذوف أصلاً.`,

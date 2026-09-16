@@ -195,20 +195,27 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
     await ChannelConfigModel.deleteMany({ guildId: GUILD });
   });
 
-  it("does not post anything for a verbal warning", async () => {
+  it("posts a Staff Warn شفوي message for a verbal warning", async () => {
     await issueVerbals(guild, target, manager, [
       { reason: "تأخير", evidence: [] },
     ]);
 
-    expect(sent).toHaveLength(0);
+    expect(sent).toHaveLength(1);
+    const lines = sent[0]!.content.split("\n");
+    expect(lines).toHaveLength(4);
+    expect(lines[0]).toBe(`**Staff Warn شفوي ${ATTENTION}**`);
+    expect(lines[2]).toBe("**السبب : تأخير**");
+
     const stored = await StaffWarningModel.find({ guildId: GUILD }).exec();
     expect(stored).toHaveLength(1);
     expect(stored[0]!.type).toBe(StaffWarningType.VERBAL);
   });
 
-  it("posts nothing after only two verbal warnings", async () => {
+  it("posts one Staff Warn شفوي message per verbal warning, no escalation before the third", async () => {
     await issueVerbals(guild, target, manager, threeVerbals("a").slice(0, 2));
-    expect(sent).toHaveLength(0);
+    expect(sent).toHaveLength(2);
+    expect(sent[0]!.content.split("\n")[0]).toBe(`**Staff Warn شفوي ${ATTENTION}**`);
+    expect(sent[1]!.content.split("\n")[0]).toBe(`**Staff Warn شفوي ${ATTENTION}**`);
   });
 
   it("posts Staff Warn 1 when three verbals escalate to a real warning", async () => {
@@ -218,8 +225,9 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
     expect(escalation).toBeDefined();
     expect(escalation!.level).toBe(1);
 
-    expect(sent).toHaveLength(1);
-    const lines = sent[0]!.content.split("\n");
+    // 3 verbal announcements + 1 real announcement.
+    expect(sent).toHaveLength(4);
+    const lines = sent.at(-1)!.content.split("\n");
     expect(lines).toHaveLength(4);
     expect(lines[0]).toBe(`**Staff Warn 1 ${ATTENTION}**`);
     expect(lines[1]).toBe(`**منشن : <@${target.id}>**`);
@@ -230,31 +238,44 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
     await issueVerbals(guild, target, manager, threeVerbals("b"));
     await issueVerbals(guild, target, manager, threeVerbals("c"));
 
-    expect(sent).toHaveLength(3);
-    expect(sent[0]!.content.split("\n")[0]).toBe(`**Staff Warn 1 ${ATTENTION}**`);
-    expect(sent[1]!.content.split("\n")[0]).toBe(`**Staff Warn 2 ${ATTENTION}**`);
-    expect(sent[2]!.content.split("\n")[0]).toBe(`**Staff Warn 3 ${ATTENTION}**`);
+    const realMessages = sent.filter((s) => /^\*\*Staff Warn \d/.test(s.content));
+    expect(realMessages).toHaveLength(3);
+    expect(realMessages[0]!.content.split("\n")[0]).toBe(`**Staff Warn 1 ${ATTENTION}**`);
+    expect(realMessages[1]!.content.split("\n")[0]).toBe(`**Staff Warn 2 ${ATTENTION}**`);
+    expect(realMessages[2]!.content.split("\n")[0]).toBe(`**Staff Warn 3 ${ATTENTION}**`);
   });
 
-  it("carries the managers' reasons and every proof onto the real warning log", async () => {
+  it("each verbal Staff Warn شفوي message carries its own manager reason", async () => {
     await issueVerbals(guild, target, manager, threeVerbals("a"));
 
-    const content = sent[0]!.content;
-    expect(content).toContain("سبب a أول");
-    expect(content).toContain("سبب a ثاني");
-    expect(content).toContain("سبب a ثالث");
-    expect(content).toContain("https://cdn.discordapp.com/a-1.png");
-    expect(content).toContain("https://cdn.discordapp.com/a-3.png");
+    const verbalMessages = sent.filter((s) => s.content.startsWith("**Staff Warn شفوي"));
+    expect(verbalMessages).toHaveLength(3);
+    expect(verbalMessages[0]!.content).toContain("سبب a أول");
+    expect(verbalMessages[1]!.content).toContain("سبب a ثاني");
+    expect(verbalMessages[2]!.content).toContain("سبب a ثالث");
   });
 
-  it("shows لا يوجد when no verbal warning carried proof", async () => {
+  it("the escalated real warning shows a generic reason and every verbal's proof, never the verbal reasons", async () => {
+    await issueVerbals(guild, target, manager, threeVerbals("a"));
+
+    const real = sent.find((s) => /^\*\*Staff Warn \d/.test(s.content))!;
+    expect(real.content).toContain("**السبب : حصل على 3 تحذيرات شفوية**");
+    expect(real.content).not.toContain("سبب a أول");
+    expect(real.content).not.toContain("سبب a ثاني");
+    expect(real.content).not.toContain("سبب a ثالث");
+    expect(real.content).toContain("https://cdn.discordapp.com/a-1.png");
+    expect(real.content).toContain("https://cdn.discordapp.com/a-3.png");
+  });
+
+  it("shows لا يوجد on the real warning when no verbal warning carried proof", async () => {
     await issueVerbals(guild, target, manager, [
       { reason: "أول", evidence: [] },
       { reason: "ثاني", evidence: [] },
       { reason: "ثالث", evidence: [] },
     ]);
 
-    expect(sent[0]!.content).toContain("**الدليل : لا يوجد**");
+    const real = sent.find((s) => /^\*\*Staff Warn \d/.test(s.content))!;
+    expect(real.content).toContain("**الدليل : لا يوجد**");
   });
 
   it("pings only the warned member, never @everyone from a crafted reason", async () => {
@@ -264,9 +285,10 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
       { reason: "ثالث", evidence: [] },
     ]);
 
-    expect(sent[0]!.allowedMentions).toEqual({ users: [target.id] });
+    const verbalMsg = sent[0]!;
+    expect(verbalMsg.allowedMentions).toEqual({ users: [target.id] });
     // The text is preserved verbatim; only the mention policy neutralises it.
-    expect(sent[0]!.content).toContain("@everyone انتبهوا");
+    expect(verbalMsg.content).toContain("@everyone انتبهوا");
   });
 
   it("stores the log message id on the real warning", async () => {
@@ -331,13 +353,15 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
       type: StaffWarningType.VERBAL,
     }).exec();
 
+    const sentBefore = sent.length;
     const result = await staffWarningLogService.send({
       guild: guild as never,
       warningId: verbal!._id,
     });
 
     expect(result.outcome).toBe("not-real");
-    expect(sent).toHaveLength(0);
+    // send() must refuse the verbal warning outright — no extra message.
+    expect(sent).toHaveLength(sentBefore);
   });
 
   it("does not delete or repost the log when the warning is revoked (§12)", async () => {
@@ -347,7 +371,7 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
       type: StaffWarningType.REAL,
     }).exec();
     const messageId = real!.staffWarnMessageId;
-    expect(sent).toHaveLength(1);
+    expect(sent).toHaveLength(4);
 
     await warningActionService.revokeWarning({
       guild: guild as never,
@@ -358,8 +382,8 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
       reason: "استئناف مقبول",
     });
 
-    // Still exactly one message, and the id is still on the record.
-    expect(sent).toHaveLength(1);
+    // No new message posted by the revoke.
+    expect(sent).toHaveLength(4);
     const after = await StaffWarningModel.findById(real!._id).exec();
     expect(after!.status).toBe(WarningStatus.REMOVED);
     expect(after!.staffWarnMessageId).toBe(messageId as string);

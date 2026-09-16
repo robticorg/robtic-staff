@@ -10,7 +10,7 @@ import {
 } from "../../../modules/staff/services/staff-management.service.ts";
 import { staffTypeService } from "../../../modules/staff/services/staff-type.service.ts";
 import { AcceptArgProblem, parseAcceptArguments } from "../_shared/accept-args.ts";
-import { PrefixAbort, requireStaffManager } from "../_shared/guards.ts";
+import { PrefixAbort, requireApplyManager } from "../_shared/guards.ts";
 import { requireTargetMember } from "../_shared/target.ts";
 
 const M = prefixMessages.staff;
@@ -19,7 +19,7 @@ export default definePrefixCommand({
   name: "accept",
   category: "staff",
   async execute(ctx) {
-    await requireStaffManager(ctx);
+    await requireApplyManager(ctx);
     const target = await requireTargetMember(ctx, "!accept @user [level|tier] [type]");
 
     // §Parser — the command itself holds no parsing or Staff Type logic.

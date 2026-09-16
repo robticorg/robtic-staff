@@ -15,21 +15,14 @@ export const tickets: TicketConfig = {
 
 export const UNSET_ID = "000000000000000000";
 
-/** A configuration slot left deliberately empty. */
 export function isUnsetId(id: string | undefined | null): boolean {
   return !id || id === UNSET_ID;
 }
 
-/**
- * True when a panel has no support role, which makes it administrator-only.
- * Administrators bypass channel overwrites in Discord, so no explicit allow is
- * needed for them — the panel simply grants nobody else access.
- */
 export function panelIsAdminOnly(panel: Pick<TicketPanelConfig, "supportRoleId">): boolean {
   return isUnsetId(panel.supportRoleId);
 }
 
-/** Panels that open a real ticket channel; gift-claim does not. */
 export function panelCreatesChannel(
   panel: Pick<TicketPanelConfig, "createsChannel">,
 ): boolean {

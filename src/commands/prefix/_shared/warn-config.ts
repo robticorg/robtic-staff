@@ -21,3 +21,16 @@ export function textAfterTarget(rest: string): string {
     .replace(/^\s*\d{17,20}\s*/, "")
     .trim();
 }
+
+/**
+ * A staff-warn reason ending in a standalone "=" word marks a VERBAL warning;
+ * with no trailing "=" it is a direct REAL warning. Only staff warns read
+ * this marker — member warns never do.
+ */
+export function splitVerbalMarker(reason: string): { reason: string; isVerbal: boolean } {
+  const tokens = reason.trim().split(/\s+/).filter(Boolean);
+  if (tokens.length > 0 && tokens[tokens.length - 1] === "=") {
+    return { reason: tokens.slice(0, -1).join(" "), isVerbal: true };
+  }
+  return { reason: reason.trim(), isVerbal: false };
+}

@@ -37,6 +37,7 @@ export const RoleConfigType = {
   VACATION: "VACATION",
   APPEAL_MANAGER: "APPEAL_MANAGER",
   GIFT_MANAGER: "GIFT_MANAGER",
+  APPLY_MANAGER: "APPLY_MANAGER",
   TAG: "TAG",
 } as const;
 export type RoleConfigType = (typeof RoleConfigType)[keyof typeof RoleConfigType];
@@ -64,6 +65,7 @@ export const SINGLETON_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.VACATION,
   RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
+  RoleConfigType.APPLY_MANAGER,
   RoleConfigType.TAG,
   RoleConfigType.ACCEPTED,
 ];

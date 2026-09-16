@@ -312,6 +312,77 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
     expect(doc?.status).toBe("REVOKED");
   });
 
+  it("direct real staff warning: no '=' issues a REAL warning straight away, no verbal record", async () => {
+    const target = fakeMember("staff-direct-real-1");
+    await staffManagementService.accept(target as never, SYSTEM_ACTOR, 2);
+    const manager = fakeMember("manager-direct-1");
+
+    const result = await warningActionService.issueDirectRealStaffWarning({
+      guild: target.guild,
+      target: target as never,
+      reason: "مخالفة مباشرة",
+      issuer: manager as never,
+      evidence: [],
+    });
+
+    expect(result.level).toBe(1);
+    expect(result.fired).toBe(false);
+    expect(target.roles.cache.has(WARN[1])).toBe(true);
+
+    const targetStaff = await staffService.get("staff-direct-real-1", GUILD);
+    const verbalCount = await StaffWarningModel.countDocuments({
+      staffId: targetStaff!._id,
+      type: "VERBAL",
+    }).exec();
+    expect(verbalCount).toBe(0);
+
+    const real = await StaffWarningModel.findById(result.realWarningId).exec();
+    expect(real?.reason).toBe("مخالفة مباشرة");
+    expect(real?.source).toBe("MANUAL");
+  });
+
+  it("direct real staff warning: reaching level 3 fires + blacklists", async () => {
+    const target = fakeMember("staff-direct-real-3");
+    await staffManagementService.accept(target as never, SYSTEM_ACTOR, 2);
+    const manager = fakeMember("manager-direct-3");
+
+    let last;
+    for (let i = 1; i <= 3; i++) {
+      last = await warningActionService.issueDirectRealStaffWarning({
+        guild: target.guild,
+        target: target as never,
+        reason: `مخالفة ${i}`,
+        issuer: manager as never,
+        evidence: [],
+      });
+    }
+
+    expect(last!.level).toBe(3);
+    expect(last!.fired).toBe(true);
+    expect(last!.blacklisted).toBe(true);
+    expect(target.roles.cache.has(BLACKLIST)).toBe(true);
+    const staff = await staffService.get("staff-direct-real-3", GUILD);
+    expect(staff?.status).toBe(StaffStatus.BLACKLISTED);
+  });
+
+  it("direct real staff warning: new staff (level 0) fires immediately on the first one", async () => {
+    const target = fakeMember("staff-direct-real-0");
+    await staffManagementService.accept(target as never, SYSTEM_ACTOR, 0);
+    const manager = fakeMember("manager-direct-0");
+
+    const result = await warningActionService.issueDirectRealStaffWarning({
+      guild: target.guild,
+      target: target as never,
+      reason: "مخالفة",
+      issuer: manager as never,
+      evidence: [],
+    });
+
+    expect(result.level).toBe(1);
+    expect(result.fired).toBe(true);
+    expect(target.roles.cache.has(BLACKLIST)).toBe(true);
+  });
+
   it("Fast Access: guild+command is unique; duplicate add is rejected", async () => {
     await fastAccessService.create({
       guildId: GUILD,

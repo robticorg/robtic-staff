@@ -95,6 +95,13 @@ export interface IssueVerbalStaffWarnResult {
   escalation?: EscalationResult;
 }
 
+export interface IssueDirectRealStaffWarnResult {
+  realWarningId: string;
+  level: StaffWarningLevel;
+  fired: boolean;
+  blacklisted: boolean;
+}
+
 export class WarningActionService {
   private async postWarnLog(guild: Guild, input: WarnLogInput): Promise<void> {
     try {
@@ -204,13 +211,10 @@ export class WarningActionService {
       await staffService.incrementCounters(issuerStaff._id, { staffWarningsIssued: 1 });
     }
 
-    await this.postWarnLog(params.guild, {
-      kind: "VERBAL",
+    await staffWarningLogService.sendVerbal({
+      guild: params.guild,
+      warningId: verbal._id,
       targetId: params.target.id,
-      issuerId: params.issuer.id,
-      reason: params.reason,
-      evidence: params.evidence,
-      warningId: ref,
     });
 
     const escalation = await this.escalate({
@@ -227,6 +231,99 @@ export class WarningActionService {
     ]);
 
     return { verbalWarningId: ref, verbalActiveCount, verbalConvertedCount, escalation };
+  }
+
+  /**
+   * Issues a REAL staff warning directly — no verbal record, no triplet to
+   * accumulate. Used when `!warn` on a staff member carries a reason with no
+   * trailing "=" marker.
+   */
+  async issueDirectRealStaffWarning(params: {
+    guild: Guild;
+    target: GuildMember;
+    reason: string;
+    issuer: GuildMember;
+    evidence: string[];
+  }): Promise<IssueDirectRealStaffWarnResult> {
+    const guildId = params.guild.id;
+    if (!params.reason?.trim()) throw new WarnError(prefixMessages.warn.reasonRequired);
+
+    const targetStaff = await staffService.get(params.target.id, guildId);
+    if (!targetStaff) {
+      throw new WarnError(prefixMessages.warn.staffWarnTargetNotStaff(`<@${params.target.id}>`));
+    }
+    if (targetStaff.status !== StaffStatus.ACTIVE) {
+      throw new WarnError(prefixMessages.warn.staffWarnTargetInactive(`<@${params.target.id}>`));
+    }
+
+    const currentLevel = await staffWarningService.currentRealLevel(targetStaff._id);
+    const level = Math.min(STAFF_WARNING_FIRE_LEVEL, currentLevel + 1) as StaffWarningLevel;
+
+    const real = await staffWarningService.issueReal({
+      guildId,
+      staffId: targetStaff._id,
+      level,
+      reason: params.reason,
+      issuedBy: params.issuer.id,
+      evidence: params.evidence,
+      source: StaffWarningRealSource.MANUAL,
+    });
+    const ref = real._id.toString();
+
+    const issuerStaff = await staffService.ensure(params.issuer.id, guildId);
+    const award = await staffPointService.add({
+      staffId: issuerStaff._id,
+      amount: 1,
+      type: StaffPointTransactionType.STAFF_WARNING,
+      referenceId: ref,
+      reason: `Staff real warning ${ref}`,
+    });
+    if (!award.duplicate) {
+      await staffActivityService.create({
+        staffId: issuerStaff._id,
+        type: StaffActivityType.STAFF_WARNING,
+        referenceId: ref,
+        metadata: { targetId: params.target.id, kind: "REAL" },
+      });
+      await staffService.incrementCounters(issuerStaff._id, { staffWarningsIssued: 1 });
+    }
+
+    await staffHistoryService.record({
+      staffId: targetStaff._id,
+      action: StaffHistoryAction.STAFF_WARNING,
+      performedBy: params.issuer.id,
+      reason: params.reason,
+      metadata: { level, warningId: ref, source: StaffWarningRealSource.MANUAL },
+    });
+
+    await this.postWarnLog(params.guild, {
+      kind: "REAL",
+      targetId: params.target.id,
+      issuerId: params.issuer.id,
+      reason: params.reason,
+      level,
+      evidence: params.evidence,
+      warningId: ref,
+    });
+
+    await staffWarningLogService.send({
+      guild: params.guild,
+      warningId: real._id,
+      targetId: params.target.id,
+    });
+
+    const fired = (targetStaff.currentRoleLevel ?? 0) === 0 || level >= STAFF_WARNING_FIRE_LEVEL;
+
+    if (fired) {
+      // Reaching the fire threshold is a direct consequence of the warning
+      // itself, not a discretionary termination — bypass authorization the
+      // same way the automatic verbal-escalation fire does.
+      await staffManagementService.fire(params.target, SYSTEM_ACTOR, true);
+      return { realWarningId: ref, level, fired: true, blacklisted: true };
+    }
+
+    await reconcileStaffWarnRoles(params.target, level, `Real staff warning ${level}`);
+    return { realWarningId: ref, level, fired: false, blacklisted: false };
   }
 
   private async escalate(input: {
@@ -253,7 +350,7 @@ export class WarningActionService {
       guildId: input.guild.id,
       staffId: input.staffObjectId,
       level,
-      reason: "تحويل تلقائي من 3 تحذيرات شفوية",
+      reason: "حصل على 3 تحذيرات شفوية",
       issuedBy: "SYSTEM",
       evidence: [],
       source: StaffWarningRealSource.VERBAL_ESCALATION,

@@ -2,7 +2,7 @@ import type { TicketPanelConfig } from "../types.ts";
 import { colors } from "../../config/colors.ts";
 
 export const supportPanel: TicketPanelConfig = {
-  id: "support-account",
+  id: "support",
   name: "الـدعـم الـفـنـي",
   description: "تواصل مع فريق الدعم الفني لحل مشاكل الخاصة بك.",
   emoji: "<a:736257973906571306:1485939519642537994>",

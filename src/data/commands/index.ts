@@ -26,6 +26,7 @@ export const RoleSubcommand = {
   VACATION: "vacation",
   APPEAL_MANAGER: "appealmanager",
   GIFT_MANAGER: "giftmanager",
+  APPLY_MANAGER: "applymanager",
   TAG: "tag",
   CHECK: "check",
   ACCESS: "access",
@@ -136,6 +137,10 @@ export const commandCopy = {
       giftmanager: {
         description: "ضبط الرتبة اللي تقدر تراجع طلبات الهدايا وتسلّمها",
         option: "رتبة مانجر الهدايا",
+      },
+      applymanager: {
+        description: "ضبط الرتبة اللي تقدر تقبل طلبات التقديم (زيادة على مانجرات الستاف)",
+        option: "رتبة مانجر التقديم",
       },
       tag: {
         description: "ضبط الرتبة اللي تنعطى تلقائياً لكل عضو يستخدم تاق السيرفر",
