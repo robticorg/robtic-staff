@@ -16,6 +16,19 @@ export const WarningSource = {
 export type WarningSource = (typeof WarningSource)[keyof typeof WarningSource];
 export const WARNING_SOURCE_VALUES = Object.values(WarningSource);
 
+/**
+ * Which warning ladder a staff warning belongs to. The two are tracked
+ * completely separately: a STAFF Warn 1 can never become an OWNER Warn 2, and
+ * each category has its own three Discord roles and its own verbal→real
+ * progression. Chosen from the target's hierarchy tier, never by the manager.
+ */
+export const WarningCategory = {
+  STAFF: "STAFF",
+  OWNER: "OWNER",
+} as const;
+export type WarningCategory = (typeof WarningCategory)[keyof typeof WarningCategory];
+export const WARNING_CATEGORY_VALUES = Object.values(WarningCategory);
+
 export const StaffWarningType = {
   VERBAL: "VERBAL",
   REAL: "REAL",

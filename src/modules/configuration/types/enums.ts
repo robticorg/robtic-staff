@@ -19,6 +19,14 @@ export const RoleConfigType = {
   WARN_1: "WARN_1",
   WARN_2: "WARN_2",
   WARN_3: "WARN_3",
+  /**
+   * The Owner warning ladder — a second, completely separate set of three
+   * warning roles used when the target sits at Owner tier or above. Never
+   * mixed with WARN_1/2/3.
+   */
+  OWNER_WARN_1: "OWNER_WARN_1",
+  OWNER_WARN_2: "OWNER_WARN_2",
+  OWNER_WARN_3: "OWNER_WARN_3",
   MUTE: "MUTE",
   JAIL: "JAIL",
   CHAT_MANAGER: "CHAT_MANAGER",
@@ -48,6 +56,9 @@ export const SINGLETON_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.WARN_1,
   RoleConfigType.WARN_2,
   RoleConfigType.WARN_3,
+  RoleConfigType.OWNER_WARN_1,
+  RoleConfigType.OWNER_WARN_2,
+  RoleConfigType.OWNER_WARN_3,
   RoleConfigType.MUTE,
   RoleConfigType.JAIL,
   RoleConfigType.CHAT_MANAGER,

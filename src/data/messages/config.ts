@@ -25,6 +25,22 @@ export const configMessages = {
     ladderDuplicateRoles: "السلّم فيه رتب مكررة",
   },
 
+  ownerWarns: {
+    configured: "تم ضبط رتب تحذيرات الأونر.",
+    note: "هذي الرتب لتحذيرات ستاف **الأونر** بس — منفصلة تماماً عن رتب تحذيرات الستاف العادية.",
+    line: (index: number, roleId: string) => `تحذير أونر ${index}: <@&${roleId}>`,
+
+    duplicate: "لازم تكون الرتب الثلاث مختلفة عن بعض.",
+    everyone: "ما تقدر تستخدم رتبة @everyone كرتبة تحذير.",
+    managed: (roleId: string) => `<@&${roleId}> رتبة تابعة لتطبيق/بوت وما تنعطى يدوياً.`,
+    unmanageable: (roleId: string) =>
+      `<@&${roleId}> فوق رتبة البوت — ارفع رتبة البوت فوقها عشان يقدر يعطيها ويشيلها.`,
+    onLadder: (roleId: string) =>
+      `<@&${roleId}> رتبة ضمن سلّم الستاف المرقّم — ما تنفع كرتبة تحذير.`,
+    reserved: (roleId: string, label: string) =>
+      `<@&${roleId}> مستخدمة أصلاً كـ "${label}" — اختر رتبة ثانية.`,
+  },
+
   channels: {
     configured: "تم ضبط الروم.",
     slotLine: (type: string) => `الخانة:\n\`${type}\``,

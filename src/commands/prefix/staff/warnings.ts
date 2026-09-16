@@ -3,6 +3,8 @@ import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { staffService } from "../../../modules/staff/index.ts";
 import { staffPermissionService } from "../../../modules/staff/services/staff-permissions.service.ts";
 import { staffWarningService, userWarningService } from "../../../modules/warnings/index.ts";
+import { WarningCategory } from "../../../modules/warnings/types/enums.ts";
+import { resolveWarningCategory } from "../../../modules/warnings/services/warning-actions.service.ts";
 import { firstUserTarget } from "../_shared/parse.ts";
 import { PrefixAbort } from "../_shared/guards.ts";
 
@@ -28,10 +30,16 @@ export default definePrefixCommand({
 
     const targetStaff = await staffService.get(targetId, ctx.guild.id);
     if (targetStaff && (isManager || viewingSelf)) {
+      // The summary reflects the ladder the member is on right now; the other
+      // category's history is untouched and still stored.
+      const targetMember = await ctx.guild.members.fetch(targetId).catch(() => null);
+      const category = targetMember
+        ? await resolveWarningCategory(targetMember)
+        : WarningCategory.STAFF;
       const [verbalActive, verbalConverted, realLevel] = await Promise.all([
-        staffWarningService.countActiveVerbal(targetStaff._id),
-        staffWarningService.countConvertedVerbal(targetStaff._id),
-        staffWarningService.currentRealLevel(targetStaff._id),
+        staffWarningService.countActiveVerbal(targetStaff._id, category),
+        staffWarningService.countConvertedVerbal(targetStaff._id, category),
+        staffWarningService.currentRealLevel(targetStaff._id, category),
       ]);
       lines.push("", W.verbalSection, W.verbalSummary(verbalActive, verbalConverted));
       lines.push("", W.realSection, W.realSummary(realLevel));

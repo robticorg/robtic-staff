@@ -5,8 +5,10 @@ import {
   STAFF_WARNING_LEVEL_VALUES,
   STAFF_WARNING_REAL_SOURCE_VALUES,
   STAFF_WARNING_TYPE_VALUES,
+  WARNING_CATEGORY_VALUES,
   WARNING_STATUS_VALUES,
   StaffWarningType,
+  WarningCategory,
   WarningStatus,
   type StaffWarningLevel,
   type StaffWarningRealSource,
@@ -16,6 +18,11 @@ export interface StaffWarning {
   guildId?: GuildId;
   staffId: Types.ObjectId;
   type: StaffWarningType;
+  /**
+   * STAFF or OWNER. Absent on rows written before owner warnings existed —
+   * always read it through `warningCategoryOf`, which treats absent as STAFF.
+   */
+  category?: WarningCategory;
   level?: StaffWarningLevel;
   reason: string;
 
@@ -53,6 +60,12 @@ const staffWarningSchema = new Schema<StaffWarning>(
       default: StaffWarningType.REAL,
       required: true,
     },
+    category: {
+      type: String,
+      enum: WARNING_CATEGORY_VALUES,
+      default: WarningCategory.STAFF,
+      index: true,
+    },
     level: { type: Number, enum: STAFF_WARNING_LEVEL_VALUES },
     reason: { type: String, required: true, trim: true, maxlength: 1000 },
     evidence: { type: [String], default: [] },
@@ -79,6 +92,8 @@ const staffWarningSchema = new Schema<StaffWarning>(
 
 staffWarningSchema.index({ staffId: 1, status: 1, createdAt: -1 });
 staffWarningSchema.index({ staffId: 1, type: 1, status: 1, createdAt: 1 });
+// Every progression query is scoped to one category — never both at once.
+staffWarningSchema.index({ staffId: 1, category: 1, type: 1, status: 1, createdAt: 1 });
 
 export const StaffWarningModel: Model<StaffWarning> =
   (mongoose.models.StaffWarning as Model<StaffWarning> | undefined) ??

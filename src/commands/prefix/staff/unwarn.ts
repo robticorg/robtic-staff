@@ -4,7 +4,11 @@ import { staffService } from "../../../modules/staff/index.ts";
 import { staffPermissionService } from "../../../modules/staff/services/staff-permissions.service.ts";
 import { staffWarningService } from "../../../modules/warnings/index.ts";
 import { classifyWarnChannel } from "../../../modules/warnings/services/warn-channels.ts";
-import { warningActionService } from "../../../modules/warnings/services/warning-actions.service.ts";
+import {
+  resolveWarningCategory,
+  warningActionService,
+} from "../../../modules/warnings/services/warning-actions.service.ts";
+import { staffManagementAuthorizationService } from "../../../modules/staff/services/staff-management-authorization.service.ts";
 import { PrefixAbort, requireStaff } from "../_shared/guards.ts";
 import { requireTargetId } from "../_shared/target.ts";
 import { loadWarnChannels, textAfterTarget } from "../_shared/warn-config.ts";
@@ -48,14 +52,21 @@ export default definePrefixCommand({
       return;
     }
 
-    if (!(await staffPermissionService.isStaffManager(ctx.member))) {
-      throw new PrefixAbort(M.staffWarnManagerOnly);
-    }
+    // Whoever may warn this member may also lift that warning — same tiers,
+    // same boundaries, one decision point.
+    const targetMember = await ctx.guild.members.fetch(targetId).catch(() => null);
+    if (!targetMember) throw new PrefixAbort(prefixMessages.staff.memberNotFound);
+
+    const decision = await staffManagementAuthorizationService.canWarn(ctx.member, targetMember);
+    if (!decision.allowed) throw new PrefixAbort(decision.message);
 
     const targetStaff = await staffService.get(targetId, ctx.guild.id);
     if (!targetStaff) throw new PrefixAbort(M.staffWarnTargetNotStaff(mention));
 
-    const activeReal = await staffWarningService.activeRealForStaff(targetStaff._id);
+    // Scoped to the ladder the member is on now, so `!unwarn` on an Owner lifts
+    // an Owner warning and never reaches into their normal staff history.
+    const category = await resolveWarningCategory(targetMember);
+    const activeReal = await staffWarningService.activeRealForStaff(targetStaff._id, category);
     const latest = activeReal.at(-1);
     if (!latest) throw new PrefixAbort(M.noActiveRealWarning(mention));
 

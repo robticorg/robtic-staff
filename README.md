@@ -443,6 +443,52 @@ applies to unverified DISABLED edges.
 Both keep evidence as `string[]` (multiple attachments) and are **soft-deleted** —
 historical rows are never destroyed.
 
+### Two staff warning ladders: `STAFF` and `OWNER`
+
+Staff warnings carry a **`category`** (`WarningCategory`): `STAFF` or `OWNER`.
+The two are tracked completely separately — a `STAFF` Warn 1 can never become an
+`OWNER` Warn 2 — and each has its own three Discord roles, its own verbal→real
+progression and its own active level.
+
+**The manager never chooses.** `decideWarningCategory(targetLevel, ownerStartLevel)`
+reads it from the target's calculated level against the configured Owner
+boundary, so `!warn @user` alone decides. Ship tier also resolves to `OWNER`
+(there is no third role set, and only an Administrator can warn Ship anyway).
+
+`/role ownerwarns warn1: warn2: warn3:` configures `OWNER_WARN_1/2/3`
+(Administrators only). `/role warn` is untouched. Validation rejects duplicates,
+`@everyone`, managed roles, roles above the bot, ladder rungs, and any role
+already filling another Staff slot — the normal warn roles included.
+
+**Who can warn whom** — `staffManagementAuthorizationService.canWarn(actor, target)`,
+one decision point, levels from the hierarchy and never from role position:
+
+| Actor | May warn |
+|---|---|
+| Administrator | every tier, Ship included |
+| Staff Manager | `targetLevel < ownerStartLevel` |
+| Owner Manager | `ownerStartLevel <= targetLevel < shipStartLevel` |
+| anyone else | nobody |
+
+Nobody warns themselves, Administrator included. Holding *both* manager roles
+grants the union of both authorities — the "Owner Manager cannot warn normal
+Staff" rule describes someone who is only an Owner Manager.
+
+**Same channel, same shape.** `STAFF_WARN_ANNOUNCE` carries both; only the word
+changes (`**Staff Warn 1 …**` vs `**Owner Warn 1 …**`), same four bold lines, no
+embeds, message id still stored.
+
+**Tier changes** (`syncWarningCategoryRoles`): crossing the Owner boundary
+re-derives the active level *inside the new category* and clears the other
+ladder's roles — the crossing is the one case where touching the other category
+is intended. No warning record is created, moved or deleted, so crossing back
+restores the other ladder's role.
+
+**`!unwarn`** reads the category off the stored row and recalculates only that
+ladder. Rows written before this feature have no `category`; `warningCategoryOf`
+and `categoryFilter` treat them as `STAFF` (a Mongo `$in: [..., null]` also
+matches a missing field), so no historical warning is reinterpreted or lost.
+
 ---
 
 ## Appeals

@@ -8,16 +8,19 @@ import {
   STAFF_WARNING_LEVEL_VALUES,
   StaffWarningType,
   VERBAL_WARNINGS_PER_REAL,
+  WarningCategory,
   WarningStatus,
   type StaffWarningLevel,
   type StaffWarningRealSource,
 } from "../types/enums.ts";
+import { categoryFilter, warningCategoryOf } from "./warning-category.ts";
 
 type Doc = HydratedDocument<StaffWarning>;
 
 export interface IssueVerbalInput {
   guildId: GuildId;
   staffId: IdLike;
+  category: WarningCategory;
   reason: string;
   issuedBy: UserId;
   evidence?: string[];
@@ -26,6 +29,7 @@ export interface IssueVerbalInput {
 export interface IssueRealInput {
   guildId: GuildId;
   staffId: IdLike;
+  category: WarningCategory;
   level: StaffWarningLevel;
   reason: string;
   issuedBy: UserId;
@@ -57,6 +61,7 @@ export class StaffWarningService extends BaseRepository<StaffWarning> {
       guildId: input.guildId,
       staffId: toObjectId(input.staffId),
       type: StaffWarningType.VERBAL,
+      category: input.category,
       reason: input.reason.trim(),
       issuedBy: input.issuedBy,
       evidence: input.evidence ?? [],
@@ -73,6 +78,7 @@ export class StaffWarningService extends BaseRepository<StaffWarning> {
       guildId: input.guildId,
       staffId: toObjectId(input.staffId),
       type: StaffWarningType.REAL,
+      category: input.category,
       level: input.level,
       reason: input.reason.trim(),
       issuedBy: input.issuedBy,
@@ -85,11 +91,16 @@ export class StaffWarningService extends BaseRepository<StaffWarning> {
 
   listForStaff(
     staffId: IdLike,
-    options: ListOptions & { status?: WarningStatus; type?: StaffWarningType } = {},
+    options: ListOptions & {
+      status?: WarningStatus;
+      type?: StaffWarningType;
+      category?: WarningCategory;
+    } = {},
   ): Promise<Doc[]> {
     const filter: MongoFilter<StaffWarning> = { staffId: toObjectId(staffId) };
     if (options.status) filter.status = options.status;
     if (options.type) filter.type = options.type;
+    if (options.category) Object.assign(filter, categoryFilter(options.category));
     return this.find(filter, options);
   }
 
@@ -97,39 +108,43 @@ export class StaffWarningService extends BaseRepository<StaffWarning> {
     return this.listForStaff(staffId, { status: WarningStatus.ACTIVE });
   }
 
-  countActiveVerbal(staffId: IdLike): Promise<number> {
+  countActiveVerbal(staffId: IdLike, category: WarningCategory): Promise<number> {
     return this.count({
       staffId: toObjectId(staffId),
       type: StaffWarningType.VERBAL,
       status: WarningStatus.ACTIVE,
+      ...categoryFilter(category),
     });
   }
 
-  countConvertedVerbal(staffId: IdLike): Promise<number> {
+  countConvertedVerbal(staffId: IdLike, category: WarningCategory): Promise<number> {
     return this.count({
       staffId: toObjectId(staffId),
       type: StaffWarningType.VERBAL,
       status: WarningStatus.CONVERTED,
+      ...categoryFilter(category),
     });
   }
 
-  activeRealForStaff(staffId: IdLike): Promise<Doc[]> {
+  activeRealForStaff(staffId: IdLike, category?: WarningCategory): Promise<Doc[]> {
     return this.model
       .find({
         staffId: toObjectId(staffId),
         type: StaffWarningType.REAL,
         status: WarningStatus.ACTIVE,
+        ...(category ? categoryFilter(category) : {}),
       })
       .sort({ level: 1, createdAt: 1 })
       .exec();
   }
 
-  async currentRealLevel(staffId: IdLike): Promise<number> {
+  async currentRealLevel(staffId: IdLike, category: WarningCategory): Promise<number> {
     const rows = await this.model
       .find({
         staffId: toObjectId(staffId),
         type: StaffWarningType.REAL,
         status: WarningStatus.ACTIVE,
+        ...categoryFilter(category),
       })
       .select({ level: 1 })
       .exec();
@@ -138,10 +153,18 @@ export class StaffWarningService extends BaseRepository<StaffWarning> {
     return highest;
   }
 
-  async claimVerbalTriplet(staffId: IdLike): Promise<Types.ObjectId[] | null> {
+  async claimVerbalTriplet(
+    staffId: IdLike,
+    category: WarningCategory,
+  ): Promise<Types.ObjectId[] | null> {
     const staff = toObjectId(staffId);
     const candidates = await this.model
-      .find({ staffId: staff, type: StaffWarningType.VERBAL, status: WarningStatus.ACTIVE })
+      .find({
+        staffId: staff,
+        type: StaffWarningType.VERBAL,
+        status: WarningStatus.ACTIVE,
+        ...categoryFilter(category),
+      })
       .sort({ createdAt: 1 })
       .limit(VERBAL_WARNINGS_PER_REAL)
       .select({ _id: 1 })

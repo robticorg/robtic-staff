@@ -17,6 +17,7 @@ import { DomainError } from "../../shared/utils/errors.ts";
 import { STAFF_TIER_LABELS, hierarchyMessages } from "../../data/messages/hierarchy.ts";
 import { buildRoleCheckView } from "./check.ts";
 import { handleAccess } from "./access.ts";
+import { handleOwnerWarns } from "./owner-warns.ts";
 import { handleAccepted } from "./accepted.ts";
 import { handleAssign } from "./assign.ts";
 import { handleStaffType } from "./staff-type.ts";
@@ -43,6 +44,9 @@ const NON_NUMBERED_TYPES = [
   RoleConfigType.WARN_1,
   RoleConfigType.WARN_2,
   RoleConfigType.WARN_3,
+  RoleConfigType.OWNER_WARN_1,
+  RoleConfigType.OWNER_WARN_2,
+  RoleConfigType.OWNER_WARN_3,
   RoleConfigType.MUTE,
   RoleConfigType.JAIL,
   RoleConfigType.CHAT_MANAGER,
@@ -114,6 +118,20 @@ const data = new SlashCommandBuilder()
       )
       .addRoleOption((o) =>
         o.setName(CommandOption.WARN_3).setDescription(copy.sub.warn.options.warn3).setRequired(true),
+      ),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName(RoleSubcommand.OWNER_WARNS)
+      .setDescription(copy.sub.ownerwarns.description)
+      .addRoleOption((o) =>
+        o.setName(CommandOption.WARN_1).setDescription(copy.sub.ownerwarns.options.warn1).setRequired(true),
+      )
+      .addRoleOption((o) =>
+        o.setName(CommandOption.WARN_2).setDescription(copy.sub.ownerwarns.options.warn2).setRequired(true),
+      )
+      .addRoleOption((o) =>
+        o.setName(CommandOption.WARN_3).setDescription(copy.sub.ownerwarns.options.warn3).setRequired(true),
       ),
   )
   .addSubcommand((s) =>
@@ -490,6 +508,8 @@ export default defineCommand({
         return handleAssign(interaction);
       case RoleSubcommand.WARN:
         return handleWarn(interaction);
+      case RoleSubcommand.OWNER_WARNS:
+        return handleOwnerWarns(interaction);
       default: {
         const staffType = STAFF_TYPE_SUBCOMMANDS.get(sub);
         if (staffType) return handleStaffType(interaction, staffType);

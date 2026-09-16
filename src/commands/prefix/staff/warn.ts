@@ -1,6 +1,7 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { staffPermissionService } from "../../../modules/staff/services/staff-permissions.service.ts";
+import { staffManagementAuthorizationService } from "../../../modules/staff/services/staff-management-authorization.service.ts";
 import { classifyWarnChannel } from "../../../modules/warnings/services/warn-channels.ts";
 import { warningActionService } from "../../../modules/warnings/services/warning-actions.service.ts";
 import { PrefixAbort } from "../_shared/guards.ts";
@@ -41,9 +42,10 @@ export default definePrefixCommand({
       return;
     }
 
-    if (!(await staffPermissionService.isStaffManager(ctx.member))) {
-      throw new PrefixAbort(prefixMessages.warn.staffWarnManagerOnly);
-    }
+    // §Warnings — one central decision. It also picks nothing: the category is
+    // derived from the target's tier further down, never from the actor.
+    const decision = await staffManagementAuthorizationService.canWarn(ctx.member, target);
+    if (!decision.allowed) throw new PrefixAbort(decision.message);
 
     const { reason, isVerbal } = splitVerbalMarker(rawReason);
     if (!reason) throw new PrefixAbort(prefixMessages.warn.reasonRequired);

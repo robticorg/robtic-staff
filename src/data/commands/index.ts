@@ -30,6 +30,7 @@ export const RoleSubcommand = {
   OWNER_MANAGER: "ownermanager",
   TRANSFER_MANAGER: "transfermanager",
   WARN: "warn",
+  OWNER_WARNS: "ownerwarns",
   MUTE: "mute",
   JAIL: "jail",
   CHAT_MANAGER: "chatmanager",
@@ -153,6 +154,14 @@ export const commandCopy = {
       giftmanager: {
         description: "ضبط الرتبة اللي تقدر تراجع طلبات الهدايا وتسلّمها",
         option: "رتبة مانجر الهدايا",
+      },
+      ownerwarns: {
+        description: "ضبط رتب تحذيرات ستاف الأونر (منفصلة عن تحذيرات الستاف العادية)",
+        options: {
+          warn1: "رتبة تحذير الأونر 1",
+          warn2: "رتبة تحذير الأونر 2",
+          warn3: "رتبة تحذير الأونر 3",
+        },
       },
       transfermanager: {
         description: "ضبط الرتبة اللي تقدر تحوّل عضوية الستاف من عضو لعضو (!transfer)",

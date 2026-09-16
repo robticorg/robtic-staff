@@ -40,6 +40,12 @@ export const DenyReason = {
   BELOW_MIN_LEVEL: "BELOW_MIN_LEVEL",
   NOT_A_TRANSFER_MANAGER: "NOT_A_TRANSFER_MANAGER",
   TRANSFER_SAME_MEMBER: "TRANSFER_SAME_MEMBER",
+  SELF_WARN: "SELF_WARN",
+  NOT_A_WARN_MANAGER: "NOT_A_WARN_MANAGER",
+  WARN_TARGET_IN_OWNER: "WARN_TARGET_IN_OWNER",
+  WARN_TARGET_IN_SHIP: "WARN_TARGET_IN_SHIP",
+  WARN_TARGET_BELOW_OWNER: "WARN_TARGET_BELOW_OWNER",
+  WARN_TARGET_NOT_STAFF: "WARN_TARGET_NOT_STAFF",
 } as const;
 export type DenyReason = (typeof DenyReason)[keyof typeof DenyReason];
 
@@ -57,6 +63,18 @@ const deny = (reason: DenyReason): AuthorizationDecision => ({
   reason,
   message: denialMessage(reason),
 });
+
+export interface WarnContextInput {
+  actorIsAdministrator: boolean;
+  actorIsStaffManager: boolean;
+  actorIsOwnerManager: boolean;
+  isSelf: boolean;
+  /** Calculated Staff level of the target — never a Discord role position. */
+  targetLevel: number;
+  /** First level of the Owner tier, or null when no boundary is configured. */
+  ownerStartLevel: number | null;
+  shipStartLevel: number | null;
+}
 
 export interface ActorAuthority {
   kind: ManagementAuthority;
@@ -294,6 +312,64 @@ export class StaffManagementAuthorizationService {
       RoleConfigType.TRANSFER_MANAGER,
     );
     return row ? actor.roles.cache.has(row.roleId) : false;
+  }
+
+  /**
+   * §Warnings — who may warn a Staff member sitting at `targetLevel`.
+   *
+   * Pure, so the whole matrix is testable without Discord or MongoDB. The two
+   * manager roles are independent inputs because holding both genuinely grants
+   * both authorities; "Owner Manager cannot warn normal Staff" describes
+   * somebody who is *only* an Owner Manager.
+   */
+  decideWarnAuthorization(input: WarnContextInput): AuthorizationDecision {
+    if (input.isSelf) return deny(DenyReason.SELF_WARN);
+    if (input.actorIsAdministrator) return allow();
+
+    if (!input.actorIsStaffManager && !input.actorIsOwnerManager) {
+      return deny(DenyReason.NOT_A_WARN_MANAGER);
+    }
+
+    // Ship is administrator-only, whatever manager roles the actor holds.
+    if (input.shipStartLevel !== null && input.targetLevel >= input.shipStartLevel) {
+      return deny(DenyReason.WARN_TARGET_IN_SHIP);
+    }
+
+    const inOwner =
+      input.ownerStartLevel !== null && input.targetLevel >= input.ownerStartLevel;
+
+    if (inOwner) {
+      return input.actorIsOwnerManager ? allow() : deny(DenyReason.WARN_TARGET_IN_OWNER);
+    }
+    return input.actorIsStaffManager ? allow() : deny(DenyReason.WARN_TARGET_BELOW_OWNER);
+  }
+
+  /**
+   * `canWarn(actor, target)` — the target's level is read from the hierarchy,
+   * never from Discord role positions, and no caller can override it.
+   */
+  async canWarn(actor: GuildMember, target: GuildMember): Promise<AuthorizationDecision> {
+    const hierarchy = await getHierarchy(actor.guild.id);
+    const invalid = this.hierarchyGuard(hierarchy);
+    if (invalid) return invalid;
+
+    const targetLevel = highestLevelFromRoleIds(hierarchy, target.roles.cache.keys());
+    if (targetLevel === null) return deny(DenyReason.WARN_TARGET_NOT_STAFF);
+
+    const [isStaffManager, isOwnerManager] = await Promise.all([
+      this.isStaffManager(actor),
+      this.isOwnerManager(actor),
+    ]);
+
+    return this.decideWarnAuthorization({
+      actorIsAdministrator: this.isAdministrator(actor),
+      actorIsStaffManager: isStaffManager,
+      actorIsOwnerManager: isOwnerManager,
+      isSelf: actor.id === target.id,
+      targetLevel,
+      ownerStartLevel: hierarchy.boundaryLevels[StaffTier.OWNER],
+      shipStartLevel: hierarchy.boundaryLevels[StaffTier.SHIP],
+    });
   }
 
   async canTransfer(

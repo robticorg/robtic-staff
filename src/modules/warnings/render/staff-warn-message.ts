@@ -5,17 +5,21 @@ const M = staffWarnChannelMessage;
 
 export const DISCORD_MESSAGE_LIMIT = 2000;
 
+export type StaffWarnCategory = "STAFF" | "OWNER";
+
 export interface StaffWarnMessageInput {
   level: number;
   targetId: UserId;
   reason: string;
   evidence: readonly string[];
+  category?: StaffWarnCategory;
 }
 
 export interface VerbalStaffWarnMessageInput {
   targetId: UserId;
   reason: string;
   evidence: readonly string[];
+  category?: StaffWarnCategory;
 }
 
 function compose(heading: string, targetId: UserId, reason: string, proof: string): string {
@@ -47,11 +51,21 @@ function composeWithLimit(
 }
 
 export function formatStaffWarningMessage(input: StaffWarnMessageInput): string {
-  return composeWithLimit(M.heading(input.level), input.targetId, input.reason, input.evidence);
+  return composeWithLimit(
+    M.heading(input.level, input.category ?? "STAFF"),
+    input.targetId,
+    input.reason,
+    input.evidence,
+  );
 }
 
 export function formatVerbalStaffWarningMessage(input: VerbalStaffWarnMessageInput): string {
-  return composeWithLimit(M.headingVerbal, input.targetId, input.reason, input.evidence);
+  return composeWithLimit(
+    M.headingVerbalFor(input.category ?? "STAFF"),
+    input.targetId,
+    input.reason,
+    input.evidence,
+  );
 }
 
 export function staffWarnMessageWasTruncated(message: string): boolean {

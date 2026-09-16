@@ -10,6 +10,7 @@ import {
   StaffWarningRealSource,
   StaffWarningType,
 } from "../types/enums.ts";
+import { warningCategoryOf } from "./warning-category.ts";
 import {
   formatStaffWarningMessage,
   formatVerbalStaffWarningMessage,
@@ -77,6 +78,7 @@ export class StaffWarningLogService {
         targetId,
         reason: warning.reason,
         evidence,
+        category: warningCategoryOf(warning),
       });
       if (staffWarnMessageWasTruncated(content)) {
         log.warn(`staff warn ${warning._id.toString()} proof list trimmed to fit Discord's limit`);
@@ -146,6 +148,7 @@ export class StaffWarningLogService {
         targetId,
         reason: warning.reason,
         evidence: warning.evidence ?? [],
+        category: warningCategoryOf(warning),
       });
       if (staffWarnMessageWasTruncated(content)) {
         log.warn(`staff warn ${warning._id.toString()} proof list trimmed to fit Discord's limit`);

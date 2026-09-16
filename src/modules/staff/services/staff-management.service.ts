@@ -78,6 +78,21 @@ async function cancelOpenVacationSnapshot(
   }
 }
 
+/**
+ * Imported lazily: the warnings module already depends on staff management, so
+ * a static import here would close the cycle.
+ */
+async function syncWarningRolesForTier(member: GuildMember, reason: string): Promise<void> {
+  try {
+    const { warningActionService } = await import(
+      "../../warnings/services/warning-actions.service.ts"
+    );
+    await warningActionService.syncWarningCategoryRoles(member, reason);
+  } catch (err) {
+    log.warn(`warning category sync failed for ${member.id}`, err);
+  }
+}
+
 export interface AcceptResult {
   level: number;
   previousLevel: number;
@@ -307,6 +322,8 @@ export class StaffManagementService {
     if (to === from) return { from, to, changed: false };
 
     await syncStaffRoles(member, to, `${direction} by ${actorId(actor)}`);
+    // Crossing the Owner boundary switches which warning ladder is displayed.
+    await syncWarningRolesForTier(member, `${direction} by ${actorId(actor)}`);
 
     await staffService.setRoleLevel(staff._id, to);
     await staffHistoryService.record({

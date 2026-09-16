@@ -24,6 +24,7 @@ import {
 } from "../modules/configuration/index.ts";
 import { reportService } from "../modules/reports/index.ts";
 import { ReportType } from "../modules/reports/types/enums.ts";
+import { WarningCategory } from "../modules/warnings/types/enums.ts";
 
 const log = logger.child("example");
 
@@ -86,6 +87,7 @@ async function main(): Promise<void> {
   await staffWarningService.issueVerbal({
     guildId: GUILD,
     staffId: staff.id,
+    category: WarningCategory.STAFF,
     reason: "Slow response times",
     issuedBy: ADMIN,
     evidence: ["https://cdn.example/att1.png"],

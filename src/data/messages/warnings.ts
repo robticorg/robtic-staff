@@ -1,8 +1,11 @@
 import { customEmojis, emojis } from "../emojis/index.ts";
 
 export const staffWarnChannelMessage = {
-  heading: (level: number) => `**Staff Warn ${level} ${customEmojis.attention}**`,
+  heading: (level: number, category: "STAFF" | "OWNER" = "STAFF") =>
+    `**${category === "OWNER" ? "Owner" : "Staff"} Warn ${level} ${customEmojis.attention}**`,
   headingVerbal: `**Staff Warn شفوي ${customEmojis.attention}**`,
+  headingVerbalFor: (category: "STAFF" | "OWNER" = "STAFF") =>
+    `**${category === "OWNER" ? "Owner" : "Staff"} Warn شفوي ${customEmojis.attention}**`,
   mention: (userId: string) => `**منشن : <@${userId}>**`,
   reason: (reason: string) => `**السبب : ${reason}**`,
   proof: (proof: string) => `**الدليل : ${proof}**`,

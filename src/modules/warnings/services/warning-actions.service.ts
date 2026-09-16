@@ -30,9 +30,18 @@ import {
   STAFF_WARNING_FIRE_LEVEL,
   StaffWarningRealSource,
   StaffWarningType,
+  WarningCategory,
   WarningStatus,
   type StaffWarningLevel,
 } from "../types/enums.ts";
+import {
+  OTHER_CATEGORY,
+  decideWarningCategory,
+  warnRoleTypes,
+  warningCategoryOf,
+} from "./warning-category.ts";
+import { getHierarchy, highestLevelFromRoleIds } from "../../configuration/utils/staff-levels.ts";
+import { StaffTier } from "../../configuration/types/enums.ts";
 
 const log = logger.child("warn-actions");
 
@@ -42,25 +51,29 @@ class WarnError extends DomainError {
   }
 }
 
-const WARN_ROLE_TYPE = {
-  1: RoleConfigType.WARN_1,
-  2: RoleConfigType.WARN_2,
-  3: RoleConfigType.WARN_3,
-} as const;
-
-async function warnRoleIds(guildId: string): Promise<Record<1 | 2 | 3, string | null>> {
+async function warnRoleIds(
+  guildId: string,
+  category: WarningCategory,
+): Promise<Record<1 | 2 | 3, string | null>> {
+  const types = warnRoleTypes(category);
   const rows = await Promise.all(
-    ([1, 2, 3] as const).map((lvl) => roleConfigService.getByType(guildId, WARN_ROLE_TYPE[lvl])),
+    ([1, 2, 3] as const).map((lvl) => roleConfigService.getByType(guildId, types[lvl])),
   );
   return { 1: rows[0]?.roleId ?? null, 2: rows[1]?.roleId ?? null, 3: rows[2]?.roleId ?? null };
 }
 
+/**
+ * Brings one category's three warning roles in line with `activeLevel`. Only
+ * that category's roles are ever named, so a STAFF reconcile can never touch an
+ * OWNER warn role and vice versa.
+ */
 async function reconcileStaffWarnRoles(
   member: GuildMember,
   activeLevel: 0 | 1 | 2 | 3,
   reason: string,
+  category: WarningCategory,
 ): Promise<void> {
-  const ids = await warnRoleIds(member.guild.id);
+  const ids = await warnRoleIds(member.guild.id, category);
   const keep = activeLevel === 0 ? null : ids[activeLevel];
   for (const lvl of [1, 2, 3] as const) {
     const roleId = ids[lvl];
@@ -74,6 +87,19 @@ async function reconcileStaffWarnRoles(
       await member.roles.remove(roleId, reason).catch((err) => log.warn("warn role remove failed", err));
     }
   }
+}
+
+/**
+ * The warning ladder this member belongs to *right now*, from their calculated
+ * Staff level and the configured Owner boundary. Managers never choose it.
+ */
+export async function resolveWarningCategory(
+  member: GuildMember,
+): Promise<WarningCategory> {
+  const hierarchy = await getHierarchy(member.guild.id);
+  const level = highestLevelFromRoleIds(hierarchy, member.roles.cache.keys());
+  if (level === null) return WarningCategory.STAFF;
+  return decideWarningCategory(level, hierarchy.boundaryLevels[StaffTier.OWNER]);
 }
 
 export interface IssueUserWarnResult {
@@ -185,9 +211,12 @@ export class WarningActionService {
       throw new WarnError(prefixMessages.warn.staffWarnTargetInactive(`<@${params.target.id}>`));
     }
 
+    const category = await resolveWarningCategory(params.target);
+
     const verbal = await staffWarningService.issueVerbal({
       guildId,
       staffId: targetStaff._id,
+      category,
       reason: params.reason,
       issuedBy: params.issuer.id,
       evidence: params.evidence,
@@ -224,11 +253,12 @@ export class WarningActionService {
       staffObjectId: targetStaff._id,
       staffRoleLevel: targetStaff.currentRoleLevel ?? 0,
       actorId: params.issuer.id,
+      category,
     });
 
     const [verbalActiveCount, verbalConvertedCount] = await Promise.all([
-      staffWarningService.countActiveVerbal(targetStaff._id),
-      staffWarningService.countConvertedVerbal(targetStaff._id),
+      staffWarningService.countActiveVerbal(targetStaff._id, category),
+      staffWarningService.countConvertedVerbal(targetStaff._id, category),
     ]);
 
     return { verbalWarningId: ref, verbalActiveCount, verbalConvertedCount, escalation };
@@ -253,12 +283,14 @@ export class WarningActionService {
       throw new WarnError(prefixMessages.warn.staffWarnTargetInactive(`<@${params.target.id}>`));
     }
 
-    const currentLevel = await staffWarningService.currentRealLevel(targetStaff._id);
+    const category = await resolveWarningCategory(params.target);
+    const currentLevel = await staffWarningService.currentRealLevel(targetStaff._id, category);
     const level = Math.min(STAFF_WARNING_FIRE_LEVEL, currentLevel + 1) as StaffWarningLevel;
 
     const real = await staffWarningService.issueReal({
       guildId,
       staffId: targetStaff._id,
+      category,
       level,
       reason: params.reason,
       issuedBy: params.issuer.id,
@@ -290,7 +322,7 @@ export class WarningActionService {
       action: StaffHistoryAction.STAFF_WARNING,
       performedBy: params.issuer.id,
       reason: params.reason,
-      metadata: { level, warningId: ref, source: StaffWarningRealSource.MANUAL },
+      metadata: { level, warningId: ref, source: StaffWarningRealSource.MANUAL, category },
     });
 
     await this.postWarnLog(params.guild, {
@@ -316,7 +348,7 @@ export class WarningActionService {
       return { realWarningId: ref, level, fired: true, blacklisted: true };
     }
 
-    await reconcileStaffWarnRoles(params.target, level, `Real staff warning ${level}`);
+    await reconcileStaffWarnRoles(params.target, level, `Real staff warning ${level}`, category);
     return { realWarningId: ref, level, fired: false, blacklisted: false };
   }
 
@@ -326,11 +358,18 @@ export class WarningActionService {
     staffObjectId: Types.ObjectId;
     staffRoleLevel: number;
     actorId: string;
+    category: WarningCategory;
   }): Promise<EscalationResult | undefined> {
-    const claimed = await staffWarningService.claimVerbalTriplet(input.staffObjectId);
+    const claimed = await staffWarningService.claimVerbalTriplet(
+      input.staffObjectId,
+      input.category,
+    );
     if (!claimed) return undefined;
 
-    const currentLevel = await staffWarningService.currentRealLevel(input.staffObjectId);
+    const currentLevel = await staffWarningService.currentRealLevel(
+      input.staffObjectId,
+      input.category,
+    );
     if (currentLevel >= STAFF_WARNING_FIRE_LEVEL) {
       log.warn(
         `staff ${input.staffObjectId.toString()} already at real warning level ${currentLevel}; skipping a 4th`,
@@ -343,6 +382,7 @@ export class WarningActionService {
     const real = await staffWarningService.issueReal({
       guildId: input.guild.id,
       staffId: input.staffObjectId,
+      category: input.category,
       level,
       reason: "حصل على 3 تحذيرات شفوية",
       issuedBy: "SYSTEM",
@@ -357,7 +397,12 @@ export class WarningActionService {
       action: StaffHistoryAction.STAFF_WARNING,
       performedBy: input.actorId,
       reason: real.reason,
-      metadata: { level, warningId: real._id.toString(), source: StaffWarningRealSource.VERBAL_ESCALATION },
+      metadata: {
+        level,
+        warningId: real._id.toString(),
+        source: StaffWarningRealSource.VERBAL_ESCALATION,
+        category: input.category,
+      },
     });
 
     const fired = input.staffRoleLevel === 0 || level >= STAFF_WARNING_FIRE_LEVEL;
@@ -390,7 +435,12 @@ export class WarningActionService {
       };
     }
 
-    await reconcileStaffWarnRoles(input.target, level, `Real staff warning ${level}`);
+    await reconcileStaffWarnRoles(
+      input.target,
+      level,
+      `Real staff warning ${level}`,
+      input.category,
+    );
     return {
       realWarningId: real._id.toString(),
       level,
@@ -398,6 +448,28 @@ export class WarningActionService {
       fired: false,
       blacklisted: false,
     };
+  }
+
+  /**
+   * §Tier Changes — after a promotion or demotion crosses the Owner boundary,
+   * the *displayed* warning role must match the ladder the member is on now.
+   *
+   * The member's active level is recomputed inside their current category and
+   * the other category's roles are cleared: the crossing is exactly the
+   * "explicitly required by the hierarchy transition" case. No warning record
+   * is created, moved or deleted — if they cross back, the other ladder's role
+   * returns because its warnings were never touched.
+   */
+  async syncWarningCategoryRoles(member: GuildMember, reason: string): Promise<void> {
+    const staff = await staffService.get(member.id, member.guild.id);
+    if (!staff) return;
+
+    const category = await resolveWarningCategory(member);
+    const level = await staffWarningService.currentRealLevel(staff._id, category);
+    const active = Math.min(3, Math.max(0, level)) as 0 | 1 | 2 | 3;
+
+    await reconcileStaffWarnRoles(member, active, reason, category);
+    await reconcileStaffWarnRoles(member, 0, reason, OTHER_CATEGORY[category]);
   }
 
   async findWarning(
@@ -424,7 +496,7 @@ export class WarningActionService {
     actor: GuildMember;
     isStaffManager: boolean;
     reason?: string;
-  }): Promise<{ kind: "USER" | "STAFF_VERBAL" | "STAFF_REAL" }> {
+  }): Promise<{ kind: "USER" | "STAFF_VERBAL" | "STAFF_REAL"; category?: WarningCategory }> {
     const found = await this.findWarning(params.warningId);
     if (!found) throw new WarnError(prefixMessages.warn.warningNotFound);
 
@@ -466,11 +538,16 @@ export class WarningActionService {
         action: StaffHistoryAction.STAFF_WARNING_REMOVED,
         performedBy: params.actor.id,
         reason: params.reason,
-        metadata: { warningId: found.doc._id.toString(), kind: StaffWarningType.VERBAL },
+        metadata: {
+        warningId: found.doc._id.toString(),
+        kind: StaffWarningType.VERBAL,
+        category: warningCategoryOf(found.doc),
+      },
       });
-      return { kind: "STAFF_VERBAL" };
+      return { kind: "STAFF_VERBAL", category: warningCategoryOf(found.doc) };
     }
 
+    const category = warningCategoryOf(found.doc);
     const level = (found.doc.level ?? 0) as 0 | 1 | 2 | 3;
     await staffWarningService.remove({
       warningId: found.doc._id,
@@ -481,11 +558,14 @@ export class WarningActionService {
 
     const member = await params.guild.members.fetch(params.targetId).catch(() => null);
     if (member) {
-      const newLevel = await staffWarningService.currentRealLevel(targetStaff._id);
+      // Recalculated inside the revoked warning's own category — the other
+      // category's roles and history are left exactly as they were.
+      const newLevel = await staffWarningService.currentRealLevel(targetStaff._id, category);
       await reconcileStaffWarnRoles(
         member,
         Math.min(3, Math.max(0, newLevel)) as 0 | 1 | 2 | 3,
         `Real staff warning removed by ${params.actor.id}`,
+        category,
       );
     }
 
@@ -494,10 +574,15 @@ export class WarningActionService {
       action: StaffHistoryAction.STAFF_WARNING_REMOVED,
       performedBy: params.actor.id,
       reason: params.reason,
-      metadata: { level, warningId: found.doc._id.toString(), kind: StaffWarningType.REAL },
+      metadata: {
+        level,
+        warningId: found.doc._id.toString(),
+        kind: StaffWarningType.REAL,
+        category,
+      },
     });
 
-    return { kind: "STAFF_REAL" };
+    return { kind: "STAFF_REAL", category };
   }
 }
 
