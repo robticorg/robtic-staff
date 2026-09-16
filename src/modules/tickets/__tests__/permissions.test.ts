@@ -19,6 +19,7 @@ describe("decideClaimEligibility", () => {
     memberHasSupportRole: true,
     memberIsManager: false,
     memberIsAdministrator: false,
+    memberIsOwner: false,
     claimer,
     ticketStatus: TicketStatus.OPEN,
     alreadyClaimed: false,
@@ -59,6 +60,19 @@ describe("decideClaimEligibility", () => {
         memberIsAdministrator: true,
       }),
     ).toEqual({ ok: true });
+  });
+
+  it("blocks the ticket's own opener even as an administrator/manager/support", () => {
+    expect(decideClaimEligibility({ ...base, memberIsOwner: true })).toEqual({
+      ok: false,
+      reason: "IS_OWNER",
+    });
+    expect(
+      decideClaimEligibility({ ...base, memberIsOwner: true, memberIsAdministrator: true }),
+    ).toMatchObject({ ok: false, reason: "IS_OWNER" });
+    expect(
+      decideClaimEligibility({ ...base, memberIsOwner: true, memberIsManager: true }),
+    ).toMatchObject({ ok: false, reason: "IS_OWNER" });
   });
 });
 

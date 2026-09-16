@@ -310,11 +310,25 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
 
   // ── Fire (§21) ────────────────────────────────────────────────────────────
 
-  it("applies the demotion ceiling to firing too", async () => {
-    expect((await auth.canFire(staffManagerAt(5), plainStaff(7, "t"), 7)).allowed).toBe(false);
-    expect((await auth.canFire(ownerManagerAt(5), plainStaff(11, "t"), 11)).allowed).toBe(false);
-    expect((await auth.canFire(administrator(), plainStaff(11, "t"), 11)).allowed).toBe(true);
-    expect((await auth.canFire(staffManagerAt(5), plainStaff(4, "t"), 4)).allowed).toBe(true);
+  it("blocks a Staff Manager from firing anyone at all, regardless of level", async () => {
+    const decision = await auth.canFire(staffManagerAt(5), plainStaff(4, "t"), 4);
+    expect(decision.allowed).toBe(false);
+    expect((decision as { reason: DenyReason }).reason).toBe(DenyReason.NOT_A_MANAGER);
+  });
+
+  it("lets an Owner Manager fire someone below the Owner tier", async () => {
+    expect((await auth.canFire(ownerManagerAt(5), plainStaff(4, "t"), 4)).allowed).toBe(true);
+    expect((await auth.canFire(ownerManagerAt(5), plainStaff(HIGHSTAFF_LEVEL, "t"), HIGHSTAFF_LEVEL)).allowed).toBe(true);
+  });
+
+  it("blocks an Owner Manager from firing an Owner or Ship member — only an administrator can", async () => {
+    const atOwner = await auth.canFire(ownerManagerAt(5), plainStaff(OWNER_LEVEL, "t"), OWNER_LEVEL);
+    expect(atOwner.allowed).toBe(false);
+    expect((atOwner as { reason: DenyReason }).reason).toBe(DenyReason.TARGET_IN_OWNER);
+
+    expect((await auth.canFire(ownerManagerAt(5), plainStaff(SHIP_LEVEL, "t"), SHIP_LEVEL)).allowed).toBe(false);
+    expect((await auth.canFire(administrator(), plainStaff(SHIP_LEVEL, "t"), SHIP_LEVEL)).allowed).toBe(true);
+    expect((await auth.canFire(administrator(), plainStaff(OWNER_LEVEL, "t"), OWNER_LEVEL)).allowed).toBe(true);
   });
 
   // ── Configuration edge cases (§21–§25 of the test list) ───────────────────

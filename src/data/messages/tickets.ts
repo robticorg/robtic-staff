@@ -52,6 +52,7 @@ export const ticketMessages = {
 
   claim: {
     notEligible: `${E.error} ما عندك صلاحية تستلم تكتات هذا القسم.`,
+    cantClaimOwn: `${E.error} ما تقدر تستلم تكتك انت.`,
     notOpen: `${E.error} هذا التكت ما عاد يمكن استلامه.`,
     alreadyClaimed: (userId: string) => `${E.error} هذا التكت مستلَم أصلاً من <@${userId}>.`,
     success: (ticketId: string) => `${E.success} استلمت \`${ticketId}\`. **+1 نقطة.**`,

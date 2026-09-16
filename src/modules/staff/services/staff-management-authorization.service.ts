@@ -317,21 +317,31 @@ export class StaffManagementAuthorizationService {
     return allow();
   }
 
-  /** §21 — firing uses the same ceiling as demotion. */
+  /**
+   * §21 — firing is deliberately narrower than demoting: only an
+   * Administrator or an Owner Manager may fire anyone at all, and an Owner
+   * Manager may only fire someone strictly below the Owner tier — dismissing
+   * an Owner (or Ship) needs a real administrator.
+   */
   async canFire(
     actor: GuildMember,
     target: GuildMember,
     targetCurrentLevel: number,
   ): Promise<AuthorizationDecision> {
     const authority = await this.getAuthority(actor);
-    if (authority.kind === ManagementAuthority.NONE) return deny(DenyReason.NOT_A_MANAGER);
+    if (
+      authority.kind !== ManagementAuthority.ADMINISTRATOR &&
+      authority.kind !== ManagementAuthority.OWNER_MANAGER
+    ) {
+      return deny(DenyReason.NOT_A_MANAGER);
+    }
     if (actor.id === target.id && !authority.canTargetSelf) return deny(DenyReason.SELF_FIRE);
+    if (authority.kind === ManagementAuthority.ADMINISTRATOR) return allow();
 
-    return this.canTouch(authority, targetCurrentLevel, {
-      inShip: DenyReason.TARGET_IN_SHIP_MANAGE,
-      inOwner: DenyReason.TARGET_IN_OWNER,
-      aboveActor: DenyReason.TARGET_ABOVE_ACTOR,
-    });
+    if (authority.ownerStartLevel !== null && targetCurrentLevel >= authority.ownerStartLevel) {
+      return deny(DenyReason.TARGET_IN_OWNER);
+    }
+    return allow();
   }
 
   /** Generic "may this actor manage this Staff member at all?" (§11). */

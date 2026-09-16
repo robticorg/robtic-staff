@@ -13,6 +13,8 @@ export interface ClaimContextInput {
   memberHasSupportRole: boolean;
   memberIsManager: boolean;
   memberIsAdministrator: boolean;
+  /** The ticket's own opener — never allowed to claim it, no exceptions. */
+  memberIsOwner: boolean;
   claimer: TicketClaimerConfig;
   ticketStatus: TicketStatus;
   alreadyClaimed: boolean;
@@ -21,6 +23,11 @@ export interface ClaimContextInput {
 }
 
 export function decideClaimEligibility(input: ClaimContextInput): Decision {
+  // Checked first and unconditionally — a staff member who opened this
+  // ticket must not be able to claim (and credit) their own request, even as
+  // an administrator or the ticket's manager/support role holder.
+  if (input.memberIsOwner) return { ok: false, reason: "IS_OWNER" };
+
   // With no support role configured the panel is administrator-only: managers
   // and the (non-existent) support role grant nothing.
   const eligibleRole = input.panelIsAdminOnly
@@ -85,12 +92,13 @@ export function memberHasPanelSupportRole(
 export function canClaimTicket(
   member: GuildMember,
   panel: TicketPanelConfig,
-  ticket: Pick<Ticket, "status" | "claimedBy">,
+  ticket: Pick<Ticket, "status" | "claimedBy" | "userId">,
 ): Decision {
   return decideClaimEligibility({
     memberHasSupportRole: memberHasPanelSupportRole(member, panel),
     memberIsManager: memberIsTicketManager(member),
     memberIsAdministrator: memberIsAdministrator(member),
+    memberIsOwner: member.id === ticket.userId,
     claimer: panel.claimer,
     ticketStatus: ticket.status,
     alreadyClaimed: ticket.claimedBy != null,

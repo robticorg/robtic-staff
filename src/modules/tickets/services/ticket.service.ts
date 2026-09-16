@@ -235,6 +235,7 @@ export class TicketService extends BaseRepository<Ticket> {
         throw new ConflictError(M.claim.alreadyClaimed(ticket.claimedByDiscordId ?? "someone"));
       }
       if (gate.reason === "NOT_OPEN") throw new ValidationError(M.claim.notOpen);
+      if (gate.reason === "IS_OWNER") throw new ValidationError(M.claim.cantClaimOwn);
       throw new ValidationError(M.claim.notEligible);
     }
 

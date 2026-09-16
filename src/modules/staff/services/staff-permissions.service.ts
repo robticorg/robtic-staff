@@ -39,16 +39,17 @@ export class StaffPermissionService {
   }
 
   /**
-   * Apply Manager reviews staff applications (`!accept`) without needing
-   * full Staff Manager rights — Staff Managers keep access too.
+   * Apply Manager reviews staff applications (`!accept`) — deliberately its
+   * own permission, not a Staff Manager privilege. Holding Staff Manager
+   * alone must not grant it.
    */
   async isApplyManager(member: GuildMember): Promise<boolean> {
+    if (this.isAdministrator(member)) return true;
     const applyRole = await roleConfigService.getByType(
       member.guild.id,
       RoleConfigType.APPLY_MANAGER,
     );
-    if (applyRole && member.roles.cache.has(applyRole.roleId)) return true;
-    return this.isStaffManager(member);
+    return applyRole ? member.roles.cache.has(applyRole.roleId) : false;
   }
 }
 
