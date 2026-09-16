@@ -31,8 +31,7 @@ export async function handlePanelSelect(interaction: StringSelectMenuInteraction
   try {
     const panelId = interaction.values[0];
     const panel = panelId ? ticketConfigService.getPanel(panelId) : undefined;
-    // A hidden panel is never in this menu, so a value naming one is a forged
-    // interaction — treated exactly like an unknown panel.
+
     if (!panel || panel.hidden) {
       await interaction.reply({ content: M.create.unknownPanel, flags: MessageFlags.Ephemeral });
       return;

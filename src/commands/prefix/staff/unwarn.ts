@@ -52,8 +52,6 @@ export default definePrefixCommand({
       return;
     }
 
-    // Whoever may warn this member may also lift that warning — same tiers,
-    // same boundaries, one decision point.
     const targetMember = await ctx.guild.members.fetch(targetId).catch(() => null);
     if (!targetMember) throw new PrefixAbort(prefixMessages.staff.memberNotFound);
 
@@ -63,8 +61,6 @@ export default definePrefixCommand({
     const targetStaff = await staffService.get(targetId, ctx.guild.id);
     if (!targetStaff) throw new PrefixAbort(M.staffWarnTargetNotStaff(mention));
 
-    // Scoped to the ladder the member is on now, so `!unwarn` on an Owner lifts
-    // an Owner warning and never reaches into their normal staff history.
     const category = await resolveWarningCategory(targetMember);
     const activeReal = await staffWarningService.activeRealForStaff(targetStaff._id, category);
     const latest = activeReal.at(-1);

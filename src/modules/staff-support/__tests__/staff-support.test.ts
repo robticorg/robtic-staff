@@ -9,7 +9,6 @@ import {
   decideSupportVisibility,
 } from "../services/staff-support-visibility.ts";
 
-/** START 0 … HIGHSTAFF 3 … OWNER 6 … SHIP 9 … END 10 */
 const BOUNDS = { ownerStartLevel: 6, shipStartLevel: 9 };
 
 describe("decideSupportVisibility", () => {
@@ -41,7 +40,7 @@ describe("decideSupportVisibility", () => {
     expect(
       decideSupportVisibility({ applicantLevel: 99, ownerStartLevel: null, shipStartLevel: null }),
     ).toBe(SupportAudience.STAFF_AND_OWNER_MANAGERS);
-    // A Ship boundary alone still protects Ship.
+
     expect(
       decideSupportVisibility({ applicantLevel: 9, ownerStartLevel: null, shipStartLevel: 9 }),
     ).toBe(SupportAudience.ADMINISTRATORS_ONLY);

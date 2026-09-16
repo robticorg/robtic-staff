@@ -67,7 +67,6 @@ describe("arabic prefix aliases", () => {
     expect(map.get("تسليم")).toBe("handover");
     expect(map.get("سلم")).toBe("handover");
 
-    // تحويل is the *ticket* handover; the staff transfer answers to نقل.
     expect(map.get("تحويل")).toBe("handover");
     expect(map.get("نقل")).toBe("transfer");
   });

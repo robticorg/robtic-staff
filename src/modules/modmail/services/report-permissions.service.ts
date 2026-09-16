@@ -13,7 +13,7 @@ export interface Decision {
 
 export interface ClaimEligibilityInput {
   memberIsStaff: boolean;
-  /** An Administrator counts as staff here, with or without a Staff role. */
+
   memberIsAdministrator?: boolean;
   memberIsReportedUser: boolean;
   caseStatus: ModmailCaseStatus;
@@ -21,8 +21,6 @@ export interface ClaimEligibilityInput {
 }
 
 export function decideClaimEligibility(input: ClaimEligibilityInput): Decision {
-  // Checked first and for everyone: a report about you is never yours to claim,
-  // not even as an administrator.
   if (input.memberIsReportedUser) {
     return { ok: false, reason: modmailMessages.permissions.claimAboutYou };
   }

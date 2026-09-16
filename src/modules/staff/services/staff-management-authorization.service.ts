@@ -73,7 +73,7 @@ export interface DemissionContextInput {
   actorIsAdministrator: boolean;
   actorIsStaffManager: boolean;
   actorIsOwnerManager: boolean;
-  /** Calculated Staff level of the applicant — never a Discord role position. */
+
   targetLevel: number;
   ownerStartLevel: number | null;
   shipStartLevel: number | null;
@@ -84,9 +84,9 @@ export interface WarnContextInput {
   actorIsStaffManager: boolean;
   actorIsOwnerManager: boolean;
   isSelf: boolean;
-  /** Calculated Staff level of the target — never a Discord role position. */
+
   targetLevel: number;
-  /** First level of the Owner tier, or null when no boundary is configured. */
+
   ownerStartLevel: number | null;
   shipStartLevel: number | null;
 }
@@ -321,14 +321,6 @@ export class StaffManagementAuthorizationService {
     return allow();
   }
 
-  /**
-   * §Demission — who may action a resignation for an applicant at `targetLevel`.
-   *
-   * Deliberately its own decision rather than `canFire`: `!fire` is an
-   * unsolicited dismissal and stays restricted to Administrators and Owner
-   * Managers, while a resignation the member asked for is actioned by whoever
-   * manages that member's tier. Pure, so the whole matrix is testable.
-   */
   decideDemissionAuthorization(input: DemissionContextInput): AuthorizationDecision {
     if (input.actorIsAdministrator) return allow();
 
@@ -336,7 +328,6 @@ export class StaffManagementAuthorizationService {
       return deny(DenyReason.NOT_A_DEMISSION_MANAGER);
     }
 
-    // Ship and above is administrator-only, whatever the actor holds.
     if (input.shipStartLevel !== null && input.targetLevel >= input.shipStartLevel) {
       return deny(DenyReason.DEMISSION_TARGET_IN_SHIP);
     }
@@ -349,15 +340,10 @@ export class StaffManagementAuthorizationService {
         ? allow()
         : deny(DenyReason.DEMISSION_TARGET_IN_OWNER);
     }
-    // Below Owner: either manager role may action it.
+
     return allow();
   }
 
-  /**
-   * `canHandleDemission(actor, target)` — the applicant's level is re-read from
-   * the hierarchy on every call, so a tier change while the request sits open
-   * is picked up rather than trusted from stale request metadata.
-   */
   async canHandleDemission(
     actor: GuildMember,
     target: GuildMember,
@@ -392,14 +378,6 @@ export class StaffManagementAuthorizationService {
     return row ? actor.roles.cache.has(row.roleId) : false;
   }
 
-  /**
-   * §Warnings — who may warn a Staff member sitting at `targetLevel`.
-   *
-   * Pure, so the whole matrix is testable without Discord or MongoDB. The two
-   * manager roles are independent inputs because holding both genuinely grants
-   * both authorities; "Owner Manager cannot warn normal Staff" describes
-   * somebody who is *only* an Owner Manager.
-   */
   decideWarnAuthorization(input: WarnContextInput): AuthorizationDecision {
     if (input.isSelf) return deny(DenyReason.SELF_WARN);
     if (input.actorIsAdministrator) return allow();
@@ -408,7 +386,6 @@ export class StaffManagementAuthorizationService {
       return deny(DenyReason.NOT_A_WARN_MANAGER);
     }
 
-    // Ship is administrator-only, whatever manager roles the actor holds.
     if (input.shipStartLevel !== null && input.targetLevel >= input.shipStartLevel) {
       return deny(DenyReason.WARN_TARGET_IN_SHIP);
     }
@@ -422,10 +399,6 @@ export class StaffManagementAuthorizationService {
     return input.actorIsStaffManager ? allow() : deny(DenyReason.WARN_TARGET_BELOW_OWNER);
   }
 
-  /**
-   * `canWarn(actor, target)` — the target's level is read from the hierarchy,
-   * never from Discord role positions, and no caller can override it.
-   */
   async canWarn(actor: GuildMember, target: GuildMember): Promise<AuthorizationDecision> {
     const hierarchy = await getHierarchy(actor.guild.id);
     const invalid = this.hierarchyGuard(hierarchy);

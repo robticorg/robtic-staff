@@ -42,8 +42,6 @@ export default definePrefixCommand({
       return;
     }
 
-    // §Warnings — one central decision. It also picks nothing: the category is
-    // derived from the target's tier further down, never from the actor.
     const decision = await staffManagementAuthorizationService.canWarn(ctx.member, target);
     if (!decision.allowed) throw new PrefixAbort(decision.message);
 

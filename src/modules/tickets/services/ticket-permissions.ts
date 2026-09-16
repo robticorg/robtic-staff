@@ -81,15 +81,10 @@ export function decideManageAccess(input: ManageContextInput): boolean {
 export interface SleepContextInput {
   memberIsAdministrator: boolean;
   memberIsClaimer: boolean;
-  /** Holds the support role of *this* panel — not any staff role. */
+
   memberHasPanelSupportRole: boolean;
 }
 
-/**
- * `!sleep` is deliberately wider than managing a ticket: anybody who staffs
- * this panel can nudge an idle opener, not only whoever claimed it. It cannot
- * hand the ticket over or close it early, so the wider gate is safe.
- */
 export function decideSleepAccess(input: SleepContextInput): boolean {
   return (
     input.memberIsAdministrator || input.memberIsClaimer || input.memberHasPanelSupportRole

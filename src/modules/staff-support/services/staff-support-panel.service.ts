@@ -13,15 +13,6 @@ export interface PanelDeployResult {
   created: boolean;
 }
 
-/**
- * Deploys the Staff Support panel — the single entry point that replaced the
- * Break-only panel.
- *
- * It deliberately reuses the existing panel deployment record: that is what
- * makes this a *replacement* rather than a second panel. A guild that already
- * had the Break panel deployed gets it edited in place into the new one, so no
- * orphan Break panel is left behind for members to click.
- */
 export class StaffSupportPanelService {
   async deploy(guild: Guild, channel: GuildTextBasedChannel): Promise<PanelDeployResult> {
     if (
@@ -52,8 +43,6 @@ export class StaffSupportPanelService {
       { upsert: true, returnDocument: "after" },
     ).exec();
 
-    // Moving the panel to another channel removes the old message, so the
-    // superseded panel can never be clicked.
     if (existing && existing.channelId !== channel.id) {
       const oldChannel = await guild.channels.fetch(existing.channelId).catch(() => null);
       if (oldChannel?.isTextBased()) {

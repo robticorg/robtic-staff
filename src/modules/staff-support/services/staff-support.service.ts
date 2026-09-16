@@ -51,7 +51,7 @@ export interface CreateSupportInput {
 
 export interface SupportVisibility {
   audience: SupportAudience;
-  /** Role ids granted access to the channel. Empty for administrator-only. */
+
   roleIds: RoleId[];
   level: number;
   tier: StaffTier;
@@ -72,17 +72,7 @@ export type DemissionFireOutcome =
   | { ok: true; targetId: UserId }
   | { ok: false; reason: "ALREADY_HANDLED" | "NOT_AUTHORIZED" | "GONE" | "NOT_STAFF"; message: string };
 
-/**
- * Staff-specific business rules for the Staff Support panel. Ticket creation,
- * channels, permissions, claiming, closing and transcripts all stay in
- * TicketService — this service only decides *who* and *what*, never *how* a
- * ticket is built.
- */
 export class StaffSupportService {
-  /**
-   * §Visibility — computed from the applicant's live hierarchy standing, never
-   * from Discord role position and never from stored metadata.
-   */
   async getSupportVisibility(member: GuildMember): Promise<SupportVisibility> {
     const guildId = member.guild.id;
     const hierarchy = await getHierarchy(guildId);
@@ -115,7 +105,6 @@ export class StaffSupportService {
     return rows.filter((r): r is NonNullable<typeof r> => !!r).map((r) => r.roleId);
   }
 
-  /** §Staff Support — opens an ordinary ticket with a tier-derived audience. */
   async createSupportTicket(input: CreateSupportInput): Promise<CreateSupportResult> {
     const { guild, member } = input;
 
@@ -140,8 +129,7 @@ export class StaffSupportService {
       member,
       answers: [],
       additionalRoleIds: visibility.roleIds,
-      // Scoped so an open support ticket never blocks a resignation, and vice
-      // versa — the guild-wide rule belongs to the public ticket panel.
+
       duplicateScope: "PANEL",
       metadata: {
         workflow: StaffSupportWorkflow.STAFF_SUPPORT,
@@ -171,11 +159,6 @@ export class StaffSupportService {
     return { ticketId: ticket.ticketId, channelId: channel.id, visibility };
   }
 
-  /**
-   * §Demission — opens a ticket through the same infrastructure *and* posts a
-   * manager card into the existing Break requests channel. No accept/reject:
-   * the only action is the fire button.
-   */
   async createDemissionRequest(input: CreateSupportInput): Promise<CreateDemissionResult> {
     const { guild, member } = input;
     const guildId = guild.id;
@@ -198,8 +181,6 @@ export class StaffSupportService {
       throw new ConflictError(M.demission.alreadyOpen, { requestId: existing.requestId });
     }
 
-    // The same channel the Break system already uses — no separate destination
-    // for demissions, owners or ship.
     const channel = await this.requestsChannel(guild);
 
     const panel = ticketConfigService.getPanel(StaffSupportWorkflow.DEMISSION_APPLY);
@@ -284,10 +265,6 @@ export class StaffSupportService {
     return channel as GuildTextBasedChannel;
   }
 
-  /**
-   * §Demission Authorization — delegated to the central service. Exposed here
-   * so handlers never build the decision themselves.
-   */
   getDemissionAuthority(manager: GuildMember, applicant: GuildMember) {
     return staffManagementAuthorizationService.canHandleDemission(manager, applicant);
   }
@@ -296,11 +273,6 @@ export class StaffSupportService {
     return StaffSupportRequestModel.findOne({ requestId }).exec();
   }
 
-  /**
-   * §Fire — authorization is re-checked against the applicant's *live* state,
-   * then the request is claimed atomically so two managers clicking at once
-   * can only fire once.
-   */
   async handleDemissionFire(input: {
     guild: Guild;
     requestId: string;
@@ -321,8 +293,6 @@ export class StaffSupportService {
       return { ok: false, reason: "GONE", message: M.demission.targetGone };
     }
 
-    // Re-read, never trust the snapshot: the applicant's tier may have changed
-    // while the request sat open, which changes who may action it.
     const decision = await this.getDemissionAuthority(manager, applicant);
     if (!decision.allowed) {
       return { ok: false, reason: "NOT_AUTHORIZED", message: decision.message };
@@ -333,9 +303,6 @@ export class StaffSupportService {
       return { ok: false, reason: "NOT_STAFF", message: M.demission.targetNotStaff };
     }
 
-    // The atomic claim. Whoever flips OPEN -> COMPLETED first owns the fire;
-    // everyone else is told it was already handled, and no second FIRE history
-    // or activity row is ever written.
     const claimed = await StaffSupportRequestModel.findOneAndUpdate(
       { requestId: request.requestId, status: StaffSupportRequestStatus.OPEN },
       {
@@ -352,14 +319,8 @@ export class StaffSupportService {
     }
 
     try {
-      // The existing fire workflow, unchanged, and explicitly without
-      // blacklisting — resigning is not a punishment. `preauthorizedActor`
-      // keeps the manager's id on the history/activity records while skipping
-      // the service's own !fire gate, which we have already replaced with the
-      // demission-specific decision above.
       await staffManagementService.fire(applicant, preauthorizedActor(manager.id), false);
     } catch (err) {
-      // Hand the request back so it can be retried rather than silently lost.
       await StaffSupportRequestModel.updateOne(
         { requestId: request.requestId },
         {

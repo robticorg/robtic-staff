@@ -5,7 +5,6 @@ import {
   type WarnContextInput,
 } from "../services/staff-management-authorization.service.ts";
 
-/** START 0 … HIGHSTAFF 3 … OWNER 6 … SHIP 9 … END 10 */
 const base: WarnContextInput = {
   actorIsAdministrator: false,
   actorIsStaffManager: false,
@@ -115,7 +114,6 @@ describe("canWarn — holding both manager roles", () => {
 
 describe("canWarn — unconfigured boundaries", () => {
   it("treats a missing Owner boundary as 'everything is normal staff'", () => {
-    // Level 8 is below the Ship boundary, so only the Owner rule is in play.
     expect(
       decide({ actorIsStaffManager: true, ownerStartLevel: null, targetLevel: 8 }).allowed,
     ).toBe(true);

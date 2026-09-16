@@ -16,14 +16,6 @@ export class StaffPermissionService {
     return ids;
   }
 
-  /**
-   * Identity: does this member actually hold a Staff role? Deliberately NOT
-   * folded with Administrator — callers that ask "is this person staff" to
-   * decide what happens *to* them (the Server Tag restriction, a vacation
-   * snapshot, a scan import) must not treat every admin as staff.
-   *
-   * For "may this person run a staff action", use `canActAsStaff`.
-   */
   async isStaff(member: GuildMember): Promise<boolean> {
     const ids = await this.staffRoleIds(member.guild.id);
     return member.roles.cache.some((role) => ids.has(role.id));
@@ -33,20 +25,11 @@ export class StaffPermissionService {
     return member.permissions.has(PermissionFlagsBits.Administrator);
   }
 
-  /**
-   * Authorization: an Administrator may run anything a staff member can, with
-   * or without a Staff role. Every "staff only" command gate goes through this.
-   */
   async canActAsStaff(member: GuildMember): Promise<boolean> {
     if (this.isAdministrator(member)) return true;
     return this.isStaff(member);
   }
 
-  /**
-   * True when the member's calculated Staff level reaches the tier's boundary.
-   * Administrators always pass. Levels come from the hierarchy, never from a
-   * Discord role position, and an unconfigured boundary grants nothing.
-   */
   async isAtLeastTier(member: GuildMember, tier: StaffTier): Promise<boolean> {
     if (this.isAdministrator(member)) return true;
 

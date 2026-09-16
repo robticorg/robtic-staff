@@ -30,14 +30,6 @@ type CardInput = Pick<
   | "handledBy"
 >;
 
-/**
- * The manager-facing card in the Break requests channel. Deliberately has no
- * accept/reject pair — a resignation is not approved, it is actioned. The one
- * button fires the applicant through the existing workflow.
- *
- * The button is removed once the request is completed; server-side
- * authorization still runs on every click regardless.
- */
 export function buildDemissionCard(request: CardInput): BaseMessageOptions {
   const done = request.status !== StaffSupportRequestStatus.OPEN;
 

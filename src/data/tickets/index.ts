@@ -16,8 +16,7 @@ export const tickets: TicketConfig = {
     minecraftPanel,
     verifiedPanel,
     giftClaimPanel,
-    // Hidden: opened from the Staff Support panel's own buttons, never from
-    // the public ticket select.
+
     staffSupportPanel,
     demissionPanel,
   ],
@@ -41,7 +40,6 @@ export function listPanels(): readonly TicketPanelConfig[] {
   return tickets.panels;
 }
 
-/** Panels a normal member may open from the public ticket panel. */
 export function listPublicPanels(): readonly TicketPanelConfig[] {
   return tickets.panels.filter((p) => !p.hidden);
 }

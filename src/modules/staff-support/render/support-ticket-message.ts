@@ -25,7 +25,6 @@ export interface SupportTicketMessageInput {
   demission?: boolean;
 }
 
-/** The opening message inside a Staff Support / Demission ticket channel. */
 export function buildSupportTicketMessage(
   input: SupportTicketMessageInput,
 ): BaseMessageOptions {

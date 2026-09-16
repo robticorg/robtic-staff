@@ -13,7 +13,7 @@ export const STAFF_SUPPORT_REQUEST_TYPE_VALUES = Object.values(StaffSupportReque
 
 export const StaffSupportRequestStatus = {
   OPEN: "OPEN",
-  /** A demission that has been actioned — the applicant was fired. */
+
   COMPLETED: "COMPLETED",
   CANCELLED: "CANCELLED",
 } as const;
@@ -30,19 +30,12 @@ export interface StaffSupportRequest extends Timestamps {
 
   reason: string;
 
-  /** The ticket this request opened, through the ordinary ticket system. */
   ticketId?: string;
   ticketChannelId?: ChannelId;
 
-  /** Where the manager-facing card was posted (the Break requests channel). */
   channelId?: ChannelId;
   messageId?: string;
 
-  /**
-   * The applicant's standing when the request was filed. Kept for the audit
-   * trail and for rendering — never trusted at decision time, which always
-   * re-reads the live hierarchy.
-   */
   snapshotLevel?: number;
   snapshotTier?: string;
 

@@ -15,17 +15,12 @@ export class PrefixAbort extends DomainError {
   }
 }
 
-/**
- * Every staff-gated command goes through `canActAsStaff`, so an Administrator
- * is never locked out of their own server by not holding a Staff role.
- */
 export async function requireStaff(ctx: PrefixContext): Promise<void> {
   if (!(await staffPermissionService.canActAsStaff(ctx.member))) {
     throw new PrefixAbort(prefixMessages.common.notStaff);
   }
 }
 
-/** HIGHSTAFF tier and above — the boundary role set by `/role highstaff`. */
 export async function requireHighStaff(ctx: PrefixContext): Promise<void> {
   if (!(await staffPermissionService.isAtLeastTier(ctx.member, StaffTier.HIGHSTAFF))) {
     throw new PrefixAbort(prefixMessages.common.notHighStaff);

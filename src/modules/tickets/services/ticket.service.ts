@@ -55,22 +55,10 @@ export interface CreateTicketInput {
   member: GuildMember;
   answers: TicketAnswer[];
 
-  /**
-   * Extra roles granted access to this one channel, on top of whatever the
-   * panel configures. Used by workflows whose audience depends on the member
-   * rather than on the panel — Staff Support picks its managers from the
-   * applicant's tier.
-   */
   additionalRoleIds?: readonly RoleId[];
 
-  /** Stored on the ticket document as-is. */
   metadata?: Record<string, unknown>;
 
-  /**
-   * Which open tickets block a new one. "GUILD" (the default, and the existing
-   * behaviour) means any open ticket blocks; "PANEL" scopes it to the same
-   * panel, so an open Staff Support ticket cannot block a resignation.
-   */
   duplicateScope?: "GUILD" | "PANEL";
 }
 

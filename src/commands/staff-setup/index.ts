@@ -22,7 +22,6 @@ const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .setContexts(InteractionContextType.Guild);
 
-/** Thin: the panel itself is built and tracked by StaffSupportPanelService. */
 export default defineCommand({
   data,
   requiredPermissions: PermissionFlagsBits.Administrator,

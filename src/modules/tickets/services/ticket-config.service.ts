@@ -23,7 +23,6 @@ export class TicketConfigService {
     return listPanels();
   }
 
-  /** What the public ticket panel offers — hidden workflow panels excluded. */
   listPublicPanels(): readonly TicketPanelConfig[] {
     return listPublicPanels();
   }
@@ -86,9 +85,7 @@ export class TicketConfigService {
         if (!category || category.type !== ChannelType.GuildCategory) {
           problems.push(P.panelCategory(panel.id));
         }
-        // Hidden workflow panels (Staff Support, Demission) deliberately have
-        // no ticket-log channel: their audit trail is the Staff history and
-        // the request card, not the public ticket log.
+
         if (!panel.hidden) {
           const logChannel = await fetchChannel(guild, panel.logChannelId);
           if (!logChannel || !logChannel.isTextBased()) {

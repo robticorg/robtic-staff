@@ -10,10 +10,6 @@ import { StaffSupportCustomId, StaffSupportModalField } from "../handlers/compon
 const S = staffSupportMessages.support;
 const D = staffSupportMessages.demission;
 
-/**
- * Both modals ask for exactly one thing: the reason. Level, tier, roles and
- * destination are all derived server-side and never asked for.
- */
 function reasonModal(
   customId: string,
   title: string,

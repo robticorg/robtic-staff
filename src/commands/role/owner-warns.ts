@@ -14,11 +14,6 @@ const SLOTS = [
   { option: CommandOption.WARN_3, type: RoleConfigType.OWNER_WARN_3, level: 3 },
 ] as const;
 
-/**
- * Role slots an Owner warning role may never double as. Everything the Staff
- * system already owns is off limits, the normal warning roles included — the
- * two ladders must stay completely separate.
- */
 const RESERVED_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.START,
   RoleConfigType.END,
@@ -56,7 +51,6 @@ export async function handleOwnerWarns(
     role: interaction.options.getRole(slot.option, true) as Role,
   }));
 
-  // ── Shape checks, cheapest first ────────────────────────────────────────
   const ids = roles.map((r) => r.role.id);
   if (new Set(ids).size !== ids.length) throw new CommandError(M.duplicate);
 
@@ -70,14 +64,13 @@ export async function handleOwnerWarns(
     }
   }
 
-  // ── Must not already mean something else to the Staff system ────────────
   const hierarchy = await getHierarchy(guild.id);
   for (const { role } of roles) {
     if (hierarchy.levelByRoleId.has(role.id)) throw new CommandError(M.onLadder(role.id));
 
     const current = await roleConfigService.get(guild.id, role.id);
     if (!current) continue;
-    // Re-running the command with the same roles is a no-op, not a conflict.
+
     const isOwnWarnSlot =
       current.type === RoleConfigType.OWNER_WARN_1 ||
       current.type === RoleConfigType.OWNER_WARN_2 ||

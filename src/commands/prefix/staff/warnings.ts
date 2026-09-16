@@ -30,8 +30,6 @@ export default definePrefixCommand({
 
     const targetStaff = await staffService.get(targetId, ctx.guild.id);
     if (targetStaff && (isManager || viewingSelf)) {
-      // The summary reflects the ladder the member is on right now; the other
-      // category's history is untouched and still stored.
       const targetMember = await ctx.guild.members.fetch(targetId).catch(() => null);
       const category = targetMember
         ? await resolveWarningCategory(targetMember)

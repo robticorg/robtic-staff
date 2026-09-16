@@ -18,10 +18,7 @@ export interface StaffWarning {
   guildId?: GuildId;
   staffId: Types.ObjectId;
   type: StaffWarningType;
-  /**
-   * STAFF or OWNER. Absent on rows written before owner warnings existed —
-   * always read it through `warningCategoryOf`, which treats absent as STAFF.
-   */
+
   category?: WarningCategory;
   level?: StaffWarningLevel;
   reason: string;
@@ -92,7 +89,7 @@ const staffWarningSchema = new Schema<StaffWarning>(
 
 staffWarningSchema.index({ staffId: 1, status: 1, createdAt: -1 });
 staffWarningSchema.index({ staffId: 1, type: 1, status: 1, createdAt: 1 });
-// Every progression query is scoped to one category — never both at once.
+
 staffWarningSchema.index({ staffId: 1, category: 1, type: 1, status: 1, createdAt: 1 });
 
 export const StaffWarningModel: Model<StaffWarning> =

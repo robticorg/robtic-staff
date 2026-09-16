@@ -16,7 +16,6 @@ const log = logger.child("staff-support:panel");
 const M = staffSupportMessages;
 const EPHEMERAL = { flags: MessageFlags.Ephemeral } as const;
 
-/** Shared gate: all three workflows are for staff only. */
 async function requireStaff(interaction: ButtonInteraction): Promise<boolean> {
   if (!interaction.inCachedGuild()) return false;
   if (await staffPermissionService.canActAsStaff(interaction.member)) return true;
@@ -34,11 +33,6 @@ export async function handleDemissionButton(interaction: ButtonInteraction): Pro
   await interaction.showModal(buildDemissionModal());
 }
 
-/**
- * Break Apply reuses the existing vacation application modal verbatim — its
- * submit id belongs to the vacation router, so the whole approval flow,
- * duration parsing, role snapshot and expiration stay exactly where they are.
- */
 export async function handleBreakButton(interaction: ButtonInteraction): Promise<void> {
   if (!(await requireStaff(interaction))) return;
   await interaction.showModal(buildApplicationModal());

@@ -14,10 +14,6 @@ import { StaffSupportCustomId } from "../handlers/component-ids.ts";
 
 const P = staffSupportMessages.panel;
 
-/**
- * The single entry point for all three Staff Support workflows. Replaces the
- * old Break-only panel; Break Apply is now one of its three buttons.
- */
 export function buildStaffSupportPanel(): BaseMessageOptions {
   const container = new ContainerBuilder().setAccentColor(staffSupportConfig.panelAccentColor);
 

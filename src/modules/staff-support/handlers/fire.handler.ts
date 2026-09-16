@@ -9,11 +9,6 @@ const log = logger.child("staff-support:fire");
 const D = staffSupportMessages.demission;
 const EPHEMERAL = { flags: MessageFlags.Ephemeral } as const;
 
-/**
- * The فصل الموظف button. Thin on purpose: every rule — authorization against
- * the applicant's live tier, the atomic claim, and the fire itself — lives in
- * StaffSupportService.
- */
 export async function handleDemissionFireButton(
   interaction: ButtonInteraction,
   requestId: string,
@@ -30,8 +25,7 @@ export async function handleDemissionFireButton(
 
     if (!outcome.ok) {
       await interaction.editReply(outcome.message);
-      // Somebody else already actioned it — refresh the card so the stale
-      // button disappears for everyone still looking at it.
+
       if (outcome.reason === "ALREADY_HANDLED") await refreshCard(interaction, requestId);
       return;
     }
@@ -48,7 +42,6 @@ export async function handleDemissionFireButton(
   }
 }
 
-/** Re-renders the card from the stored request, which drops the fire button. */
 async function refreshCard(
   interaction: ButtonInteraction,
   requestId: string,

@@ -62,11 +62,6 @@ async function warnRoleIds(
   return { 1: rows[0]?.roleId ?? null, 2: rows[1]?.roleId ?? null, 3: rows[2]?.roleId ?? null };
 }
 
-/**
- * Brings one category's three warning roles in line with `activeLevel`. Only
- * that category's roles are ever named, so a STAFF reconcile can never touch an
- * OWNER warn role and vice versa.
- */
 async function reconcileStaffWarnRoles(
   member: GuildMember,
   activeLevel: 0 | 1 | 2 | 3,
@@ -89,10 +84,6 @@ async function reconcileStaffWarnRoles(
   }
 }
 
-/**
- * The warning ladder this member belongs to *right now*, from their calculated
- * Staff level and the configured Owner boundary. Managers never choose it.
- */
 export async function resolveWarningCategory(
   member: GuildMember,
 ): Promise<WarningCategory> {
@@ -450,16 +441,6 @@ export class WarningActionService {
     };
   }
 
-  /**
-   * §Tier Changes — after a promotion or demotion crosses the Owner boundary,
-   * the *displayed* warning role must match the ladder the member is on now.
-   *
-   * The member's active level is recomputed inside their current category and
-   * the other category's roles are cleared: the crossing is exactly the
-   * "explicitly required by the hierarchy transition" case. No warning record
-   * is created, moved or deleted — if they cross back, the other ladder's role
-   * returns because its warnings were never touched.
-   */
   async syncWarningCategoryRoles(member: GuildMember, reason: string): Promise<void> {
     const staff = await staffService.get(member.id, member.guild.id);
     if (!staff) return;
@@ -558,8 +539,6 @@ export class WarningActionService {
 
     const member = await params.guild.members.fetch(params.targetId).catch(() => null);
     if (member) {
-      // Recalculated inside the revoked warning's own category — the other
-      // category's roles and history are left exactly as they were.
       const newLevel = await staffWarningService.currentRealLevel(targetStaff._id, category);
       await reconcileStaffWarnRoles(
         member,
