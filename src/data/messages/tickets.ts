@@ -106,24 +106,22 @@ export const ticketMessages = {
   },
 
   log: {
-    created: (ticketId: string, userId: string, panelName: string) =>
-      `${E.report} **تم فتح تكت** — \`${ticketId}\` (${panelName}) بواسطة <@${userId}>`,
-    claimed: (ticketId: string, staffId: string) =>
-      `${E.staff} **تم استلام تكت** — \`${ticketId}\` بواسطة <@${staffId}>`,
-    renamed: (ticketId: string, name: string, staffId: string) =>
-      `✏️ **تم تغيير اسم تكت** — \`${ticketId}\` → \`${name}\` بواسطة <@${staffId}>`,
-    closed: (ticketId: string, staffId: string) =>
-      `🔒 **تم إغلاق تكت** — \`${ticketId}\` بواسطة <@${staffId}>`,
-    deleted: (ticketId: string, staffId: string) =>
-      `${E.error} **تم حذف تكت** — \`${ticketId}\` بواسطة <@${staffId}>`,
-    userAdded: (ticketId: string, targetId: string, staffId: string) =>
-      `${E.user} **تمت إضافة عضو** — <@${targetId}> إلى \`${ticketId}\` بواسطة <@${staffId}>`,
-    userRemoved: (ticketId: string, targetId: string, staffId: string) =>
-      `${E.user} **تمت إزالة عضو** — <@${targetId}> من \`${ticketId}\` بواسطة <@${staffId}>`,
-    roleAdded: (ticketId: string, roleId: string, staffId: string) =>
-      `${E.staff} **تمت إضافة رتبة** — <@&${roleId}> إلى \`${ticketId}\` بواسطة <@${staffId}>`,
-    roleRemoved: (ticketId: string, roleId: string, staffId: string) =>
-      `${E.staff} **تمت إزالة رتبة** — <@&${roleId}> من \`${ticketId}\` بواسطة <@${staffId}>`,
+    titleCreated: `${E.report} تم فتح تكت`,
+    titleClaimed: `${E.staff} تم استلام تكت`,
+    titleRenamed: "✏️ تم تغيير اسم تكت",
+    titleClosed: "🔒 تم إغلاق تكت",
+    titleDeleted: `${E.error} تم حذف تكت`,
+    titleUserAdded: `${E.user} تمت إضافة عضو`,
+    titleUserRemoved: `${E.user} تمت إزالة عضو`,
+    titleRoleAdded: `${E.staff} تمت إضافة رتبة`,
+    titleRoleRemoved: `${E.staff} تمت إزالة رتبة`,
+
+    ticket: "التكت",
+    panel: "القسم",
+    actor: "بواسطة",
+    newName: "الاسم الجديد",
+    member: "العضو",
+    role: "الرتبة",
   },
 
   faq: {

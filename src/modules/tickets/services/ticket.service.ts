@@ -35,6 +35,7 @@ import { canClaimTicket } from "./ticket-permissions.ts";
 import { protectedTicketPrincipals } from "./ticket-permissions.ts";
 import { ticketLogService } from "./ticket-log.service.ts";
 import { transcriptService } from "./transcript.service.ts";
+import { transcriptCache } from "./transcript-cache.ts";
 
 const log = logger.child("tickets");
 const M = ticketMessages;
@@ -113,6 +114,15 @@ export class TicketService extends BaseRepository<Ticket> {
     return this.model.find(filter).sort({ createdAt: -1 }).exec();
   }
 
+  /** Channel ids of every still-open ticket, across every guild — used to
+   * re-arm the transcript cache after a bot restart. */
+  async listAllActiveChannelIds(): Promise<string[]> {
+    const rows = await this.model
+      .find({ status: { $in: ACTIVE_TICKET_STATUSES as TicketStatus[] } }, { channelId: 1 })
+      .exec();
+    return rows.map((r) => r.channelId);
+  }
+
   getPanel(ticket: Pick<Ticket, "panelId">): string {
     return ticket.panelId;
   }
@@ -151,6 +161,10 @@ export class TicketService extends BaseRepository<Ticket> {
       reason: `Ticket ${ticketId} (${panel.id}) for ${member.id}`,
     });
 
+    // Real-time transcript capture starts the moment the channel exists, so
+    // every message (including the bot's own) is caught as it happens.
+    transcriptCache.track(channel.id);
+
     let ticket: TicketDoc;
     try {
       ticket = await this.insert({
@@ -165,6 +179,7 @@ export class TicketService extends BaseRepository<Ticket> {
         addedRoles: [],
       });
     } catch (err) {
+      transcriptCache.untrack(channel.id);
       await channel.delete("ticket DB write failed").catch(() => undefined);
       throw err;
     }
@@ -413,14 +428,7 @@ export class TicketService extends BaseRepository<Ticket> {
       | GuildTextBasedChannel
       | null;
 
-    let transcriptId: string | undefined;
-    if (panel.close.transcript) {
-      const transcript = await transcriptService.generate(ticket, channel).catch((err) => {
-        log.warn("transcript generation failed", err);
-        return null;
-      });
-      transcriptId = transcript?.transcriptId;
-    }
+    const transcriptId = await this.ensureTranscript(ticket, guild, channel, panel);
 
     const closed = await this.model
       .findOneAndUpdate(
@@ -449,6 +457,8 @@ export class TicketService extends BaseRepository<Ticket> {
     if (panel.close.delete) {
       await this.deleteTicket(ticketId, actorId, guild, panel);
       deleted = true;
+    } else {
+      transcriptCache.untrack(ticket.channelId);
     }
 
     return { ticket: closed, deleted, transcriptId };
@@ -461,30 +471,71 @@ export class TicketService extends BaseRepository<Ticket> {
     panel?: TicketPanelConfig,
   ): Promise<TicketDoc> {
     const ticket = await this.getTicketOrThrow(ticketId);
+    const resolvedPanel = panel ?? (await this.panelFor(ticket));
 
-    const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
+    // A ticket deleted directly (never closed first) still needs its
+    // transcript captured — fetch and generate it before the channel, and
+    // whatever the cache has, is gone for good.
+    const channel = (await guild.channels.fetch(ticket.channelId).catch(() => null)) as
+      | GuildTextBasedChannel
+      | null;
+    const transcriptId = await this.ensureTranscript(ticket, guild, channel, resolvedPanel);
+
     if (channel) {
       await channel.delete(`ticket ${ticketId} deleted by ${actorId}`).catch((err) =>
         log.warn("ticket channel delete failed", err),
       );
     }
+    transcriptCache.untrack(ticket.channelId);
 
     const updated = await this.model
       .findOneAndUpdate(
         { ticketId },
-        { $set: { status: TicketStatus.DELETED, deletedAt: new Date(), deletedBy: actorId } },
+        {
+          $set: {
+            status: TicketStatus.DELETED,
+            deletedAt: new Date(),
+            deletedBy: actorId,
+            ...(transcriptId ? { transcriptId } : {}),
+          },
+        },
         { returnDocument: "after" },
       )
       .exec();
 
     await ticketLogService.record(TicketLogAction.TICKET_DELETED, {
       guild,
-      panel: panel ?? (await this.panelFor(ticket)),
+      panel: resolvedPanel,
       ticketId,
       actorId,
     });
 
     return updated ?? ticket;
+  }
+
+  /**
+   * Generates (once) and posts the transcript for a ticket that doesn't have
+   * one yet. A no-op if the ticket was already transcripted — this lets
+   * `closeTicket` → `deleteTicket` chain without double-generating or
+   * double-posting.
+   */
+  private async ensureTranscript(
+    ticket: Ticket,
+    guild: Guild,
+    channel: GuildTextBasedChannel | null,
+    panel: TicketPanelConfig,
+  ): Promise<string | undefined> {
+    if (ticket.transcriptId) return ticket.transcriptId;
+    if (!panel.close.transcript) return undefined;
+
+    const transcript = await transcriptService.generate(ticket, channel).catch((err) => {
+      log.warn("transcript generation failed", err);
+      return null;
+    });
+    if (!transcript) return undefined;
+
+    await transcriptService.sendToChannel(guild, transcript);
+    return transcript.transcriptId;
   }
 
   async removableEntries(

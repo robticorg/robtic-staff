@@ -7,6 +7,12 @@ export const ticketMain: TicketMainConfig = {
 
   managerRoleId: "1536248952301813780",
 
+  // Set this to a real channel id to receive closed/deleted ticket
+  // transcripts. Left as the all-zero placeholder (matches UNSET_ID in
+  // ./index.ts — kept as a literal here to avoid a circular import),
+  // transcripts are only stored, never posted.
+  transcriptChannelId: "000000000000000000",
+
   selectPlaceholder: "اختر القسم اللي يناسب مشكلتك",
 
   content: {

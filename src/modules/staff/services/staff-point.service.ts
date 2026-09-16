@@ -6,15 +6,14 @@ import { isDuplicateKeyError, ValidationError } from "../../../shared/utils/erro
 import { toObjectId } from "../../../shared/utils/id.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { periodStart, type PointsPeriod } from "../../../shared/utils/time.ts";
+import type { GuildId } from "../../../shared/types/index.ts";
 import { StaffModel } from "../models/staff.model.ts";
 import {
   StaffPointTransactionModel,
   type StaffPointTransaction,
 } from "../models/staff-point-transaction.model.ts";
-import {
-  STAFF_POINT_TRANSACTION_TYPE_VALUES,
-  type StaffPointTransactionType,
-} from "../types/enums.ts";
+import { staffService } from "./staff.service.ts";
+import { STAFF_POINT_TRANSACTION_TYPE_VALUES, StaffPointTransactionType } from "../types/enums.ts";
 
 const log = logger.child("staff-points");
 
@@ -103,6 +102,41 @@ export class StaffPointService extends BaseRepository<StaffPointTransaction> {
 
   remove(input: AddPointsInput): Promise<AddPointsResult> {
     return this.add({ ...input, amount: -Math.abs(input.amount) });
+  }
+
+  /**
+   * Zeroes a staff member's all-time balance by writing a compensating
+   * MANUAL_ADJUSTMENT transaction — the balance is a sum over transaction
+   * history everywhere it's displayed, so a bare `$set` on `staff.points`
+   * would leave the old total showing up in leaderboards and period stats.
+   */
+  async resetToZero(
+    staffId: IdLike,
+    actorId: string,
+  ): Promise<{ reset: boolean; previousBalance: number }> {
+    const previousBalance = await this.getAllTimePoints(staffId);
+    if (previousBalance === 0) return { reset: false, previousBalance: 0 };
+
+    await this.add({
+      staffId,
+      amount: -previousBalance,
+      type: StaffPointTransactionType.MANUAL_ADJUSTMENT,
+      reason: `Points reset by ${actorId}`,
+    });
+    return { reset: true, previousBalance };
+  }
+
+  async resetAllForGuild(
+    guildId: GuildId,
+    actorId: string,
+  ): Promise<{ resetCount: number; totalStaff: number }> {
+    const staffList = await staffService.listByGuild(guildId);
+    let resetCount = 0;
+    for (const staff of staffList) {
+      const result = await this.resetToZero(staff._id, actorId);
+      if (result.reset) resetCount++;
+    }
+    return { resetCount, totalStaff: staffList.length };
   }
 
   private async sumSince(staffId: IdLike, since: Date | null): Promise<number> {

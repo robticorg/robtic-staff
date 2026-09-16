@@ -91,6 +91,9 @@ export interface TicketMainConfig {
 
   managerRoleId: RoleId;
 
+  /** Where the closed/deleted ticket transcript gets posted. */
+  transcriptChannelId: ChannelId;
+
   content: TicketV2Content;
 
   selectPlaceholder: string;

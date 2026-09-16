@@ -8,8 +8,16 @@ export const CommandName = {
   FAST_ACCESS: "fast-access",
   VACATION_SETUP: "vacation-setup",
   SCAN: "scan",
+  POINTS: "points",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
+
+export const PointsSubcommand = {
+  ADD: "add",
+  REMOVE: "remove",
+  RESET: "reset",
+} as const;
+export type PointsSubcommand = (typeof PointsSubcommand)[keyof typeof PointsSubcommand];
 
 export const RoleSubcommand = {
   START: "start",
@@ -72,6 +80,9 @@ export const CommandOption = {
   CONTEXT: "context",
   FROM: "from",
   TO: "to",
+  MEMBER: "member",
+  AMOUNT: "amount",
+  REASON: "reason",
 } as const;
 
 export const commandCopy = {
@@ -193,6 +204,33 @@ export const commandCopy = {
   },
   scan: {
     description: "فحص السيرفر واستيراد أعضاء الستاف الموجودين ومزامنة مستوياتهم",
+  },
+  points: {
+    description: "إدارة نقاط الستاف يدويًا (إضافة / خصم / تصفير) — للإداريين بس",
+    sub: {
+      add: {
+        description: "إضافة نقاط لعضو ستاف",
+        options: {
+          member: "عضو الستاف",
+          amount: "عدد النقاط المراد إضافتها",
+          reason: "سبب الإضافة (اختياري)",
+        },
+      },
+      remove: {
+        description: "خصم نقاط من عضو ستاف",
+        options: {
+          member: "عضو الستاف",
+          amount: "عدد النقاط المراد خصمها",
+          reason: "سبب الخصم (اختياري)",
+        },
+      },
+      reset: {
+        description: "تصفير نقاط عضو ستاف واحد، أو كل الستاف إذا ما حددت أحد",
+        options: {
+          member: "عضو الستاف (اتركه فاضي عشان تصفّر نقاط كل الستاف)",
+        },
+      },
+    },
   },
   channels: {
     description: `ضبط الرومات اللي يستخدمها نظام ستاف ${branding.botName}`,

@@ -64,6 +64,20 @@ export const statsMessages = {
     `${rankText} <@${userId}> — **${points}** نقطة`,
   lbMedal: (rank: number) => (rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `${rank}.`),
 
+  admin: {
+    notStaff: (mention: string) => `${E.error} ${mention} مو عضو ستاف في هذا السيرفر.`,
+    defaultReason: (adminId: string) => `تعديل يدوي من <@${adminId}>`,
+    added: (mention: string, amount: number, balance: number) =>
+      `${E.success} تمت إضافة **${amount}** نقطة لـ ${mention}. الرصيد الحالي: **${balance}**.`,
+    removed: (mention: string, amount: number, balance: number) =>
+      `${E.success} تم خصم **${amount}** نقطة من ${mention}. الرصيد الحالي: **${balance}**.`,
+    resetOne: (mention: string, previousBalance: number) =>
+      `${E.success} تم تصفير نقاط ${mention} (كان عنده **${previousBalance}** نقطة).`,
+    resetNothingToDo: (mention: string) => `${E.warning} ${mention} أصلاً عنده **0** نقطة.`,
+    resetAll: (resetCount: number, totalStaff: number) =>
+      `${E.success} تم تصفير نقاط **${resetCount}** من أصل **${totalStaff}** عضو ستاف.`,
+  },
+
   labels: {
     memberFallback: "هذا العضو",
     today: "اليوم",
