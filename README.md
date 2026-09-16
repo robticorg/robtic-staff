@@ -253,7 +253,7 @@ by not holding a Staff role.
 |---|---|
 | `/role · /channels · /points · /ticket-setup · /vacation-setup · /faq` | Administrator only |
 | `/scan · /fast-access` | Staff Manager (admin folded in) |
-| `!come` | **HIGHSTAFF tier and up** (`/role highstaff`) |
+| `!come` | **HIGHSTAFF tier and up** (`/role boundary tier:highstaff`) |
 | `!transfer` | **Transfer Manager** (`/role transfermanager`) |
 | `!handover` + the ticket `[Transfer]` button | **the claimer of that ticket** |
 | `!sleep` / `/sleep` | **anyone holding that panel's support role**, plus the claimer |
@@ -308,6 +308,27 @@ roleConfigService.rebuildLadder(guildId, orderedIds)   // persist the full ladde
 The command layer resolves/orders Discord roles (by position, minus IGNORE / the
 general STAFF role) and passes plain ids to the service — services stay
 Discord-free.
+
+### `/role` sits against Discord's 25-subcommand cap
+
+Discord allows a command **25 subcommands, hard**. `/role` is at **24**, so two
+things that used to be one-subcommand-each are now a single subcommand with a
+choice:
+
+| Before | Now |
+|---|---|
+| `/role highstaff` · `/role owner` · `/role ship` | `/role boundary tier:<…> role:@role` |
+| `/role max` · `/role dev` (generated per Staff Type) | `/role stafftype type:<…> role:@role` |
+
+The staff-type one mattered most: those subcommands were **generated** from
+`STAFF_TYPE_DEFINITIONS`, so every new Staff Type silently ate a slot and would
+eventually break command registration at boot. As a choice list it costs one
+slot forever (choices cap at 25 too, with room to spare).
+
+`src/commands/__tests__/command-limits.test.ts` asserts the caps — subcommands,
+options per subcommand, choices, and name/description lengths — for every
+registered command, so exceeding them fails the suite instead of crashing on
+deploy.
 
 ### The ladder follows Discord's role order automatically
 

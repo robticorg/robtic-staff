@@ -43,9 +43,8 @@ export const RoleSubcommand = {
   ACCESS: "access",
   ACCEPTED: "accepted",
   ASSIGN: "assign",
-  HIGHSTAFF: "highstaff",
-  OWNER: "owner",
-  SHIP: "ship",
+  BOUNDARY: "boundary",
+  STAFF_TYPE: "stafftype",
 } as const;
 export type RoleSubcommand = (typeof RoleSubcommand)[keyof typeof RoleSubcommand];
 
@@ -89,6 +88,7 @@ export const CommandOption = {
   REASON: "reason",
   PANEL: "panel",
   TIME: "time",
+  TIER: "tier",
 } as const;
 
 export const commandCopy = {
@@ -155,6 +155,20 @@ export const commandCopy = {
         description: "ضبط الرتبة اللي تقدر تراجع طلبات الهدايا وتسلّمها",
         option: "رتبة مانجر الهدايا",
       },
+      boundary: {
+        description: "تحديد أول رتبة في تصنيف (هاي ستاف / أونر / شيب)",
+        options: {
+          tier: "التصنيف",
+          role: "أول رتبة في هذا التصنيف",
+        },
+      },
+      stafftype: {
+        description: "ضبط رتبة نوع الستاف (ماكس / مبرمج …)",
+        options: {
+          type: "نوع الستاف",
+          role: "الرتبة اللي تنعطى لهذا النوع",
+        },
+      },
       ownerwarns: {
         description: "ضبط رتب تحذيرات ستاف الأونر (منفصلة عن تحذيرات الستاف العادية)",
         options: {
@@ -195,9 +209,6 @@ export const commandCopy = {
           to: "آخر رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
         },
       },
-      staffType: {
-        option: "الرتبة اللي تمثّل هذا النوع من الستاف",
-      },
       assign: {
         description: "ربط رتبة إضافية بمستويات ستاف معيّنة — تنعطى وتنشال تلقائياً",
         options: {
@@ -205,18 +216,6 @@ export const commandCopy = {
           from: "أول رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
           to: "آخر رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
         },
-      },
-      highstaff: {
-        description: "تحديد أول رتبة في تصنيف الهاي ستاف (لازم تكون ضمن السلّم المرقّم)",
-        option: "أول رتبة هاي ستاف",
-      },
-      owner: {
-        description: "تحديد أول رتبة في تصنيف الأونر (لازم تكون ضمن السلّم المرقّم)",
-        option: "أول رتبة أونر",
-      },
-      ship: {
-        description: "تحديد أول رتبة في تصنيف الشيب (لازم تكون ضمن السلّم المرقّم)",
-        option: "أول رتبة شيب",
       },
     },
   },

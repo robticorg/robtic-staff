@@ -22,6 +22,7 @@ import { handleAccepted } from "./accepted.ts";
 import { handleAssign } from "./assign.ts";
 import { handleStaffType } from "./staff-type.ts";
 import { STAFF_TYPE_DEFINITIONS } from "../../data/staff-types/index.ts";
+import { STAFF_TIER_KEYWORD_DEFINITIONS } from "../../data/staff-tiers/index.ts";
 import {
   CommandName,
   CommandOption,
@@ -218,26 +219,25 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((s) =>
     s
-      .setName(RoleSubcommand.HIGHSTAFF)
-      .setDescription(copy.sub.highstaff.description)
+      .setName(RoleSubcommand.BOUNDARY)
+      .setDescription(copy.sub.boundary.description)
+      .addStringOption((o) =>
+        o
+          .setName(CommandOption.TIER)
+          .setDescription(copy.sub.boundary.options.tier)
+          .setRequired(true)
+          .addChoices(
+            ...STAFF_TIER_KEYWORD_DEFINITIONS.map((d) => ({
+              name: STAFF_TIER_LABELS[d.tier],
+              value: d.tier as string,
+            })),
+          ),
+      )
       .addRoleOption((o) =>
-        o.setName(CommandOption.ROLE).setDescription(copy.sub.highstaff.option).setRequired(true),
-      ),
-  )
-  .addSubcommand((s) =>
-    s
-      .setName(RoleSubcommand.OWNER)
-      .setDescription(copy.sub.owner.description)
-      .addRoleOption((o) =>
-        o.setName(CommandOption.ROLE).setDescription(copy.sub.owner.option).setRequired(true),
-      ),
-  )
-  .addSubcommand((s) =>
-    s
-      .setName(RoleSubcommand.SHIP)
-      .setDescription(copy.sub.ship.description)
-      .addRoleOption((o) =>
-        o.setName(CommandOption.ROLE).setDescription(copy.sub.ship.option).setRequired(true),
+        o
+          .setName(CommandOption.ROLE)
+          .setDescription(copy.sub.boundary.options.role)
+          .setRequired(true),
       ),
   )
   .addSubcommand((s) =>
@@ -295,24 +295,34 @@ const data = new SlashCommandBuilder()
       .addRoleOption((o) =>
         o.setName(CommandOption.ROLE).setDescription(copy.sub.check.option).setRequired(true),
       ),
-  );
-
-for (const definition of STAFF_TYPE_DEFINITIONS) {
-  data.addSubcommand((s) =>
+  )
+  .addSubcommand((s) =>
     s
-      .setName(definition.slug)
-      .setDescription(definition.description)
+      .setName(RoleSubcommand.STAFF_TYPE)
+      .setDescription(copy.sub.stafftype.description)
+      .addStringOption((o) =>
+        o
+          .setName(CommandOption.TYPE)
+          .setDescription(copy.sub.stafftype.options.type)
+          .setRequired(true)
+          .addChoices(
+            ...STAFF_TYPE_DEFINITIONS.map((d) => ({ name: d.label, value: d.slug })),
+          ),
+      )
       .addRoleOption((o) =>
         o
           .setName(CommandOption.ROLE)
-          .setDescription(copy.sub.staffType.option)
+          .setDescription(copy.sub.stafftype.options.role)
           .setRequired(true),
       ),
   );
-}
 
-const STAFF_TYPE_SUBCOMMANDS = new Map(
+const STAFF_TYPE_BY_SLUG = new Map(
   STAFF_TYPE_DEFINITIONS.map((definition) => [definition.slug, definition]),
+);
+
+const STAFF_TIER_BY_VALUE = new Map<string, StaffTier>(
+  STAFF_TIER_KEYWORD_DEFINITIONS.map((d) => [d.tier as string, d.tier]),
 );
 
 async function handleBoundary(
@@ -492,12 +502,18 @@ export default defineCommand({
         return handleSingleton(interaction, RoleConfigType.APPLY_MANAGER);
       case RoleSubcommand.TAG:
         return handleSingleton(interaction, RoleConfigType.TAG);
-      case RoleSubcommand.HIGHSTAFF:
-        return handleBoundary(interaction, StaffTier.HIGHSTAFF);
-      case RoleSubcommand.OWNER:
-        return handleBoundary(interaction, StaffTier.OWNER);
-      case RoleSubcommand.SHIP:
-        return handleBoundary(interaction, StaffTier.SHIP);
+      case RoleSubcommand.BOUNDARY: {
+        const raw = interaction.options.getString(CommandOption.TIER, true);
+        const tier = STAFF_TIER_BY_VALUE.get(raw);
+        if (!tier) throw new CommandError(commonMessages.errors.unknownSubcommand(raw));
+        return handleBoundary(interaction, tier);
+      }
+      case RoleSubcommand.STAFF_TYPE: {
+        const raw = interaction.options.getString(CommandOption.TYPE, true);
+        const definition = STAFF_TYPE_BY_SLUG.get(raw);
+        if (!definition) throw new CommandError(commonMessages.errors.unknownSubcommand(raw));
+        return handleStaffType(interaction, definition);
+      }
       case RoleSubcommand.CHECK:
         return handleCheck(interaction);
       case RoleSubcommand.ACCESS:
@@ -510,11 +526,8 @@ export default defineCommand({
         return handleWarn(interaction);
       case RoleSubcommand.OWNER_WARNS:
         return handleOwnerWarns(interaction);
-      default: {
-        const staffType = STAFF_TYPE_SUBCOMMANDS.get(sub);
-        if (staffType) return handleStaffType(interaction, staffType);
+      default:
         throw new CommandError(commonMessages.errors.unknownSubcommand(sub));
-      }
     }
   },
 });
