@@ -5,6 +5,7 @@ import {
   UNSET_ID,
   getPanel,
   listPanels,
+  listPublicPanels,
   panelCreatesChannel,
   panelIsAdminOnly,
   tickets,
@@ -22,6 +23,11 @@ export class TicketConfigService {
     return listPanels();
   }
 
+  /** What the public ticket panel offers — hidden workflow panels excluded. */
+  listPublicPanels(): readonly TicketPanelConfig[] {
+    return listPublicPanels();
+  }
+
   getPanel(panelId: string): TicketPanelConfig | undefined {
     return getPanel(panelId);
   }
@@ -37,7 +43,7 @@ export class TicketConfigService {
   }
 
   hasPanels(): boolean {
-    return listPanels().length > 0;
+    return listPublicPanels().length > 0;
   }
 
   questionPageCount(panel: TicketPanelConfig): number {
@@ -80,9 +86,14 @@ export class TicketConfigService {
         if (!category || category.type !== ChannelType.GuildCategory) {
           problems.push(P.panelCategory(panel.id));
         }
-        const logChannel = await fetchChannel(guild, panel.logChannelId);
-        if (!logChannel || !logChannel.isTextBased()) {
-          problems.push(P.panelLogChannel(panel.id));
+        // Hidden workflow panels (Staff Support, Demission) deliberately have
+        // no ticket-log channel: their audit trail is the Staff history and
+        // the request card, not the public ticket log.
+        if (!panel.hidden) {
+          const logChannel = await fetchChannel(guild, panel.logChannelId);
+          if (!logChannel || !logChannel.isTextBased()) {
+            problems.push(P.panelLogChannel(panel.id));
+          }
         }
       }
     }

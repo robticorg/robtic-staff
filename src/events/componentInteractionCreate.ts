@@ -5,6 +5,7 @@ import { routeTicketComponent } from "../modules/tickets/handlers/index.ts";
 import { routeFaqComponent } from "../modules/tickets/handlers/faq-add.handler.ts";
 import { routePunishmentComponent } from "../modules/punishment/handlers/index.ts";
 import { routeVacationComponent } from "../modules/vacation/handlers/index.ts";
+import { routeStaffSupportComponent } from "../modules/staff-support/handlers/component-router.ts";
 import { routeAppealComponent } from "../modules/appeals/handlers/index.ts";
 import { routeGiftClaimComponent } from "../modules/gift-claims/handlers/index.ts";
 
@@ -14,6 +15,7 @@ const routers = [
   routeFaqComponent,
   routePunishmentComponent,
   routeVacationComponent,
+  routeStaffSupportComponent,
   routeAppealComponent,
   routeGiftClaimComponent,
 ];

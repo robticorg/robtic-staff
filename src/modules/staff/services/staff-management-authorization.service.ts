@@ -41,6 +41,11 @@ export const DenyReason = {
   NOT_A_TRANSFER_MANAGER: "NOT_A_TRANSFER_MANAGER",
   TRANSFER_SAME_MEMBER: "TRANSFER_SAME_MEMBER",
   SELF_WARN: "SELF_WARN",
+  NOT_A_DEMISSION_MANAGER: "NOT_A_DEMISSION_MANAGER",
+  DEMISSION_TARGET_IN_OWNER: "DEMISSION_TARGET_IN_OWNER",
+  DEMISSION_TARGET_IN_SHIP: "DEMISSION_TARGET_IN_SHIP",
+  DEMISSION_TARGET_BELOW_OWNER: "DEMISSION_TARGET_BELOW_OWNER",
+  DEMISSION_TARGET_NOT_STAFF: "DEMISSION_TARGET_NOT_STAFF",
   NOT_A_WARN_MANAGER: "NOT_A_WARN_MANAGER",
   WARN_TARGET_IN_OWNER: "WARN_TARGET_IN_OWNER",
   WARN_TARGET_IN_SHIP: "WARN_TARGET_IN_SHIP",
@@ -63,6 +68,16 @@ const deny = (reason: DenyReason): AuthorizationDecision => ({
   reason,
   message: denialMessage(reason),
 });
+
+export interface DemissionContextInput {
+  actorIsAdministrator: boolean;
+  actorIsStaffManager: boolean;
+  actorIsOwnerManager: boolean;
+  /** Calculated Staff level of the applicant — never a Discord role position. */
+  targetLevel: number;
+  ownerStartLevel: number | null;
+  shipStartLevel: number | null;
+}
 
 export interface WarnContextInput {
   actorIsAdministrator: boolean;
@@ -304,6 +319,69 @@ export class StaffManagementAuthorizationService {
     if (requestedLevel >= actorTierStart) return deny(DenyReason.LEVEL_ABOVE_AUTHORITY);
 
     return allow();
+  }
+
+  /**
+   * §Demission — who may action a resignation for an applicant at `targetLevel`.
+   *
+   * Deliberately its own decision rather than `canFire`: `!fire` is an
+   * unsolicited dismissal and stays restricted to Administrators and Owner
+   * Managers, while a resignation the member asked for is actioned by whoever
+   * manages that member's tier. Pure, so the whole matrix is testable.
+   */
+  decideDemissionAuthorization(input: DemissionContextInput): AuthorizationDecision {
+    if (input.actorIsAdministrator) return allow();
+
+    if (!input.actorIsStaffManager && !input.actorIsOwnerManager) {
+      return deny(DenyReason.NOT_A_DEMISSION_MANAGER);
+    }
+
+    // Ship and above is administrator-only, whatever the actor holds.
+    if (input.shipStartLevel !== null && input.targetLevel >= input.shipStartLevel) {
+      return deny(DenyReason.DEMISSION_TARGET_IN_SHIP);
+    }
+
+    const inOwner =
+      input.ownerStartLevel !== null && input.targetLevel >= input.ownerStartLevel;
+
+    if (inOwner) {
+      return input.actorIsOwnerManager
+        ? allow()
+        : deny(DenyReason.DEMISSION_TARGET_IN_OWNER);
+    }
+    // Below Owner: either manager role may action it.
+    return allow();
+  }
+
+  /**
+   * `canHandleDemission(actor, target)` — the applicant's level is re-read from
+   * the hierarchy on every call, so a tier change while the request sits open
+   * is picked up rather than trusted from stale request metadata.
+   */
+  async canHandleDemission(
+    actor: GuildMember,
+    target: GuildMember,
+  ): Promise<AuthorizationDecision> {
+    const hierarchy = await getHierarchy(actor.guild.id);
+    const invalid = this.hierarchyGuard(hierarchy);
+    if (invalid) return invalid;
+
+    const targetLevel = highestLevelFromRoleIds(hierarchy, target.roles.cache.keys());
+    if (targetLevel === null) return deny(DenyReason.DEMISSION_TARGET_NOT_STAFF);
+
+    const [isStaffManager, isOwnerManager] = await Promise.all([
+      this.isStaffManager(actor),
+      this.isOwnerManager(actor),
+    ]);
+
+    return this.decideDemissionAuthorization({
+      actorIsAdministrator: this.isAdministrator(actor),
+      actorIsStaffManager: isStaffManager,
+      actorIsOwnerManager: isOwnerManager,
+      targetLevel,
+      ownerStartLevel: hierarchy.boundaryLevels[StaffTier.OWNER],
+      shipStartLevel: hierarchy.boundaryLevels[StaffTier.SHIP],
+    });
   }
 
   async isTransferManager(actor: GuildMember): Promise<boolean> {

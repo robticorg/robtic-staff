@@ -1,5 +1,8 @@
 import type { ChannelId, RoleId } from "../../shared/types/index.ts";
 
+/** Placeholder for an id that has not been filled in yet. */
+export const UNSET_ID = "000000000000000000";
+
 export type QuestionStyle = "SHORT" | "PARAGRAPH";
 
 export interface TicketQuestion {
@@ -57,6 +60,13 @@ export interface TicketPanelConfig {
   description: string;
 
   emoji?: string;
+
+  /**
+   * Kept out of the public ticket panel's select menu. Used by workflows that
+   * own their own entry point — the Staff Support panel opens its tickets from
+   * its own buttons, and must never be openable by a normal member.
+   */
+  hidden?: boolean;
 
   supportRoleId: RoleId;
 

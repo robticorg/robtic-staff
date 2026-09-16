@@ -40,6 +40,19 @@ export function memberActor(member: GuildMember): StaffActor {
 
 export const SYSTEM_ACTOR: StaffActor = { kind: "SYSTEM", id: "SYSTEM" };
 
+/**
+ * A real person whose authority was already established by a different, more
+ * specific decision — the Staff Support demission flow authorizes with
+ * `canHandleDemission`, whose matrix differs from `!fire`'s on purpose.
+ *
+ * Keeps the actor's id on the history and activity records while skipping the
+ * management service's own gate. Only use it where an explicit authorization
+ * check has just run.
+ */
+export function preauthorizedActor(id: string): StaffActor {
+  return { kind: "SYSTEM", id };
+}
+
 function actorId(actor: StaffActor): string {
   return actor.kind === "MEMBER" ? actor.member.id : actor.id;
 }

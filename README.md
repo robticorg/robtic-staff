@@ -491,6 +491,74 @@ matches a missing field), so no historical warning is reinterpreted or lost.
 
 ---
 
+## Staff Support (`/staff-setup`)
+
+One panel, three workflows, **built on the existing ticket system** — there is no
+second ticket implementation. `TicketService` still owns creation, channels,
+permissions, claiming, closing, transcripts and lifecycle; `StaffSupportService`
+only decides *who* and *what*.
+
+`/staff-setup` (Administrators) deploys the panel that **replaced the Break-only
+panel** — it reuses the same deployment record, so an existing Break panel is
+edited in place and no orphan is left behind. Buttons: **دعم الستاف** ·
+**طلب إجازة** · **طلب استقالة**.
+
+| Workflow | Panel id | Goes to |
+|---|---|---|
+| دعم الستاف | `staff-support` | a ticket under the Staff Support category |
+| طلب إجازة | — | the **existing** `VacationService` modal + approval flow, untouched |
+| طلب استقالة | `demission-apply` | a ticket **and** a manager card in the existing Break requests channel |
+
+Both ticket panels are **`hidden: true`**: registered in `tickets.panels` so
+`TicketService` resolves them normally, but excluded from `listPublicPanels()`,
+so they never appear in the public ticket select — and a forged select value
+naming one is rejected. The category id lives in
+`src/data/staff-support/config.ts` (`staffSupportCategoryId`), never inside a
+service, handler or command.
+
+### Visibility — derived from the applicant's tier
+
+`decideSupportVisibility` reads the applicant's calculated level against the
+configured `OWNER` / `SHIP` boundaries — never a Discord role position:
+
+| Applicant | Who can see the ticket |
+|---|---|
+| below Owner | Staff Manager + Owner Manager + creator |
+| Owner tier | Owner Manager + creator (**Staff Manager excluded**) |
+| Ship and above | Administrators + creator only |
+
+The panels' `supportRoleId` is deliberately unset — administrator-only is the
+safe base — and the computed manager roles are added as per-channel overwrites
+via the new `additionalRoleIds` option on `createTicket`.
+
+### Demission — no accept/reject, one fire button
+
+The card carries a single **فصل الموظف** button. `canHandleDemission` on
+`StaffManagementAuthorizationService` decides: below Owner → either manager;
+Owner tier → Owner Manager only; Ship+ → Administrator only.
+
+Clicking it **re-fetches the applicant's live Staff state and re-authorizes** —
+a tier change while the request sat open is picked up, and button visibility is
+never treated as authorization. The request is then **claimed atomically**
+(`OPEN → COMPLETED`), so two managers clicking at once fire exactly once; the
+loser gets *"تم التعامل مع طلب الاستقالة مسبقًا."* and no duplicate FIRE history
+or activity row is written. If the fire throws, the claim is released so it can
+be retried. On success the card re-renders without the button.
+
+The fire itself is the **existing** `staffManagementService.fire(...)` with
+`blacklist: false` — resigning is not a punishment, and blacklist behavior is
+unchanged. `preauthorizedActor(manager.id)` keeps the manager's id on the
+history/activity records while skipping the service's own `!fire` gate, which
+the demission decision has already replaced.
+
+> **`!fire` is deliberately not the same matrix.** `canFire` stays restricted to
+> Administrators and Owner Managers because it is an *unsolicited* dismissal;
+> a resignation the member asked for is actioned by whoever manages that
+> member's tier. That is why demission has its own decision rather than reusing
+> `canFire`.
+
+---
+
 ## Appeals
 
 Fully implemented — see **[Appeal System](#appeal-system)**. A user appeals a

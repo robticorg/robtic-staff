@@ -6,22 +6,23 @@ import {
 } from "discord.js";
 import { defineCommand } from "../../discord/command.ts";
 import { CommandName, commandCopy } from "../../data/commands/index.ts";
-import { vacationMessages } from "../../data/vacation/messages.ts";
+import { commonMessages } from "../../data/messages/common.ts";
+import { staffSupportMessages } from "../../data/staff-support/messages.ts";
 import { DomainError } from "../../shared/utils/errors.ts";
 import { logger } from "../../shared/utils/logger.ts";
-import { commonMessages } from "../../data/messages/common.ts";
-import { vacationPanelService } from "../../modules/vacation/services/vacation-panel.service.ts";
+import { staffSupportPanelService } from "../../modules/staff-support/services/staff-support-panel.service.ts";
 import { requireAdministrator, requireGuild } from "../_shared/guards.ts";
 
-const log = logger.child("command:vacation-setup");
-const M = vacationMessages.panel;
+const log = logger.child("command:staff-setup");
+const M = staffSupportMessages.panel;
 
 const data = new SlashCommandBuilder()
-  .setName(CommandName.VACATION_SETUP)
-  .setDescription(commandCopy.vacationSetup.description)
+  .setName(CommandName.STAFF_SETUP)
+  .setDescription(commandCopy.staffSetup.description)
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
   .setContexts(InteractionContextType.Guild);
 
+/** Thin: the panel itself is built and tracked by StaffSupportPanelService. */
 export default defineCommand({
   data,
   requiredPermissions: PermissionFlagsBits.Administrator,
@@ -37,7 +38,7 @@ export default defineCommand({
 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     try {
-      const result = await vacationPanelService.deploy(guild, channel);
+      const result = await staffSupportPanelService.deploy(guild, channel);
       await interaction.editReply(
         result.created ? M.setupDeployed(result.channelId) : M.setupUpdated(result.channelId),
       );
@@ -46,7 +47,7 @@ export default defineCommand({
         await interaction.editReply(err.message);
         return;
       }
-      log.error("vacation-setup failed", err);
+      log.error("staff-setup failed", err);
       await interaction.editReply(commonMessages.errors.commandCrashed);
     }
   },

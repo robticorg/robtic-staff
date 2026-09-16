@@ -1,26 +1,37 @@
 import { ChannelType, type Guild, type GuildTextBasedChannel } from "discord.js";
 import { DomainError } from "../../../shared/utils/errors.ts";
-import { vacationMessages } from "../../../data/vacation/messages.ts";
-import { VacationPanelDeploymentModel } from "../models/vacation-panel-deployment.model.ts";
-import { buildVacationPanel } from "../render/panel.ts";
+import { logger } from "../../../shared/utils/logger.ts";
+import { staffSupportMessages } from "../../../data/staff-support/messages.ts";
+import { VacationPanelDeploymentModel } from "../../vacation/models/vacation-panel-deployment.model.ts";
+import { buildStaffSupportPanel } from "../render/panel.ts";
 
-const M = vacationMessages.panel;
+const log = logger.child("staff-support:panel");
+const M = staffSupportMessages.panel;
 
 export interface PanelDeployResult {
   channelId: string;
   created: boolean;
 }
 
-export class VacationPanelService {
+/**
+ * Deploys the Staff Support panel — the single entry point that replaced the
+ * Break-only panel.
+ *
+ * It deliberately reuses the existing panel deployment record: that is what
+ * makes this a *replacement* rather than a second panel. A guild that already
+ * had the Break panel deployed gets it edited in place into the new one, so no
+ * orphan Break panel is left behind for members to click.
+ */
+export class StaffSupportPanelService {
   async deploy(guild: Guild, channel: GuildTextBasedChannel): Promise<PanelDeployResult> {
     if (
       channel.type !== ChannelType.GuildText &&
       channel.type !== ChannelType.GuildAnnouncement
     ) {
-      throw new DomainError("VACATION_PANEL_CHANNEL_INVALID", M.setupChannelInvalid);
+      throw new DomainError("STAFF_SUPPORT_PANEL_CHANNEL_INVALID", M.setupChannelInvalid);
     }
 
-    const payload = buildVacationPanel();
+    const payload = buildStaffSupportPanel();
     const existing = await VacationPanelDeploymentModel.findOne({
       guildId: guild.id,
       key: "main",
@@ -41,6 +52,8 @@ export class VacationPanelService {
       { upsert: true, returnDocument: "after" },
     ).exec();
 
+    // Moving the panel to another channel removes the old message, so the
+    // superseded panel can never be clicked.
     if (existing && existing.channelId !== channel.id) {
       const oldChannel = await guild.channels.fetch(existing.channelId).catch(() => null);
       if (oldChannel?.isTextBased()) {
@@ -51,8 +64,9 @@ export class VacationPanelService {
       }
     }
 
+    log.info(`staff support panel deployed in ${guild.id} (#${channel.id})`);
     return { channelId: channel.id, created: true };
   }
 }
 
-export const vacationPanelService = new VacationPanelService();
+export const staffSupportPanelService = new StaffSupportPanelService();

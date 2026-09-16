@@ -1,19 +1,27 @@
-import type { TicketConfig, TicketPanelConfig } from "./types.ts";
+import { UNSET_ID, type TicketConfig, type TicketPanelConfig } from "./types.ts";
 import { ticketMain } from "./main.ts";
 import { verifiedPanel } from "./panels/verified.ts";
 import { supportPanel } from "./panels/support.ts";
 import { giftClaimPanel } from "./panels/gift-claim.ts";
 import { minecraftPanel } from "./panels/minecraft.ts";
+import { demissionPanel, staffSupportPanel } from "../staff-support/panels.ts";
 
 export * from "./types.ts";
 export { ticketMain } from "./main.ts";
 
 export const tickets: TicketConfig = {
   main: ticketMain,
-  panels: [supportPanel, minecraftPanel, verifiedPanel, giftClaimPanel],
+  panels: [
+    supportPanel,
+    minecraftPanel,
+    verifiedPanel,
+    giftClaimPanel,
+    // Hidden: opened from the Staff Support panel's own buttons, never from
+    // the public ticket select.
+    staffSupportPanel,
+    demissionPanel,
+  ],
 };
-
-export const UNSET_ID = "000000000000000000";
 
 export function isUnsetId(id: string | undefined | null): boolean {
   return !id || id === UNSET_ID;
@@ -31,6 +39,11 @@ export function panelCreatesChannel(
 
 export function listPanels(): readonly TicketPanelConfig[] {
   return tickets.panels;
+}
+
+/** Panels a normal member may open from the public ticket panel. */
+export function listPublicPanels(): readonly TicketPanelConfig[] {
+  return tickets.panels.filter((p) => !p.hidden);
 }
 
 export function getPanel(panelId: string): TicketPanelConfig | undefined {

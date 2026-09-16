@@ -32,6 +32,11 @@ export const staffMessages = {
     BELOW_MIN_LEVEL: `${E.error} ما تقدر تنزل هذا الستاف أكثر. إذا تبي تفصله استخدم \`!fire\`.`,
 
     SELF_WARN: `${E.error} ما تقدر تحذّر نفسك.`,
+    NOT_A_DEMISSION_MANAGER: `${E.error} ما عندك صلاحية تتعامل مع طلبات الاستقالة.`,
+    DEMISSION_TARGET_IN_OWNER: `${E.error} استقالة ستاف من رتبة الأونر يتعامل معها مانجر الأونر بس.`,
+    DEMISSION_TARGET_IN_SHIP: `${E.error} استقالة ستاف الشيب تتعامل معها الإدارة بس.`,
+    DEMISSION_TARGET_BELOW_OWNER: `${E.error} هذا العضو تحت رتبة الأونر.`,
+    DEMISSION_TARGET_NOT_STAFF: `${E.error} هذا العضو ما عنده رتبة ستاف مرقّمة.`,
     NOT_A_WARN_MANAGER: `${E.error} ما عندك صلاحية تحذّر الستاف.`,
     WARN_TARGET_IN_OWNER: `${E.error} تحذير ستاف من رتبة الأونر لمانجر الأونر بس.`,
     WARN_TARGET_IN_SHIP: `${E.error} ستاف الشيب ما يحذّرهم إلا الأدمن.`,

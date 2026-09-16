@@ -16,7 +16,7 @@ export interface DeployResult {
 export class TicketSetupService {
   async deploy(guild: Guild): Promise<DeployResult> {
     const main = ticketConfigService.getMainConfig();
-    const panels = ticketConfigService.listPanels();
+    const panels = ticketConfigService.listPublicPanels();
     if (panels.length === 0) throw new ValidationError(M.noPanels);
 
     const problems = await ticketConfigService.validateConfig(guild);

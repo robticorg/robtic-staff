@@ -54,6 +54,24 @@ export interface CreateTicketInput {
   panel: TicketPanelConfig;
   member: GuildMember;
   answers: TicketAnswer[];
+
+  /**
+   * Extra roles granted access to this one channel, on top of whatever the
+   * panel configures. Used by workflows whose audience depends on the member
+   * rather than on the panel — Staff Support picks its managers from the
+   * applicant's tier.
+   */
+  additionalRoleIds?: readonly RoleId[];
+
+  /** Stored on the ticket document as-is. */
+  metadata?: Record<string, unknown>;
+
+  /**
+   * Which open tickets block a new one. "GUILD" (the default, and the existing
+   * behaviour) means any open ticket blocks; "PANEL" scopes it to the same
+   * panel, so an open Staff Support ticket cannot block a resignation.
+   */
+  duplicateScope?: "GUILD" | "PANEL";
 }
 
 export interface CreateTicketResult {
@@ -123,6 +141,22 @@ export class TicketService extends BaseRepository<Ticket> {
       .exec();
   }
 
+  getOpenTicketForUserInPanel(
+    guildId: GuildId,
+    userId: UserId,
+    panelId: string,
+  ): Promise<TicketDoc | null> {
+    return this.model
+      .findOne({
+        guildId,
+        userId,
+        panelId,
+        status: { $in: ACTIVE_TICKET_STATUSES as TicketStatus[] },
+      })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
   listForGuild(guildId: GuildId, status?: TicketStatus): Promise<TicketDoc[]> {
     const filter: MongoFilter<Ticket> = { guildId };
     if (status) filter.status = status;
@@ -148,7 +182,10 @@ export class TicketService extends BaseRepository<Ticket> {
   async createTicket(input: CreateTicketInput): Promise<CreateTicketResult> {
     const { guild, panel, member } = input;
 
-    const existing = await this.getOpenTicketForUser(guild.id, member.id);
+    const existing =
+      input.duplicateScope === "PANEL"
+        ? await this.getOpenTicketForUserInPanel(guild.id, member.id, panel.id)
+        : await this.getOpenTicketForUser(guild.id, member.id);
     if (existing) {
       throw new ConflictError(M.create.alreadyOpen(existing.channelId), {
         ticketId: existing.ticketId,
@@ -168,7 +205,12 @@ export class TicketService extends BaseRepository<Ticket> {
       name: ticketId,
       type: ChannelType.GuildText,
       parent: (category as CategoryChannel).id,
-      permissionOverwrites: this.baseOverwrites(guild, panel, member.id),
+      permissionOverwrites: this.baseOverwrites(
+        guild,
+        panel,
+        member.id,
+        input.additionalRoleIds ?? [],
+      ),
       reason: `Ticket ${ticketId} (${panel.id}) for ${member.id}`,
     });
 
@@ -186,6 +228,7 @@ export class TicketService extends BaseRepository<Ticket> {
         answers: input.answers,
         addedUsers: [],
         addedRoles: [],
+        ...(input.metadata ? { metadata: input.metadata } : {}),
       });
     } catch (err) {
       transcriptCache.untrack(channel.id);
@@ -207,7 +250,12 @@ export class TicketService extends BaseRepository<Ticket> {
     guild: Guild,
     panel: TicketPanelConfig,
     creatorId: UserId,
+    additionalRoleIds: readonly RoleId[] = [],
   ): OverwriteResolvable[] {
+    const extra = [...new Set(additionalRoleIds)].filter(
+      (id) => id !== panel.supportRoleId && guild.roles.cache.has(id),
+    );
+
     return [
       { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
 
@@ -220,6 +268,10 @@ export class TicketService extends BaseRepository<Ticket> {
               type: OverwriteType.Role,
             } as OverwriteResolvable,
           ]),
+      ...extra.map(
+        (id) =>
+          ({ id, allow: accessBits(), type: OverwriteType.Role }) as OverwriteResolvable,
+      ),
       { id: creatorId, allow: accessBits(), type: OverwriteType.Member },
       {
         id: guild.members.me?.id ?? guild.client.user.id,

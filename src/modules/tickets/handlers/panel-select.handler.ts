@@ -18,7 +18,7 @@ async function resetPanelMenu(interaction: StringSelectMenuInteraction): Promise
   try {
     if (!interaction.message.editable) return;
     const main = ticketConfigService.getMainConfig();
-    const panels = ticketConfigService.listPanels();
+    const panels = ticketConfigService.listPublicPanels();
     await interaction.message.edit(buildTicketPanelMessage(main, panels));
   } catch (err) {
     log.warn("panel select menu reset failed", err);
@@ -31,7 +31,9 @@ export async function handlePanelSelect(interaction: StringSelectMenuInteraction
   try {
     const panelId = interaction.values[0];
     const panel = panelId ? ticketConfigService.getPanel(panelId) : undefined;
-    if (!panel) {
+    // A hidden panel is never in this menu, so a value naming one is a forged
+    // interaction — treated exactly like an unknown panel.
+    if (!panel || panel.hidden) {
       await interaction.reply({ content: M.create.unknownPanel, flags: MessageFlags.Ephemeral });
       return;
     }

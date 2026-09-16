@@ -6,7 +6,7 @@ export const CommandName = {
   TICKET_SETUP: "ticket-setup",
   FAQ: "faq",
   FAST_ACCESS: "fast-access",
-  VACATION_SETUP: "vacation-setup",
+  STAFF_SETUP: "staff-setup",
   SCAN: "scan",
   POINTS: "points",
   SLEEP: "sleep",
@@ -274,8 +274,8 @@ export const commandCopy = {
   ticketSetup: {
     description: "نشر أو تحديث لوحة التكتات من إعدادات الكود",
   },
-  vacationSetup: {
-    description: "نشر أو تحديث لوحة التقديم على إجازة الستاف في هذا الروم",
+  staffSetup: {
+    description: "نشر أو تحديث لوحة دعم الستاف في هذا الروم",
   },
   faq: {
     description: "إدارة الأسئلة الشائعة (FAQ) اللي تستخدمها التكتات",
