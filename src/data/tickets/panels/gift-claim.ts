@@ -8,7 +8,7 @@ export const giftClaimPanel: TicketPanelConfig = {
   description: "استلم هدية أو مكافأة فزت فيها.",
   emoji: "<:white_money_nc:1486103487979978823>",
 
-  supportRoleId: "",
+  supportRoleId: "1536111011004678304",
 
   createsChannel: false,
 
