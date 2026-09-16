@@ -15,7 +15,7 @@ export default definePrefixCommand({
     const targetId = ctx.mentionedUsers[0]?.id ?? firstUserTarget(ctx.args) ?? ctx.member.id;
     const viewingSelf = targetId === ctx.member.id;
 
-    const isStaff = await staffPermissionService.isStaff(ctx.member);
+    const isStaff = await staffPermissionService.canActAsStaff(ctx.member);
     if (!viewingSelf && !isStaff) throw new PrefixAbort(W.privacyDenied);
 
     const isManager = await staffPermissionService.isStaffManager(ctx.member);

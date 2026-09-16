@@ -145,7 +145,7 @@ export const ticketMessages = {
 
   sleep: {
     usage: `${E.warning} الطريقة: \`!sleep [المدة]\` — مثال: \`!sleep 6h\` أو \`!sleep 30m\`.`,
-    notAllowed: `${E.error} ما عندك صلاحية تستخدم هذا — لازم تكون مستلم التكت.`,
+    notAllowed: `${E.error} ما عندك صلاحية تستخدم هذا — لازم تكون من ستاف هذا القسم أو مستلم التكت.`,
     notOpen: `${E.error} هذا التكت مو مفتوح.`,
     invalidDuration: (min: string, max: string) =>
       `${E.error} مدة غير صحيحة. استخدم شيء مثل \`6h\` أو \`30m\` — بين ${min} و ${max}.`,

@@ -12,7 +12,7 @@ import { TicketModel, type Ticket } from "../models/ticket.model.ts";
 import { ACTIVE_TICKET_STATUSES, TicketLogAction, TicketStatus } from "../types/enums.ts";
 import { buildSleepDm } from "../render/sleep-dm.ts";
 import { ticketConfigService } from "./ticket-config.service.ts";
-import { canManageTicket } from "./ticket-permissions.ts";
+import { canSleepTicket } from "./ticket-permissions.ts";
 import { ticketLogService } from "./ticket-log.service.ts";
 import { ticketService } from "./ticket.service.ts";
 import { transcriptCache } from "./transcript-cache.ts";
@@ -59,7 +59,7 @@ export class TicketSleepService {
     const { actor, panel, durationMs } = input;
     const ticket = await ticketService.getTicketOrThrow(input.ticketId);
 
-    if (!canManageTicket(actor, ticket)) {
+    if (!canSleepTicket(actor, panel, ticket)) {
       throw new ValidationError(M.sleep.notAllowed);
     }
     if (!(ACTIVE_TICKET_STATUSES as TicketStatus[]).includes(ticket.status)) {

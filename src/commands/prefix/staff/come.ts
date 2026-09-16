@@ -3,7 +3,7 @@ import { staffMessages } from "../../../data/messages/staff.ts";
 import { limits } from "../../../data/config/limits.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { buildComeDm } from "../../../modules/staff/render/come-dm.ts";
-import { PrefixAbort, requireStaff } from "../_shared/guards.ts";
+import { PrefixAbort, requireHighStaff } from "../_shared/guards.ts";
 import { requireTargetMember } from "../_shared/target.ts";
 import { extractUserIds } from "../_shared/parse.ts";
 
@@ -14,7 +14,7 @@ export default definePrefixCommand({
   name: "come",
   category: "staff",
   async execute(ctx) {
-    await requireStaff(ctx);
+    await requireHighStaff(ctx);
     const target = await requireTargetMember(ctx, M.usage);
 
     const reason = ctx.args

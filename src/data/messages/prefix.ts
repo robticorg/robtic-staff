@@ -19,6 +19,7 @@ export const prefixMessages = {
     notStaff: `${E.error} ما عندك صلاحية تستخدم هذا.`,
     notStaffManager: `${E.error} هذا لمانجرات الستاف بس.`,
     notApplyManager: `${E.error} هذا لمانجرات التقديم بس.`,
+    notHighStaff: `${E.error} هذا الأمر للهاي ستاف فما فوق.`,
     usage: (usage: string) => `${E.warning} الطريقة: \`${usage}\``,
     needUserTarget: `${E.warning} منشن العضو أو حط الآيدي حقه.`,
   },

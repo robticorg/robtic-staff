@@ -13,7 +13,7 @@ export async function canViewStats(
   const isManager = await staffPermissionService.isStaffManager(viewer);
   if (isManager) return { ok: true, detailed: true };
 
-  const isStaff = await staffPermissionService.isStaff(viewer);
+  const isStaff = await staffPermissionService.canActAsStaff(viewer);
   if (!isStaff) return { ok: false, detailed: false };
 
   return { ok: viewer.id === targetUserId, detailed: false };
@@ -21,5 +21,5 @@ export async function canViewStats(
 
 export async function canViewLeaderboard(viewer: GuildMember): Promise<boolean> {
   if (await staffPermissionService.isStaffManager(viewer)) return true;
-  return staffPermissionService.isStaff(viewer);
+  return staffPermissionService.canActAsStaff(viewer);
 }

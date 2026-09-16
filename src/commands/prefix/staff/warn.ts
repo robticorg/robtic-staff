@@ -20,7 +20,7 @@ export default definePrefixCommand({
 
     if (kind === null) throw new PrefixAbort();
 
-    if (!(await staffPermissionService.isStaff(ctx.member))) {
+    if (!(await staffPermissionService.canActAsStaff(ctx.member))) {
       throw new PrefixAbort(prefixMessages.common.notStaff);
     }
 

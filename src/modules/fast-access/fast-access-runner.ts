@@ -35,7 +35,7 @@ class FastAccessRunner {
     if (!entry) return { delivered: false, reason: "UNKNOWN" };
     if (!entry.enabled) return { delivered: false, reason: "DISABLED" };
 
-    if (!(await staffPermissionService.isStaff(input.member))) {
+    if (!(await staffPermissionService.canActAsStaff(input.member))) {
       return { delivered: false, reason: "NOT_STAFF" };
     }
 

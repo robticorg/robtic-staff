@@ -15,7 +15,7 @@ export default definePrefixCommand({
     const found = await warningActionService.findWarning(warningId);
     if (!found) throw new PrefixAbort(prefixMessages.warn.warningNotFound);
 
-    const isStaff = await staffPermissionService.isStaff(ctx.member);
+    const isStaff = await staffPermissionService.canActAsStaff(ctx.member);
     const isManager = await staffPermissionService.isStaffManager(ctx.member);
 
     const lines: string[] = [];

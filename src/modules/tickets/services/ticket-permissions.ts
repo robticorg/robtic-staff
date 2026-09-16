@@ -78,6 +78,24 @@ export function decideManageAccess(input: ManageContextInput): boolean {
   return input.memberIsAdministrator || input.memberIsClaimer;
 }
 
+export interface SleepContextInput {
+  memberIsAdministrator: boolean;
+  memberIsClaimer: boolean;
+  /** Holds the support role of *this* panel — not any staff role. */
+  memberHasPanelSupportRole: boolean;
+}
+
+/**
+ * `!sleep` is deliberately wider than managing a ticket: anybody who staffs
+ * this panel can nudge an idle opener, not only whoever claimed it. It cannot
+ * hand the ticket over or close it early, so the wider gate is safe.
+ */
+export function decideSleepAccess(input: SleepContextInput): boolean {
+  return (
+    input.memberIsAdministrator || input.memberIsClaimer || input.memberHasPanelSupportRole
+  );
+}
+
 export function protectedTicketPrincipals(
   ticket: Pick<Ticket, "userId" | "claimedByDiscordId">,
   panel: Pick<TicketPanelConfig, "supportRoleId">,
@@ -120,6 +138,19 @@ export function canClaimTicket(
     ticketStatus: ticket.status,
     alreadyClaimed: ticket.claimedBy != null,
     panelIsAdminOnly: panelIsAdminOnly(panel),
+  });
+}
+
+export function canSleepTicket(
+  member: GuildMember,
+  panel: TicketPanelConfig,
+  ticket: Pick<Ticket, "claimedByDiscordId">,
+): boolean {
+  return decideSleepAccess({
+    memberIsAdministrator: memberIsAdministrator(member),
+    memberIsClaimer:
+      !!ticket.claimedByDiscordId && ticket.claimedByDiscordId === member.id,
+    memberHasPanelSupportRole: memberHasPanelSupportRole(member, panel),
   });
 }
 

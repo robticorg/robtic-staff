@@ -13,16 +13,20 @@ export interface Decision {
 
 export interface ClaimEligibilityInput {
   memberIsStaff: boolean;
+  /** An Administrator counts as staff here, with or without a Staff role. */
+  memberIsAdministrator?: boolean;
   memberIsReportedUser: boolean;
   caseStatus: ModmailCaseStatus;
   alreadyClaimed: boolean;
 }
 
 export function decideClaimEligibility(input: ClaimEligibilityInput): Decision {
+  // Checked first and for everyone: a report about you is never yours to claim,
+  // not even as an administrator.
   if (input.memberIsReportedUser) {
     return { ok: false, reason: modmailMessages.permissions.claimAboutYou };
   }
-  if (!input.memberIsStaff) {
+  if (!input.memberIsStaff && !input.memberIsAdministrator) {
     return { ok: false, reason: modmailMessages.permissions.claimNotManager };
   }
   if (input.alreadyClaimed || input.caseStatus !== ModmailCaseStatus.PENDING) {
@@ -33,6 +37,7 @@ export function decideClaimEligibility(input: ClaimEligibilityInput): Decision {
 
 export interface ManageAccessInput {
   memberIsStaff: boolean;
+  memberIsAdministrator?: boolean;
   memberIsReportedUser: boolean;
   memberIsClaimer: boolean;
   memberIsStaffManager: boolean;
@@ -40,6 +45,7 @@ export interface ManageAccessInput {
 
 export function decideManageAccess(input: ManageAccessInput): boolean {
   if (input.memberIsReportedUser) return false;
+  if (input.memberIsAdministrator) return true;
   if (!input.memberIsStaff) return false;
   return input.memberIsClaimer || input.memberIsStaffManager;
 }
@@ -84,6 +90,7 @@ export class ReportPermissionService {
   async canClaimReport(member: GuildMember, kase: Pick<ModmailCase, "status" | "claimedBy" | "reportedUserId">): Promise<Decision> {
     return decideClaimEligibility({
       memberIsStaff: await this.isStaffMember(member),
+      memberIsAdministrator: this.isAdministrator(member),
       memberIsReportedUser: member.id === kase.reportedUserId,
       caseStatus: kase.status,
       alreadyClaimed: kase.claimedBy != null,
@@ -100,6 +107,7 @@ export class ReportPermissionService {
     ]);
     return decideManageAccess({
       memberIsStaff: isStaff,
+      memberIsAdministrator: this.isAdministrator(member),
       memberIsReportedUser: member.id === kase.reportedUserId,
       memberIsClaimer: !!kase.claimedByDiscordId && member.id === kase.claimedByDiscordId,
       memberIsStaffManager: isManager,

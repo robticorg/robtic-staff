@@ -49,6 +49,53 @@ describe("decideClaimEligibility", () => {
   });
 });
 
+describe("administrator bypass", () => {
+  it("lets an administrator with no staff role claim a report", () => {
+    expect(
+      decideClaimEligibility({
+        memberIsStaff: false,
+        memberIsAdministrator: true,
+        memberIsReportedUser: false,
+        caseStatus: ModmailCaseStatus.PENDING,
+        alreadyClaimed: false,
+      }),
+    ).toEqual({ ok: true });
+  });
+
+  it("lets an administrator manage a report they did not claim", () => {
+    expect(
+      decideManageAccess({
+        memberIsStaff: false,
+        memberIsAdministrator: true,
+        memberIsReportedUser: false,
+        memberIsClaimer: false,
+        memberIsStaffManager: false,
+      }),
+    ).toBe(true);
+  });
+
+  it("still refuses a report about the administrator themselves", () => {
+    expect(
+      decideClaimEligibility({
+        memberIsStaff: false,
+        memberIsAdministrator: true,
+        memberIsReportedUser: true,
+        caseStatus: ModmailCaseStatus.PENDING,
+        alreadyClaimed: false,
+      }).ok,
+    ).toBe(false);
+    expect(
+      decideManageAccess({
+        memberIsStaff: true,
+        memberIsAdministrator: true,
+        memberIsReportedUser: true,
+        memberIsClaimer: true,
+        memberIsStaffManager: true,
+      }),
+    ).toBe(false);
+  });
+});
+
 describe("decideManageAccess", () => {
   const base = {
     memberIsStaff: true,

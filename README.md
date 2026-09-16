@@ -243,6 +243,50 @@ prevents the same event (e.g. one report claim) from awarding points twice.
 
 ---
 
+## Permissions — who can run what
+
+**An Administrator can run everything.** Every authorization gate folds the
+Administrator permission in, so an admin is never locked out of their own server
+by not holding a Staff role.
+
+| Surface | Who |
+|---|---|
+| `/role · /channels · /points · /ticket-setup · /vacation-setup · /faq` | Administrator only |
+| `/scan · /fast-access` | Staff Manager (admin folded in) |
+| `!come` | **HIGHSTAFF tier and up** (`/role highstaff`) |
+| `!transfer` | **Transfer Manager** (`/role transfermanager`) |
+| `!handover` + the ticket `[Transfer]` button | **the claimer of that ticket** |
+| `!sleep` / `/sleep` | **anyone holding that panel's support role**, plus the claimer |
+| `!close · !delete · !rename · !add · !remove`, ticket Options | the claimer |
+| `!claim` | the panel's support role / ticket manager, per `panel.claimer` |
+| `!accept` | Apply Manager · `!fire` Owner Manager · `!prompt`/`!demote` Staff Manager |
+| Report claim / manage | staff; manage also needs claimer or Staff Manager |
+| Gift claim review | Gift Manager or the gift panel's support role |
+| Appeal review | Appeal Manager or Staff Manager |
+| Punishment approval | KICK: Chat Manager · BAN: Administrator only |
+
+### The one distinction that matters
+
+`staffPermissionService` separates two questions that look alike:
+
+- **`isStaff(member)`** — *identity*: do they actually hold a Staff role? Never
+  folded with Administrator, because callers that ask this decide what happens
+  **to** the member — the Server Tag restriction stripping their roles, a
+  vacation snapshot, a `/scan` import. Treating every admin as staff there would
+  restrict admins on tag removal and import them as staff.
+- **`canActAsStaff(member)`** — *authorization*: may they run a staff action?
+  Administrator always passes. Every "staff only" command gate uses this one.
+
+`isAtLeastTier(member, tier)` answers the HIGHSTAFF/OWNER/SHIP question from the
+calculated level and the configured boundary — never a Discord role position —
+and an unconfigured boundary grants nothing (except to admins).
+
+**Deliberately left as identity checks:** `!break` / `!unbreak` still require a
+real Staff record, because an admin without one has no staff position to pause
+and nothing to snapshot.
+
+---
+
 ## Role configuration & the numbered hierarchy
 
 `role_configs` maps each Discord role to a slot (`RoleConfigType`):
