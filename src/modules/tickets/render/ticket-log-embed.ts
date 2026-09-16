@@ -24,6 +24,8 @@ function titleFor(action: TicketLogAction): string | null {
       return L.titleClosed;
     case TicketLogAction.TICKET_DELETED:
       return L.titleDeleted;
+    case TicketLogAction.TICKET_DELETED_MANUALLY:
+      return L.titleDeletedManually;
     case TicketLogAction.USER_ADDED:
       return L.titleUserAdded;
     case TicketLogAction.USER_REMOVED:
@@ -44,6 +46,7 @@ function colorFor(action: TicketLogAction): "success" | "error" | "warning" | "i
     case TicketLogAction.ROLE_ADDED:
       return "success";
     case TicketLogAction.TICKET_DELETED:
+    case TicketLogAction.TICKET_DELETED_MANUALLY:
     case TicketLogAction.USER_REMOVED:
     case TicketLogAction.ROLE_REMOVED:
       return "error";
@@ -82,6 +85,15 @@ export function buildTicketLogEmbed(
     case TicketLogAction.USER_ADDED:
     case TicketLogAction.USER_REMOVED:
       if (ctx.targetId) fields.push({ name: L.member, value: `<@${ctx.targetId}>`, inline: true });
+      break;
+    case TicketLogAction.TICKET_DELETED_MANUALLY:
+      fields.push({
+        name: L.deletedBy,
+        value: ctx.targetId ? `<@${ctx.targetId}>` : L.unknownActor,
+        inline: true,
+      });
+      fields.push({ name: L.panel, value: ctx.panel.name, inline: true });
+      fields.push({ name: L.reason, value: L.manualNote });
       break;
     case TicketLogAction.TICKET_SLEEP:
       if (ctx.targetId) fields.push({ name: L.member, value: `<@${ctx.targetId}>`, inline: true });

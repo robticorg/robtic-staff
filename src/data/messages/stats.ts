@@ -46,10 +46,22 @@ export const statsMessages = {
   activityHeading: (periodLabel: string) => `__النشاط — ${periodLabel}__`,
   activityRow: (label: string, value: string | number) => `${label}: ${value}`,
 
-  ticketsByPanel: (entries: [string, number][]) =>
-    entries.length
-      ? `التكتات حسب القسم: ${entries.map(([p, n]) => `${p} ${n}`).join(" · ")}`
-      : "التكتات حسب القسم: —",
+  reset: {
+    one: (mention: string, previous: number) =>
+      `تم تصفير عدّادات تكتات ${mention} (كانت ${previous}).`,
+    nothingToDo: (mention: string) => `عدّادات تكتات ${mention} مصفّرة أصلاً.`,
+    all: (resetCount: number, totalStaff: number) =>
+      `تم تصفير عدّادات التكتات لـ ${resetCount} من ${totalStaff} عضو ستاف.`,
+    note: "سجلّ التكتات في قاعدة البيانات ما تغيّر — العدّادات بس رجعت صفر.",
+  },
+
+  ticketsByPanelHeading: "__التكتات حسب القسم__",
+  ticketsByPanelEmpty: "• (ما فيه)",
+  ticketsByPanelRow: (
+    panelName: string,
+    stat: { claimed: number; completed: number; open: number },
+  ) =>
+    `• ${panelName} — استلم **${stat.claimed}** · أكمل **${stat.completed}** · مفتوح **${stat.open}**`,
 
   recentHeading: "__آخر النشاطات__",
   recentRow: (rel: string, text: string) => `• ${rel} — ${text}`,

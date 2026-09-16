@@ -8,6 +8,7 @@ import staffSetupCommand from "./staff-setup/index.ts";
 import scanCommand from "./scan/index.ts";
 import pointsCommand from "./points/index.ts";
 import sleepCommand from "./sleep/index.ts";
+import ticketStatsCommand from "./ticket-stats/index.ts";
 
 export const commands: SlashCommand[] = [
   roleCommand,
@@ -19,4 +20,5 @@ export const commands: SlashCommand[] = [
   staffSetupCommand,
   pointsCommand,
   sleepCommand,
+  ticketStatsCommand,
 ];

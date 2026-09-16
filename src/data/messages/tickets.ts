@@ -185,6 +185,7 @@ export const ticketMessages = {
     titleRenamed: "✏️ تم تغيير اسم تكت",
     titleClosed: "🔒 تم إغلاق تكت",
     titleDeleted: `${E.error} تم حذف تكت`,
+    titleDeletedManually: `${E.warning} تم حذف روم تكت يدوياً`,
     titleUserAdded: `${E.user} تمت إضافة عضو`,
     titleUserRemoved: `${E.user} تمت إزالة عضو`,
     titleRoleAdded: `${E.staff} تمت إضافة رتبة`,
@@ -201,6 +202,9 @@ export const ticketMessages = {
     from: "من",
     to: "إلى",
     reason: "السبب",
+    deletedBy: "حذفه",
+    unknownActor: "غير معروف",
+    manualNote: "الروم انحذف من برا البوت — تم حفظ النسخة تلقائياً.",
   },
 
   faq: {

@@ -28,7 +28,7 @@ export const staffSupportPanel: TicketPanelConfig = {
     transferable: false,
   },
 
-  close: { transcript: true, delete: false },
+  close: { transcript: true, delete: true },
 
   faq: { enabled: false },
 
@@ -56,7 +56,7 @@ export const demissionPanel: TicketPanelConfig = {
     transferable: false,
   },
 
-  close: { transcript: true, delete: false },
+  close: { transcript: true, delete: true },
 
   faq: { enabled: false },
 

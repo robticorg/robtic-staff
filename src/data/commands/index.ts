@@ -10,6 +10,7 @@ export const CommandName = {
   SCAN: "scan",
   POINTS: "points",
   SLEEP: "sleep",
+  TICKET_STATS: "ticket-stats",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -19,6 +20,12 @@ export const PointsSubcommand = {
   RESET: "reset",
 } as const;
 export type PointsSubcommand = (typeof PointsSubcommand)[keyof typeof PointsSubcommand];
+
+export const TicketStatsSubcommand = {
+  RESET: "reset",
+} as const;
+export type TicketStatsSubcommand =
+  (typeof TicketStatsSubcommand)[keyof typeof TicketStatsSubcommand];
 
 export const RoleSubcommand = {
   START: "start",
@@ -221,6 +228,17 @@ export const commandCopy = {
   },
   scan: {
     description: "فحص السيرفر واستيراد أعضاء الستاف الموجودين ومزامنة مستوياتهم",
+  },
+  ticketStats: {
+    description: "إدارة عدّادات تكتات الستاف",
+    sub: {
+      reset: {
+        description: "تصفير عدّادات التكتات — للإداريين بس",
+        options: {
+          member: "عضو الستاف (اتركه فاضي عشان تصفّر الكل)",
+        },
+      },
+    },
   },
   sleep: {
     description: "تنبيه صاحب التكت إنه بينقفل تلقائياً إذا ما رد",

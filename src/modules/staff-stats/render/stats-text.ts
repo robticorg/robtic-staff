@@ -1,4 +1,5 @@
 import { ACTIVITY_LABELS, statsMessages as S } from "../../../data/messages/stats.ts";
+import { ticketConfigService } from "../../tickets/services/ticket-config.service.ts";
 import { STATS_PERIOD_LABEL } from "../types/enums.ts";
 import type { StaffStatsResult } from "../services/staff-statistics.service.ts";
 
@@ -32,7 +33,7 @@ export function buildStatsText(stats: StaffStatsResult): string {
     S.activityRow(L.ticketsClaimed, a.ticketsClaimed),
     S.activityRow(L.ticketsCompleted, a.ticketsCompleted),
     S.activityRow(L.ticketsAssignedNow, a.ticketsAssignedNow),
-    S.ticketsByPanel(Object.entries(a.ticketsByPanel)),
+    ...ticketsByPanelLines(a.ticketsByPanel),
     S.activityRow(L.giftClaimsHandled, a.giftClaimsHandled),
     S.activityRow(
       L.giftClaimsBreakdown,
@@ -66,4 +67,18 @@ export function buildStatsText(stats: StaffStatsResult): string {
   }
 
   return out.join("\n").slice(0, 1950);
+}
+
+function ticketsByPanelLines(
+  byPanel: Record<string, { claimed: number; completed: number; open: number }>,
+): string[] {
+  const entries = Object.entries(byPanel).sort((a, b) => b[1].claimed - a[1].claimed);
+  if (entries.length === 0) return [S.ticketsByPanelHeading, S.ticketsByPanelEmpty];
+
+  return [
+    S.ticketsByPanelHeading,
+    ...entries.map(([panelId, stat]) =>
+      S.ticketsByPanelRow(ticketConfigService.getPanel(panelId)?.name ?? panelId, stat),
+    ),
+  ];
 }

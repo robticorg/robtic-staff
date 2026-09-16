@@ -210,7 +210,11 @@ describe.skipIf(!hasDb)("Staff statistics (aggregation over existing data)", () 
       period: StatsPeriod.ALL_TIME,
     });
     expect(stats.activity.ticketsClaimed).toBe(1);
-    expect(stats.activity.ticketsByPanel["gift-claim"]).toBe(1);
+    expect(stats.activity.ticketsByPanel["gift-claim"]).toEqual({
+      claimed: 1,
+      completed: 0,
+      open: 1,
+    });
     expect(stats.activity.giftClaimsFulfilled).toBe(1);
     expect(stats.activity.giftClaimsApproved).toBe(1);
     expect(stats.activity.giftClaimsHandled).toBe(1);

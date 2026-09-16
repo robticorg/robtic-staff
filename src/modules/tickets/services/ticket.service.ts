@@ -1,4 +1,5 @@
 import {
+  AuditLogEvent,
   ChannelType,
   OverwriteType,
   PermissionFlagsBits,
@@ -10,7 +11,14 @@ import {
 } from "discord.js";
 import type { HydratedDocument, Types } from "mongoose";
 import { BaseRepository } from "../../../shared/repository/base.repository.ts";
-import type { GuildId, IdLike, MongoFilter, RoleId, UserId } from "../../../shared/types/index.ts";
+import type {
+  ChannelId,
+  GuildId,
+  IdLike,
+  MongoFilter,
+  RoleId,
+  UserId,
+} from "../../../shared/types/index.ts";
 import {
   ConflictError,
   DomainError,
@@ -40,6 +48,7 @@ import { transcriptCache } from "./transcript-cache.ts";
 
 const log = logger.child("tickets");
 const M = ticketMessages;
+const AUDIT_LOOKBACK_MS = 60_000;
 
 const GRANT_ACCESS = {
   ViewChannel: true,
@@ -627,6 +636,87 @@ export class TicketService extends BaseRepository<Ticket> {
     });
 
     return updated ?? ticket;
+  }
+
+  async handleManualChannelDelete(input: {
+    guild: Guild;
+    channelId: ChannelId;
+  }): Promise<{ handled: boolean; ticketId?: string; actorId?: UserId }> {
+    const ticket = await this.getTicketByChannel(input.channelId);
+    if (!ticket || ticket.guildId !== input.guild.id) return { handled: false };
+
+    if (ticket.status === TicketStatus.DELETED) {
+      transcriptCache.untrack(input.channelId);
+      return { handled: false, ticketId: ticket.ticketId };
+    }
+
+    const panel = await this.panelFor(ticket).catch(() => null);
+    if (!panel) {
+      transcriptCache.untrack(input.channelId);
+      log.warn(
+        `ticket ${ticket.ticketId} channel was deleted but its panel "${ticket.panelId}" is gone`,
+      );
+      return { handled: false, ticketId: ticket.ticketId };
+    }
+
+    const actorId = await this.resolveChannelDeleter(input.guild, input.channelId);
+
+    const transcriptId = await this.ensureTranscript(ticket, input.guild, null, panel);
+
+    const updated = await this.model
+      .findOneAndUpdate(
+        { ticketId: ticket.ticketId, status: { $ne: TicketStatus.DELETED } },
+        {
+          $set: {
+            status: TicketStatus.DELETED,
+            deletedAt: new Date(),
+            deletedBy: actorId ?? "UNKNOWN",
+            ...(transcriptId ? { transcriptId } : {}),
+          },
+          $unset: { sleepDueAt: "", sleepStartedBy: "", sleepStartedAt: "", sleepDurationMs: "" },
+        },
+        { returnDocument: "after" },
+      )
+      .exec();
+
+    transcriptCache.untrack(input.channelId);
+
+    if (!updated) return { handled: false, ticketId: ticket.ticketId };
+
+    await ticketLogService.record(TicketLogAction.TICKET_DELETED_MANUALLY, {
+      guild: input.guild,
+      panel,
+      ticketId: ticket.ticketId,
+      actorId: actorId ?? "UNKNOWN",
+      targetId: actorId ?? undefined,
+    });
+
+    log.warn(
+      `ticket ${ticket.ticketId} channel deleted outside the bot by ${actorId ?? "an unknown actor"} ` +
+        `— transcript ${transcriptId ? "saved" : "unavailable"}`,
+    );
+
+    return { handled: true, ticketId: ticket.ticketId, actorId: actorId ?? undefined };
+  }
+
+  private async resolveChannelDeleter(
+    guild: Guild,
+    channelId: ChannelId,
+  ): Promise<UserId | null> {
+    try {
+      const logs = await guild.fetchAuditLogs({
+        type: AuditLogEvent.ChannelDelete,
+        limit: 10,
+      });
+      const entry = logs.entries.find(
+        (e) =>
+          e.targetId === channelId && Date.now() - e.createdTimestamp < AUDIT_LOOKBACK_MS,
+      );
+      return entry?.executor?.id ?? null;
+    } catch (err) {
+      log.warn("audit log lookup for the deleted ticket channel failed", err);
+      return null;
+    }
   }
 
   private async ensureTranscript(

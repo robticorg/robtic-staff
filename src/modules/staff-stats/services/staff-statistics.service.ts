@@ -8,7 +8,7 @@ import {
   type StatsPeriod as Period,
 } from "../types/enums.ts";
 import { resolveStatsRange } from "../utils/date-range.ts";
-import { statsRepository } from "./stats-repository.ts";
+import { statsRepository, type TicketPanelStat } from "./stats-repository.ts";
 
 export interface PeriodPoints {
   today: number;
@@ -52,7 +52,7 @@ export interface StaffStatsResult {
     ticketsClaimed: number;
     ticketsCompleted: number;
     ticketsAssignedNow: number;
-    ticketsByPanel: Record<string, number>;
+    ticketsByPanel: Record<string, TicketPanelStat>;
     giftClaimsHandled: number;
     giftClaimsApproved: number;
     giftClaimsRejected: number;

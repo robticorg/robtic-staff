@@ -123,6 +123,29 @@ export class StaffService extends BaseRepository<Staff> {
     return this.updateById(id, { $inc: inc });
   }
 
+  async resetTicketCounters(id: IdLike): Promise<{ reset: boolean; previous: number }> {
+    const staff = await this.findById(id);
+    if (!staff) return { reset: false, previous: 0 };
+
+    const previous = staff.ticketsClaimed + staff.ticketsCompleted;
+    if (previous === 0) return { reset: false, previous: 0 };
+
+    await this.updateById(id, { $set: { ticketsClaimed: 0, ticketsCompleted: 0 } });
+    return { reset: true, previous };
+  }
+
+  async resetTicketCountersForGuild(
+    guildId: GuildId,
+  ): Promise<{ resetCount: number; totalStaff: number }> {
+    const staffList = await this.listByGuild(guildId);
+    let resetCount = 0;
+    for (const staff of staffList) {
+      const result = await this.resetTicketCounters(staff._id);
+      if (result.reset) resetCount += 1;
+    }
+    return { resetCount, totalStaff: staffList.length };
+  }
+
   async getStats(id: IdLike): Promise<StaffStats> {
     const staff = await this.getByIdOrThrow(id);
     return {

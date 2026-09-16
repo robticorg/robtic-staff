@@ -912,6 +912,45 @@ a transfer note, and `TICKET_TRANSFERRED` is logged with from / to / reason. **N
 claim point is awarded** — the +1 stays with whoever claimed first — but
 completion credit at close follows the new claimer (`claimedBy` moved).
 
+### Manual channel deletion is caught, not lost
+
+If someone deletes a ticket channel **outside the bot** (right-click → delete),
+the `channelDelete` event still salvages it: the transcript is generated from the
+in-memory buffer (`transcriptService.generate` takes a `null` channel and flushes
+`transcriptCache`, so the conversation survives even though the channel is gone),
+posted to the transcript channel, and the ticket is marked `DELETED`.
+
+**Who did it** comes from the guild audit log — `AuditLogEvent.ChannelDelete`
+matched on the channel id within a 60s window. It needs *View Audit Log*; if the
+lookup fails or finds nothing the actor is recorded as `UNKNOWN` rather than
+guessed. A `TICKET_DELETED_MANUALLY` entry is logged with the deleter, the panel
+and a note that the channel went outside the bot.
+
+The DB write is filtered on `status != DELETED`, so the bot's own delete path and
+this safety net can never double-process the same ticket.
+
+### Per-panel ticket stats
+
+`!stats` breaks a staffer's tickets down **per panel**, each with claimed /
+completed / currently-open, ordered by volume and labelled with the panel's
+Arabic name (falling back to the raw id if the panel was removed from config):
+
+```
+__التكتات حسب القسم__
+• الـدعـم الـفـنـي — استلم 12 · أكمل 10 · مفتوح 2
+• دعـم مـايـنكـرافـت — استلم 5 · أكمل 5 · مفتوح 0
+```
+
+Computed in one `$group` over the ticket collection, so it is always consistent
+with the tickets themselves rather than with a counter that can drift.
+
+`/ticket-stats reset [member]` (Administrators) zeroes the stored
+`ticketsClaimed`/`ticketsCompleted` counters — for one member or the whole guild.
+**The ticket rows themselves are never touched**, which is also why `!stats`
+numbers are unaffected by the reset: they are derived from the ticket collection,
+not from those counters. Use the period selector (`TODAY` / `THIS_WEEK` /
+`THIS_MONTH`) to scope what `!stats` reports.
+
 ### Sleep — idle ticket auto-close (`!sleep` / `/sleep time:`)
 
 For when the opener has gone quiet. The ticket's handler (claimer or admin —

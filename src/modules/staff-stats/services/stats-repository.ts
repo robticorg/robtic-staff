@@ -31,11 +31,17 @@ export interface ReportStatRow {
   assignedNow: number;
 }
 
+export interface TicketPanelStat {
+  claimed: number;
+  completed: number;
+  open: number;
+}
+
 export interface TicketStatRow {
   claimed: number;
   completed: number;
   assignedNow: number;
-  byPanel: Record<string, number>;
+  byPanel: Record<string, TicketPanelStat>;
 }
 
 export interface GiftClaimStatRow {
@@ -186,16 +192,43 @@ export class StatsRepository {
         claimedBy: staffId,
         status: TicketStatus.CLAIMED,
       }),
-      TicketModel.aggregate<{ _id: string; count: number }>([
+      TicketModel.aggregate<{
+        _id: string;
+        claimed: number;
+        completed: number;
+        open: number;
+      }>([
         { $match: { guildId, claimedBy: staffId, ...rangeFilter(range, "claimedAt") } },
-        { $group: { _id: "$panelId", count: { $sum: 1 } } },
+        {
+          $group: {
+            _id: "$panelId",
+            claimed: { $sum: 1 },
+            completed: {
+              $sum: {
+                $cond: [
+                  { $in: ["$status", [TicketStatus.CLOSED, TicketStatus.DELETED]] },
+                  1,
+                  0,
+                ],
+              },
+            },
+            open: {
+              $sum: { $cond: [{ $eq: ["$status", TicketStatus.CLAIMED] }, 1, 0] },
+            },
+          },
+        },
       ]),
     ]);
     return {
       claimed,
       completed,
       assignedNow,
-      byPanel: Object.fromEntries(panelRows.map((r) => [r._id, r.count])),
+      byPanel: Object.fromEntries(
+        panelRows.map((r) => [
+          r._id,
+          { claimed: r.claimed, completed: r.completed, open: r.open },
+        ]),
+      ),
     };
   }
 
