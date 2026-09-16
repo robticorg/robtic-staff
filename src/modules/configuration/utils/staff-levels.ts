@@ -259,6 +259,20 @@ export function getNumberedStaffRoles(guildId: GuildId): Promise<StaffRoleLevel[
   return getHierarchy(guildId).then((h) => h.levels.map((r) => ({ ...r })));
 }
 
+/**
+ * The numbered level a tier opens at, or null when its boundary role is not
+ * configured (or no longer sits on the ladder).
+ *
+ * This is what turns `!accept @user ship` into a level: the tier never carries
+ * one of its own, it is read from the configured boundary role.
+ */
+export async function getLevelForTier(
+  guildId: GuildId,
+  tier: StaffTierType,
+): Promise<number | null> {
+  return (await getHierarchy(guildId)).boundaryLevels[tier] ?? null;
+}
+
 /** The ladder role that sits at a given level, if any. */
 export function getRoleForLevel(hierarchy: StaffHierarchy, level: number): RoleId | null {
   for (const rung of hierarchy.levels) if (rung.level === level) return rung.roleId;
@@ -313,6 +327,7 @@ export const staffHierarchyService = {
   validateHierarchy,
   getTierForLevel,
   getTierForRole,
+  getLevelForTier,
   highestLevelFromRoleIds,
   getAccessRoles,
   isAccessRole,

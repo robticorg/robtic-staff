@@ -44,6 +44,19 @@ export interface ConfiguredStaffType {
 }
 
 /**
+ * Slots a Staff Type role may take over.
+ *
+ * IGNORE is included deliberately: marking a role ignored keeps it off the
+ * numbered ladder, which is exactly why someone would pick it as a DEV/MAX role
+ * — "I never want people promoted into this role". STAFF_TYPE rows are excluded
+ * from the ladder rebuild too, so the intent survives the conversion.
+ */
+const OVERWRITABLE_SLOTS: ReadonlySet<RoleConfigType> = new Set([
+  RoleConfigType.STAFF_TYPE,
+  RoleConfigType.IGNORE,
+]);
+
+/**
  * Owns everything about Staff Types: keyword resolution, the configured role
  * per type, and applying/replacing the role on a member.
  *
@@ -131,7 +144,7 @@ export class StaffTypeService {
     // roles — all live in RoleConfig, so one lookup covers every rejection the
     // spec lists. Re-typing such a row would silently delete it from its slot.
     const current = await roleConfigService.get(guildId, role.id);
-    if (current && current.type !== RoleConfigType.STAFF_TYPE) {
+    if (current && !OVERWRITABLE_SLOTS.has(current.type)) {
       throw new StaffTypeError(StaffTypeProblem.RESERVED, {
         roleId: role.id,
         conflict: current.type,

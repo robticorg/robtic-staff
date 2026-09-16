@@ -71,6 +71,19 @@ export const prefixMessages = {
       `${E.error} نوع الستاف غير معروف: \`${token}\`. الأنواع المتاحة: ${available}.`,
     duplicateStaffLevel: `${E.error} حدد مستوى واحد بس.`,
     duplicateStaffType: `${E.error} حدد نوع ستاف واحد بس.`,
+    duplicateStaffTier: `${E.error} حدد تصنيف واحد بس.`,
+    levelAndTier: `${E.error} ما ينفع تحدد مستوى وتصنيف مع بعض — التصنيف نفسه يحدد المستوى.`,
+    tierNotConfigured: (tierLabel: string, slug: string) =>
+      `${E.error} تصنيف **${tierLabel}** مو مضبوط. شغّل \`/role ${slug}\` وحدد أول رتبة فيه.`,
+    acceptedWithTier: (userMention: string, level: number, tierLabel: string) =>
+      `${E.success} تم قبول ${userMention} كـ **${tierLabel}** على المستوى **${level}**.`,
+    acceptedWithTierAndType: (
+      userMention: string,
+      level: number,
+      tierLabel: string,
+      typeLabel: string,
+    ) =>
+      `${E.success} تم قبول ${userMention} كـ **${tierLabel}** ونوعه **${typeLabel}** على المستوى **${level}**.`,
     staffTypeRoleMissing: (typeLabel: string, slug: string) =>
       `${E.error} رتبة نوع الستاف **${typeLabel}** مو مضبوطة. شغّل \`/role ${slug}\` أول.`,
     fired: (userMention: string) => `${E.success} تم فصل ${userMention} من الستاف.`,

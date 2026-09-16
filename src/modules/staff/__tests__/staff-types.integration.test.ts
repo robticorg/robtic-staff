@@ -159,6 +159,28 @@ describe.skipIf(!hasDb)("Staff Types", () => {
     expect(await attempt(BLACKLIST)).toBe(StaffTypeProblem.RESERVED);
   });
 
+  it("accepts a role that was marked ignored", async () => {
+    // Ignoring a role keeps it off the ladder — a deliberate reason to pick it
+    // as a type role ("nobody gets promoted into this"). It must not be refused.
+    await roleConfigService.setRole({
+      guildId: GUILD,
+      roleId: DEV_ROLE,
+      type: RoleConfigType.IGNORE,
+    });
+    invalidateStaffHierarchy(GUILD);
+
+    await types.configureRole(guild as never, StaffType.DEV, role(guild, DEV_ROLE));
+
+    const row = await roleConfigService.get(GUILD, DEV_ROLE);
+    expect(row!.type).toBe(RoleConfigType.STAFF_TYPE);
+    expect(row!.staffType).toBe(StaffType.DEV);
+    // Still not a ladder rung, which is what being ignored protected.
+    expect(await roleConfigService.getStaffLevel(GUILD, DEV_ROLE)).toBeNull();
+    expect((await roleConfigService.getStaffRoleLevels(GUILD)).map((r) => r.roleId)).toEqual(
+      LADDER,
+    );
+  });
+
   it("keeps one role per type, replacing a previous binding", async () => {
     await types.configureRole(guild as never, StaffType.MAX, role(guild, MAX_ROLE));
     await types.configureRole(guild as never, StaffType.MAX, role(guild, COMMUNITY));

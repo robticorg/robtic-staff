@@ -1,3 +1,5 @@
+import { resolveTierKeyword } from "../../../data/staff-tiers/index.ts";
+import type { StaffTier } from "../../../modules/configuration/types/enums.ts";
 import { staffTypeService } from "../../../modules/staff/services/staff-type.service.ts";
 import type { StaffType } from "../../../modules/staff/types/enums.ts";
 
@@ -12,12 +14,20 @@ export const AcceptArgProblem = {
   UNKNOWN_TOKEN: "UNKNOWN_TOKEN",
   DUPLICATE_LEVEL: "DUPLICATE_LEVEL",
   DUPLICATE_TYPE: "DUPLICATE_TYPE",
+  DUPLICATE_TIER: "DUPLICATE_TIER",
+  /** A tier already names a level, so giving both is ambiguous. */
+  LEVEL_AND_TIER: "LEVEL_AND_TIER",
 } as const;
 export type AcceptArgProblem = (typeof AcceptArgProblem)[keyof typeof AcceptArgProblem];
 
 export interface ParsedAcceptArguments {
   level: number | null;
   staffType: StaffType | null;
+  /**
+   * Tier keyword (ship / owner / high). Resolved to a numbered level by the
+   * hierarchy at execution time — never a level of its own.
+   */
+  tier: StaffTier | null;
   problem?: AcceptArgProblem;
   /** The offending word, when the parse failed. */
   token?: string;
@@ -41,7 +51,16 @@ export function parseAcceptArguments(
 ): ParsedAcceptArguments {
   let level: number | null = null;
   let staffType: StaffType | null = null;
+  let tier: StaffTier | null = null;
   let targetSeen = false;
+
+  const fail = (problem: AcceptArgProblem, token: string): ParsedAcceptArguments => ({
+    level,
+    staffType,
+    tier,
+    problem,
+    token,
+  });
 
   for (const raw of args) {
     const token = raw.trim();
@@ -59,25 +78,35 @@ export function parseAcceptArguments(
     if (/^\d+$/.test(token)) {
       if (token.length >= SNOWFLAKE_MIN_DIGITS) continue;
       const parsed = Number.parseInt(token, 10);
-      if (!Number.isSafeInteger(parsed)) {
-        return { level, staffType, problem: AcceptArgProblem.UNKNOWN_TOKEN, token };
-      }
-      if (level !== null) {
-        return { level, staffType, problem: AcceptArgProblem.DUPLICATE_LEVEL, token };
-      }
+      if (!Number.isSafeInteger(parsed)) return fail(AcceptArgProblem.UNKNOWN_TOKEN, token);
+      if (level !== null) return fail(AcceptArgProblem.DUPLICATE_LEVEL, token);
+      if (tier !== null) return fail(AcceptArgProblem.LEVEL_AND_TIER, token);
       level = parsed;
       continue;
     }
 
-    const resolved = staffTypeService.resolveKeyword(token);
-    if (!resolved) {
-      return { level, staffType, problem: AcceptArgProblem.UNKNOWN_TOKEN, token };
+    const resolvedType = staffTypeService.resolveKeyword(token);
+    if (resolvedType) {
+      if (staffType !== null && staffType !== resolvedType) {
+        return fail(AcceptArgProblem.DUPLICATE_TYPE, token);
+      }
+      staffType = resolvedType;
+      continue;
     }
-    if (staffType !== null && staffType !== resolved) {
-      return { level, staffType, problem: AcceptArgProblem.DUPLICATE_TYPE, token };
+
+    // A tier names the level to accept at, so it cannot accompany a number.
+    const resolvedTier = resolveTierKeyword(token);
+    if (resolvedTier) {
+      if (level !== null) return fail(AcceptArgProblem.LEVEL_AND_TIER, token);
+      if (tier !== null && tier !== resolvedTier) {
+        return fail(AcceptArgProblem.DUPLICATE_TIER, token);
+      }
+      tier = resolvedTier;
+      continue;
     }
-    staffType = resolved;
+
+    return fail(AcceptArgProblem.UNKNOWN_TOKEN, token);
   }
 
-  return { level, staffType };
+  return { level, staffType, tier };
 }

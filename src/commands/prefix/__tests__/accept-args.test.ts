@@ -5,6 +5,12 @@ import {
   STAFF_TYPE_BY_KEYWORD,
   STAFF_TYPE_DEFINITIONS,
 } from "../../../data/staff-types/index.ts";
+import {
+  STAFF_TIER_BY_KEYWORD,
+  STAFF_TIER_KEYWORD_DEFINITIONS,
+  resolveTierKeyword,
+} from "../../../data/staff-tiers/index.ts";
+import { StaffTier } from "../../../modules/configuration/types/enums.ts";
 
 const USER = "123456789012345678";
 const MENTION = `<@${USER}>`;
@@ -19,6 +25,7 @@ describe("parseAcceptArguments", () => {
     expect(parseAcceptArguments(args(MENTION), USER)).toEqual({
       level: null,
       staffType: null,
+      tier: null,
     });
   });
 
@@ -26,6 +33,7 @@ describe("parseAcceptArguments", () => {
     expect(parseAcceptArguments(args(`${MENTION} 3`), USER)).toEqual({
       level: 3,
       staffType: null,
+      tier: null,
     });
   });
 
@@ -39,6 +47,7 @@ describe("parseAcceptArguments", () => {
     expect(parseAcceptArguments(args(`${MENTION} max`), USER)).toEqual({
       level: null,
       staffType: StaffType.MAX,
+      tier: null,
     });
     expect(parseAcceptArguments(args(`${MENTION} dev`), USER).staffType).toBe(StaffType.DEV);
   });
@@ -62,10 +71,12 @@ describe("parseAcceptArguments", () => {
     expect(parseAcceptArguments(args(`${MENTION} max 3`), USER)).toEqual({
       level: 3,
       staffType: StaffType.MAX,
+      tier: null,
     });
     expect(parseAcceptArguments(args(`${MENTION} dev 5`), USER)).toEqual({
       level: 5,
       staffType: StaffType.DEV,
+      tier: null,
     });
   });
 
@@ -73,10 +84,12 @@ describe("parseAcceptArguments", () => {
     expect(parseAcceptArguments(args(`${MENTION} 3 max`), USER)).toEqual({
       level: 3,
       staffType: StaffType.MAX,
+      tier: null,
     });
     expect(parseAcceptArguments(args(`${MENTION} 5 dev`), USER)).toEqual({
       level: 5,
       staffType: StaffType.DEV,
+      tier: null,
     });
   });
 
@@ -84,10 +97,12 @@ describe("parseAcceptArguments", () => {
     expect(parseAcceptArguments(args(`${MENTION} ماكس 3`), USER)).toEqual({
       level: 3,
       staffType: StaffType.MAX,
+      tier: null,
     });
     expect(parseAcceptArguments(args(`${MENTION} 3 مبرمج`), USER)).toEqual({
       level: 3,
       staffType: StaffType.DEV,
+      tier: null,
     });
   });
 
@@ -98,6 +113,7 @@ describe("parseAcceptArguments", () => {
       expect(parseAcceptArguments(args(`${form} 3`), USER)).toEqual({
         level: 3,
         staffType: null,
+        tier: null,
       });
     }
   });
@@ -111,6 +127,7 @@ describe("parseAcceptArguments", () => {
     expect(parseAcceptArguments(args(`${MENTION} <@999888777666555444> 2`), USER)).toEqual({
       level: 2,
       staffType: null,
+      tier: null,
     });
   });
 
@@ -139,6 +156,83 @@ describe("parseAcceptArguments", () => {
 
   it("tolerates the same type twice", () => {
     expect(parseAcceptArguments(args(`${MENTION} max ماكس`), USER).staffType).toBe(StaffType.MAX);
+  });
+
+  // ── Tiers ────────────────────────────────────────────────────────────────
+
+  it("reads the English tier keywords", () => {
+    expect(parseAcceptArguments(args(`${MENTION} ship`), USER).tier).toBe(StaffTier.SHIP);
+    expect(parseAcceptArguments(args(`${MENTION} owner`), USER).tier).toBe(StaffTier.OWNER);
+    expect(parseAcceptArguments(args(`${MENTION} high`), USER).tier).toBe(StaffTier.HIGHSTAFF);
+  });
+
+  it("maps the Arabic tier keywords onto the same tiers", () => {
+    expect(parseAcceptArguments(args(`${MENTION} شيب`), USER).tier).toBe(StaffTier.SHIP);
+    expect(parseAcceptArguments(args(`${MENTION} اونر`), USER).tier).toBe(StaffTier.OWNER);
+    expect(parseAcceptArguments(args(`${MENTION} عليا`), USER).tier).toBe(StaffTier.HIGHSTAFF);
+  });
+
+  it("leaves the level unset — the tier resolves it later", () => {
+    const parsed = parseAcceptArguments(args(`${MENTION} ship`), USER);
+    expect(parsed.level).toBeNull();
+    expect(parsed.staffType).toBeNull();
+  });
+
+  it("combines a tier with a staff type, either order", () => {
+    expect(parseAcceptArguments(args(`${MENTION} ship dev`), USER)).toEqual({
+      level: null,
+      staffType: StaffType.DEV,
+      tier: StaffTier.SHIP,
+    });
+    expect(parseAcceptArguments(args(`${MENTION} مبرمج عليا`), USER)).toEqual({
+      level: null,
+      staffType: StaffType.DEV,
+      tier: StaffTier.HIGHSTAFF,
+    });
+  });
+
+  it("rejects a tier together with an explicit level, either order", () => {
+    expect(parseAcceptArguments(args(`${MENTION} ship 3`), USER).problem).toBe(
+      AcceptArgProblem.LEVEL_AND_TIER,
+    );
+    expect(parseAcceptArguments(args(`${MENTION} 3 ship`), USER).problem).toBe(
+      AcceptArgProblem.LEVEL_AND_TIER,
+    );
+  });
+
+  it("rejects two different tiers but tolerates the same one twice", () => {
+    expect(parseAcceptArguments(args(`${MENTION} ship owner`), USER).problem).toBe(
+      AcceptArgProblem.DUPLICATE_TIER,
+    );
+    expect(parseAcceptArguments(args(`${MENTION} ship شيب`), USER).tier).toBe(StaffTier.SHIP);
+  });
+
+  it("is case-insensitive for English tier keywords", () => {
+    for (const written of ["SHIP", "Ship", "sHiP"]) {
+      expect(parseAcceptArguments(args(`${MENTION} ${written}`), USER).tier).toBe(StaffTier.SHIP);
+    }
+  });
+});
+
+describe("Staff Tier registry", () => {
+  it("has no keyword shared with a Staff Type", () => {
+    for (const keyword of STAFF_TIER_BY_KEYWORD.keys()) {
+      expect(STAFF_TYPE_BY_KEYWORD.has(keyword)).toBe(false);
+    }
+  });
+
+  it("resolves every configured keyword and rejects unknown ones", () => {
+    for (const definition of STAFF_TIER_KEYWORD_DEFINITIONS) {
+      for (const keyword of definition.keywords) {
+        expect(resolveTierKeyword(keyword)).toBe(definition.tier);
+      }
+      expect(definition.keywords).toContain(definition.slug);
+    }
+    expect(resolveTierKeyword("emperor")).toBeNull();
+  });
+
+  it("does not claim a keyword for the implicit STAFF tier", () => {
+    expect(resolveTierKeyword("staff")).toBeNull();
   });
 });
 

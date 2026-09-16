@@ -1,6 +1,9 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
+import { STAFF_TIER_LABELS } from "../../../data/messages/hierarchy.ts";
+import { STAFF_TIER_KEYWORD_DEFINITIONS } from "../../../data/staff-tiers/index.ts";
 import { staffTypeLabel } from "../../../data/staff-types/index.ts";
+import { getLevelForTier } from "../../../modules/configuration/utils/staff-levels.ts";
 import {
   memberActor,
   staffManagementService,
@@ -17,20 +20,41 @@ export default definePrefixCommand({
   category: "staff",
   async execute(ctx) {
     await requireStaffManager(ctx);
-    const target = await requireTargetMember(ctx, "!accept @user [level] [type]");
+    const target = await requireTargetMember(ctx, "!accept @user [level|tier] [type]");
 
     // §Parser — the command itself holds no parsing or Staff Type logic.
     const parsed = parseAcceptArguments(ctx.args, target.id);
     switch (parsed.problem) {
-      case AcceptArgProblem.UNKNOWN_TOKEN:
-        // §Type Validation — reject outright rather than partially accepting.
-        throw new PrefixAbort(
-          M.unknownStaffType(parsed.token ?? "", staffTypeService.getAvailableKeywords().join(", ")),
-        );
+      case AcceptArgProblem.UNKNOWN_TOKEN: {
+        // Unknown words could be a type or a tier, so list both vocabularies.
+        const available = [
+          ...staffTypeService.getAvailableKeywords(),
+          ...STAFF_TIER_KEYWORD_DEFINITIONS.map((d) => d.slug),
+        ].join(", ");
+        throw new PrefixAbort(M.unknownStaffType(parsed.token ?? "", available));
+      }
       case AcceptArgProblem.DUPLICATE_LEVEL:
         throw new PrefixAbort(M.duplicateStaffLevel);
       case AcceptArgProblem.DUPLICATE_TYPE:
         throw new PrefixAbort(M.duplicateStaffType);
+      case AcceptArgProblem.DUPLICATE_TIER:
+        throw new PrefixAbort(M.duplicateStaffTier);
+      case AcceptArgProblem.LEVEL_AND_TIER:
+        throw new PrefixAbort(M.levelAndTier);
+    }
+
+    // A tier names the level to accept at. StaffHierarchyService stays the only
+    // source of truth — the boundary role's own level is what gets used.
+    let level = parsed.level;
+    if (parsed.tier) {
+      const tierLevel = await getLevelForTier(ctx.guild.id, parsed.tier);
+      if (tierLevel === null) {
+        const slug =
+          STAFF_TIER_KEYWORD_DEFINITIONS.find((d) => d.tier === parsed.tier)?.slug ??
+          parsed.tier.toLowerCase();
+        throw new PrefixAbort(M.tierNotConfigured(STAFF_TIER_LABELS[parsed.tier], slug));
+      }
+      level = tierLevel;
     }
 
     // A type with no configured role would accept the member and silently skip
@@ -51,14 +75,30 @@ export default definePrefixCommand({
     const result = await staffManagementService.accept(
       target,
       memberActor(ctx.member),
-      parsed.level,
+      level,
       parsed.staffType,
     );
 
-    await ctx.reply(
-      result.staffType
-        ? M.acceptedWithType(`<@${target.id}>`, result.level, staffTypeLabel(result.staffType))
-        : M.accepted(`<@${target.id}>`, result.level),
-    );
+    const mention = `<@${target.id}>`;
+    const tierLabel = parsed.tier ? STAFF_TIER_LABELS[parsed.tier] : null;
+
+    if (tierLabel && result.staffType) {
+      await ctx.reply(
+        M.acceptedWithTierAndType(
+          mention,
+          result.level,
+          tierLabel,
+          staffTypeLabel(result.staffType),
+        ),
+      );
+    } else if (tierLabel) {
+      await ctx.reply(M.acceptedWithTier(mention, result.level, tierLabel));
+    } else if (result.staffType) {
+      await ctx.reply(
+        M.acceptedWithType(mention, result.level, staffTypeLabel(result.staffType)),
+      );
+    } else {
+      await ctx.reply(M.accepted(mention, result.level));
+    }
   },
 });
