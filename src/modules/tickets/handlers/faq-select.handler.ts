@@ -1,4 +1,4 @@
-import { MessageFlags, type StringSelectMenuInteraction } from "discord.js";
+import { ContainerBuilder, MessageFlags, type StringSelectMenuInteraction } from "discord.js";
 import { logger } from "../../../shared/utils/logger.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import { faqService } from "../services/faq.service.ts";
@@ -28,8 +28,14 @@ export async function handleFaqSelect(
       return;
     }
 
+    const container = new ContainerBuilder()
+      .addTextDisplayComponents((t) => t.setContent(`**${faq.question}**`))
+      .addSeparatorComponents((s) => s.setDivider(true))
+      .addTextDisplayComponents((t) => t.setContent(faq.answer));
+
     await interaction.reply({
-      content: `**${faq.question}**\n${faq.answer}`,
+      components: [container],
+      flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
       allowedMentions: { parse: [] },
     });
   } catch (err) {

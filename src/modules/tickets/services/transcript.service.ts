@@ -109,7 +109,11 @@ export class TranscriptService {
       }
 
       const payload = JSON.parse(transcript.content) as TranscriptPayload;
-      const file = new AttachmentBuilder(Buffer.from(renderTranscriptText(payload), "utf-8"), {
+      // A leading UTF-8 BOM stops viewers that guess a text file's encoding
+      // from misdetecting Arabic (and other non-Latin) content as some other
+      // multi-byte charset (e.g. Thai) and rendering it as garbage.
+      const text = "﻿" + renderTranscriptText(payload);
+      const file = new AttachmentBuilder(Buffer.from(text, "utf-8"), {
         name: `${transcript.ticketId}-transcript.txt`,
       });
 

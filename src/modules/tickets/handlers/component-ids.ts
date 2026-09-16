@@ -14,9 +14,11 @@ export const TicketCustomId = {
   optClose: (ticketId: string) => `${TK_NS}:optClose:${ticketId}`,
   optAddUser: (ticketId: string) => `${TK_NS}:optAddUser:${ticketId}`,
   optRemoveUser: (ticketId: string) => `${TK_NS}:optRemoveUser:${ticketId}`,
+  optRename: (ticketId: string) => `${TK_NS}:optRename:${ticketId}`,
 
   addUserModal: (ticketId: string) => `${TK_NS}:addUserModal:${ticketId}`,
   removeUserModal: (ticketId: string) => `${TK_NS}:removeUserModal:${ticketId}`,
+  renameModal: (ticketId: string) => `${TK_NS}:renameModal:${ticketId}`,
 
   faqSelect: (ticketId: string) => `${TK_NS}:faqSelect:${ticketId}`,
 } as const;
@@ -26,6 +28,7 @@ export const TicketModalField = {
   addUsers: "addUsers",
   addRoles: "addRoles",
   removeTargets: "removeTargets",
+  newName: "newName",
 } as const;
 
 export interface ParsedTicketId {

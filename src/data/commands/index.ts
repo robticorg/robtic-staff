@@ -56,6 +56,7 @@ export const FaqSubcommand = {
   ADD: "add",
   REMOVE: "remove",
   LIST: "list",
+  ASSIGN: "assign",
 } as const;
 export type FaqSubcommand = (typeof FaqSubcommand)[keyof typeof FaqSubcommand];
 
@@ -83,6 +84,7 @@ export const CommandOption = {
   MEMBER: "member",
   AMOUNT: "amount",
   REASON: "reason",
+  PANEL: "panel",
 } as const;
 
 export const commandCopy = {
@@ -256,12 +258,22 @@ export const commandCopy = {
   faq: {
     description: "إدارة الأسئلة الشائعة (FAQ) اللي تستخدمها التكتات",
     sub: {
-      add: { description: "إضافة عنصر FAQ (يفتح نموذج)" },
+      add: {
+        description: "إضافة عنصر FAQ (يفتح نموذج)",
+        option: "القسم اللي يظهر فيه (اتركه فاضي عشان يظهر بكل الأقسام)",
+      },
       remove: {
         description: "حذف عنصر FAQ",
         option: "الـ FAQ اللي تبي تحذفه",
       },
       list: { description: "عرض عناصر الـ FAQ المضافة" },
+      assign: {
+        description: "تخصيص عنصر FAQ بقسم تكت معيّن (أو رجّعه لكل الأقسام)",
+        options: {
+          faq: "الـ FAQ اللي تبي تخصّصه",
+          panel: "القسم اللي تبي تربطه فيه (اتركه فاضي عشان يرجع لكل الأقسام)",
+        },
+      },
     },
   },
   fastAccess: {

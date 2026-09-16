@@ -1,11 +1,14 @@
 import { MessageFlags, type ButtonInteraction, type Guild, type GuildMember } from "discord.js";
 import { DomainError } from "../../../shared/utils/errors.ts";
 import { logger } from "../../../shared/utils/logger.ts";
+import { sleep } from "../../../shared/utils/sleep.ts";
+import { limits } from "../../../data/config/limits.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
 import type { TicketDocument } from "../models/ticket.model.ts";
 import { buildTicketOptionsUi } from "../render/options-ui.ts";
 import { buildAddUserModal, buildRemoveUserModal } from "../render/add-remove-modals.ts";
+import { buildRenameModal } from "../render/rename-modal.ts";
 import { ticketConfigService } from "../services/ticket-config.service.ts";
 import { canManageTicket } from "../services/ticket-permissions.ts";
 import { ticketService } from "../services/ticket.service.ts";
@@ -36,7 +39,7 @@ async function resolve(
     await reject(interaction, M.create.unknownPanel);
     return null;
   }
-  if (!canManageTicket(interaction.member, panel, ticket)) {
+  if (!canManageTicket(interaction.member, ticket)) {
     await reject(interaction, M.options.notAllowed);
     return null;
   }
@@ -90,6 +93,15 @@ export async function handleOptionsClose(
   if (!resolved) return;
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+  const confirming = M.close.confirming(ticketId, limits.ticketCloseConfirmSeconds);
+  await interaction.editReply(confirming);
+  const channel = interaction.channel;
+  if (channel?.isTextBased() && "send" in channel) {
+    await channel.send({ content: confirming, allowedMentions: { parse: [] } }).catch(() => undefined);
+  }
+  await sleep(limits.ticketCloseConfirmSeconds * 1000);
+
   try {
     const result = await ticketService.closeTicket(
       ticketId,
@@ -101,13 +113,11 @@ export async function handleOptionsClose(
     await interaction.editReply(
       result.transcriptId ? M.close.withTranscript(ticketId) : M.close.done(ticketId),
     );
-    if (!result.deleted) {
-      const channel = interaction.channel;
-      if (channel?.isTextBased() && "send" in channel) {
-        await channel
-          .send({ content: M.close.done(ticketId), allowedMentions: { parse: [] } })
-          .catch(() => undefined);
-      }
+    // The channel is gone once close deleted it — nothing left to post into.
+    if (!result.deleted && channel?.isTextBased() && "send" in channel) {
+      await channel
+        .send({ content: M.close.done(ticketId), allowedMentions: { parse: [] } })
+        .catch(() => undefined);
     }
   } catch (err) {
     if (err instanceof DomainError) {
@@ -117,4 +127,13 @@ export async function handleOptionsClose(
     log.error("close failed", err);
     await interaction.editReply(M.common.genericError);
   }
+}
+
+export async function handleOptionsRename(
+  interaction: ButtonInteraction,
+  ticketId: string,
+): Promise<void> {
+  const resolved = await resolve(interaction, ticketId);
+  if (!resolved) return;
+  await interaction.showModal(buildRenameModal(ticketId));
 }

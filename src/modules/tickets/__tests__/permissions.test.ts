@@ -78,29 +78,17 @@ describe("decideClaimEligibility", () => {
 
 describe("decideManageAccess", () => {
   const base = {
-    memberHasSupportRole: false,
-    memberIsManager: false,
     memberIsAdministrator: false,
     memberIsClaimer: false,
-    ticketClaimed: false,
   };
 
-  it("managers and admins always manage", () => {
-    expect(decideManageAccess({ ...base, memberIsManager: true })).toBe(true);
+  it("admins always manage", () => {
     expect(decideManageAccess({ ...base, memberIsAdministrator: true })).toBe(true);
   });
 
-  it("before claim: any support member can manage", () => {
-    expect(decideManageAccess({ ...base, memberHasSupportRole: true })).toBe(true);
-  });
-
-  it("after claim: only the claimer (or manager/admin) can manage", () => {
-    expect(
-      decideManageAccess({ ...base, memberHasSupportRole: true, ticketClaimed: true }),
-    ).toBe(false);
-    expect(
-      decideManageAccess({ ...base, ticketClaimed: true, memberIsClaimer: true }),
-    ).toBe(true);
+  it("only the claimer manages otherwise — nobody else, claimed or not", () => {
+    expect(decideManageAccess(base)).toBe(false);
+    expect(decideManageAccess({ ...base, memberIsClaimer: true })).toBe(true);
   });
 });
 

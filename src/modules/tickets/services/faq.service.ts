@@ -10,6 +10,8 @@ export interface AddFaqInput {
   question: string;
   answer: string;
   createdBy: UserId;
+  /** Omit or leave empty to show this FAQ on every ticket panel. */
+  panelIds?: string[];
 }
 
 export class FaqService extends BaseRepository<Faq> {
@@ -26,11 +28,15 @@ export class FaqService extends BaseRepository<Faq> {
       question: input.question.trim(),
       answer: input.answer.trim(),
       createdBy: input.createdBy,
+      panelIds: input.panelIds ?? [],
     });
   }
 
-  list(guildId: GuildId): Promise<HydratedDocument<Faq>[]> {
-    return this.model.find({ guildId }).sort({ createdAt: 1 }).exec();
+  /** With `panelId`, only FAQs scoped to it (or scoped to nothing — every panel) come back. */
+  async list(guildId: GuildId, panelId?: string): Promise<HydratedDocument<Faq>[]> {
+    const all = await this.model.find({ guildId }).sort({ createdAt: 1 }).exec();
+    if (!panelId) return all;
+    return all.filter((f) => f.panelIds.length === 0 || f.panelIds.includes(panelId));
   }
 
   get(guildId: GuildId, faqId: string): Promise<HydratedDocument<Faq> | null> {
@@ -52,6 +58,23 @@ export class FaqService extends BaseRepository<Faq> {
     const q = query.trim().toLowerCase();
     const matched = q ? all.filter((f) => f.question.toLowerCase().includes(q)) : all;
     return matched.slice(0, limits.faqAutocompleteResults);
+  }
+
+  /** Sets this FAQ to show on exactly one panel, or on every panel when `panelId` is omitted. */
+  async assignPanel(
+    guildId: GuildId,
+    faqId: string,
+    panelId: string | null,
+  ): Promise<HydratedDocument<Faq>> {
+    const updated = await this.model
+      .findOneAndUpdate(
+        { guildId, faqId },
+        { $set: { panelIds: panelId ? [panelId] : [] } },
+        { returnDocument: "after" },
+      )
+      .exec();
+    if (!updated) throw new NotFoundError("faq", { guildId, faqId });
+    return updated;
   }
 }
 

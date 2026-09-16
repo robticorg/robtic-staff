@@ -8,7 +8,9 @@ const log = logger.child("tickets:faq-add");
 const M = ticketMessages.faq;
 
 export async function routeFaqComponent(interaction: Interaction): Promise<boolean> {
-  if (!interaction.isModalSubmit() || interaction.customId !== FaqAddModal.id) return false;
+  if (!interaction.isModalSubmit()) return false;
+  const panelId = FaqAddModal.parsePanelId(interaction.customId);
+  if (panelId === null) return false;
   if (!interaction.inCachedGuild()) return true;
 
   const question = safe(interaction, FaqAddModal.questionField);
@@ -24,6 +26,7 @@ export async function routeFaqComponent(interaction: Interaction): Promise<boole
       question,
       answer,
       createdBy: interaction.user.id,
+      panelIds: panelId ? [panelId] : [],
     });
     await interaction.reply({ content: M.added(faq.question), flags: MessageFlags.Ephemeral });
   } catch (err) {

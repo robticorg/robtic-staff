@@ -27,6 +27,7 @@ const OTHER_GUILD = "auth-itest-other";
 const R_STAFF_MARKER = "r-staff-marker";
 const R_STAFF_MANAGER = "r-staff-manager";
 const R_OWNER_MANAGER = "r-owner-manager";
+const R_APPLY_MANAGER = "r-apply-manager";
 const R_IGNORE = "r-ignore";
 const R_BLACKLIST = "r-blacklist";
 
@@ -64,6 +65,8 @@ const staffManagerAt = (level: number, id = "sm") =>
   member(id, [R_STAFF_MARKER, R_STAFF_MANAGER, rung(level)]);
 const ownerManagerAt = (level: number, id = "om") =>
   member(id, [R_STAFF_MARKER, R_OWNER_MANAGER, rung(level)]);
+const applyManagerAt = (level: number, id = "am") =>
+  member(id, [R_STAFF_MARKER, R_APPLY_MANAGER, rung(level)]);
 const administrator = (id = "admin") => member(id, [R_STAFF_MARKER], true);
 const plainStaff = (level: number, id = "plain") =>
   member(id, [R_STAFF_MARKER, rung(level)]);
@@ -76,6 +79,7 @@ async function seed(guildId = GUILD, opts: { ship?: boolean; owner?: boolean } =
     { guildId, roleId: R_STAFF_MARKER, type: RoleConfigType.STAFF },
     { guildId, roleId: R_STAFF_MANAGER, type: RoleConfigType.STAFF_MANAGER },
     { guildId, roleId: R_OWNER_MANAGER, type: RoleConfigType.OWNER_MANAGER },
+    { guildId, roleId: R_APPLY_MANAGER, type: RoleConfigType.APPLY_MANAGER },
     { guildId, roleId: R_IGNORE, type: RoleConfigType.IGNORE },
     { guildId, roleId: R_BLACKLIST, type: RoleConfigType.BLACKLIST },
   ];
@@ -285,27 +289,43 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
 
   // ── Accept (§20) ──────────────────────────────────────────────────────────
 
-  it("stops a Staff Manager accepting into Ship (§20)", async () => {
-    const decision = await auth.canAccept(staffManagerAt(11), plainStaff(0, "t"), SHIP_LEVEL);
-    expect(decision.allowed).toBe(false);
-    expect((decision as { reason: string }).reason).toBe(DenyReason.ACCEPT_IN_SHIP);
-  });
-
-  it("stops an Owner Manager accepting into Ship (§20)", async () => {
-    expect(
-      (await auth.canAccept(ownerManagerAt(5), plainStaff(0, "t"), SHIP_LEVEL)).allowed,
-    ).toBe(false);
-  });
-
-  it("lets an Administrator accept into Ship (§20)", async () => {
+  it("lets an Administrator accept at any level, including Ship", async () => {
     expect(
       (await auth.canAccept(administrator(), plainStaff(0, "t"), SHIP_LEVEL)).allowed,
     ).toBe(true);
   });
 
-  it("stops a Staff Manager accepting above their own level", async () => {
-    expect((await auth.canAccept(staffManagerAt(3), plainStaff(0, "t"), 4)).allowed).toBe(false);
-    expect((await auth.canAccept(staffManagerAt(3), plainStaff(0, "t"), 3)).allowed).toBe(true);
+  it("blocks a Staff Manager or Owner Manager from accepting — Apply Manager only", async () => {
+    const smDecision = await auth.canAccept(staffManagerAt(11), plainStaff(0, "t"), 0);
+    expect(smDecision.allowed).toBe(false);
+    expect((smDecision as { reason: DenyReason }).reason).toBe(DenyReason.NOT_A_MANAGER);
+
+    expect((await auth.canAccept(ownerManagerAt(5), plainStaff(0, "t"), 0)).allowed).toBe(false);
+  });
+
+  it("blocks an Apply Manager from accepting at or above their own tier", async () => {
+    const om = applyManagerAt(OWNER_LEVEL);
+    const atOwn = await auth.canAccept(om, plainStaff(0, "t"), OWNER_LEVEL);
+    expect(atOwn.allowed).toBe(false);
+    expect((atOwn as { reason: DenyReason }).reason).toBe(DenyReason.LEVEL_ABOVE_AUTHORITY);
+
+    expect((await auth.canAccept(om, plainStaff(0, "t"), OWNER_LEVEL + 1)).allowed).toBe(false);
+    expect((await auth.canAccept(om, plainStaff(0, "t"), SHIP_LEVEL)).allowed).toBe(false);
+  });
+
+  it("lets an Apply Manager accept strictly below their own tier", async () => {
+    const om = applyManagerAt(OWNER_LEVEL);
+    expect((await auth.canAccept(om, plainStaff(0, "t"), OWNER_LEVEL - 1)).allowed).toBe(true);
+    expect((await auth.canAccept(om, plainStaff(0, "t"), HIGHSTAFF_LEVEL)).allowed).toBe(true);
+
+    const hs = applyManagerAt(HIGHSTAFF_LEVEL, "am-hs");
+    expect((await auth.canAccept(hs, plainStaff(0, "t"), HIGHSTAFF_LEVEL)).allowed).toBe(false);
+    expect((await auth.canAccept(hs, plainStaff(0, "t"), HIGHSTAFF_LEVEL - 1)).allowed).toBe(true);
+  });
+
+  it("blocks an Apply Manager from accepting themselves", async () => {
+    const om = applyManagerAt(OWNER_LEVEL, "self-am");
+    expect((await auth.canAccept(om, om, 0)).allowed).toBe(false);
   });
 
   // ── Fire (§21) ────────────────────────────────────────────────────────────

@@ -67,19 +67,11 @@ describe("administrator-only panel (no support role configured)", () => {
     expect(decideClaimEligibility({ ...base, memberHasSupportRole: true }).ok).toBe(false);
   });
 
-  it("restricts management to administrators", () => {
-    const m = {
-      memberHasSupportRole: false,
-      memberIsManager: false,
-      memberIsAdministrator: false,
-      memberIsClaimer: false,
-      ticketClaimed: false,
-      panelIsAdminOnly: true,
-    };
+  it("management is admin-or-claimer regardless of panel type", () => {
+    const m = { memberIsAdministrator: false, memberIsClaimer: false };
     expect(decideManageAccess({ ...m, memberIsAdministrator: true })).toBe(true);
-    expect(decideManageAccess({ ...m, memberIsManager: true })).toBe(false);
-    expect(decideManageAccess({ ...m, memberHasSupportRole: true })).toBe(false);
-    expect(decideManageAccess({ ...m, memberIsClaimer: true, ticketClaimed: true })).toBe(false);
+    expect(decideManageAccess({ ...m, memberIsClaimer: true })).toBe(true);
+    expect(decideManageAccess(m)).toBe(false);
   });
 
   it("does not protect the placeholder id as a principal", () => {
@@ -103,20 +95,11 @@ describe("configured panel is unaffected", () => {
     alreadyClaimed: false,
   };
 
-  it("still lets the support role claim and manage", () => {
+  it("still lets the support role claim", () => {
     expect(decideClaimEligibility(base)).toEqual({ ok: true });
-    expect(
-      decideManageAccess({
-        memberHasSupportRole: true,
-        memberIsManager: false,
-        memberIsAdministrator: false,
-        memberIsClaimer: false,
-        ticketClaimed: false,
-      }),
-    ).toBe(true);
   });
 
-  it("still lets a manager claim and manage", () => {
+  it("still lets a manager claim", () => {
     expect(decideClaimEligibility({ ...base, memberHasSupportRole: false, memberIsManager: true }))
       .toEqual({ ok: true });
   });

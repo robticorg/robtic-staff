@@ -23,6 +23,9 @@ export const limits = {
   faqAutocompleteResults: 25,
 
   transcriptMessageCap: 500,
+
+  /** How long the "closing in..." confirmation stays up before a ticket close actually runs. */
+  ticketCloseConfirmSeconds: 5,
 } as const;
 
 export type Limits = typeof limits;

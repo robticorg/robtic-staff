@@ -9,6 +9,8 @@ export interface Faq extends Timestamps {
   question: string;
   answer: string;
   createdBy: UserId;
+  /** Ticket panel ids this FAQ shows up on. Empty/absent = every panel. */
+  panelIds: string[];
 }
 
 export type FaqDocument = HydratedDocument<Faq>;
@@ -20,6 +22,7 @@ const faqSchema = new Schema<Faq>(
     question: { type: String, required: true, trim: true, maxlength: 250 },
     answer: { type: String, required: true, trim: true, maxlength: 2000 },
     createdBy: { type: String, required: true },
+    panelIds: { type: [String], default: [] },
   },
   { timestamps: true, collection: "faqs" },
 );

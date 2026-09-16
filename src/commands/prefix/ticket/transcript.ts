@@ -9,8 +9,8 @@ export default definePrefixCommand({
   name: "transcript",
   category: "ticket",
   async execute(ctx) {
-    const { ticket, panel } = await resolveTicketContext(ctx);
-    if (!canManageTicket(ctx.member, panel, ticket)) {
+    const { ticket } = await resolveTicketContext(ctx);
+    if (!canManageTicket(ctx.member, ticket)) {
       throw new PrefixAbort(prefixMessages.ticket.notAllowed);
     }
 

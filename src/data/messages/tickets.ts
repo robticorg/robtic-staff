@@ -70,7 +70,15 @@ export const ticketMessages = {
     closeButton: "إغلاق",
     addUserButton: "إضافة عضو",
     removeUserButton: "إزالة عضو",
-    notAllowed: `${E.error} ما عندك صلاحية تدير هذا التكت.`,
+    renameButton: "تغيير الاسم",
+    notAllowed: `${E.error} ما عندك صلاحية تدير هذا التكت — لازم تستلمه أول.`,
+  },
+
+  renameTicket: {
+    modalTitle: "تغيير اسم التكت",
+    nameLabel: "الاسم الجديد",
+    namePlaceholder: "اكتب الاسم الجديد للتكت",
+    done: (name: string) => `${E.success} تم تغيير اسم التكت إلى \`${name}\`.`,
   },
 
   addUser: {
@@ -93,6 +101,8 @@ export const ticketMessages = {
   },
 
   close: {
+    confirming: (ticketId: string, seconds: number) =>
+      `${E.warning} بيتم إغلاق \`${ticketId}\` خلال ${seconds} ثواني...`,
     done: (ticketId: string) => `${E.success} تم إغلاق \`${ticketId}\`.`,
     withTranscript: (ticketId: string) => `${E.success} تم إغلاق \`${ticketId}\` — تم حفظ النسخة.`,
     channelWillDelete: `${E.warning} راح ينحذف هذا التكت بعد شوي.`,
@@ -131,7 +141,8 @@ export const ticketMessages = {
     notFound: `${E.error} عنصر الـ FAQ هذا مو موجود.`,
     empty: "ما فيه ولا عنصر FAQ مضاف لحد الآن.",
     listTitle: "**FAQ**",
-    listLine: (index: number, question: string) => `${index}. ${question}`,
+    listLine: (index: number, question: string, scope: string) => `${index}. ${question} — ${scope}`,
+    scopeAll: "كل الأقسام",
     modalTitle: "إضافة FAQ",
     questionLabel: "السؤال",
     questionPlaceholder: "كيف أغيّر كلمة السر؟",
@@ -139,5 +150,8 @@ export const ticketMessages = {
     answerPlaceholder: "روح إلى الإعدادات ← الأمان ← تغيير كلمة السر…",
     selectPlaceholder: "تصفّح الأسئلة الشائعة",
     bothRequired: `${E.error} لازم سؤال وإجابة الاثنين.`,
+    assigned: (question: string, scope: string) =>
+      `${E.success} صار FAQ **${question}** يظهر في: ${scope}.`,
+    unknownPanel: `${E.error} هذا القسم مو موجود.`,
   },
 } as const;

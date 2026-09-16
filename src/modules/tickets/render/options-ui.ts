@@ -30,6 +30,10 @@ export function buildTicketOptionsUi(ticketId: string): InteractionReplyOptions 
           .setCustomId(TicketCustomId.optRemoveUser(ticketId))
           .setLabel(M.removeUserButton)
           .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder()
+          .setCustomId(TicketCustomId.optRename(ticketId))
+          .setLabel(M.renameButton)
+          .setStyle(ButtonStyle.Secondary),
       ),
     ],
   };

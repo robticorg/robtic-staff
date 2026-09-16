@@ -43,22 +43,14 @@ export function decideClaimEligibility(input: ClaimContextInput): Decision {
 }
 
 export interface ManageContextInput {
-  memberHasSupportRole: boolean;
-  memberIsManager: boolean;
   memberIsAdministrator: boolean;
+  /** Whoever actually claimed the ticket — nobody else may manage it, not
+   * even the support role or a ticket manager, until they claim it first. */
   memberIsClaimer: boolean;
-  ticketClaimed: boolean;
-  /** Panel has no support role configured — Administrators only. */
-  panelIsAdminOnly?: boolean;
 }
 
 export function decideManageAccess(input: ManageContextInput): boolean {
-  if (input.memberIsAdministrator) return true;
-  // Administrator-only panel: not even a ticket manager gets in.
-  if (input.panelIsAdminOnly) return false;
-  if (input.memberIsManager) return true;
-  if (!input.ticketClaimed) return input.memberHasSupportRole;
-  return input.memberIsClaimer;
+  return input.memberIsAdministrator || input.memberIsClaimer;
 }
 
 export function protectedTicketPrincipals(
@@ -108,15 +100,10 @@ export function canClaimTicket(
 
 export function canManageTicket(
   member: GuildMember,
-  panel: TicketPanelConfig,
-  ticket: Pick<Ticket, "claimedBy" | "claimedByDiscordId">,
+  ticket: Pick<Ticket, "claimedByDiscordId">,
 ): boolean {
   return decideManageAccess({
-    memberHasSupportRole: memberHasPanelSupportRole(member, panel),
-    memberIsManager: memberIsTicketManager(member),
     memberIsAdministrator: memberIsAdministrator(member),
     memberIsClaimer: !!ticket.claimedByDiscordId && ticket.claimedByDiscordId === member.id,
-    ticketClaimed: ticket.claimedBy != null,
-    panelIsAdminOnly: panelIsAdminOnly(panel),
   });
 }

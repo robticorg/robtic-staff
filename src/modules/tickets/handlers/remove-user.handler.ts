@@ -47,7 +47,7 @@ export async function handleRemoveUserModal(
       await interaction.editReply(M.create.unknownPanel);
       return;
     }
-    if (!canManageTicket(interaction.member, panel, ticket)) {
+    if (!canManageTicket(interaction.member, ticket)) {
       await interaction.editReply(M.options.notAllowed);
       return;
     }

@@ -8,15 +8,22 @@ import { ticketMessages } from "../../../data/messages/tickets.ts";
 
 const M = ticketMessages.faq;
 
+const FAQ_NS = "faq:addModal";
+
 export const FaqAddModal = {
-  id: "faq:addModal",
+  /** `panelId` empty means "show on every panel". */
+  id: (panelId: string) => `${FAQ_NS}:${panelId}`,
+  parsePanelId: (customId: string): string | null => {
+    if (!customId.startsWith(`${FAQ_NS}:`)) return null;
+    return customId.slice(FAQ_NS.length + 1);
+  },
   questionField: "question",
   answerField: "answer",
 } as const;
 
-export function buildFaqAddModal(): ModalBuilder {
+export function buildFaqAddModal(panelId: string): ModalBuilder {
   return new ModalBuilder()
-    .setCustomId(FaqAddModal.id)
+    .setCustomId(FaqAddModal.id(panelId))
     .setTitle(M.modalTitle)
     .addLabelComponents(
       new LabelBuilder().setLabel(M.questionLabel).setTextInputComponent(

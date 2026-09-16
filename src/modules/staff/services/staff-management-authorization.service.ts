@@ -5,6 +5,7 @@ import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType, StaffTier } from "../../configuration/types/enums.ts";
 import {
   getHierarchy,
+  getTierForLevel,
   highestLevelFromRoleIds,
   validateHierarchy,
   type StaffHierarchy,
@@ -34,7 +35,6 @@ export const DenyReason = {
   TARGET_IN_SHIP: "TARGET_IN_SHIP",
   TARGET_IN_SHIP_MANAGE: "TARGET_IN_SHIP_MANAGE",
   LEVEL_IN_SHIP: "LEVEL_IN_SHIP",
-  ACCEPT_IN_SHIP: "ACCEPT_IN_SHIP",
   ACTOR_NOT_STAFF: "ACTOR_NOT_STAFF",
   HIERARCHY_INVALID: "HIERARCHY_INVALID",
   BELOW_MIN_LEVEL: "BELOW_MIN_LEVEL",
@@ -94,6 +94,15 @@ export class StaffManagementAuthorizationService {
     const row = await roleConfigService.getByType(
       actor.guild.id,
       RoleConfigType.STAFF_MANAGER,
+    );
+    return row ? actor.roles.cache.has(row.roleId) : false;
+  }
+
+  /** Pure role check — no Administrator folding, unlike staffPermissionService.isApplyManager. */
+  async isApplyManager(actor: GuildMember): Promise<boolean> {
+    const row = await roleConfigService.getByType(
+      actor.guild.id,
+      RoleConfigType.APPLY_MANAGER,
     );
     return row ? actor.roles.cache.has(row.roleId) : false;
   }
@@ -286,7 +295,13 @@ export class StaffManagementAuthorizationService {
     return allow();
   }
 
-  /** §20 — accepting is a promotion from outside the ladder. */
+  /**
+   * §20 — accepting is its own authority now, not a Staff/Owner Manager
+   * privilege: only an Administrator or the Apply Manager role may accept,
+   * and an Apply Manager may only bring someone in strictly below their own
+   * current tier — never at or above their own standing (an Owner-tier Apply
+   * Manager can never accept another Owner, for instance).
+   */
   async canAccept(
     actor: GuildMember,
     target: GuildMember,
@@ -296,24 +311,17 @@ export class StaffManagementAuthorizationService {
     const invalid = this.hierarchyGuard(hierarchy);
     if (invalid) return invalid;
 
-    const authority = await this.getAuthority(actor);
-    if (authority.kind === ManagementAuthority.NONE) return deny(DenyReason.NOT_A_MANAGER);
-    if (actor.id === target.id && !authority.canTargetSelf) return deny(DenyReason.SELF_ACCEPT);
-    if (authority.kind === ManagementAuthority.ADMINISTRATOR) return allow();
+    if (this.isAdministrator(actor)) return allow();
+    if (!(await this.isApplyManager(actor))) return deny(DenyReason.NOT_A_MANAGER);
+    if (actor.id === target.id) return deny(DenyReason.SELF_ACCEPT);
 
-    if (authority.shipStartLevel !== null && requestedLevel >= authority.shipStartLevel) {
-      return deny(DenyReason.ACCEPT_IN_SHIP);
-    }
-    if (authority.kind === ManagementAuthority.STAFF_MANAGER && authority.actorLevel === null) {
-      return deny(DenyReason.ACTOR_NOT_STAFF);
-    }
-    if (authority.maxTargetLevel !== null && requestedLevel > authority.maxTargetLevel) {
-      return deny(
-        authority.kind === ManagementAuthority.STAFF_MANAGER
-          ? DenyReason.LEVEL_ABOVE_ACTOR
-          : DenyReason.LEVEL_ABOVE_AUTHORITY,
-      );
-    }
+    const actorLevel = highestLevelFromRoleIds(hierarchy, actor.roles.cache.keys());
+    if (actorLevel === null) return deny(DenyReason.ACTOR_NOT_STAFF);
+
+    const actorTier = getTierForLevel(hierarchy, actorLevel);
+    const actorTierStart = hierarchy.boundaryLevels[actorTier] ?? 0;
+    if (requestedLevel >= actorTierStart) return deny(DenyReason.LEVEL_ABOVE_AUTHORITY);
+
     return allow();
   }
 

@@ -40,7 +40,7 @@ export async function runCreateTicket(
       answers,
     });
 
-    const faqEntries = panel.faq.enabled ? await faqService.list(member.guild.id) : [];
+    const faqEntries = panel.faq.enabled ? await faqService.list(member.guild.id, panel.id) : [];
 
     // Admin-only panels have no support role configured — isUnsetId guards
     // against pinging the placeholder id.

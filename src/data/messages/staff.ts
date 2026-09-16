@@ -30,7 +30,6 @@ export const staffMessages = {
     TARGET_IN_SHIP: `${E.error} ما عندك صلاحية تنزل ستاف من رتبة الشيب.`,
     TARGET_IN_SHIP_MANAGE: `${E.error} ما عندك صلاحية تتحكم بستاف من رتبة الشيب.`,
     LEVEL_IN_SHIP: `${E.error} ما تقدر ترقي أحد إلى مستويات الشيب.`,
-    ACCEPT_IN_SHIP: `${E.error} ما تقدر تقبل أحد مباشرة في مستويات الشيب.`,
 
     ACTOR_NOT_STAFF: `${E.error} لازم تكون عضو ستاف عنده رتبة مرقّمة عشان تدير الستاف.`,
     HIERARCHY_INVALID: `${E.error} إعدادات سلّم الستاف ناقصة أو غير صحيحة — صحّحها قبل إدارة الستاف.`,
