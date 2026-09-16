@@ -58,7 +58,10 @@ export class StatsRepository {
   guildStaff(guildId: GuildId, opts: { excludeInactive?: boolean } = {}): Promise<GuildStaffRow[]> {
     const filter: Record<string, unknown> = { guildId };
     if (opts.excludeInactive) {
-      filter.status = { $nin: [StaffStatus.FIRED, StaffStatus.BLACKLISTED] };
+      filter.status = {
+        // A transferred record is a past identity, exactly like a fired one.
+        $nin: [StaffStatus.FIRED, StaffStatus.BLACKLISTED, StaffStatus.TRANSFERRED],
+      };
     }
     return StaffModel.find(filter, { userId: 1, status: 1, currentRoleLevel: 1 })
       .lean<GuildStaffRow[]>()

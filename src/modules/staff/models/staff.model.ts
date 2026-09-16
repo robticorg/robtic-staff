@@ -1,4 +1,4 @@
-import mongoose, { Schema, type Model } from "mongoose";
+import mongoose, { Schema, type Model, type Types } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 import type { GuildId, Timestamps, UserId } from "../../../shared/types/index.ts";
 import {
@@ -36,6 +36,16 @@ export interface Staff extends Timestamps {
   acceptedAt?: Date;
   firedBy?: UserId;
   firedAt?: Date;
+
+  /**
+   * `!transfer` link between the two records. The source keeps its own history
+   * and statistics — these fields only say where the position went (or came
+   * from), never that the other user performed the past activity.
+   */
+  transferredFrom?: Types.ObjectId;
+  transferredTo?: Types.ObjectId;
+  transferredAt?: Date;
+  transferredBy?: UserId;
 }
 
 export type StaffDocument = HydratedDocument<Staff>;
@@ -67,6 +77,11 @@ const staffSchema = new Schema<Staff>(
     acceptedAt: { type: Date },
     firedBy: { type: String },
     firedAt: { type: Date },
+
+    transferredFrom: { type: Schema.Types.ObjectId, ref: "Staff" },
+    transferredTo: { type: Schema.Types.ObjectId, ref: "Staff" },
+    transferredAt: { type: Date },
+    transferredBy: { type: String },
   },
   { timestamps: true, collection: "staff" },
 );

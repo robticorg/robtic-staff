@@ -155,7 +155,13 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
       .select({ status: 1 })
       .exec();
     if (!staff) return { allowed: true, status: null };
-    const blocked: string[] = [StaffStatus.FIRED, StaffStatus.BLACKLISTED];
+    // A member who handed their position to someone else must never have their
+    // Staff roles restored by a tag restriction expiring afterwards.
+    const blocked: string[] = [
+      StaffStatus.FIRED,
+      StaffStatus.BLACKLISTED,
+      StaffStatus.TRANSFERRED,
+    ];
     return { allowed: !blocked.includes(staff.status), status: staff.status };
   }
 

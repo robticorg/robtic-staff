@@ -27,6 +27,7 @@ export const RoleSubcommand = {
   BLACKLIST: "blacklist",
   STAFF_MANAGER: "staffmanager",
   OWNER_MANAGER: "ownermanager",
+  TRANSFER_MANAGER: "transfermanager",
   WARN: "warn",
   MUTE: "mute",
   JAIL: "jail",
@@ -150,6 +151,10 @@ export const commandCopy = {
       giftmanager: {
         description: "ضبط الرتبة اللي تقدر تراجع طلبات الهدايا وتسلّمها",
         option: "رتبة مانجر الهدايا",
+      },
+      transfermanager: {
+        description: "ضبط الرتبة اللي تقدر تحوّل عضوية الستاف من عضو لعضو (!transfer)",
+        option: "رتبة مانجر التحويل",
       },
       applymanager: {
         description: "ضبط الرتبة اللي تقدر تقبل طلبات التقديم (زيادة على مانجرات الستاف)",

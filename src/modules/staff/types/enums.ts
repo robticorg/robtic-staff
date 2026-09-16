@@ -3,6 +3,12 @@ export const StaffStatus = {
   BREAK: "BREAK",
   FIRED: "FIRED",
   BLACKLISTED: "BLACKLISTED",
+  /**
+   * Handed their Staff position to someone else via `!transfer`. Deliberately
+   * not FIRED: the record keeps its history and statistics, it simply no longer
+   * represents an active staff member.
+   */
+  TRANSFERRED: "TRANSFERRED",
 } as const;
 export type StaffStatus = (typeof StaffStatus)[keyof typeof StaffStatus];
 export const STAFF_STATUS_VALUES = Object.values(StaffStatus);
@@ -33,6 +39,8 @@ export const StaffActivityType = {
   DEMOTE: "DEMOTE",
   ACCEPT: "ACCEPT",
   FIRE: "FIRE",
+  /** Staff position handed over — recorded on both sides of the transfer. */
+  TRANSFER: "TRANSFER",
   PUNISHMENT_REQUEST: "PUNISHMENT_REQUEST",
   PUNISHMENT_APPROVED: "PUNISHMENT_APPROVED",
   PUNISHMENT_REJECTED: "PUNISHMENT_REJECTED",
@@ -76,6 +84,8 @@ export const StaffHistoryAction = {
   DEMOTE: "DEMOTE",
   FIRE: "FIRE",
   BLACKLIST: "BLACKLIST",
+  /** Its own lifecycle event — never recorded as a fake ACCEPT/PROMOTE/FIRE. */
+  TRANSFER: "TRANSFER",
   BREAK: "BREAK",
   RETURN_FROM_BREAK: "RETURN_FROM_BREAK",
   STAFF_WARNING: "STAFF_WARNING",

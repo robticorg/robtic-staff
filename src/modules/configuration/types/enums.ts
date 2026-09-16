@@ -28,6 +28,11 @@ export const RoleConfigType = {
   BLACKLIST: "BLACKLIST",
   STAFF_MANAGER: "STAFF_MANAGER",
   OWNER_MANAGER: "OWNER_MANAGER",
+  /**
+   * May run `!transfer`. Its authority comes from this configuration row alone —
+   * where the role physically sits in the Discord list is never consulted.
+   */
+  TRANSFER_MANAGER: "TRANSFER_MANAGER",
   WARN_1: "WARN_1",
   WARN_2: "WARN_2",
   WARN_3: "WARN_3",
@@ -56,6 +61,7 @@ export const SINGLETON_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.BLACKLIST,
   RoleConfigType.STAFF_MANAGER,
   RoleConfigType.OWNER_MANAGER,
+  RoleConfigType.TRANSFER_MANAGER,
   RoleConfigType.WARN_1,
   RoleConfigType.WARN_2,
   RoleConfigType.WARN_3,

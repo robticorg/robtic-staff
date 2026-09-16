@@ -38,6 +38,8 @@ export const DenyReason = {
   ACTOR_NOT_STAFF: "ACTOR_NOT_STAFF",
   HIERARCHY_INVALID: "HIERARCHY_INVALID",
   BELOW_MIN_LEVEL: "BELOW_MIN_LEVEL",
+  NOT_A_TRANSFER_MANAGER: "NOT_A_TRANSFER_MANAGER",
+  TRANSFER_SAME_MEMBER: "TRANSFER_SAME_MEMBER",
 } as const;
 export type DenyReason = (typeof DenyReason)[keyof typeof DenyReason];
 
@@ -323,6 +325,35 @@ export class StaffManagementAuthorizationService {
     if (requestedLevel >= actorTierStart) return deny(DenyReason.LEVEL_ABOVE_AUTHORITY);
 
     return allow();
+  }
+
+  /** Pure role check — the configuration row is the only source of authority. */
+  async isTransferManager(actor: GuildMember): Promise<boolean> {
+    const row = await roleConfigService.getByType(
+      actor.guild.id,
+      RoleConfigType.TRANSFER_MANAGER,
+    );
+    return row ? actor.roles.cache.has(row.roleId) : false;
+  }
+
+  /**
+   * Who may hand one member's Staff position to another.
+   *
+   * Administrator or the configured Transfer Manager role — nothing else, and
+   * no level maths: a Transfer Manager gains nothing by sitting higher in the
+   * Discord role list, and loses nothing by sitting lower. Everything about the
+   * *state* of the two members (staff, blacklist, break, active cases) is the
+   * transfer service's job, not this one's.
+   */
+  async canTransfer(
+    actor: GuildMember,
+    source: GuildMember,
+    target: GuildMember,
+  ): Promise<AuthorizationDecision> {
+    if (source.id === target.id) return deny(DenyReason.TRANSFER_SAME_MEMBER);
+    if (this.isAdministrator(actor)) return allow();
+    if (await this.isTransferManager(actor)) return allow();
+    return deny(DenyReason.NOT_A_TRANSFER_MANAGER);
   }
 
   /**

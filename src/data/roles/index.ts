@@ -19,6 +19,7 @@ export const ROLE_SLOT_LABELS: Record<RoleConfigType, string> = {
   [RoleConfigType.BLACKLIST]: "رتبة البلاك ليست",
   [RoleConfigType.STAFF_MANAGER]: "رتبة مانجر الستاف",
   [RoleConfigType.OWNER_MANAGER]: "رتبة مانجر الأونر",
+  [RoleConfigType.TRANSFER_MANAGER]: "رتبة مانجر التحويل",
   [RoleConfigType.WARN_1]: "رتبة تحذير الستاف 1",
   [RoleConfigType.WARN_2]: "رتبة تحذير الستاف 2",
   [RoleConfigType.WARN_3]: "رتبة تحذير الستاف 3",

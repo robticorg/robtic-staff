@@ -246,7 +246,8 @@ prevents the same event (e.g. one report claim) from awarding points twice.
 ## Role configuration & the numbered hierarchy
 
 `role_configs` maps each Discord role to a slot (`RoleConfigType`):
-`START · END · STAFF · IGNORE · BLACKLIST · BREAK · STAFF_MANAGER · WARN_1/2/3`.
+`START · END · STAFF · IGNORE · BLACKLIST · BREAK · STAFF_MANAGER ·
+TRANSFER_MANAGER · WARN_1/2/3`.
 
 - The **numbered ladder** = every `RoleConfig` with a numeric `level`
   (`START` = 0, intermediate rungs = `STAFF` + level, `END` = highest).
@@ -284,6 +285,58 @@ debounced (`configurationConfig.ladderSyncDebounceMs`, 3s) into a single rebuild
 and the rebuild only runs when the computed order actually differs — a rename or
 colour change ends in `UNCHANGED` without touching MongoDB. A half-configured
 hierarchy (no START or no END) is skipped rather than guessed at.
+
+---
+
+## Staff transfer (`!transfer @from @to`)
+
+Hands **one member's Staff position** to another. Deliberately not a role
+copier: only the five Staff-managed categories move, and the level they derive
+from comes from `StaffHierarchyService`, never from whatever roles look
+staff-ish.
+
+**Authorization** — `staffManagementAuthorizationService.canTransfer(actor, source, target)`:
+Administrator or the configured **Transfer Manager** role (`/role transfermanager`,
+Administrators only). No level maths and no position maths — a Transfer Manager
+gains nothing by sitting higher in the Discord role list.
+
+**Moves:** Staff marker · numbered ladder up to the level · the Access Roles the
+source *actually holds* · level-driven assignments · Accepted Role · Staff Type
+(via `StaffTypeService`).
+**Never touched:** Administrator, Transfer/Staff/Owner Manager, warning roles,
+Vacation, Blacklist, or any unrelated Discord role — on either member.
+
+**Refuses before touching anything** (all of it, in order): same member · bot
+target · source not Staff / fired / already transferred · source or target
+blacklisted (status *or* role) · source on break (status *or* an open vacation
+row — a snapshot must never point at the wrong user) · source still owns active
+cases (tickets, reports, appeals, gift claims awaiting fulfilment) · target
+already Staff (`ACTIVE`/`BREAK` → rejected, never merged; a `FIRED`/`TRANSFERRED`
+record is reused) · ladder unconfigured or hierarchy invalid. A case count that
+*fails* is treated as blocking, not as zero.
+
+**Atomicity** — validation completes before the first write. Then: grant to
+target → strip source → Staff Type → DB. Any failure in that block rolls both
+members' roles back and leaves MongoDB untouched. History is written last, so a
+successful-transfer record can only exist for a transfer that finished.
+
+**Data** — the two Staff records stay separate, linked by `transferredFrom` /
+`transferredTo` / `transferredAt` / `transferredBy`. The source becomes
+`StaffStatus.TRANSFERRED` (its own status, not a fake fire) and **keeps its
+points, counters, `StaffPointTransaction` and `StaffActivity` rows**; the target
+starts as a new Staff identity at the transferred level. Both records get a
+`StaffHistoryAction.TRANSFER` entry (its own lifecycle event — never a fake
+ACCEPT/PROMOTE/DEMOTE) carrying `sourceStaffId · targetStaffId · sourceUserId ·
+targetUserId · sourceLevel · transferredRoleIds · performedBy · side`.
+
+**Role safety** — every role passes `filterAssignableRoles` first: exists in the
+guild, not `@everyone`, not integration-managed, below the bot. Anything else is
+skipped and reported, never attempted.
+
+Layering: command (`prefix/staff/transfer.ts`, pure I/O) → authorization →
+`StaffTransferService` → hierarchy / type / assignment / accepted-role services →
+Discord → MongoDB → history. Pure decision logic lives in
+`staff-transfer-rules.ts` and is unit-tested without Discord or Mongo.
 
 ---
 

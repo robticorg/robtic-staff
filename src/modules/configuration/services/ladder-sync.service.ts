@@ -16,6 +16,7 @@ const OFF_LADDER_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.BLACKLIST,
   RoleConfigType.STAFF_MANAGER,
   RoleConfigType.OWNER_MANAGER,
+  RoleConfigType.TRANSFER_MANAGER,
   RoleConfigType.WARN_1,
   RoleConfigType.WARN_2,
   RoleConfigType.WARN_3,

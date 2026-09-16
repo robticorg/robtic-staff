@@ -34,5 +34,70 @@ export const staffMessages = {
     ACTOR_NOT_STAFF: `${E.error} لازم تكون عضو ستاف عنده رتبة مرقّمة عشان تدير الستاف.`,
     HIERARCHY_INVALID: `${E.error} إعدادات سلّم الستاف ناقصة أو غير صحيحة — صحّحها قبل إدارة الستاف.`,
     BELOW_MIN_LEVEL: `${E.error} ما تقدر تنزل هذا الستاف أكثر. إذا تبي تفصله استخدم \`!fire\`.`,
+
+    NOT_A_TRANSFER_MANAGER: `${E.error} أمر التحويل للأدمن ومانجر التحويل بس.`,
+    TRANSFER_SAME_MEMBER: `${E.error} ما تقدر تحوّل عضوية الستاف لنفس العضو.`,
+  },
+
+  /**
+   * `!transfer` copy. Keyed by TransferProblem so the transfer service never
+   * formats text, exactly like the authorization block above.
+   */
+  transfer: {
+    usage: `${E.warning} الطريقة: \`!transfer @من @إلى\``,
+    roleWriteFailed: `${E.error} فشلت عملية الرتب — تم التراجع عن التحويل وما تغيّر شيء في قاعدة البيانات.`,
+
+    activeCases: (
+      sourceMention: string,
+      counts: { reports: number; tickets: number; appeals: number; giftClaims: number },
+    ) =>
+      [
+        `${E.error} ${sourceMention} عنده شغل مفتوح لازم ينتهي أو ينتقل لغيره قبل التحويل:`,
+        counts.tickets > 0 ? `• تكتات: ${counts.tickets}` : null,
+        counts.reports > 0 ? `• بلاغات: ${counts.reports}` : null,
+        counts.appeals > 0 ? `• استئنافات: ${counts.appeals}` : null,
+        counts.giftClaims > 0 ? `• هدايا بانتظار التسليم: ${counts.giftClaims}` : null,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+
+    problem: {
+      NOT_AUTHORIZED: () => `${E.error} أمر التحويل للأدمن ومانجر التحويل بس.`,
+      SAME_MEMBER: () => `${E.error} ما تقدر تحوّل عضوية الستاف لنفس العضو.`,
+      TARGET_IS_BOT: () => `${E.error} ما تقدر تحوّل عضوية الستاف لبوت.`,
+
+      SOURCE_NOT_STAFF: (source: string) => `${E.error} ${source} مو عضو ستاف.`,
+      SOURCE_FIRED: (source: string) => `${E.error} ${source} مفصول من الستاف.`,
+      SOURCE_BLACKLISTED: (source: string) =>
+        `${E.error} ${source} في البلاك ليست — ما ينحوّل، وما ينشال منه البلاك ليست بهذا الأمر.`,
+      SOURCE_ON_BREAK: (source: string) =>
+        `${E.error} ${source} على إجازة الآن. رجّعه من الإجازة أول (\`!unbreak\`) عشان ما تبقى نسخة رتبه محفوظة لشخص غلط.`,
+      SOURCE_TRANSFERRED: (source: string) =>
+        `${E.error} ${source} محوّل عضويته أصلاً لعضو ثاني.`,
+      SOURCE_HAS_ACTIVE_CASES: (source: string) =>
+        `${E.error} ${source} عنده شغل مفتوح لازم ينتهي قبل التحويل.`,
+
+      TARGET_ALREADY_STAFF: (_source: string, target: string) =>
+        `${E.error} ${target} عضو ستاف أصلاً — افصله أول أو اختر عضو ثاني. ما ندمج سجلّين ستاف.`,
+      TARGET_BLACKLISTED: (_source: string, target: string) =>
+        `${E.error} ${target} في البلاك ليست.`,
+
+      HIERARCHY_INVALID: () =>
+        `${E.error} إعدادات سلّم الستاف ناقصة أو غير صحيحة — صحّحها قبل التحويل.`,
+      LADDER_NOT_CONFIGURED: () =>
+        `${E.error} رتب الستاف المرقّمة مو مضبوطة. شغّل \`/role start\` و \`/role end\` أول.`,
+      LEVEL_UNKNOWN: (source: string) =>
+        `${E.error} ما قدرت أحدد مستوى ${source} في سلّم الستاف.`,
+    },
+
+    success: (source: string, target: string, level: number) =>
+      `${E.success} تم تحويل عضوية الستاف من ${source} إلى ${target} — المستوى **${level}**.`,
+    successWithType: (source: string, target: string, level: number, type: string) =>
+      `${E.success} تم تحويل عضوية الستاف من ${source} إلى ${target} — المستوى **${level}** ونوع **${type}**.`,
+    rolesLine: (granted: number, removed: number) =>
+      `تم إعطاء ${granted} رتبة وسحب ${removed} رتبة.`,
+    skippedLine: (count: number) =>
+      `${E.warning} ${count} رتبة ما انعطت — إما محذوفة أو فوق رتبة البوت.`,
+    statsNote: "نقاط وإحصائيات العضو القديم تبقى في سجلّه ولا تنتقل.",
   },
 } as const;

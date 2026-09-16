@@ -10,6 +10,7 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   end: ["انهاء", "إنهاء", "انهاء-التحقيق"],
 
   accept: ["قبول", "قبل"],
+  transfer: ["تحويل", "نقل"],
   fire: ["فصل", "طرد", "اقالة"],
   prompt: ["ترقية", "رفع"],
   demote: ["تنزيل", "خفض", "تخفيض"],
