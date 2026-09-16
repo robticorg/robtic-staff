@@ -10,6 +10,7 @@ import { vacationExpirationService } from "../modules/vacation/services/vacation
 import { serverTagExpirationService } from "../modules/server-tag/services/server-tag-expiration.service.ts";
 import { serverTagAuditService } from "../modules/server-tag/services/server-tag-audit.service.ts";
 import { ladderSyncService } from "../modules/configuration/services/ladder-sync.service.ts";
+import { ticketSleepService } from "../modules/tickets/services/ticket-sleep.service.ts";
 
 export function attachModuleClients(client: Client): void {
   attachModmailClient(client);
@@ -25,11 +26,15 @@ export function startModuleRuntime(): void {
   vacationExpirationService.start();
   // Sweeps immediately on start — this is the Server Tag restart recovery.
   serverTagExpirationService.start();
+  // Same idea: tickets whose sleep window elapsed while the bot was down are
+  // closed on the first sweep.
+  ticketSleepService.start();
 }
 
 export function stopModuleRuntime(): void {
   vacationExpirationService.stop();
   serverTagExpirationService.stop();
   serverTagAuditService.stop();
+  ticketSleepService.stop();
   ladderSyncService.stop();
 }

@@ -7,7 +7,11 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   add: ["اضافة", "إضافة", "ضيف"],
   remove: ["ازالة", "إزالة", "شيل"],
 
+  sleep: ["نوم", "خمول", "تنبيه"],
+
   end: ["انهاء", "إنهاء", "انهاء-التحقيق"],
+
+  come: ["تعال", "حضور", "نداء"],
 
   accept: ["قبول", "قبل"],
   transfer: ["تحويل", "نقل"],

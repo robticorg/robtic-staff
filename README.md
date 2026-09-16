@@ -288,6 +288,21 @@ hierarchy (no START or no END) is skipped rather than guessed at.
 
 ---
 
+## `!come @user <reason>`
+
+Summons a member to where the command was typed. Staff only (`requireStaff`),
+reason **required**, self/bot targets refused. Sends a plain DM (no embed) with a
+link button jumping to the exact `!come` message:
+
+```
+لقد تم ندائك بواسطة @caller للحضور بسبب : <السبب>
+```
+
+A closed DM is reported back to the caller as a failure rather than a silent
+success.
+
+---
+
 ## Staff transfer (`!transfer @from @to`)
 
 Hands **one member's Staff position** to another. Deliberately not a role
@@ -681,6 +696,36 @@ is never demoted, even if they were somehow the claimer). The receiver gets a
 a transfer note, and `TICKET_TRANSFERRED` is logged with from / to / reason. **No
 claim point is awarded** — the +1 stays with whoever claimed first — but
 completion credit at close follows the new claimer (`claimedBy` moved).
+
+### Sleep — idle ticket auto-close (`!sleep` / `/sleep time:`)
+
+For when the opener has gone quiet. The ticket's handler (claimer or admin —
+same `canManageTicket` gate as Options) marks it asleep; the opener gets a
+**plain DM with a link button** into the channel:
+
+```
+سيتم اقفال التكت الخاص بك خلال 6 ساعات اذا لم ترد
+الرجاء الذهاب الى التكت و الرد حالا
+```
+
+Duration defaults to **6h**; `!sleep 30m`, `!sleep 1h30m`, `!sleep 90` (bare =
+minutes) or `/sleep time:6h` override it, clamped to `ticketSleepMinMs` (1m) …
+`ticketSleepMaxMs` (7d) — anything unparseable is refused rather than silently
+defaulted. A note is also posted in the channel, so a closed DM is not a silent
+failure.
+
+**Waking** — *any* message from the ticket's own opener clears the deadline
+(staff messages do not; the deadline is about them answering). The hook runs on
+`messageCreate` behind an O(1) `transcriptCache.isTracked()` check, so non-ticket
+channels never touch MongoDB.
+
+**Closing** — a 60s sweeper picks up due tickets (`{sleepDueAt, status}` index)
+and closes them through the normal `ticketService.closeTicket`, so the
+**transcript, the log entry and the completion credit behave exactly like a
+manual close**. The deadline is cleared *before* the close runs, so two sweeps
+can never double-close. Tickets whose window elapsed while the bot was down are
+settled on the first sweep after boot. `TICKET_SLEEP` / `TICKET_SLEEP_CANCELLED`
+are logged with the member, duration and deadline.
 
 ### Options (ephemeral, staff only)
 

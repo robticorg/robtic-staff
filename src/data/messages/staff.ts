@@ -39,6 +39,23 @@ export const staffMessages = {
     TRANSFER_SAME_MEMBER: `${E.error} ما تقدر تحوّل عضوية الستاف لنفس العضو.`,
   },
 
+  /** `!come` — summon a member to where the command was typed. */
+  come: {
+    usage: `${E.warning} الطريقة: \`!come @العضو السبب\``,
+    reasonRequired: `${E.error} لازم تكتب سبب النداء.`,
+    self: `${E.error} ما تقدر تنادي نفسك.`,
+    bot: `${E.error} ما تقدر تنادي بوت.`,
+    sent: (userMention: string) => `${E.success} تم إرسال النداء لـ ${userMention} في الخاص.`,
+    dmFailed: (userMention: string) =>
+      `${E.error} ما قدرت أرسل لـ ${userMention} — خاصه مغلق.`,
+
+    dm: {
+      body: (callerId: string, reason: string) =>
+        `لقد تم ندائك بواسطة <@${callerId}> للحضور بسبب : ${reason}`,
+      button: "الذهاب للرسالة",
+    },
+  },
+
   /**
    * `!transfer` copy. Keyed by TransferProblem so the transfer service never
    * formats text, exactly like the authorization block above.

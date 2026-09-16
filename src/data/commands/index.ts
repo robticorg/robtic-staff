@@ -9,6 +9,7 @@ export const CommandName = {
   VACATION_SETUP: "vacation-setup",
   SCAN: "scan",
   POINTS: "points",
+  SLEEP: "sleep",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -86,6 +87,7 @@ export const CommandOption = {
   AMOUNT: "amount",
   REASON: "reason",
   PANEL: "panel",
+  TIME: "time",
 } as const;
 
 export const commandCopy = {
@@ -211,6 +213,12 @@ export const commandCopy = {
   },
   scan: {
     description: "فحص السيرفر واستيراد أعضاء الستاف الموجودين ومزامنة مستوياتهم",
+  },
+  sleep: {
+    description: "تنبيه صاحب التكت إنه بينقفل تلقائياً إذا ما رد",
+    options: {
+      time: "المدة قبل الإقفال — مثل 6h أو 30m (الافتراضي 6 ساعات)",
+    },
   },
   points: {
     description: "إدارة نقاط الستاف يدويًا (إضافة / خصم / تصفير) — للإداريين بس",

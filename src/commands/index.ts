@@ -7,6 +7,7 @@ import fastAccessCommand from "./fast-access/index.ts";
 import vacationSetupCommand from "./vacation-setup/index.ts";
 import scanCommand from "./scan/index.ts";
 import pointsCommand from "./points/index.ts";
+import sleepCommand from "./sleep/index.ts";
 
 export const commands: SlashCommand[] = [
   roleCommand,
@@ -17,4 +18,5 @@ export const commands: SlashCommand[] = [
   fastAccessCommand,
   vacationSetupCommand,
   pointsCommand,
+  sleepCommand,
 ];

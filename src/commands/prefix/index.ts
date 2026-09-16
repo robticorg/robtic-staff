@@ -7,10 +7,12 @@ import ticketRename from "./ticket/rename.ts";
 import ticketTranscript from "./ticket/transcript.ts";
 import ticketAdd from "./ticket/add.ts";
 import ticketRemove from "./ticket/remove.ts";
+import ticketSleep from "./ticket/sleep.ts";
 
 import modmailEnd from "./modmail/end.ts";
 
 import staffAccept from "./staff/accept.ts";
+import staffCome from "./staff/come.ts";
 import staffTransfer from "./staff/transfer.ts";
 import staffFire from "./staff/fire.ts";
 import staffPrompt from "./staff/prompt.ts";
@@ -33,9 +35,11 @@ export const prefixCommands: PrefixCommand[] = [
   ticketTranscript,
   ticketAdd,
   ticketRemove,
+  ticketSleep,
 
   modmailEnd,
 
+  staffCome,
   staffAccept,
   staffTransfer,
   staffFire,

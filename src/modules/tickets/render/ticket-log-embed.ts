@@ -14,6 +14,10 @@ function titleFor(action: TicketLogAction): string | null {
       return L.titleClaimed;
     case TicketLogAction.TICKET_TRANSFERRED:
       return L.titleTransferred;
+    case TicketLogAction.TICKET_SLEEP:
+      return L.titleSleep;
+    case TicketLogAction.TICKET_SLEEP_CANCELLED:
+      return L.titleSleepCancelled;
     case TicketLogAction.TICKET_RENAMED:
       return L.titleRenamed;
     case TicketLogAction.TICKET_CLOSED:
@@ -44,7 +48,10 @@ function colorFor(action: TicketLogAction): "success" | "error" | "warning" | "i
     case TicketLogAction.ROLE_REMOVED:
       return "error";
     case TicketLogAction.TICKET_CLOSED:
+    case TicketLogAction.TICKET_SLEEP:
       return "warning";
+    case TicketLogAction.TICKET_SLEEP_CANCELLED:
+      return "success";
     case TicketLogAction.TICKET_CLAIMED:
     case TicketLogAction.TICKET_TRANSFERRED:
       return "info";
@@ -74,6 +81,20 @@ export function buildTicketLogEmbed(
       break;
     case TicketLogAction.USER_ADDED:
     case TicketLogAction.USER_REMOVED:
+      if (ctx.targetId) fields.push({ name: L.member, value: `<@${ctx.targetId}>`, inline: true });
+      break;
+    case TicketLogAction.TICKET_SLEEP:
+      if (ctx.targetId) fields.push({ name: L.member, value: `<@${ctx.targetId}>`, inline: true });
+      if (ctx.name) fields.push({ name: L.duration, value: ctx.name, inline: true });
+      if (ctx.dueAt) {
+        fields.push({
+          name: L.closesAt,
+          value: `<t:${Math.floor(ctx.dueAt.getTime() / 1000)}:R>`,
+          inline: true,
+        });
+      }
+      break;
+    case TicketLogAction.TICKET_SLEEP_CANCELLED:
       if (ctx.targetId) fields.push({ name: L.member, value: `<@${ctx.targetId}>`, inline: true });
       break;
     case TicketLogAction.TICKET_TRANSFERRED:

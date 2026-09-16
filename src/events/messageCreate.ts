@@ -3,6 +3,7 @@ import { defineEvent } from "../discord/event.ts";
 import { logger } from "../shared/utils/logger.ts";
 import { handleDirectMessage, handleThreadMessage } from "../modules/modmail/handlers/index.ts";
 import { transcriptCache } from "../modules/tickets/services/transcript-cache.ts";
+import { ticketSleepService } from "../modules/tickets/services/ticket-sleep.service.ts";
 import { runPrefixCommand } from "../commands/prefix/runner.ts";
 import { runFastAccess } from "../modules/fast-access/index.ts";
 
@@ -23,6 +24,10 @@ export default defineEvent({
         return;
       }
       if (!message.inGuild()) return;
+
+      // Before the command dispatch: a sleeping ticket wakes on *any* message
+      // from its opener, including one that happens to be a command.
+      await ticketSleepService.handleTicketMessage(message);
 
       if (await runFastAccess(message)) return;
       if (await runPrefixCommand(message)) return;

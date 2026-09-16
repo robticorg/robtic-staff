@@ -17,6 +17,8 @@ export interface TicketLogContext {
   /** Transfer only — the claimer the ticket was handed over from. */
   fromId?: string;
   reason?: string;
+  /** Sleep only — when the ticket auto-closes if nobody replies. */
+  dueAt?: Date;
 }
 
 export class TicketLogService {

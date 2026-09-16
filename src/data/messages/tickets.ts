@@ -142,6 +142,32 @@ export const ticketMessages = {
     notAllowed: `${E.error} ما عندك صلاحية تغلق هذا التكت.`,
   },
 
+  sleep: {
+    usage: `${E.warning} الطريقة: \`!sleep [المدة]\` — مثال: \`!sleep 6h\` أو \`!sleep 30m\`.`,
+    notAllowed: `${E.error} ما عندك صلاحية تستخدم هذا — لازم تكون مستلم التكت.`,
+    notOpen: `${E.error} هذا التكت مو مفتوح.`,
+    invalidDuration: (min: string, max: string) =>
+      `${E.error} مدة غير صحيحة. استخدم شيء مثل \`6h\` أو \`30m\` — بين ${min} و ${max}.`,
+    alreadySleeping: (dueAt: Date) =>
+      `${E.warning} التكت أصلاً بانتظار رد العضو — بينقفل <t:${Math.floor(dueAt.getTime() / 1000)}:R>.`,
+
+    started: (duration: string, dueAt: Date) =>
+      `${E.success} تم تنبيه صاحب التكت — بينقفل تلقائياً بعد **${duration}** (<t:${Math.floor(dueAt.getTime() / 1000)}:R>) إذا ما رد.`,
+    dmFailed: (userId: string) =>
+      `${E.warning} ما قدرت أرسل رسالة خاصة لـ <@${userId}> — خاصه مغلق. التنبيه انكتب في الروم.`,
+    channelNote: (userId: string, duration: string) =>
+      `${E.loading} <@${userId}> — بينقفل هذا التكت تلقائياً بعد **${duration}** إذا ما رد صاحبه.`,
+    cancelled: (userId: string) =>
+      `${E.success} <@${userId}> رد — تم إلغاء الإقفال التلقائي.`,
+    autoClosed: `${E.lock} تم إقفال التكت تلقائياً — ما وصل رد من صاحب التكت خلال المدة المحددة.`,
+
+    dm: {
+      body: (duration: string) =>
+        `سيتم اقفال التكت الخاص بك خلال ${duration} اذا لم ترد\nالرجاء الذهاب الى التكت و الرد حالا`,
+      button: "الذهاب للتكت",
+    },
+  },
+
   common: {
     notATicket: `${E.error} هذا مو روم تكت.`,
     ticketGone: `${E.error} هذا التكت ما عاد موجود.`,
@@ -153,6 +179,8 @@ export const ticketMessages = {
     titleCreated: `${E.report} تم فتح تكت`,
     titleClaimed: `${E.staff} تم استلام تكت`,
     titleTransferred: `${E.transfer} تم تحويل تكت`,
+    titleSleep: `${E.loading} تكت بانتظار رد العضو`,
+    titleSleepCancelled: `${E.success} رجع العضو للتكت`,
     titleRenamed: "✏️ تم تغيير اسم تكت",
     titleClosed: "🔒 تم إغلاق تكت",
     titleDeleted: `${E.error} تم حذف تكت`,
@@ -164,6 +192,8 @@ export const ticketMessages = {
     ticket: "التكت",
     panel: "القسم",
     actor: "بواسطة",
+    duration: "المدة",
+    closesAt: "يقفل",
     newName: "الاسم الجديد",
     member: "العضو",
     role: "الرتبة",

@@ -31,6 +31,15 @@ export interface Ticket extends Timestamps {
   transferredAt?: Date;
   transferReason?: string;
 
+  /**
+   * `!sleep` — the ticket is waiting on its opener. Set means "auto-close at
+   * `sleepDueAt` unless they reply first"; cleared the moment they do.
+   */
+  sleepDueAt?: Date;
+  sleepStartedBy?: UserId;
+  sleepStartedAt?: Date;
+  sleepDurationMs?: number;
+
   claimedAt?: Date;
   closedAt?: Date;
   closedBy?: UserId;
@@ -79,6 +88,11 @@ const ticketSchema = new Schema<Ticket>(
     transferredAt: { type: Date },
     transferReason: { type: String },
 
+    sleepDueAt: { type: Date },
+    sleepStartedBy: { type: String },
+    sleepStartedAt: { type: Date },
+    sleepDurationMs: { type: Number },
+
     claimedAt: { type: Date },
     closedAt: { type: Date },
     closedBy: { type: String },
@@ -95,6 +109,8 @@ ticketSchema.index({ guildId: 1, userId: 1, status: 1 });
 ticketSchema.index({ guildId: 1, panelId: 1, createdAt: -1 });
 ticketSchema.index({ guildId: 1, claimedBy: 1, claimedAt: -1 });
 ticketSchema.index({ guildId: 1, claimedBy: 1, status: 1 });
+// Drives the sleep sweeper: due tickets only, cheapest possible scan.
+ticketSchema.index({ sleepDueAt: 1, status: 1 });
 
 export const TicketModel: Model<Ticket> =
   (mongoose.models.Ticket as Model<Ticket> | undefined) ??
