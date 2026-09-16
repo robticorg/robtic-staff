@@ -683,9 +683,17 @@ wins. Winner gets exactly **+1** via `StaffPointService.add` (unique
 
 ### Transfer (claimer → another staff member)
 
-`[Transfer]` in Options, only on panels with `claimer.transferable: true` and only
-once the ticket is **CLAIMED** — a modal with a single **User select** + a
-**required reason**. The receiver must be guild staff (`staffPermissionService
+Two surfaces, one flow: the `[Transfer]` button in Options (a modal with a single
+**User select** + a **required reason**), or **`!handover @user <reason>`**
+(`!تسليم`, `!سلم`, `!تحويل-التكت`) inside the ticket channel. Both call
+`performTicketTransfer`, so the DM, the channel note and the confirmation can
+never drift apart between them.
+
+> Not to be confused with `!transfer`, which moves a **staff member's position**
+> between accounts. Ticket handover is `!handover`; staff transfer is `!transfer`.
+
+Available only on panels with `claimer.transferable: true` and only once the
+ticket is **CLAIMED**. The receiver must be guild staff (`staffPermissionService
 .isStaff`) or an Administrator; bots, the current claimer and the ticket's own
 opener are refused. The write is atomic on
 `{ status: CLAIMED, claimedByDiscordId: <current> }`, so two simultaneous

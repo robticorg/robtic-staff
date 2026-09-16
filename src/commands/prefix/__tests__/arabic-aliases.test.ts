@@ -51,4 +51,23 @@ describe("arabic prefix aliases", () => {
     expect(map.get("claim")).toBe("claim");
     expect(map.get("lb")).toBe("leaderboard");
   });
+
+  it("resolves the arabic triggers for come, sleep and handover", () => {
+    const map = new Map<string, string>();
+    for (const command of prefixCommands) {
+      map.set(command.name, command.name);
+      for (const alias of command.aliases ?? []) map.set(alias, command.name);
+    }
+    for (const [name, aliases] of Object.entries(prefixCommandAliases)) {
+      for (const alias of aliases) map.set(alias, name);
+    }
+    expect(map.get("تعال")).toBe("come");
+    expect(map.get("خمول")).toBe("sleep");
+    expect(map.get("نوم")).toBe("sleep");
+    expect(map.get("تسليم")).toBe("handover");
+    expect(map.get("سلم")).toBe("handover");
+
+    expect(map.get("تحويل")).toBe("transfer");
+    expect(map.get("تحويل-التكت")).toBe("handover");
+  });
 });

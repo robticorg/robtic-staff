@@ -76,6 +76,7 @@ export const ticketMessages = {
   },
 
   transfer: {
+    usage: `${E.warning} الطريقة: \`!handover @العضو السبب\``,
     modalTitle: "تحويل التكت",
     targetLabel: "العضو اللي تبي تحوّل له التكت",
     reasonLabel: "سبب التحويل",

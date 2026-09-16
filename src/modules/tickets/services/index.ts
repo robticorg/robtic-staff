@@ -5,6 +5,7 @@ export * from "./ticket.service.ts";
 export * from "./ticket-setup.service.ts";
 export * from "./ticket-log.service.ts";
 export * from "./ticket-sleep.service.ts";
+export * from "./ticket-transfer-flow.ts";
 export * from "./transcript.service.ts";
 export * from "./transcript-cache.ts";
 export * from "./faq.service.ts";

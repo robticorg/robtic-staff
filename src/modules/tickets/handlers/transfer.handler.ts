@@ -1,10 +1,10 @@
-import { MessageFlags, type GuildMember, type ModalSubmitInteraction } from "discord.js";
+import { MessageFlags, type ModalSubmitInteraction } from "discord.js";
 import { DomainError } from "../../../shared/utils/errors.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
-import { buildTransferDm } from "../render/transfer-dm.ts";
 import { ticketConfigService } from "../services/ticket-config.service.ts";
 import { canManageTicket } from "../services/ticket-permissions.ts";
+import { performTicketTransfer } from "../services/ticket-transfer-flow.ts";
 import { ticketService } from "../services/ticket.service.ts";
 import { TicketModalField } from "./component-ids.ts";
 
@@ -54,36 +54,14 @@ export async function handleTransferModal(
       return;
     }
 
-    const result = await ticketService.transferTicket({
+    const outcome = await performTicketTransfer({
       ticketId,
       actor: interaction.member,
       target,
       panel,
       reason,
     });
-
-    const delivered = await notify(target, {
-      ticketId,
-      guildId: result.ticket.guildId,
-      channelId: result.ticket.channelId,
-      reason: result.reason,
-    });
-
-    await interaction.editReply(
-      delivered
-        ? M.transfer.done(ticketId, target.id)
-        : `${M.transfer.done(ticketId, target.id)}\n${M.transfer.dmFailed(target.id)}`,
-    );
-
-    const channel = interaction.channel;
-    if (channel?.isTextBased() && "send" in channel) {
-      await channel
-        .send({
-          content: M.transfer.channelNote(result.previousClaimerId, target.id, result.reason),
-          allowedMentions: { users: [target.id] },
-        })
-        .catch(() => undefined);
-    }
+    await interaction.editReply(outcome.reply);
   } catch (err) {
     if (err instanceof DomainError) {
       await interaction.editReply(err.message);
@@ -91,18 +69,5 @@ export async function handleTransferModal(
     }
     log.error("transfer failed", err);
     await interaction.editReply(M.common.genericError);
-  }
-}
-
-async function notify(
-  target: GuildMember,
-  input: { ticketId: string; guildId: string; channelId: string; reason: string },
-): Promise<boolean> {
-  try {
-    await target.send(buildTransferDm(input));
-    return true;
-  } catch (err) {
-    log.warn(`transfer DM to ${target.id} failed`, err);
-    return false;
   }
 }
