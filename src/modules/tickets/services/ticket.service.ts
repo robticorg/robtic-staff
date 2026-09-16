@@ -21,7 +21,7 @@ import { toObjectId } from "../../../shared/utils/id.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { nextSequence } from "../../../shared/sequence.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
-import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
+import { panelIsAdminOnly, type TicketPanelConfig } from "../../../data/tickets/index.ts";
 import { StaffActivityType, staffActivityService, staffService } from "../../staff/index.ts";
 import { TicketModel, type Ticket, type TicketAnswer } from "../models/ticket.model.ts";
 import {
@@ -132,7 +132,11 @@ export class TicketService extends BaseRepository<Ticket> {
       });
     }
 
-    const category = await guild.channels.fetch(panel.categoryId).catch(() => null);
+    // Only channel-opening panels reach here; a missing category is still fatal
+    // for them, but the field is now optional on panels that never create one.
+    const category = panel.categoryId
+      ? await guild.channels.fetch(panel.categoryId).catch(() => null)
+      : null;
     if (!category || category.type !== ChannelType.GuildCategory) {
       throw new DomainError("TICKET_CATEGORY_INVALID", M.create.categoryMissing);
     }
@@ -182,7 +186,18 @@ export class TicketService extends BaseRepository<Ticket> {
   ): OverwriteResolvable[] {
     return [
       { id: guild.roles.everyone.id, deny: [PermissionFlagsBits.ViewChannel] },
-      { id: panel.supportRoleId, allow: accessBits(), type: OverwriteType.Role },
+      // With no support role the panel is administrator-only. Administrators
+      // bypass overwrites, so they still see the channel; writing the unset
+      // placeholder id here would make Discord reject the whole channel create.
+      ...(panelIsAdminOnly(panel)
+        ? []
+        : [
+            {
+              id: panel.supportRoleId,
+              allow: accessBits(),
+              type: OverwriteType.Role,
+            } as OverwriteResolvable,
+          ]),
       { id: creatorId, allow: accessBits(), type: OverwriteType.Member },
       {
         id: guild.members.me?.id ?? guild.client.user.id,

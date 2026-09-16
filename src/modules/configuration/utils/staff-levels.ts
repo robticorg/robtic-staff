@@ -37,6 +37,8 @@ export interface StaffHierarchy {
   levels: StaffRoleLevel[];
   levelByRoleId: Map<RoleId, number>;
   ignoredRoleIds: Set<RoleId>;
+  /** Staff-adjacent roles with no level — never used in level maths. */
+  accessRoleIds: Set<RoleId>;
   generalStaffRoleId: RoleId | null;
   startLevel: number | null;
   endLevel: number | null;
@@ -71,15 +73,23 @@ export function invalidateStaffHierarchy(guildId: GuildId): void {
 }
 
 async function loadHierarchy(guildId: GuildId): Promise<StaffHierarchy> {
-  const [levels, ignoredRoleIds, generalStaffRoleId, boundaryRoles, startRow, endRow] =
-    await Promise.all([
-      roleConfigService.getStaffRoleLevels(guildId),
-      roleConfigService.getIgnoredRoleIds(guildId),
-      roleConfigService.getGeneralStaffRoleId(guildId),
-      roleConfigService.getBoundaryRoles(guildId),
-      roleConfigService.getByType(guildId, RoleConfigType.START),
-      roleConfigService.getByType(guildId, RoleConfigType.END),
-    ]);
+  const [
+    levels,
+    ignoredRoleIds,
+    accessRoleIds,
+    generalStaffRoleId,
+    boundaryRoles,
+    startRow,
+    endRow,
+  ] = await Promise.all([
+    roleConfigService.getStaffRoleLevels(guildId),
+    roleConfigService.getIgnoredRoleIds(guildId),
+    roleConfigService.getAccessRoleIds(guildId),
+    roleConfigService.getGeneralStaffRoleId(guildId),
+    roleConfigService.getBoundaryRoles(guildId),
+    roleConfigService.getByType(guildId, RoleConfigType.START),
+    roleConfigService.getByType(guildId, RoleConfigType.END),
+  ]);
 
   const levelByRoleId = new Map<RoleId, number>();
   for (const rung of levels) levelByRoleId.set(rung.roleId, rung.level);
@@ -107,6 +117,7 @@ async function loadHierarchy(guildId: GuildId): Promise<StaffHierarchy> {
     levels,
     levelByRoleId,
     ignoredRoleIds: new Set(ignoredRoleIds),
+    accessRoleIds: new Set(accessRoleIds),
     generalStaffRoleId,
     startLevel,
     endLevel: endRow ? (levelByRoleId.get(endRow.roleId) ?? null) : null,
@@ -243,6 +254,52 @@ export function highestLevelFromRoleIds(
   return highest;
 }
 
+/** Every numbered ladder rung, ascending. Ignored roles are never included. */
+export function getNumberedStaffRoles(guildId: GuildId): Promise<StaffRoleLevel[]> {
+  return getHierarchy(guildId).then((h) => h.levels.map((r) => ({ ...r })));
+}
+
+/** The ladder role that sits at a given level, if any. */
+export function getRoleForLevel(hierarchy: StaffHierarchy, level: number): RoleId | null {
+  for (const rung of hierarchy.levels) if (rung.level === level) return rung.roleId;
+  return null;
+}
+
+// ── Access roles ────────────────────────────────────────────────────────────
+
+/** Configured Access Roles — Staff-related, never level-bearing. */
+export async function getAccessRoles(guildId: GuildId): Promise<RoleId[]> {
+  return [...(await getHierarchy(guildId)).accessRoleIds];
+}
+
+export async function isAccessRole(roleId: RoleId, guildId: GuildId): Promise<boolean> {
+  return (await getHierarchy(guildId)).accessRoleIds.has(roleId);
+}
+
+/**
+ * True for anything owned by the Staff system: a numbered rung, the general
+ * Staff marker, or an Access Role. Deliberately broader than "has a level" —
+ * callers that need hierarchy rank must use `getStaffLevel` instead.
+ */
+export async function isStaffRelatedRole(roleId: RoleId, guildId: GuildId): Promise<boolean> {
+  const hierarchy = await getHierarchy(guildId);
+  return (
+    hierarchy.levelByRoleId.has(roleId) ||
+    hierarchy.accessRoleIds.has(roleId) ||
+    hierarchy.generalStaffRoleId === roleId
+  );
+}
+
+/** Access Roles the member currently holds, from an already loaded snapshot. */
+export function accessRolesFromRoleIds(
+  hierarchy: StaffHierarchy,
+  roleIds: Iterable<RoleId>,
+): RoleId[] {
+  const out: RoleId[] = [];
+  for (const roleId of roleIds) if (hierarchy.accessRoleIds.has(roleId)) out.push(roleId);
+  return out;
+}
+
 /**
  * The single source of truth for Staff hierarchy questions. Grouped as a
  * service object the same way `vacationDurationService` wraps its helpers.
@@ -257,4 +314,10 @@ export const staffHierarchyService = {
   getTierForLevel,
   getTierForRole,
   highestLevelFromRoleIds,
+  getAccessRoles,
+  isAccessRole,
+  isStaffRelatedRole,
+  accessRolesFromRoleIds,
+  getNumberedStaffRoles,
+  getRoleForLevel,
 };

@@ -38,7 +38,9 @@ export interface StaffWarningLogResult {
 }
 
 /**
- * Posts the Staff Warn message for a REAL staff warning (§1–§8).
+ * Posts the plain four-line Staff Warn announcement for a REAL staff warning
+ * (§1–§8) into the dedicated STAFF_WARN_ANNOUNCE channel — never STAFF_WARNS
+ * (where warnings are issued) and never WARNING_LOG (which keeps the embed).
  *
  * This is a reporting side-effect only: it never throws, never mutates warning
  * state beyond stamping the message id, and a Discord failure must never undo
@@ -60,12 +62,15 @@ export class StaffWarningLogService {
 
       const channelId = await channelConfigService.getChannelId(
         input.guild.id,
-        ChannelConfigType.STAFF_WARNS,
+        ChannelConfigType.STAFF_WARN_ANNOUNCE,
       );
       if (!channelId) {
         // §1 — configuration gap must not interrupt the warning workflow.
+        // Deliberately no fallback to STAFF_WARNS: that is the channel managers
+        // issue warnings in, and announcing into it is exactly what this slot
+        // exists to avoid.
         log.warn(
-          `STAFF_WARNS channel is not configured for guild ${input.guild.id} — ` +
+          `STAFF_WARN_ANNOUNCE channel is not configured for guild ${input.guild.id} — ` +
             `staff warn ${warning._id.toString()} was stored but not announced`,
         );
         return { outcome: "not-configured" };
@@ -91,7 +96,9 @@ export class StaffWarningLogService {
 
       const channel = await input.guild.channels.fetch(channelId).catch(() => null);
       if (!channel || !channel.isTextBased()) {
-        log.warn(`STAFF_WARNS channel ${channelId} in ${input.guild.id} is missing or not text`);
+        log.warn(
+          `STAFF_WARN_ANNOUNCE channel ${channelId} in ${input.guild.id} is missing or not text`,
+        );
         return { outcome: "channel-unavailable" };
       }
 

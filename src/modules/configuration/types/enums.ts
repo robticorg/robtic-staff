@@ -3,6 +3,28 @@ export const RoleConfigType = {
   END: "END",
   STAFF: "STAFF",
   IGNORE: "IGNORE",
+  /**
+   * Staff-adjacent roles that carry no hierarchy level. Stored as many rows
+   * per guild (like IGNORE), never as a singleton and never on the ladder.
+   */
+  ACCESS: "ACCESS",
+  /**
+   * Given on Staff acceptance. Its own role type — never a ladder rung, never
+   * an Access Role, and it carries a *level range* it applies to rather than a
+   * level of its own.
+   */
+  ACCEPTED: "ACCEPTED",
+  /**
+   * Extra roles handed out automatically for a window of numbered levels.
+   * Many rows per guild, each with its own range. Never on the ladder.
+   */
+  ASSIGN: "ASSIGN",
+  /**
+   * A Staff Type role (MAX, DEV, …). One row per configured type, discriminated
+   * by the `staffType` field rather than by a type-per-enum-entry, so a new
+   * Staff Type needs no new RoleConfigType. Never on the ladder.
+   */
+  STAFF_TYPE: "STAFF_TYPE",
   BLACKLIST: "BLACKLIST",
   STAFF_MANAGER: "STAFF_MANAGER",
   OWNER_MANAGER: "OWNER_MANAGER",
@@ -43,6 +65,7 @@ export const SINGLETON_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
   RoleConfigType.TAG,
+  RoleConfigType.ACCEPTED,
 ];
 
 /**
@@ -73,6 +96,13 @@ export const ChannelConfigType = {
   USER_WARNS: "USER_WARNS",
   STAFF_WARNS: "STAFF_WARNS",
   WARNING_LOG: "WARNING_LOG",
+  /**
+   * Where the plain four-line "Staff Warn X" announcement is posted when a
+   * REAL staff warning is created. Deliberately its own slot: STAFF_WARNS is
+   * the channel managers *type* `!warn` in, and WARNING_LOG carries the embed
+   * audit trail — this one is neither.
+   */
+  STAFF_WARN_ANNOUNCE: "STAFF_WARN_ANNOUNCE",
   REPORTS: "REPORTS",
   REPORT_LOG: "REPORT_LOG",
   PUNISHMENT_LOG: "PUNISHMENT_LOG",

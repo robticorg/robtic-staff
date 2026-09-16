@@ -120,7 +120,12 @@ export class VacationService extends BaseRepository<Vacation> {
       throw new VacationError("VACATION_TARGET_NOT_STAFF", M.break.targetNotStaff(`<@${member.id}>`));
     }
 
-    const snapshot = await vacationRoleService.snapshot(member, guildId);
+    const snap = await vacationRoleService.fullSnapshot(member, guildId);
+    const snapshot = snap.staffRoleIds;
+    const accessSnapshot = snap.accessRoleIds;
+    const acceptedSnapshot = snap.acceptedRoleIds;
+    const assignedSnapshot = snap.assignedRoleIds;
+    const typeSnapshot = snap.typeRoleIds;
     await vacationRoleService.preflight(member.guild, vacationRoleId, snapshot);
 
     const now = new Date();
@@ -145,6 +150,11 @@ export class VacationService extends BaseRepository<Vacation> {
         endsAt: window.endsAt,
         requestedAt: now,
         savedRoleIds: snapshot,
+        savedAccessRoleIds: accessSnapshot,
+        savedAcceptedRoleIds: acceptedSnapshot,
+        savedAssignedRoleIds: assignedSnapshot,
+        savedTypeRoleIds: typeSnapshot,
+        snapshotRoleLevel: snap.currentRoleLevel ?? undefined,
         isOpen: true,
         metadata: { actorId },
       });
@@ -159,7 +169,7 @@ export class VacationService extends BaseRepository<Vacation> {
     }
 
     try {
-      await vacationRoleService.removeStaffRoles(member, snapshot, `Break: ${reason}`);
+      await vacationRoleService.removeStaffRoles(member, [...snapshot, ...accessSnapshot, ...acceptedSnapshot, ...assignedSnapshot, ...typeSnapshot], `Break: ${reason}`);
       await vacationRoleService.applyVacationRole(member, vacationRoleId, `Break: ${reason}`);
     } catch (err) {
       await this.abortActivation(vacation, member, vacationRoleId, snapshot, err);
@@ -168,7 +178,16 @@ export class VacationService extends BaseRepository<Vacation> {
 
     const active = await VacationModel.findOneAndUpdate(
       { _id: vacation._id, status: VacationStatus.PENDING },
-      { $set: { status: VacationStatus.ACTIVE, savedRoleIds: snapshot } },
+      {
+        $set: {
+          status: VacationStatus.ACTIVE,
+          savedRoleIds: snapshot,
+          savedAccessRoleIds: accessSnapshot,
+          savedAcceptedRoleIds: acceptedSnapshot,
+          savedAssignedRoleIds: assignedSnapshot,
+          savedTypeRoleIds: typeSnapshot,
+        },
+      },
       { returnDocument: "after" },
     ).exec();
     if (!active) throw new ConflictError(M.break.alreadyOnVacation(`<@${member.id}>`));
@@ -240,6 +259,10 @@ export class VacationService extends BaseRepository<Vacation> {
         endsAt: window.endsAt,
         requestedAt: now,
         savedRoleIds: [],
+        savedAccessRoleIds: [],
+        savedAcceptedRoleIds: [],
+        savedAssignedRoleIds: [],
+        savedTypeRoleIds: [],
         isOpen: true,
         channelId,
       });
@@ -297,7 +320,12 @@ export class VacationService extends BaseRepository<Vacation> {
       throw new VacationError("VACATION_ROLE_UNSET", M.application.roleNotConfigured);
     }
 
-    const snapshot = await vacationRoleService.snapshot(target, vacation.guildId);
+    const snap = await vacationRoleService.fullSnapshot(target, vacation.guildId);
+    const snapshot = snap.staffRoleIds;
+    const accessSnapshot = snap.accessRoleIds;
+    const acceptedSnapshot = snap.acceptedRoleIds;
+    const assignedSnapshot = snap.assignedRoleIds;
+    const typeSnapshot = snap.typeRoleIds;
     await vacationRoleService.preflight(manager.guild, vacationRoleId, snapshot);
 
     const claimed = await VacationModel.findOneAndUpdate(
@@ -315,7 +343,7 @@ export class VacationService extends BaseRepository<Vacation> {
 
     let active: VacationDocument;
     try {
-      await vacationRoleService.removeStaffRoles(target, snapshot, `Vacation: ${vacation.reason}`);
+      await vacationRoleService.removeStaffRoles(target, [...snapshot, ...accessSnapshot, ...acceptedSnapshot, ...assignedSnapshot, ...typeSnapshot], `Vacation: ${vacation.reason}`);
       await vacationRoleService.applyVacationRole(
         target,
         vacationRoleId,
@@ -332,6 +360,11 @@ export class VacationService extends BaseRepository<Vacation> {
           $set: {
             status: VacationStatus.ACTIVE,
             savedRoleIds: snapshot,
+            savedAccessRoleIds: accessSnapshot,
+            savedAcceptedRoleIds: acceptedSnapshot,
+            savedAssignedRoleIds: assignedSnapshot,
+            savedTypeRoleIds: typeSnapshot,
+            snapshotRoleLevel: snap.currentRoleLevel ?? undefined,
             startsAt: window.startsAt,
             endsAt: window.endsAt,
           },
@@ -342,7 +375,7 @@ export class VacationService extends BaseRepository<Vacation> {
       active = updated;
     } catch (err) {
       await vacationRoleService.removeVacationRole(target, vacationRoleId, "Vacation activation failed");
-      await vacationRoleService.rollbackStaffRoles(target, snapshot, "Vacation activation failed");
+      await vacationRoleService.rollbackStaffRoles(target, [...snapshot, ...accessSnapshot, ...acceptedSnapshot, ...assignedSnapshot, ...typeSnapshot], "Vacation activation failed");
       await VacationModel.findOneAndUpdate(
         { _id: vacation._id, status: VacationStatus.APPROVED },
         { $set: { status: VacationStatus.PENDING }, $unset: { approvedBy: "", approvedAt: "" } },
@@ -438,6 +471,11 @@ export class VacationService extends BaseRepository<Vacation> {
         member,
         cancelled.savedRoleIds,
         "Break ended by manager",
+        {
+          accessRoleIds: cancelled.savedAccessRoleIds,
+          typeRoleIds: cancelled.savedTypeRoleIds,
+          restoredLevel: await this.restoredLevel(cancelled),
+        },
       );
       restoredCount = outcome.restored.length;
       missingCount = outcome.missing.length;
@@ -513,7 +551,16 @@ export class VacationService extends BaseRepository<Vacation> {
     if (vacationRoleId) {
       await vacationRoleService.removeVacationRole(member, vacationRoleId, "Vacation ended");
     }
-    await vacationRoleService.restoreSavedRoles(member, completed.savedRoleIds, "Vacation ended");
+    await vacationRoleService.restoreSavedRoles(
+      member,
+      completed.savedRoleIds,
+      "Vacation ended",
+      {
+        accessRoleIds: completed.savedAccessRoleIds,
+        typeRoleIds: completed.savedTypeRoleIds,
+        restoredLevel: await this.restoredLevel(completed),
+      },
+    );
     await VacationModel.updateOne({ _id: completed._id }, { $set: { rolesRestored: true } }).exec();
 
     await this.bookkeepingReturn(vacation.staffId, vacation.guildId, completed, BOT_ACTOR);
@@ -530,7 +577,7 @@ export class VacationService extends BaseRepository<Vacation> {
     err: unknown,
   ): Promise<void> {
     await vacationRoleService.removeVacationRole(member, vacationRoleId, "Break activation failed");
-    await vacationRoleService.rollbackStaffRoles(member, snapshot, "Break activation failed");
+    await vacationRoleService.rollbackStaffRoles(member, [...snapshot], "Break activation failed");
     await VacationModel.findOneAndUpdate(
       { _id: vacation._id, status: VacationStatus.PENDING },
       {
@@ -635,6 +682,16 @@ export class VacationService extends BaseRepository<Vacation> {
     } catch (err) {
       log.warn(`request card refresh failed for ${vacationId}`, err);
     }
+  }
+
+  /**
+   * The level the member is back at once the snapshot is restored. Used to
+   * re-check Accepted Role eligibility against the *current* configuration.
+   */
+  private async restoredLevel(vacation: Vacation): Promise<number | null> {
+    if (vacation.snapshotRoleLevel !== undefined) return vacation.snapshotRoleLevel;
+    const staff = await staffService.get(vacation.staffId, vacation.guildId);
+    return staff?.currentRoleLevel ?? null;
   }
 
   private async dm(userId: UserId, payload: { content: string }): Promise<void> {

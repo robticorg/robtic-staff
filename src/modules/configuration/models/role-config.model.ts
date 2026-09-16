@@ -1,6 +1,7 @@
 import mongoose, { Schema, type Model } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 import type { GuildId, RoleId } from "../../../shared/types/index.ts";
+import { STAFF_TYPE_VALUES, type StaffType } from "../../staff/types/enums.ts";
 import {
   ROLE_CONFIG_TYPE_VALUES,
   RoleConfigType,
@@ -23,6 +24,20 @@ export interface RoleConfig {
    */
   boundary?: StaffTier;
 
+  /**
+   * Inclusive numbered-level window this row applies to (ACCEPTED roles).
+   * Both null/absent means "every level". These are *not* the role's own
+   * level — a row carrying a range never joins the ladder.
+   */
+  rangeFromLevel?: number;
+  rangeToLevel?: number;
+
+  /**
+   * Which Staff Type this role represents, on `type: STAFF_TYPE` rows only.
+   * Stored as the internal id (MAX / DEV) — never an Arabic keyword.
+   */
+  staffType?: StaffType;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -37,6 +52,9 @@ const roleConfigSchema = new Schema<RoleConfig>(
 
     level: { type: Number, min: 0 },
     boundary: { type: String, enum: STAFF_TIER_VALUES },
+    rangeFromLevel: { type: Number, min: 0 },
+    rangeToLevel: { type: Number, min: 0 },
+    staffType: { type: String, enum: STAFF_TYPE_VALUES },
   },
   { timestamps: true, collection: "role_configs" },
 );
@@ -44,6 +62,13 @@ const roleConfigSchema = new Schema<RoleConfig>(
 roleConfigSchema.index({ guildId: 1, roleId: 1 }, { unique: true });
 
 roleConfigSchema.index({ guildId: 1, type: 1 });
+
+// At most one role per Staff Type per guild. Partial so the millions of rows
+// without a staffType are not forced to collide on `null`.
+roleConfigSchema.index(
+  { guildId: 1, staffType: 1 },
+  { unique: true, partialFilterExpression: { staffType: { $exists: true } } },
+);
 
 roleConfigSchema.index({ guildId: 1, level: 1 });
 

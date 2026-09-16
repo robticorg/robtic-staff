@@ -49,12 +49,12 @@ export function decideReporterInfoAccess(input: { isAdministrator: boolean }): b
 }
 
 async function staffRoleIds(guildId: GuildId): Promise<Set<RoleId>> {
-  const [ladder, general] = await Promise.all([
+  const [ladder, generalRoleId] = await Promise.all([
     roleConfigService.getStaffRoleLevels(guildId),
-    roleConfigService.getByType(guildId, RoleConfigType.STAFF),
+    roleConfigService.getGeneralStaffRoleId(guildId),
   ]);
   const ids = new Set<RoleId>(ladder.map((r) => r.roleId));
-  if (general) ids.add(general.roleId);
+  if (generalRoleId) ids.add(generalRoleId);
   return ids;
 }
 

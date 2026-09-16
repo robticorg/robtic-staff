@@ -15,6 +15,11 @@ import { getHierarchy } from "../../modules/configuration/utils/staff-levels.ts"
 import { DomainError } from "../../shared/utils/errors.ts";
 import { STAFF_TIER_LABELS, hierarchyMessages } from "../../data/messages/hierarchy.ts";
 import { buildRoleCheckView } from "./check.ts";
+import { handleAccess } from "./access.ts";
+import { handleAccepted } from "./accepted.ts";
+import { handleAssign } from "./assign.ts";
+import { handleStaffType } from "./staff-type.ts";
+import { STAFF_TYPE_DEFINITIONS } from "../../data/staff-types/index.ts";
 import {
   CommandName,
   CommandOption,
@@ -43,6 +48,10 @@ const NON_NUMBERED_TYPES = [
   RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
   RoleConfigType.TAG,
+  RoleConfigType.ACCEPTED,
+  RoleConfigType.ASSIGN,
+  // A Staff Type role must never be swept into the numbered ladder.
+  RoleConfigType.STAFF_TYPE,
 ] as const;
 
 const copy = commandCopy.role;
@@ -193,12 +202,83 @@ const data = new SlashCommandBuilder()
   )
   .addSubcommand((s) =>
     s
+      .setName(RoleSubcommand.ACCESS)
+      .setDescription(copy.sub.access.description)
+      .addRoleOption((o) =>
+        o.setName(CommandOption.FROM).setDescription(copy.sub.access.options.from),
+      )
+      .addRoleOption((o) =>
+        o.setName(CommandOption.TO).setDescription(copy.sub.access.options.to),
+      )
+      .addRoleOption((o) =>
+        o.setName(CommandOption.ROLE).setDescription(copy.sub.access.options.role),
+      ),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName(RoleSubcommand.ACCEPTED)
+      .setDescription(copy.sub.accepted.description)
+      .addRoleOption((o) =>
+        o
+          .setName(CommandOption.ROLE)
+          .setDescription(copy.sub.accepted.options.role)
+          .setRequired(true),
+      )
+      .addRoleOption((o) =>
+        o.setName(CommandOption.FROM).setDescription(copy.sub.accepted.options.from),
+      )
+      .addRoleOption((o) =>
+        o.setName(CommandOption.TO).setDescription(copy.sub.accepted.options.to),
+      ),
+  )
+  .addSubcommand((s) =>
+    s
+      .setName(RoleSubcommand.ASSIGN)
+      .setDescription(copy.sub.assign.description)
+      .addRoleOption((o) =>
+        o
+          .setName(CommandOption.ROLE)
+          .setDescription(copy.sub.assign.options.role)
+          .setRequired(true),
+      )
+      .addRoleOption((o) =>
+        o.setName(CommandOption.FROM).setDescription(copy.sub.assign.options.from),
+      )
+      .addRoleOption((o) =>
+        o.setName(CommandOption.TO).setDescription(copy.sub.assign.options.to),
+      ),
+  )
+  .addSubcommand((s) =>
+    s
       .setName(RoleSubcommand.CHECK)
       .setDescription(copy.sub.check.description)
       .addRoleOption((o) =>
         o.setName(CommandOption.ROLE).setDescription(copy.sub.check.option).setRequired(true),
       ),
   );
+
+/**
+ * `/role max`, `/role dev`, … are generated from the Staff Type registry, so a
+ * new type needs no change here — only a STAFF_TYPE_DEFINITIONS entry.
+ */
+for (const definition of STAFF_TYPE_DEFINITIONS) {
+  data.addSubcommand((s) =>
+    s
+      .setName(definition.slug)
+      .setDescription(definition.description)
+      .addRoleOption((o) =>
+        o
+          .setName(CommandOption.ROLE)
+          .setDescription(copy.sub.staffType.option)
+          .setRequired(true),
+      ),
+  );
+}
+
+/** Subcommand name → Staff Type, for dispatch. */
+const STAFF_TYPE_SUBCOMMANDS = new Map(
+  STAFF_TYPE_DEFINITIONS.map((definition) => [definition.slug, definition]),
+);
 
 async function handleBoundary(
   interaction: ChatInputCommandInteraction,
@@ -275,9 +355,11 @@ async function rebuildFromConfig(
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   }
 
-  const [ignored, generalStaff, others] = await Promise.all([
+  const [ignored, access, generalStaff, others] = await Promise.all([
     roleConfigService.getIgnoredRoleIds(guild.id),
-    roleConfigService.getByType(guild.id, RoleConfigType.STAFF),
+    // Access Roles must never become ladder rungs, exactly like ignored roles.
+    roleConfigService.getAccessRoleIds(guild.id),
+    roleConfigService.getGeneralStaffRole(guild.id),
     Promise.all(
       NON_NUMBERED_TYPES.filter((t) => t !== RoleConfigType.STAFF).map((t) =>
         roleConfigService.listByType(guild.id, t),
@@ -285,7 +367,7 @@ async function rebuildFromConfig(
     ),
   ]);
 
-  const excluded = new Set<string>(ignored);
+  const excluded = new Set<string>([...ignored, ...access]);
   if (generalStaff) excluded.add(generalStaff.roleId);
   for (const list of others) for (const cfg of list) excluded.add(cfg.roleId);
 
@@ -394,10 +476,19 @@ export default defineCommand({
         return handleBoundary(interaction, StaffTier.SHIP);
       case RoleSubcommand.CHECK:
         return handleCheck(interaction);
+      case RoleSubcommand.ACCESS:
+        return handleAccess(interaction);
+      case RoleSubcommand.ACCEPTED:
+        return handleAccepted(interaction);
+      case RoleSubcommand.ASSIGN:
+        return handleAssign(interaction);
       case RoleSubcommand.WARN:
         return handleWarn(interaction);
-      default:
+      default: {
+        const staffType = STAFF_TYPE_SUBCOMMANDS.get(sub);
+        if (staffType) return handleStaffType(interaction, staffType);
         throw new CommandError(commonMessages.errors.unknownSubcommand(sub));
+      }
     }
   },
 });

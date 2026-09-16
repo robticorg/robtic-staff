@@ -58,11 +58,25 @@ export interface TicketPanelConfig {
 
   emoji?: string;
 
+  /**
+   * Role that staffs this panel. Leave unset (UNSET_ID) to make the panel
+   * **administrator-only**: nobody but an Administrator can claim, manage or
+   * see its tickets, and no support-role overwrite is written.
+   */
   supportRoleId: RoleId;
 
-  categoryId: ChannelId;
+  /**
+   * False for panels that do not open a ticket channel — the gift-claim panel
+   * answers with a modal and files a case in the GIFT_CLAIMS channel instead.
+   * Such panels never read `categoryId` or `logChannelId`. Defaults to true.
+   */
+  createsChannel?: boolean;
 
-  logChannelId: ChannelId;
+  /** Required only when `createsChannel` is not false. */
+  categoryId?: ChannelId;
+
+  /** Required only when `createsChannel` is not false. */
+  logChannelId?: ChannelId;
 
   questions: TicketQuestionsConfig;
   claimer: TicketClaimerConfig;

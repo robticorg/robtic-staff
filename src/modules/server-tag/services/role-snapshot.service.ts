@@ -32,15 +32,22 @@ export class RoleSnapshotService {
    * plus the managed slots, minus anything protected (BLACKLIST above all).
    */
   async managedStaffRoleIds(guildId: GuildId): Promise<Set<RoleId>> {
-    const [ladder, ...slots] = await Promise.all([
+    // `getByType(STAFF)` can return a numbered rung, so the general marker is
+    // resolved through its own accessor.
+    const managedSlots = STAFF_TAG_MANAGED_ROLE_TYPES.filter(
+      (type) => type !== RoleConfigType.STAFF,
+    );
+    const [ladder, generalRoleId, ...slots] = await Promise.all([
       roleConfigService.getStaffRoleLevels(guildId),
-      ...STAFF_TAG_MANAGED_ROLE_TYPES.map((type) => roleConfigService.getByType(guildId, type)),
+      roleConfigService.getGeneralStaffRoleId(guildId),
+      ...managedSlots.map((type) => roleConfigService.getByType(guildId, type)),
     ]);
 
     const protectedIds = await this.protectedRoleIds(guildId);
 
     const ids = new Set<RoleId>();
     for (const rung of ladder) ids.add(rung.roleId);
+    if (generalRoleId) ids.add(generalRoleId);
     for (const slot of slots) if (slot) ids.add(slot.roleId);
     for (const id of protectedIds) ids.delete(id);
     return ids;

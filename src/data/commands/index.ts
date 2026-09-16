@@ -28,6 +28,9 @@ export const RoleSubcommand = {
   GIFT_MANAGER: "giftmanager",
   TAG: "tag",
   CHECK: "check",
+  ACCESS: "access",
+  ACCEPTED: "accepted",
+  ASSIGN: "assign",
   HIGHSTAFF: "highstaff",
   OWNER: "owner",
   SHIP: "ship",
@@ -66,6 +69,8 @@ export const CommandOption = {
   CMD: "cmd",
   MESSAGE: "message",
   CONTEXT: "context",
+  FROM: "from",
+  TO: "to",
 } as const;
 
 export const commandCopy = {
@@ -139,6 +144,33 @@ export const commandCopy = {
       check: {
         description: "عرض مستوى الرتبة وتصنيفها في سلّم الستاف",
         option: "الرتبة اللي تبي تفحصها",
+      },
+      access: {
+        description: "إضافة رتب وصول للستاف (بدون مستوى) — رتبة وحدة أو نطاق كامل",
+        options: {
+          from: "أول رتبة في النطاق",
+          to: "آخر رتبة في النطاق",
+          role: "رتبة وحدة تنضاف لرتب الوصول",
+        },
+      },
+      accepted: {
+        description: "ضبط الرتبة اللي تنعطى تلقائياً لأي عضو ينقبل في الستاف",
+        options: {
+          role: "رتبة قبول الستاف",
+          from: "أول رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
+          to: "آخر رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
+        },
+      },
+      staffType: {
+        option: "الرتبة اللي تمثّل هذا النوع من الستاف",
+      },
+      assign: {
+        description: "ربط رتبة إضافية بمستويات ستاف معيّنة — تنعطى وتنشال تلقائياً",
+        options: {
+          role: "الرتبة الإضافية",
+          from: "أول رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
+          to: "آخر رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
+        },
       },
       highstaff: {
         description: "تحديد أول رتبة في تصنيف الهاي ستاف (لازم تكون ضمن السلّم المرقّم)",

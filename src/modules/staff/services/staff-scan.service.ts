@@ -11,6 +11,7 @@ import {
 } from "../../configuration/utils/staff-levels.ts";
 import { StaffModel } from "../models/staff.model.ts";
 import { StaffStatus } from "../types/enums.ts";
+import { staffRoleAssignmentService } from "./staff-role-assignment.service.ts";
 
 const log = logger.child("staff:scan");
 
@@ -32,6 +33,8 @@ export interface ScanReport {
   invalid: number;
   errors: number;
   invalidMembers: UserId[];
+  /** Members whose level-driven assignment roles were brought back in line. */
+  assignmentsFixed: number;
   staffRoleId: RoleId;
 }
 
@@ -40,7 +43,8 @@ const inFlight = new Set<GuildId>();
 
 interface Candidate {
   userId: UserId;
-  level: number | null;
+  level: number;
+  member: GuildMember;
 }
 
 /**
@@ -98,7 +102,7 @@ export class StaffScanService {
         invalidMembers.push(member.id);
         continue;
       }
-      candidates.push({ userId: member.id, level });
+      candidates.push({ userId: member.id, level, member });
     }
 
     if (invalidMembers.length > 0) {
@@ -109,11 +113,13 @@ export class StaffScanService {
     }
 
     const result = await this.synchronise(guildId, candidates);
+    const assignmentsFixed = await this.reconcileAssignedRoles(guildId, candidates);
 
     log.info(
       `scan ${guildId} by ${input.actorId}: found ${members.length}, ` +
         `created ${result.created}, updated ${result.updated}, unchanged ${result.unchanged}, ` +
-        `invalid ${invalidMembers.length}, errors ${result.errors}`,
+        `invalid ${invalidMembers.length}, errors ${result.errors}, ` +
+        `assignments fixed ${assignmentsFixed}`,
     );
 
     return {
@@ -125,8 +131,59 @@ export class StaffScanService {
       invalid: invalidMembers.length,
       errors: result.errors,
       invalidMembers,
+      assignmentsFixed,
       staffRoleId,
     };
+  }
+
+  /**
+   * Brings level-driven assignment roles into line with the configuration.
+   *
+   * Deliberately narrower than `syncStaffRoles`: the scan treats Discord as
+   * authoritative for the hierarchy (§5 / §24), so the ladder and the Staff
+   * marker are read, never written. Only roles this system owns are touched,
+   * and only for members whose set actually diverges — unrelated roles and
+   * hand-granted Access Roles are never involved.
+   */
+  private async reconcileAssignedRoles(
+    guildId: GuildId,
+    candidates: Candidate[],
+  ): Promise<number> {
+    if (candidates.length === 0) return 0;
+
+    // One read for the whole guild; guilds without assignments cost nothing.
+    const assignments = await staffRoleAssignmentService.getAssignments(guildId);
+    if (assignments.length === 0) return 0;
+
+    let fixed = 0;
+    for (const { member, level } of candidates) {
+      const add: RoleId[] = [];
+      const remove: RoleId[] = [];
+
+      for (const assignment of assignments) {
+        // A configured role that no longer exists in the guild is skipped
+        // rather than sent to Discord, which would reject the whole edit.
+        if (!member.guild.roles.cache.has(assignment.roleId)) continue;
+
+        const applies = staffRoleAssignmentService.appliesToLevel(assignment, level);
+        const held = member.roles.cache.has(assignment.roleId);
+        if (applies && !held) add.push(assignment.roleId);
+        else if (!applies && held) remove.push(assignment.roleId);
+      }
+
+      if (add.length === 0 && remove.length === 0) continue;
+
+      try {
+        if (add.length > 0) await member.roles.add(add, "Staff scan: assignment sync");
+        if (remove.length > 0) await member.roles.remove(remove, "Staff scan: assignment sync");
+        fixed += 1;
+      } catch (err) {
+        // One member's missing permissions must not abort the whole scan.
+        log.warn(`scan ${guildId}: assignment sync failed for ${member.id}`, err);
+      }
+    }
+
+    return fixed;
   }
 
   /**

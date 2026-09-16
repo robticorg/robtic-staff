@@ -23,7 +23,12 @@ export class TicketLogService {
     if (!content) return;
 
     try {
-      const channel = await ctx.guild.channels.fetch(ctx.panel.logChannelId).catch(() => null);
+      // Panels that never open a channel (gift-claim) have no log channel; they
+      // also never reach this service, but the field is optional either way.
+      const logChannelId = ctx.panel.logChannelId;
+      if (!logChannelId) return;
+
+      const channel = await ctx.guild.channels.fetch(logChannelId).catch(() => null);
       if (!channel || !channel.isTextBased() || !("send" in channel)) {
         log.warn(`panel "${ctx.panel.id}" log channel unavailable`);
         return;

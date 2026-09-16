@@ -1,11 +1,11 @@
 import { PermissionFlagsBits, type GuildMember } from "discord.js";
 import type { GuildId } from "../../../shared/types/index.ts";
 import { GIFT_CLAIM_PANEL_ID } from "../../../data/gift-claim/config.ts";
+import { isUnsetId } from "../../../data/tickets/index.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { ticketConfigService } from "../../tickets/services/ticket-config.service.ts";
 
-const UNSET = "000000000000000000";
 
 export function decideGiftManager(input: {
   isAdministrator: boolean;
@@ -18,7 +18,8 @@ export function decideGiftManager(input: {
 export class GiftClaimPermissionService {
   panelSupportRoleId(): string | null {
     const role = ticketConfigService.getPanel(GIFT_CLAIM_PANEL_ID)?.supportRoleId;
-    return role && role !== UNSET ? role : null;
+    // Unset means the panel is administrator-only, so no role grants anything.
+    return isUnsetId(role) ? null : (role ?? null);
   }
 
   async giftManagerRoleId(guildId: GuildId): Promise<string | null> {

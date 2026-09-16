@@ -65,6 +65,14 @@ export const prefixMessages = {
     levelOutOfRange: (max: number) => `${E.error} المستوى لازم يكون بين 0 و ${max}.`,
     accepted: (userMention: string, level: number) =>
       `${E.success} تم قبول ${userMention} كـ ستاف على المستوى **${level}**.`,
+    acceptedWithType: (userMention: string, level: number, typeLabel: string) =>
+      `${E.success} تم قبول ${userMention} كـ ستاف **${typeLabel}** على المستوى **${level}**.`,
+    unknownStaffType: (token: string, available: string) =>
+      `${E.error} نوع الستاف غير معروف: \`${token}\`. الأنواع المتاحة: ${available}.`,
+    duplicateStaffLevel: `${E.error} حدد مستوى واحد بس.`,
+    duplicateStaffType: `${E.error} حدد نوع ستاف واحد بس.`,
+    staffTypeRoleMissing: (typeLabel: string, slug: string) =>
+      `${E.error} رتبة نوع الستاف **${typeLabel}** مو مضبوطة. شغّل \`/role ${slug}\` أول.`,
     fired: (userMention: string) => `${E.success} تم فصل ${userMention} من الستاف.`,
     blacklisted: (userMention: string) => `${E.success} تم فصل ${userMention} ووضعه في القائمة السوداء.`,
     blacklistRoleMissing: `${E.error} رتبة البلاك ليست مو مضبوطة (\`/role blacklist\`).`,

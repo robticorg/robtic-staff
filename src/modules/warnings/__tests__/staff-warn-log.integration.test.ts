@@ -27,7 +27,7 @@ try {
 }
 
 const GUILD = "warnlog-itest-guild";
-const STAFF_WARNS_CH = "chan-staff-warns";
+const ANNOUNCE_CH = "chan-staff-warn-announce";
 const ATTENTION = "<:Attention:1486103485756870726>";
 
 const R_START = "wl-start";
@@ -61,7 +61,7 @@ function makeGuild() {
   }
 
   const textChannel = {
-    id: STAFF_WARNS_CH,
+    id: ANNOUNCE_CH,
     type: ChannelType.GuildText,
     isTextBased: () => true,
     send: async (payload: Sent) => {
@@ -122,8 +122,8 @@ async function seedConfig(): Promise<void> {
     { guildId: GUILD, roleId: R_BLACKLIST, type: RoleConfigType.BLACKLIST },
   ]);
   await ChannelConfigModel.findOneAndUpdate(
-    { guildId: GUILD, type: ChannelConfigType.STAFF_WARNS },
-    { $set: { channelId: STAFF_WARNS_CH } },
+    { guildId: GUILD, type: ChannelConfigType.STAFF_WARN_ANNOUNCE },
+    { $set: { channelId: ANNOUNCE_CH } },
     { upsert: true },
   );
 }
@@ -280,8 +280,8 @@ describe.skipIf(!hasDb)("Staff Warn channel logging (MongoDB + Discord fakes)", 
     expect(real!.staffWarnMessageId).toMatch(/^msg-\d+$/);
   });
 
-  it("keeps the warning stored when STAFF_WARNS is not configured", async () => {
-    await ChannelConfigModel.deleteMany({ guildId: GUILD, type: ChannelConfigType.STAFF_WARNS });
+  it("keeps the warning stored when STAFF_WARN_ANNOUNCE is not configured", async () => {
+    await ChannelConfigModel.deleteMany({ guildId: GUILD, type: ChannelConfigType.STAFF_WARN_ANNOUNCE });
 
     const results = await issueVerbals(guild, target, manager, threeVerbals("a"));
 

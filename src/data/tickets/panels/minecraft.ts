@@ -1,7 +1,7 @@
 import type { TicketPanelConfig } from "../types.ts";
 import { colors } from "../../config/colors.ts";
 
-export const accountPanel: TicketPanelConfig = {
+export const minecraftPanel: TicketPanelConfig = {
   id: "support-account",
   name: "الـدعـم الـفـنـي",
   description: "تواصل مع فريق الدعم الفني لحل مشاكل الخاصة بك.",
@@ -9,7 +9,7 @@ export const accountPanel: TicketPanelConfig = {
 
   supportRoleId: "1538209900919005204",
   categoryId: "1536249080924348447",
-  logChannelId: "1545812173362700294",
+  logChannelId: "1536249123265581056",
 
   questions: {
     enabled: true,
@@ -52,8 +52,8 @@ export const accountPanel: TicketPanelConfig = {
   ticketMessage: {
     accentColor: colors.warning,
     text: [
-      "## دعم الحساب",
-      "لأمانك، لا تنشر أبداً كلمات السر أو أكواد التحقق (2FA) أو أرقام بطاقات الدفع في هذا التكت.",
+      "اهلا بك في الدعم الفني المخصصة بماينكرافت، فريق الدعم الفني جاهز لمساعدتك في حل مشاكلك.",
+      "الرجاء توضيح مشكلتك اكثر قدر ممكن، وكن صبورًا أثناء انتظار الرد.",
     ],
   },
 };

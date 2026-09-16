@@ -1,7 +1,12 @@
 import mongoose, { Schema, type Model } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 import type { GuildId, Timestamps, UserId } from "../../../shared/types/index.ts";
-import { STAFF_STATUS_VALUES, StaffStatus } from "../types/enums.ts";
+import {
+  STAFF_STATUS_VALUES,
+  STAFF_TYPE_VALUES,
+  StaffStatus,
+  type StaffType,
+} from "../types/enums.ts";
 
 export interface Staff extends Timestamps {
   userId: UserId;
@@ -9,6 +14,13 @@ export interface Staff extends Timestamps {
   status: StaffStatus;
 
   currentRoleLevel: number;
+
+  /**
+   * Current Staff Type, for querying — the configured Discord role id stays in
+   * RoleConfig, which remains the source of truth for *which* role a type maps
+   * to. Null for a normally accepted member.
+   */
+  staffType?: StaffType | null;
 
   points: number;
 
@@ -40,6 +52,7 @@ const staffSchema = new Schema<Staff>(
       index: true,
     },
     currentRoleLevel: { type: Number, default: 0, min: 0, required: true },
+    staffType: { type: String, enum: [...STAFF_TYPE_VALUES, null], default: null },
     points: { type: Number, default: 0, required: true },
 
     reportsClaimed: { type: Number, default: 0, min: 0, required: true },

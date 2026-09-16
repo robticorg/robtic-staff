@@ -22,6 +22,11 @@ import {
   staffManagementAuthorizationService,
   type AuthorizationDecision,
 } from "./staff-management-authorization.service.ts";
+import { staffAcceptedRoleService } from "./staff-accepted-role.service.ts";
+import { staffRoleAssignmentService } from "./staff-role-assignment.service.ts";
+import { syncStaffRoles } from "./staff-role-sync.service.ts";
+import { staffTypeService } from "./staff-type.service.ts";
+import type { StaffType } from "../types/enums.ts";
 
 const log = logger.child("staff-mgmt");
 
@@ -48,9 +53,45 @@ function enforce(decision: AuthorizationDecision): void {
   if (!decision.allowed) throw new StaffAdminError(decision.message);
 }
 
+/**
+ * Closes any open vacation and empties its saved snapshot. Imported lazily to
+ * avoid a cycle: the vacation service already depends on staff management.
+ */
+async function cancelOpenVacationSnapshot(
+  guildId: string,
+  staffId: string,
+  endedBy: string,
+): Promise<void> {
+  try {
+    const { VacationModel } = await import("../../vacation/models/vacation.model.ts");
+    const { VacationStatus } = await import("../../vacation/types/enums.ts");
+    await VacationModel.updateMany(
+      { guildId, staffId, isOpen: true },
+      {
+        $set: {
+          status: VacationStatus.CANCELLED,
+          isOpen: false,
+          endedBy,
+          endedAt: new Date(),
+          rolesRestored: false,
+          savedRoleIds: [],
+          savedAccessRoleIds: [],
+          savedAcceptedRoleIds: [],
+          savedAssignedRoleIds: [],
+          savedTypeRoleIds: [],
+        },
+      },
+    ).exec();
+  } catch (err) {
+    log.warn(`clearing vacation snapshot for ${staffId} in ${guildId} failed`, err);
+  }
+}
+
 export interface AcceptResult {
   level: number;
   previousLevel: number;
+  /** The type the member was accepted as, or null for a normal acceptance. */
+  staffType: StaffType | null;
 }
 export interface FireResult {
   blacklist: boolean;
@@ -92,6 +133,7 @@ export class StaffManagementService {
     member: GuildMember,
     actor: StaffActor,
     requestedLevel: number | null,
+    staffType: StaffType | null = null,
   ): Promise<AcceptResult> {
     const guildId = member.guild.id;
     const ladder = await ladderFor(guildId);
@@ -118,17 +160,27 @@ export class StaffManagementService {
       currentRoleLevel: level,
       acceptedBy: actorId(actor),
       acceptedAt: new Date(),
+      // Accepting without a type leaves an existing one alone — a type changes
+      // only when one is explicitly named.
+      ...(staffType ? { staffType } : {}),
     });
 
-    const general = await roleConfigService.getGeneralStaffRoleId(guildId);
-    const blacklistRole = await roleConfigService.getByType(guildId, RoleConfigType.BLACKLIST);
+    // One centralized sync covers the ladder, the Staff marker, level-driven
+    // assignments and the Accepted Role — no duplicated role maths here.
+    await syncStaffRoles(member, level, `Accepted as staff by ${actorId(actor)}`, {
+      clearBlacklist: true,
+    });
 
-    const add = [...rolesUpTo(ladder, level), ...(general ? [general] : [])];
-    const remove = [
-      ...rolesAbove(ladder, level),
-      ...(blacklistRole ? [blacklistRole.roleId] : []),
-    ];
-    await applyRoles(member, add, remove, `Accepted as staff by ${actorId(actor)}`);
+    // Staff Type is applied separately and never by the level sync, so it stays
+    // fully independent of the hierarchy. Replacement of a previous type is
+    // handled inside the service, not here.
+    if (staffType) {
+      await staffTypeService.assignType(
+        member,
+        staffType,
+        `Accepted as ${staffType} staff by ${actorId(actor)}`,
+      );
+    }
 
     await staffHistoryService.record({
       staffId: staff._id,
@@ -136,15 +188,17 @@ export class StaffManagementService {
       performedBy: actorId(actor),
       previousRoleLevel: previousLevel,
       newRoleLevel: level,
+      // §History — null on a normal acceptance; never a fake promotion entry.
+      metadata: { staffType: staffType ?? null },
     });
     await staffActivityService.create({
       staffId: staff._id,
       type: StaffActivityType.ACCEPT,
       referenceId: member.id,
-      metadata: { level },
+      metadata: { level, staffType: staffType ?? null },
     });
 
-    return { level, previousLevel };
+    return { level, previousLevel, staffType };
   }
 
   async fire(member: GuildMember, actor: StaffActor, blacklist: boolean): Promise<FireResult> {
@@ -175,9 +229,20 @@ export class StaffManagementService {
       roleConfigService.getByType(guildId, RoleConfigType.WARN_3),
     ]);
 
+    // Access Roles are part of the Staff cleanup even though they carry no
+    // level — only the ones the member actually holds are touched.
+    const accessRoleIds = await roleConfigService.getAccessRoleIds(guildId);
+    const acceptedConfig = await staffAcceptedRoleService.getConfig(guildId);
+
     const remove = [
       ...ladder.map((r) => r.roleId),
       ...(general ? [general] : []),
+      ...accessRoleIds,
+      ...(acceptedConfig ? [acceptedConfig.roleId] : []),
+      // Only roles this system manages — never arbitrary member roles.
+      ...(await staffRoleAssignmentService.getManagedRoleIds(guildId)),
+      // §Fire — the Staff Type role goes with the rest of the Staff identity.
+      ...(await staffTypeService.getManagedRoleIds(guildId)),
       ...warnRoles.filter((r): r is NonNullable<typeof r> => !!r).map((r) => r.roleId),
       ...(!blacklist && blacklistRole ? [blacklistRole.roleId] : []),
     ];
@@ -188,6 +253,8 @@ export class StaffManagementService {
       status: blacklist ? StaffStatus.BLACKLISTED : StaffStatus.FIRED,
       firedBy: actorId(actor),
       firedAt: new Date(),
+      // The role is gone, so the recorded type must go with it.
+      staffType: null,
     });
     await staffHistoryService.record({
       staffId: staff._id,
@@ -202,6 +269,10 @@ export class StaffManagementService {
       referenceId: member.id,
       metadata: { blacklist },
     });
+
+    // Fired while on break: void the saved snapshot so the vacation sweeper
+    // can never hand the Staff and Access roles back later.
+    await cancelOpenVacationSnapshot(guildId, member.id, actorId(actor));
 
     return { blacklist };
   }
@@ -260,10 +331,9 @@ export class StaffManagementService {
 
     if (to === from) return { from, to, changed: false };
 
-    const general = await roleConfigService.getGeneralStaffRoleId(guildId);
-    const add = [...rolesUpTo(ladder, to), ...(general ? [general] : [])];
-    const remove = rolesAbove(ladder, to);
-    await applyRoles(member, add, remove, `${direction} by ${actorId(actor)}`);
+    // Assignments and the Accepted Role are re-evaluated against the new level
+    // by the same centralized sync used on accept.
+    await syncStaffRoles(member, to, `${direction} by ${actorId(actor)}`);
 
     await staffService.setRoleLevel(staff._id, to);
     await staffHistoryService.record({

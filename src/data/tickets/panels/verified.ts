@@ -1,7 +1,7 @@
 import type { TicketPanelConfig } from "../types.ts";
 import { colors } from "../../config/colors.ts";
 
-export const technicalPanel: TicketPanelConfig = {
+export const verifiedPanel: TicketPanelConfig = {
   id: "verified-girls",
   name: "تـوثـيـق بـنـات",
   description: "اذا انتي بنت و تريدين رتبة توثيق فقط فكي هذا تكت",
@@ -9,7 +9,7 @@ export const technicalPanel: TicketPanelConfig = {
 
   supportRoleId: "1536248969611452476",
   categoryId: "1536249080924348447",
-  logChannelId: "1545812173362700294",
+  logChannelId: "1536249123265581056",
   
   questions: {
     enabled: false,
@@ -33,8 +33,8 @@ export const technicalPanel: TicketPanelConfig = {
   ticketMessage: {
     accentColor: colors.info,
     text: [
-      "## الدعم الفني",
-      "إجاباتك منشورة فوق. الفني راح يراجعها ويتابع معك هنا.",
+      "انت يا حلوة استني الموثقة تجيك و تراجع تكتك و تعطيك رتبة التوثيق",
+      "الرجاء التحلي بالصبر و عدم ازعاج الموثقة او المسؤولين و سيتم رد عليكي في اسرع وقت",
     ],
     footer: "لا تشارك كلمات السر أو التوكنات.",
   },

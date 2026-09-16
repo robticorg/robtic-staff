@@ -5,6 +5,8 @@ import {
   UNSET_ID,
   getPanel,
   listPanels,
+  panelCreatesChannel,
+  panelIsAdminOnly,
   tickets,
   type TicketMainConfig,
   type TicketPanelConfig,
@@ -69,16 +71,23 @@ export class TicketConfigService {
       if (seen.has(panel.id)) problems.push(P.panelDuplicateId(panel.id));
       seen.add(panel.id);
 
-      if (!(await roleExists(guild, panel.supportRoleId))) {
+      // An unset support role is a valid choice — it makes the panel
+      // administrator-only. Only a role that was set and then deleted is wrong.
+      if (!panelIsAdminOnly(panel) && !(await roleExists(guild, panel.supportRoleId))) {
         problems.push(P.panelSupportRole(panel.id));
       }
-      const category = await fetchChannel(guild, panel.categoryId);
-      if (!category || category.type !== ChannelType.GuildCategory) {
-        problems.push(P.panelCategory(panel.id));
-      }
-      const logChannel = await fetchChannel(guild, panel.logChannelId);
-      if (!logChannel || !logChannel.isTextBased()) {
-        problems.push(P.panelLogChannel(panel.id));
+
+      // Panels that never open a channel have no category or log channel to
+      // validate; demanding them reported problems for config that is unused.
+      if (panelCreatesChannel(panel)) {
+        const category = await fetchChannel(guild, panel.categoryId);
+        if (!category || category.type !== ChannelType.GuildCategory) {
+          problems.push(P.panelCategory(panel.id));
+        }
+        const logChannel = await fetchChannel(guild, panel.logChannelId);
+        if (!logChannel || !logChannel.isTextBased()) {
+          problems.push(P.panelLogChannel(panel.id));
+        }
       }
     }
 
@@ -86,7 +95,7 @@ export class TicketConfigService {
   }
 }
 
-async function fetchChannel(guild: Guild, id: string) {
+async function fetchChannel(guild: Guild, id: string | undefined) {
   if (!id || id === UNSET_ID) return null;
   return guild.channels.fetch(id).catch(() => null);
 }

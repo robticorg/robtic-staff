@@ -7,6 +7,20 @@ export const StaffStatus = {
 export type StaffStatus = (typeof StaffStatus)[keyof typeof StaffStatus];
 export const STAFF_STATUS_VALUES = Object.values(StaffStatus);
 
+/**
+ * Staff Type — the flavour of staff a member was accepted as (MAX, DEV, …).
+ *
+ * Deliberately orthogonal to the hierarchy: a type never carries a level and
+ * never influences one. New types are added here plus a row in
+ * STAFF_TYPE_DEFINITIONS; nothing in the acceptance flow needs to change.
+ */
+export const StaffType = {
+  MAX: "MAX",
+  DEV: "DEV",
+} as const;
+export type StaffType = (typeof StaffType)[keyof typeof StaffType];
+export const STAFF_TYPE_VALUES = Object.values(StaffType);
+
 export const StaffActivityType = {
   REPORT_CLAIM: "REPORT_CLAIM",
   REPORT_COMPLETE: "REPORT_COMPLETE",

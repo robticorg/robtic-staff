@@ -89,9 +89,19 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
     }
 
     if (SINGLETON_ROLE_TYPES.includes(input.type)) {
-      await this.model
-        .deleteMany({ guildId: input.guildId, type: input.type, roleId: { $ne: input.roleId } })
-        .exec();
+      const filter: Record<string, unknown> = {
+        guildId: input.guildId,
+        type: input.type,
+        roleId: { $ne: input.roleId },
+      };
+      // `type: STAFF` is overloaded: it marks the general @Staff role AND every
+      // middle rung of the numbered ladder (rebuildLadder stamps them STAFF).
+      // Only the unlevelled general marker is a singleton — without this guard
+      // `/role staff` deletes the whole middle of the ladder.
+      if (input.type === RoleConfigType.STAFF && level === undefined) {
+        filter.level = { $exists: false };
+      }
+      await this.model.deleteMany(filter).exec();
     }
 
     const update =
@@ -108,6 +118,11 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
       .exec();
     invalidateRoleConfig(input.guildId);
     return doc as HydratedDocument<RoleConfig>;
+  }
+
+  /** Drops every cached view of this guild's role configuration (§Cache). */
+  async touchGuild(guildId: GuildId): Promise<void> {
+    invalidateRoleConfig(guildId);
   }
 
   async unsetRole(
@@ -158,6 +173,15 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
       .select({ level: 1 })
       .exec();
     return row?.level ?? null;
+  }
+
+  /**
+   * The general @Staff marker — the STAFF row that carries no level.
+   * Use this instead of `getByType(guildId, STAFF)`, which can return a
+   * numbered ladder rung because those share the STAFF type.
+   */
+  getGeneralStaffRole(guildId: GuildId): Promise<HydratedDocument<RoleConfig> | null> {
+    return this.findOne({ guildId, type: RoleConfigType.STAFF, level: { $exists: false } });
   }
 
   async getGeneralStaffRoleId(guildId: GuildId): Promise<RoleId | null> {
@@ -247,6 +271,15 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
 
   getEndRole(guildId: GuildId): Promise<HydratedDocument<RoleConfig> | null> {
     return this.getByType(guildId, RoleConfigType.END);
+  }
+
+  /** Staff Access roles — Staff-related, but never part of the hierarchy. */
+  getAccessRoleIds(guildId: GuildId): Promise<RoleId[]> {
+    return this.model
+      .find({ guildId, type: RoleConfigType.ACCESS })
+      .select({ roleId: 1 })
+      .exec()
+      .then((rows) => rows.map((r) => r.roleId));
   }
 
   getIgnoredRoleIds(guildId: GuildId): Promise<RoleId[]> {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   HierarchyProblem,
   RoleKind,
+  accessRolesFromRoleIds,
   getTierForLevel,
   getTierForRole,
   highestLevelFromRoleIds,
@@ -51,6 +52,7 @@ function makeHierarchy(overrides: Partial<StaffHierarchy> = {}): StaffHierarchy 
     })),
     levelByRoleId,
     ignoredRoleIds: new Set(["role4"]),
+    accessRoleIds: new Set(["role-event-team"]),
     generalStaffRoleId: "role1",
     startLevel: 0,
     endLevel: 10,
@@ -186,6 +188,29 @@ describe("highestLevelFromRoleIds", () => {
   it("returns null when no numbered role is present (§7)", () => {
     expect(highestLevelFromRoleIds(h, ["role1", "community"])).toBeNull();
     expect(highestLevelFromRoleIds(h, [])).toBeNull();
+  });
+
+  it("never lets Access Roles contribute a level", () => {
+    // Staff + level 2 + two access roles is still level 2.
+    expect(highestLevelFromRoleIds(h, ["role1", "role5", "role-event-team"])).toBe(2);
+    expect(highestLevelFromRoleIds(h, ["role-event-team"])).toBeNull();
+  });
+});
+
+describe("access roles are outside the hierarchy", () => {
+  const h = makeHierarchy();
+
+  it("has no level and no tier", () => {
+    const info = getTierForRole(h, "role-event-team");
+    expect(info.kind).toBe(RoleKind.OUTSIDE);
+    expect(info.level).toBeNull();
+    expect(info.tier).toBeNull();
+  });
+
+  it("is picked out of a member's roles without touching level maths", () => {
+    const held = ["role1", "role5", "role-event-team", "community"];
+    expect(accessRolesFromRoleIds(h, held)).toEqual(["role-event-team"]);
+    expect(highestLevelFromRoleIds(h, held)).toBe(2);
   });
 });
 

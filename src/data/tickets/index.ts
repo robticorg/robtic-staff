@@ -1,18 +1,40 @@
 import type { TicketConfig, TicketPanelConfig } from "./types.ts";
 import { ticketMain } from "./main.ts";
-import { technicalPanel } from "./panels/verified.ts";
-import { accountPanel } from "./panels/support.ts";
+import { verifiedPanel } from "./panels/verified.ts";
+import { supportPanel } from "./panels/support.ts";
 import { giftClaimPanel } from "./panels/gift-claim.ts";
+import { minecraftPanel } from "./panels/minecraft.ts";
 
 export * from "./types.ts";
 export { ticketMain } from "./main.ts";
 
 export const tickets: TicketConfig = {
   main: ticketMain,
-  panels: [technicalPanel, accountPanel, giftClaimPanel],
+  panels: [supportPanel, minecraftPanel, verifiedPanel, giftClaimPanel],
 };
 
 export const UNSET_ID = "000000000000000000";
+
+/** A configuration slot left deliberately empty. */
+export function isUnsetId(id: string | undefined | null): boolean {
+  return !id || id === UNSET_ID;
+}
+
+/**
+ * True when a panel has no support role, which makes it administrator-only.
+ * Administrators bypass channel overwrites in Discord, so no explicit allow is
+ * needed for them — the panel simply grants nobody else access.
+ */
+export function panelIsAdminOnly(panel: Pick<TicketPanelConfig, "supportRoleId">): boolean {
+  return isUnsetId(panel.supportRoleId);
+}
+
+/** Panels that open a real ticket channel; gift-claim does not. */
+export function panelCreatesChannel(
+  panel: Pick<TicketPanelConfig, "createsChannel">,
+): boolean {
+  return panel.createsChannel !== false;
+}
 
 export function listPanels(): readonly TicketPanelConfig[] {
   return tickets.panels;

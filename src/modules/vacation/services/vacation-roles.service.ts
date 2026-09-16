@@ -6,6 +6,12 @@ import { vacationMessages } from "../../../data/vacation/messages.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { staffPermissionService } from "../../staff/services/staff-permissions.service.ts";
+import {
+  captureStaffRoleSnapshot,
+  restoreSnapshotRoles,
+  type StaffRoleSnapshot,
+} from "../../staff/services/staff-role-snapshot.ts";
+import { syncStaffRoles } from "../../staff/services/staff-role-sync.service.ts";
 
 const log = logger.child("vacation:roles");
 const M = vacationMessages;
@@ -15,6 +21,18 @@ export class VacationRoleError extends DomainError {}
 export interface RestoreOutcome {
   restored: RoleId[];
   missing: RoleId[];
+}
+
+export interface RestoreOptions {
+  /** Access Roles the member held before the break. */
+  accessRoleIds?: readonly RoleId[];
+  /** Staff Type role held before the break, restored verbatim. */
+  typeRoleIds?: readonly RoleId[];
+  /**
+   * Level to re-derive level-driven roles at (assignments + Accepted Role).
+   * Null skips that pass entirely.
+   */
+  restoredLevel?: number | null;
 }
 
 export class VacationRoleService {
@@ -28,9 +46,22 @@ export class VacationRoleService {
     return staffPermissionService.staffRoleIds(guildId);
   }
 
+  /**
+   * Legacy shape — numbered + marker roles only. Kept for callers that only
+   * need the hierarchy half; new code should use `fullSnapshot`.
+   */
   async snapshot(member: GuildMember, guildId: GuildId): Promise<RoleId[]> {
     const staffIds = await this.staffRoleIds(guildId);
     return [...staffIds].filter((id) => member.roles.cache.has(id));
+  }
+
+  /**
+   * Staff roles *and* Access Roles the member currently holds, captured before
+   * anything is stripped. Access Roles are kept in their own list so they can
+   * never leak into level maths.
+   */
+  fullSnapshot(member: GuildMember, guildId: GuildId): Promise<StaffRoleSnapshot> {
+    return captureStaffRoleSnapshot(member, guildId);
   }
 
   private botCanManage(guild: Guild, roleId: RoleId): boolean {
@@ -115,31 +146,49 @@ export class VacationRoleService {
       .catch((err) => log.warn("vacation role removal failed", err));
   }
 
+  /**
+   * Restores exactly the ids that were saved — never "every configured Access
+   * Role". Deleted or unmanageable roles are skipped and logged.
+   */
   async restoreSavedRoles(
     member: GuildMember,
     savedRoleIds: readonly RoleId[],
     reason: string,
+    options: RestoreOptions = {},
   ): Promise<RestoreOutcome> {
-    const guildRoles = member.guild.roles.cache;
-    const restored: RoleId[] = [];
-    const missing: RoleId[] = [];
-    for (const id of savedRoleIds) {
-      if (guildRoles.has(id)) restored.push(id);
-      else missing.push(id);
+    const {
+      accessRoleIds = [],
+      typeRoleIds = [],
+      restoredLevel = null,
+    } = options;
+
+    // Hierarchy, Access and Staff Type roles come straight back from the
+    // snapshot — they are exactly what the member had, and none of them is
+    // derived from a level. Returning never grants a type the member lacked.
+    const outcome = await restoreSnapshotRoles(
+      member,
+      [...savedRoleIds, ...accessRoleIds, ...typeRoleIds],
+      reason,
+    );
+
+    // Level-driven roles (assignments + Accepted Role) are deliberately NOT
+    // replayed from the snapshot. They are re-derived from the *current*
+    // configuration, so a rule that changed during the break is honoured and a
+    // role that no longer applies is not handed back.
+    if (restoredLevel !== null) {
+      const synced = await syncStaffRoles(member, restoredLevel, reason);
+      outcome.restored.push(...synced.added);
+      if (synced.removed.length > 0) {
+        log.info(
+          `not restoring ${synced.removed.length} level-driven role(s) for ${member.id} — no longer applicable at level ${restoredLevel}`,
+        );
+      }
     }
-    if (missing.length > 0) {
-      log.warn(
-        `restore for ${member.id} in ${member.guild.id}: ${missing.length} saved role(s) gone`,
-        { missing },
-      );
-    }
-    const toAdd = restored.filter((id) => !member.roles.cache.has(id));
-    if (toAdd.length > 0) {
-      await member.roles
-        .add(toAdd, reason)
-        .catch((err) => log.warn(`restore add failed for ${member.id}`, err));
-    }
-    return { restored, missing };
+
+    return {
+      restored: outcome.restored,
+      missing: [...outcome.missing, ...outcome.blocked],
+    };
   }
 }
 

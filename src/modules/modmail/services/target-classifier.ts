@@ -43,12 +43,12 @@ export function isSnowflake(value: string): boolean {
 }
 
 async function staffRoleIds(guildId: GuildId): Promise<RoleId[]> {
-  const [ladder, general] = await Promise.all([
+  const [ladder, generalRoleId] = await Promise.all([
     roleConfigService.getStaffRoleLevels(guildId),
-    roleConfigService.getByType(guildId, RoleConfigType.STAFF),
+    roleConfigService.getGeneralStaffRoleId(guildId),
   ]);
   const ids = ladder.map((r) => r.roleId);
-  if (general) ids.push(general.roleId);
+  if (generalRoleId) ids.push(generalRoleId);
   return ids;
 }
 
