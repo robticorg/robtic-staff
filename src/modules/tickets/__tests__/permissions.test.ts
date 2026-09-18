@@ -3,6 +3,7 @@ import type { TicketClaimerConfig } from "../../../data/tickets/index.ts";
 import { TicketStatus } from "../types/enums.ts";
 import {
   decideClaimEligibility,
+  decideClosedTicketAccess,
   decideManageAccess,
   protectedTicketPrincipals,
 } from "../services/ticket-permissions.ts";
@@ -106,5 +107,32 @@ describe("protectedTicketPrincipals", () => {
     expect(set.has("owner")).toBe(true);
     expect(set.has("support")).toBe(true);
     expect(set.size).toBe(2);
+  });
+});
+
+describe("decideClosedTicketAccess", () => {
+  const base = {
+    memberIsAdministrator: false,
+    memberIsManager: false,
+    memberIsClaimer: false,
+    memberHasPanelSupportRole: false,
+  };
+
+  it("refuses a member with none of the four roles", () => {
+    expect(decideClosedTicketAccess(base)).toBe(false);
+  });
+
+  it("lets the panel's own support staff clean up, unlike decideManageAccess", () => {
+    const supporter = { ...base, memberHasPanelSupportRole: true };
+    expect(decideClosedTicketAccess(supporter)).toBe(true);
+    expect(
+      decideManageAccess({ memberIsAdministrator: false, memberIsClaimer: false }),
+    ).toBe(false);
+  });
+
+  it("lets an admin, a ticket manager or the former claimer in", () => {
+    expect(decideClosedTicketAccess({ ...base, memberIsAdministrator: true })).toBe(true);
+    expect(decideClosedTicketAccess({ ...base, memberIsManager: true })).toBe(true);
+    expect(decideClosedTicketAccess({ ...base, memberIsClaimer: true })).toBe(true);
   });
 });

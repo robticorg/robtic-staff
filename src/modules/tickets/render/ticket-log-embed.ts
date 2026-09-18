@@ -22,6 +22,8 @@ function titleFor(action: TicketLogAction): string | null {
       return L.titleRenamed;
     case TicketLogAction.TICKET_CLOSED:
       return L.titleClosed;
+    case TicketLogAction.TICKET_REOPENED:
+      return L.titleReopened;
     case TicketLogAction.TICKET_DELETED:
       return L.titleDeleted;
     case TicketLogAction.TICKET_DELETED_MANUALLY:
@@ -54,6 +56,7 @@ function colorFor(action: TicketLogAction): "success" | "error" | "warning" | "i
     case TicketLogAction.TICKET_SLEEP:
       return "warning";
     case TicketLogAction.TICKET_SLEEP_CANCELLED:
+    case TicketLogAction.TICKET_REOPENED:
       return "success";
     case TicketLogAction.TICKET_CLAIMED:
     case TicketLogAction.TICKET_TRANSFERRED:

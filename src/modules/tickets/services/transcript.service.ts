@@ -88,6 +88,19 @@ export class TranscriptService {
     return TicketTranscriptModel.findOne({ transcriptId }).exec();
   }
 
+  latestFor(ticketId: string): Promise<TicketTranscriptDocument | null> {
+    return TicketTranscriptModel.findOne({ ticketId }).sort({ createdAt: -1 }).exec();
+  }
+
+  /** The rendered `.txt` — shared by the transcript channel post and the closed-ticket button. */
+  toAttachment(transcript: TicketTranscriptDocument): AttachmentBuilder {
+    const payload = JSON.parse(transcript.content) as TranscriptPayload;
+    const text = "﻿" + renderTranscriptText(payload);
+    return new AttachmentBuilder(Buffer.from(text, "utf-8"), {
+      name: `${transcript.ticketId}-transcript.txt`,
+    });
+  }
+
   async sendToChannel(guild: Guild, transcript: TicketTranscriptDocument): Promise<void> {
     try {
       const main = ticketConfigService.getMainConfig();
@@ -100,11 +113,7 @@ export class TranscriptService {
       }
 
       const payload = JSON.parse(transcript.content) as TranscriptPayload;
-
-      const text = "﻿" + renderTranscriptText(payload);
-      const file = new AttachmentBuilder(Buffer.from(text, "utf-8"), {
-        name: `${transcript.ticketId}-transcript.txt`,
-      });
+      const file = this.toAttachment(transcript);
 
       const embed = createEmbed({
         title: `📄 ${transcript.ticketId}`,

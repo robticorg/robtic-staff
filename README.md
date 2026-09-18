@@ -1061,11 +1061,45 @@ currently-added principals; owner / claimer / support role are **never**
 removable. **Close** obeys the panel's `close` config (transcript? delete? both?
 neither?) — `DELETED` keeps the DB record, only the channel goes.
 
+### The closed-ticket panel (`close.delete: false`)
+
+When a panel closes tickets **without** deleting the channel, the channel would
+otherwise just sit there with no way to act on it. `closeTicket` now leaves a
+Components V2 card in it — owner, handler, who closed it and when, the transcript
+id — carrying three buttons:
+
+| button | does |
+|---|---|
+| **النسخة** | replies **ephemerally** with the transcript `.txt`. If the panel never cut one (`close.transcript: false`) it generates one from the surviving channel and stores the id, so a second click reuses it. |
+| **إعادة فتح** | `reopenTicket` — `CLOSED → OPEN`, clears `claimedBy/claimedAt/closedAt/closedBy/transcriptId`, re-arms `transcriptCache`, logs `TICKET_REOPENED`, posts a notice and deletes the panel message. |
+| **حذف الروم** | `deleteTicket` — the normal path: transcript ensured, channel gone, DB row kept as `DELETED`. |
+
+Gated by `decideClosedTicketAccess` — **administrator, ticket manager, the former
+claimer, or the panel's support role**. Deliberately wider than
+`decideManageAccess`: a closed ticket has no active handler, so the panel's own
+staff have to be able to clean up.
+
+Reopening drops the claim rather than restoring it, which keeps the invariant the
+state machine already encodes (`CLOSED → CLAIMED` stays illegal, and `OPEN` means
+unclaimed). Any eligible staff member — including the original handler — can
+claim it again; the unique `staffId+TICKET_CLAIM+ticketId` point key means a
+re-claim by the same person awards nothing.
+
+**Completion credit is once per ticket.** `recordCompletionCredit` now stamps
+`completionCreditedAt` with a conditional `findOneAndUpdate` and returns early if
+it was already set, so a close → reopen → close loop cannot farm
+`TICKET_COMPLETE` activities or `ticketsCompleted` bumps.
+
+Closing does **not** change the channel's permission overwrites — the ticket
+opener can still see (and post in) the channel until it is deleted. Say so if you
+want the close to lock it down to staff.
+
 ### Services (`TicketService`, spec §32)
 
 `createTicket · getTicket · getTicketByChannel · getTicketById · claimTicket ·
-transferTicket · closeTicket · deleteTicket · renameTicket · addUser ·
-removeUser · addRole · removeRole` + `ticketConfigService.getPanel/getPanelConfig`. `renameTicket`,
+transferTicket · closeTicket · reopenTicket · deleteTicket · renameTicket ·
+addUser · removeUser · addRole · removeRole` +
+`ticketConfigService.getPanel/getPanelConfig`. `renameTicket`,
 `closeTicket`, `deleteTicket` and `TranscriptService.generate` are ready for the
 later `!rename / !close / !delete / !transcript` prefix phase (not built now).
 `TranscriptService.generate()` already exports messages + attachments +
@@ -1093,7 +1127,7 @@ Ticket handlers are one-file-per-concern under `modules/tickets/handlers/`; the
 
 | Collection | Purpose |
 |---|---|
-| `tickets` | ticket state + history (`OPEN/CLAIMED/CLOSING/CLOSED/DELETED`, answers, addedUsers/Roles, claim/close/delete stamps, transcriptId) — never deleted with the channel |
+| `tickets` | ticket state + history (`OPEN/CLAIMED/CLOSING/CLOSED/DELETED`, answers, addedUsers/Roles, claim/close/reopen/delete stamps, `completionCreditedAt`, transcriptId) — never deleted with the channel |
 | `faqs` | `/faq` entries (`{guildId,faqId}` unique) |
 | `ticket_transcripts` | stored JSON transcripts |
 | `ticket_panel_deployments` | pointer to the deployed panel message so `/ticket-setup` edits it |
@@ -1137,8 +1171,8 @@ staff/   accept fire prompt demote warn unwarn warnings warns break unbreak
 | command | delegates to | notes |
 |---|---|---|
 | `!claim` | `ticketService.claimTicket` | atomic; **+1 `TICKET_CLAIM`** once (unique `staffId+type+ticketId`); hides ticket from support role, keeps creator+claimer |
-| `!close` | `ticketService.closeTicket` + `recordCompletionCredit` | obeys panel `close.{transcript,delete}`; panel log channel |
-| `!delete` | `ticketService.deleteTicket` | channel deleted, **DB record kept** (`DELETED`, `deletedBy/At`) |
+| `!close` | `ticketService.closeTicket` + `recordCompletionCredit` | obeys panel `close.{transcript,delete}`; panel log channel; a surviving channel gets the closed-ticket panel instead of a "closed" notice |
+| `!delete` | `ticketService.deleteTicket` | channel deleted, **DB record kept** (`DELETED`, `deletedBy/At`). Works on a **closed** ticket too (`resolveTicketContext(ctx, { allowClosed: true })`), gated by `decideClosedTicketAccess` — that is how a `close.delete: false` channel gets cleaned up from the keyboard |
 | `!rename <name>` | `ticketService.renameTicket` | sanitised channel name; no direct DB writes from the command |
 | `!transcript` | `transcriptService.generate` | JSON transcript (messages, attachments, participants, Q/A, claim, timestamps) |
 | `!add` / `!remove` | `ticketService.addUser/removeUser` | mentions or raw ids; `!remove` only touches `addedUsers/addedRoles`; owner/claimer/support role never removed |

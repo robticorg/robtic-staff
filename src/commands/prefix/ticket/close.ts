@@ -35,18 +35,7 @@ export default definePrefixCommand({
     const result = await ticketService.closeTicket(ticket.ticketId, ctx.member.id, panel, ctx.guild);
     await ticketService.recordCompletionCredit(result.ticket).catch(() => undefined);
 
-    if (!result.deleted) {
-      await ctx.replyWith(
-        buildTicketNotice(
-          [
-            result.transcriptId
-              ? prefixMessages.ticket.closedWithTranscript(ticket.ticketId, result.transcriptId)
-              : prefixMessages.ticket.closed(ticket.ticketId),
-          ],
-          { tone: "success" },
-        ),
-      );
-    }
+    // A surviving channel already gets the closed-ticket panel from `closeTicket`.
   },
 });
 

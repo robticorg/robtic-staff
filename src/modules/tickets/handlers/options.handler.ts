@@ -114,15 +114,11 @@ export async function handleOptionsClose(
       resolved.guild,
     );
     await ticketService.recordCompletionCredit(result.ticket).catch(() => undefined);
+    // When the channel survives, `closeTicket` leaves the closed-ticket panel in
+    // it — no separate "closed" notice, it would just repeat the panel heading.
     await interaction.editReply(
       result.transcriptId ? M.close.withTranscript(ticketId) : M.close.done(ticketId),
     );
-
-    if (!result.deleted && channel?.isTextBased() && "send" in channel) {
-      await channel
-        .send(buildTicketNotice([M.close.done(ticketId)], { tone: "success" }))
-        .catch(() => undefined);
-    }
   } catch (err) {
     if (err instanceof DomainError) {
       await interaction.editReply(err.message);

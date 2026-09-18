@@ -14,6 +14,11 @@ import {
   handleOptionsRename,
   handleOptionsTransfer,
 } from "./options.handler.ts";
+import {
+  handleClosedDelete,
+  handleClosedReopen,
+  handleClosedTranscript,
+} from "./closed-panel.handler.ts";
 import { handleAddUserModal } from "./add-user.handler.ts";
 import { handleRemoveUserModal } from "./remove-user.handler.ts";
 import { handleRenameModal } from "./rename-modal.handler.ts";
@@ -82,6 +87,12 @@ async function dispatch(
         return handleOptionsRename(interaction, args[0] ?? "");
       case "optTransfer":
         return handleOptionsTransfer(interaction, args[0] ?? "");
+      case "cTranscript":
+        return handleClosedTranscript(interaction, args[0] ?? "");
+      case "cReopen":
+        return handleClosedReopen(interaction, args[0] ?? "");
+      case "cDelete":
+        return handleClosedDelete(interaction, args[0] ?? "");
       default:
         return;
     }

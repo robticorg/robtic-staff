@@ -143,6 +143,38 @@ export const ticketMessages = {
     notAllowed: `${E.error} ما عندك صلاحية تغلق هذا التكت.`,
   },
 
+  /** The admin control card left behind when a panel closes tickets without deleting them. */
+  closedPanel: {
+    heading: (ticketId: string) => `## ${E.lock} تم إغلاق \`${ticketId}\``,
+    closedBy: (userId: string) => `**أغلقه:** <@${userId}>`,
+    closedAt: (date: Date) => `**وقت الإغلاق:** <t:${Math.floor(date.getTime() / 1000)}:F>`,
+    owner: (userId: string) => `**صاحب التكت:** <@${userId}>`,
+    handler: (userId: string) => `**المستلِم:** <@${userId}>`,
+    handlerNone: "**المستلِم:** —",
+    transcriptSaved: (transcriptId: string) => `**النسخة:** \`${transcriptId}\``,
+    transcriptNone: "**النسخة:** —",
+    hint: "-# الروم باقي عشان الإدارة تراجعه. استخدم الأزرار تحت أو `!delete`.",
+
+    buttons: {
+      transcript: "النسخة",
+      delete: "حذف الروم",
+      reopen: "إعادة فتح",
+    },
+
+    notAllowed: `${E.error} ما عندك صلاحية تدير هذا التكت المغلق.`,
+    notClosed: `${E.error} هذا التكت مو مغلق.`,
+    transcriptUnavailable: `${E.error} ما فيه نسخة محفوظة لهذا التكت وما قدرت أطلع وحدة.`,
+    transcriptReady: (ticketId: string) => `${E.success} نسخة \`${ticketId}\`:`,
+    deleting: `${E.warning} جاري حذف الروم…`,
+  },
+
+  reopen: {
+    done: (ticketId: string) => `${E.success} تم إعادة فتح \`${ticketId}\`.`,
+    channelNote: (userId: string) =>
+      `${E.success} تم إعادة فتح التكت بواسطة <@${userId}> — صار يستقبل ردود من جديد.`,
+    raced: `${E.error} تغيّرت حالة التكت قبل شوي — جرب مرة ثانية.`,
+  },
+
   sleep: {
     usage: `${E.warning} الطريقة: \`!sleep [المدة]\` — مثال: \`!sleep 6h\` أو \`!sleep 30m\`.`,
     notAllowed: `${E.error} ما عندك صلاحية تستخدم هذا — لازم تكون من ستاف هذا القسم أو مستلم التكت.`,
@@ -184,6 +216,7 @@ export const ticketMessages = {
     titleSleepCancelled: `${E.success} رجع العضو للتكت`,
     titleRenamed: "✏️ تم تغيير اسم تكت",
     titleClosed: "🔒 تم إغلاق تكت",
+    titleReopened: `${E.success} تم إعادة فتح تكت`,
     titleDeleted: `${E.error} تم حذف تكت`,
     titleDeletedManually: `${E.warning} تم حذف روم تكت يدوياً`,
     titleUserAdded: `${E.user} تمت إضافة عضو`,

@@ -39,6 +39,7 @@ import {
   TicketStatus,
   assertTicketTransition,
 } from "../types/enums.ts";
+import { buildClosedTicketPanel } from "../render/closed-panel.ts";
 import { applyTicketClaimCredit } from "./ticket-claim-credit.ts";
 import { canClaimTicket, canTransferTicket } from "./ticket-permissions.ts";
 import { protectedTicketPrincipals } from "./ticket-permissions.ts";
@@ -587,9 +588,72 @@ export class TicketService extends BaseRepository<Ticket> {
       deleted = true;
     } else {
       transcriptCache.untrack(ticket.channelId);
+      await this.postClosedPanel(closed, channel);
     }
 
     return { ticket: closed, deleted, transcriptId };
+  }
+
+  /**
+   * The channel survives a close when `panel.close.delete` is off, so it is left
+   * with a card the remaining staff can act from: transcript / reopen / delete.
+   */
+  private async postClosedPanel(
+    ticket: TicketDoc,
+    channel: GuildTextBasedChannel | null,
+  ): Promise<void> {
+    if (!channel || !("send" in channel)) return;
+    await channel.send(buildClosedTicketPanel(ticket)).catch((err) => {
+      log.warn(`closed-ticket panel for ${ticket.ticketId} could not be posted`, err);
+    });
+  }
+
+  async reopenTicket(
+    ticketId: string,
+    actor: GuildMember,
+    panel?: TicketPanelConfig,
+  ): Promise<TicketDoc> {
+    const ticket = await this.getTicketOrThrow(ticketId);
+    if (ticket.status !== TicketStatus.CLOSED) {
+      throw new ValidationError(M.closedPanel.notClosed, { ticketId, status: ticket.status });
+    }
+    assertTicketTransition(ticket.status, TicketStatus.OPEN);
+
+    const reopened = await this.model
+      .findOneAndUpdate(
+        { ticketId, status: TicketStatus.CLOSED },
+        {
+          $set: {
+            status: TicketStatus.OPEN,
+            reopenedAt: new Date(),
+            reopenedBy: actor.id,
+          },
+          // The ticket goes back into the pool, and the next close writes a fresh
+          // transcript rather than reusing the one cut at the previous close.
+          $unset: {
+            claimedBy: "",
+            claimedByDiscordId: "",
+            claimedAt: "",
+            closedAt: "",
+            closedBy: "",
+            transcriptId: "",
+          },
+        },
+        { returnDocument: "after" },
+      )
+      .exec();
+    if (!reopened) throw new ConflictError(M.reopen.raced, { ticketId });
+
+    transcriptCache.track(reopened.channelId);
+
+    await ticketLogService.record(TicketLogAction.TICKET_REOPENED, {
+      guild: actor.guild,
+      panel: panel ?? (await this.panelFor(reopened)),
+      ticketId,
+      actorId: actor.id,
+    });
+
+    return reopened;
   }
 
   async deleteTicket(
@@ -756,6 +820,16 @@ export class TicketService extends BaseRepository<Ticket> {
 
   async recordCompletionCredit(ticket: Ticket): Promise<void> {
     if (!ticket.claimedBy) return;
+
+    // A reopened ticket can be closed again; the completion is credited once.
+    const claimed = await this.model
+      .findOneAndUpdate(
+        { ticketId: ticket.ticketId, completionCreditedAt: { $exists: false } },
+        { $set: { completionCreditedAt: new Date() } },
+      )
+      .exec();
+    if (!claimed) return;
+
     await staffActivityService.create({
       staffId: ticket.claimedBy as Types.ObjectId,
       type: StaffActivityType.TICKET_COMPLETE,

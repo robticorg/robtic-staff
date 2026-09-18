@@ -38,8 +38,13 @@ export interface Ticket extends Timestamps {
   claimedAt?: Date;
   closedAt?: Date;
   closedBy?: UserId;
+  reopenedAt?: Date;
+  reopenedBy?: UserId;
   deletedAt?: Date;
   deletedBy?: UserId;
+
+  /** Set once, the first time the ticket is completed — reopening never re-awards the credit. */
+  completionCreditedAt?: Date;
 
   transcriptId?: string;
   metadata?: Record<string, unknown>;
@@ -91,8 +96,12 @@ const ticketSchema = new Schema<Ticket>(
     claimedAt: { type: Date },
     closedAt: { type: Date },
     closedBy: { type: String },
+    reopenedAt: { type: Date },
+    reopenedBy: { type: String },
     deletedAt: { type: Date },
     deletedBy: { type: String },
+
+    completionCreditedAt: { type: Date },
 
     transcriptId: { type: String },
     metadata: { type: Schema.Types.Mixed },

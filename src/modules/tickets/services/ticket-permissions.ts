@@ -91,6 +91,28 @@ export function decideSleepAccess(input: SleepContextInput): boolean {
   );
 }
 
+export interface ClosedTicketContextInput {
+  memberIsAdministrator: boolean;
+  memberIsManager: boolean;
+  memberIsClaimer: boolean;
+
+  memberHasPanelSupportRole: boolean;
+}
+
+/**
+ * Who may drive a closed ticket's leftover channel (transcript / reopen / delete).
+ * Wider than `decideManageAccess` on purpose: the ticket has no active handler
+ * once it is closed, so the panel's own staff have to be able to clean up.
+ */
+export function decideClosedTicketAccess(input: ClosedTicketContextInput): boolean {
+  return (
+    input.memberIsAdministrator ||
+    input.memberIsManager ||
+    input.memberIsClaimer ||
+    input.memberHasPanelSupportRole
+  );
+}
+
 export function protectedTicketPrincipals(
   ticket: Pick<Ticket, "userId" | "claimedByDiscordId">,
   panel: Pick<TicketPanelConfig, "supportRoleId">,
@@ -180,5 +202,18 @@ export function canManageTicket(
   return decideManageAccess({
     memberIsAdministrator: memberIsAdministrator(member),
     memberIsClaimer: !!ticket.claimedByDiscordId && ticket.claimedByDiscordId === member.id,
+  });
+}
+
+export function canManageClosedTicket(
+  member: GuildMember,
+  panel: TicketPanelConfig,
+  ticket: Pick<Ticket, "claimedByDiscordId">,
+): boolean {
+  return decideClosedTicketAccess({
+    memberIsAdministrator: memberIsAdministrator(member),
+    memberIsManager: memberIsTicketManager(member),
+    memberIsClaimer: !!ticket.claimedByDiscordId && ticket.claimedByDiscordId === member.id,
+    memberHasPanelSupportRole: memberHasPanelSupportRole(member, panel),
   });
 }

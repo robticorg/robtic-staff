@@ -4,7 +4,7 @@ import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { ticketConfigService } from "../../../modules/tickets/index.ts";
 import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
 import type { TicketDocument } from "../../../modules/tickets/models/ticket.model.ts";
-import { ACTIVE_TICKET_STATUSES, type TicketStatus } from "../../../modules/tickets/types/enums.ts";
+import { ACTIVE_TICKET_STATUSES, TicketStatus } from "../../../modules/tickets/types/enums.ts";
 import { ticketService } from "../../../modules/tickets/services/ticket.service.ts";
 import { staffPermissionService } from "../../../modules/staff/services/staff-permissions.service.ts";
 import { StaffTier } from "../../../modules/configuration/types/enums.ts";
@@ -44,12 +44,28 @@ export interface TicketContext {
   panel: TicketPanelConfig;
 }
 
-export async function resolveTicketContext(ctx: PrefixContext): Promise<TicketContext> {
+export interface ResolveTicketOptions {
+  /**
+   * Accept a CLOSED ticket whose channel is still around — the case a panel with
+   * `close.delete: false` leaves behind. DELETED is still refused.
+   */
+  allowClosed?: boolean;
+}
+
+export async function resolveTicketContext(
+  ctx: PrefixContext,
+  options: ResolveTicketOptions = {},
+): Promise<TicketContext> {
   const ticket = await ticketService.getTicketByChannel(ctx.channel.id);
   if (!ticket || ticket.guildId !== ctx.guild.id) {
     throw new PrefixAbort(prefixMessages.ticket.notATicket);
   }
-  if (!(ACTIVE_TICKET_STATUSES as TicketStatus[]).includes(ticket.status)) {
+
+  const acceptable: TicketStatus[] = [
+    ...(ACTIVE_TICKET_STATUSES as TicketStatus[]),
+    ...(options.allowClosed ? [TicketStatus.CLOSED] : []),
+  ];
+  if (!acceptable.includes(ticket.status)) {
     throw new PrefixAbort(prefixMessages.ticket.ticketClosed);
   }
   const panel = ticketConfigService.getPanel(ticket.panelId);

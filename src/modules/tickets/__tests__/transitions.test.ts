@@ -22,6 +22,11 @@ describe("ticket state machine", () => {
     expect(canTicketTransition(S.CLOSED, S.CLAIMED)).toBe(false);
   });
 
+  it("reopens a closed ticket back into the unclaimed pool", () => {
+    expect(canTicketTransition(S.CLOSED, S.OPEN)).toBe(true);
+    expect(() => assertTicketTransition(S.CLOSED, S.OPEN)).not.toThrow();
+  });
+
   it("treats a same-status transition as a no-op", () => {
     expect(canTicketTransition(S.CLAIMED, S.CLAIMED)).toBe(true);
   });

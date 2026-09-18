@@ -17,6 +17,10 @@ export const TicketCustomId = {
   optRename: (ticketId: string) => `${TK_NS}:optRename:${ticketId}`,
   optTransfer: (ticketId: string) => `${TK_NS}:optTransfer:${ticketId}`,
 
+  closedTranscript: (ticketId: string) => `${TK_NS}:cTranscript:${ticketId}`,
+  closedDelete: (ticketId: string) => `${TK_NS}:cDelete:${ticketId}`,
+  closedReopen: (ticketId: string) => `${TK_NS}:cReopen:${ticketId}`,
+
   addUserModal: (ticketId: string) => `${TK_NS}:addUserModal:${ticketId}`,
   removeUserModal: (ticketId: string) => `${TK_NS}:removeUserModal:${ticketId}`,
   renameModal: (ticketId: string) => `${TK_NS}:renameModal:${ticketId}`,
