@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { modmailMessages } from "../../../data/messages/modmail.ts";
 import { ModmailCaseStatus, ModmailCaseType } from "../types/enums.ts";
 import { buildReportMessage } from "../render/report-message.ts";
-import { buildThreadOpener, renderReporterMessageForThread } from "../render/thread-messages.ts";
+import { renderReporterMessageForThread } from "../render/thread-messages.ts";
 import { renderStaffMessageForDm } from "../render/dm-messages.ts";
 
 const REPORTER_ID = "999000111222333444";
@@ -55,9 +55,10 @@ describe("reporter privacy in staff-facing output", () => {
     expect(msg).not.toContain(REPORTER_ID);
   });
 
-  it("the thread opener refers to the anonymous reporter, not a name or id", () => {
-    const msg = textOf(buildThreadOpener(kase));
-    expect(msg).toContain(modmailMessages.thread.reporterLine);
+  it("carries the full report body on the card so nothing is duplicated into the thread", () => {
+    const msg = textOf(buildReportMessage(kase, { evidenceCount: 4 }));
+    expect(msg).toContain(kase.reason);
+    expect(msg).toContain(kase.description);
     expect(msg).not.toContain(REPORTER_ID);
     expect(msg).not.toContain(REPORTER_NAME);
   });

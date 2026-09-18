@@ -73,6 +73,11 @@ export async function runPrefixCommand(message: Message): Promise<boolean> {
     mentionedRoles: [...message.mentions.roles.values()],
     reply: (content: string) =>
       message.reply({ content, allowedMentions: { repliedUser: false, parse: [] } }),
+    replyWith: (options) =>
+      message.reply({
+        ...options,
+        allowedMentions: { repliedUser: false, ...(options.allowedMentions ?? { parse: [] }) },
+      }),
   };
 
   try {

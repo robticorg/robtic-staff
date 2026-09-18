@@ -3,6 +3,9 @@ export const limits = {
 
   descriptionMaxLength: 3000,
 
+  /** The report card carries the description now, and a V2 container caps out at 4000 chars. */
+  reportCardDescriptionMaxLength: 1000,
+
   userIdMinLength: 17,
   userIdMaxLength: 20,
 

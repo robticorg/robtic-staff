@@ -60,8 +60,6 @@ export const serverTagMessages = {
 
     line: (label: string, value: string) => `**${label}:** ${value}`,
     target: (userId: string) => `<@${userId}> (\`${userId}\`)`,
-    roles: (roleIds: readonly string[]) =>
-      roleIds.length > 0 ? roleIds.map((id) => `<@&${id}>`).join("، ") : "—",
     none: "—",
     relative,
     absolute,
@@ -69,11 +67,6 @@ export const serverTagMessages = {
     labels: {
       member: "العضو",
       tagRole: "رتبة التاق",
-      savedRoles: "الرتب المحفوظة",
-      removedRoles: "الرتب المسحوبة",
-      restoredRoles: "الرتب المرجّعة",
-      missingRoles: "رتب محذوفة تم تجاوزها",
-      blockedRoles: "رتب فوق مستوى البوت",
       duration: "المدة",
       expiresAt: "ينتهي",
       reason: "السبب",

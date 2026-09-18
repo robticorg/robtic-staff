@@ -3,6 +3,7 @@ import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import { limits } from "../../../data/config/limits.ts";
 import { sleep } from "../../../shared/utils/sleep.ts";
+import { buildTicketNotice } from "../../../modules/tickets/render/notice.ts";
 import { canManageTicket } from "../../../modules/tickets/services/ticket-permissions.ts";
 import { ticketService } from "../../../modules/tickets/services/ticket.service.ts";
 import { PrefixAbort, resolveTicketContext } from "../_shared/guards.ts";
@@ -23,8 +24,11 @@ export default definePrefixCommand({
       throw new PrefixAbort(prefixMessages.ticket.notAllowed);
     }
 
-    await ctx.reply(
-      ticketMessages.close.confirming(ticket.ticketId, limits.ticketCloseConfirmSeconds),
+    await ctx.replyWith(
+      buildTicketNotice(
+        [ticketMessages.close.confirming(ticket.ticketId, limits.ticketCloseConfirmSeconds)],
+        { tone: "warning" },
+      ),
     );
     await sleep(limits.ticketCloseConfirmSeconds * 1000);
 
@@ -32,10 +36,15 @@ export default definePrefixCommand({
     await ticketService.recordCompletionCredit(result.ticket).catch(() => undefined);
 
     if (!result.deleted) {
-      await ctx.reply(
-        result.transcriptId
-          ? prefixMessages.ticket.closedWithTranscript(ticket.ticketId, result.transcriptId)
-          : prefixMessages.ticket.closed(ticket.ticketId),
+      await ctx.replyWith(
+        buildTicketNotice(
+          [
+            result.transcriptId
+              ? prefixMessages.ticket.closedWithTranscript(ticket.ticketId, result.transcriptId)
+              : prefixMessages.ticket.closed(ticket.ticketId),
+          ],
+          { tone: "success" },
+        ),
       );
     }
   },

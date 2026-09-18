@@ -6,6 +6,7 @@ import { limits } from "../../../data/config/limits.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
 import type { TicketDocument } from "../models/ticket.model.ts";
+import { buildTicketNotice } from "../render/notice.ts";
 import { buildTicketOptionsUi } from "../render/options-ui.ts";
 import { buildAddUserModal, buildRemoveUserModal } from "../render/add-remove-modals.ts";
 import { buildRenameModal } from "../render/rename-modal.ts";
@@ -99,7 +100,9 @@ export async function handleOptionsClose(
   await interaction.editReply(confirming);
   const channel = interaction.channel;
   if (channel?.isTextBased() && "send" in channel) {
-    await channel.send({ content: confirming, allowedMentions: { parse: [] } }).catch(() => undefined);
+    await channel
+      .send(buildTicketNotice([confirming], { tone: "warning" }))
+      .catch(() => undefined);
   }
   await sleep(limits.ticketCloseConfirmSeconds * 1000);
 
@@ -117,7 +120,7 @@ export async function handleOptionsClose(
 
     if (!result.deleted && channel?.isTextBased() && "send" in channel) {
       await channel
-        .send({ content: M.close.done(ticketId), allowedMentions: { parse: [] } })
+        .send(buildTicketNotice([M.close.done(ticketId)], { tone: "success" }))
         .catch(() => undefined);
     }
   } catch (err) {

@@ -1,6 +1,7 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { limits } from "../../../data/config/limits.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
+import { buildTicketNotice } from "../../../modules/tickets/render/notice.ts";
 import { canManageTicket } from "../../../modules/tickets/services/ticket-permissions.ts";
 import { performTicketTransfer } from "../../../modules/tickets/services/ticket-transfer-flow.ts";
 import { PrefixAbort, resolveTicketContext } from "../_shared/guards.ts";
@@ -34,6 +35,6 @@ export default definePrefixCommand({
       reason,
     });
 
-    await ctx.reply(outcome.reply);
+    await ctx.replyWith(buildTicketNotice([outcome.reply], { tone: "success" }));
   },
 });

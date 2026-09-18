@@ -473,6 +473,14 @@ Points are zeroed through the same `staffPointService.resetToZero` that
 at 0 while the historical transaction rows survive for audit. The wiped amount
 is reported in the log embed.
 
+**The tag log never lists roles.** Restriction / restore / removal cards report
+the member, the reason, the duration and the outcome — not the saved, stripped,
+restored, missing or blocked role mentions, which turned every card into a wall
+of pings. `restoreStaffRoles` still returns `missing` / `blocked`, but they are
+only used to pick between "تمت بنجاح", "تمت الإعادة مع تجاوز بعض الرتب" and
+"ديسكورد رفض إرجاع الرتب"; `arabic-copy.test.ts` asserts no `<@&…>` ever reaches
+a card.
+
 The same rule applies on rejoin: `reconcileMember` finds a restriction that is
 already past due and removes the member rather than restoring them, so being
 offline past the deadline is not an escape.
@@ -543,10 +551,18 @@ matches a missing field), so no historical warning is reinterpreted or lost.
 ## Reports — handler-owned, transferable, closed on decision
 
 The `#reports` card is a **Components V2 container** (accent follows state:
-amber pending → green claimed → neutral closed), carrying **استلام** and, once
-claimed, **تحويل**. A closed report keeps its card as a record with no buttons
-left to press. The reporter is still never named on it — `privacy.test.ts` now
-walks the nested TextDisplay components to prove that.
+amber pending → green claimed → neutral closed) and is the **only** place the
+report body is rendered: case id, reported user, masked reporter, reason,
+description, evidence count, status, handler. Its action row carries **استلام**
+and, once claimed, **تحويل**, plus **معلومات المُبلِّغ** and **إغلاق**. A closed
+report keeps its card as a record with the close button disabled. The reporter is
+still never named on it — `privacy.test.ts` walks the nested TextDisplay
+components to prove that.
+
+**The investigation thread has no opener message.** It used to be posted a
+plain-text copy of everything already on the card, so the same report was written
+twice, once as a component and once as loose text. That message is gone; the
+thread now holds only the relay (reporter ↔ handler) and the system notes.
 
 **Only the handler may reply.** A message in the thread from anyone who is not
 the claimer (or an administrator) is **deleted** and answered with a system note
@@ -566,9 +582,10 @@ end at `CLOSED` now: once the final decision is recorded, `finaliseReport` calls
 closing note and archives the thread. `!close` also works inside a report thread
 — it closes the report and leaves ticket behaviour untouched everywhere else.
 
-The thread action row is down to **معلومات المُبلِّغ** and **إغلاق**; the
-intermediate status buttons (قيد التحقيق / بانتظار العضو / إنهاء) are gone, since
-the lifecycle is now claim → work → decide → closed.
+**معلومات المُبلِّغ** and **إغلاق** now live on the `#reports` card itself (they
+used to sit on the thread opener that no longer exists); the intermediate status
+buttons (قيد التحقيق / بانتظار العضو / إنهاء) are gone, since the lifecycle is
+now claim → work → decide → closed.
 
 ---
 
@@ -770,7 +787,8 @@ services/
   target-classifier         USER vs STAFF vs NOT_IN_GUILD (+ pure core)
   claim-credit              "+1 point + REPORT_CLAIM activity", idempotent
   modmail.service           THE routing service — the only Discord+DB seam
-render/      report-message · thread-messages · dm-messages  (privacy-safe strings)
+render/      report-message (the whole card) · thread-messages (relay + system
+             notes only) · dm-messages        (privacy-safe strings)
 session/     dm-session-store  (in-memory wizard draft + activeCaseId, per user)
 flow/        dm-routing  (pure: where does a DM go?)
 handlers/    component-ids · modals · button/modal/dm-message/thread-message handlers
@@ -797,8 +815,9 @@ Relay logic lives in `ModmailService`, never in the event files.
 4. Bot asks for **evidence**: the user sends any number of attachments as DMs;
    they're held in the wizard draft. `[Submit report]` finalises.
 5. On submit: `ModmailCase` created (`RPT-N` via an atomic counter), evidence
-   persisted, a masked message posted to `REPORTS` with a `[Claim]` button, a
-   thread started from it, `threadId` stored, `CASE_CREATED` audited, reporter DMed.
+   persisted, a masked card posted to `REPORTS`, an (empty) thread started from
+   it, `threadId` stored, `CASE_CREATED` audited, reporter DMed. Evidence files
+   are the only thing posted into the thread up front.
 
 ### Claim — atomic & idempotent
 
@@ -811,9 +830,9 @@ the handler gets a `REPORT_COMPLETE` activity + `reportsCompleted` bump.
 
 ### Privacy
 
-- The `REPORTS` message and thread show `🔒 Private` / `👤 Reporter` — the render
-  functions are not even given the reporter's id.
-- `[Reporter Info (Admin)]` in the thread is **Administrator-only** (enforced in
+- The `REPORTS` card shows `🔒 Private` and relayed thread messages are labelled
+  `👤 Reporter` — the render functions are not even given the reporter's id.
+- `[Reporter Info (Admin)]` on the card is **Administrator-only** (enforced in
   `ModmailService.reporterInfo`, not just by hiding the button) and replies
   ephemerally; each use is audited `REPORTER_INFO_VIEWED`.
 - **STAFF_REPORT**: `decideManageAccess` hard-blocks `member.id === reportedUserId`
@@ -922,6 +941,15 @@ Ticket channel is created under `categoryId` with overwrites: `@everyone` no-vie
 support role + creator + bot → view/send. The V2 ticket message carries the
 submitted answers, **Claim** + **Options** buttons, and a **FAQ select** only
 when `faq.enabled` **and** ≥1 FAQ entry exists.
+
+**Every in-channel notice is a V2 card too.** "استلام من @x", "بيتم إغلاق … خلال
+5 ثواني", "تم إغلاق", the transfer note, the sleep warning / wake-up /
+auto-close — all of them go through `render/notice.ts` (`buildTicketNotice`),
+which wraps the lines in a `ContainerBuilder` with a tone-based accent colour and
+silences mentions unless a user id is passed explicitly. Prefix commands reach it
+through `ctx.replyWith(...)`, the component-capable sibling of `ctx.reply`. A
+ticket channel therefore reads as a stack of cards rather than a card followed by
+loose bot text. Ephemeral feedback to the acting staff member stays plain text.
 
 ### Claim (atomic, +1 once)
 

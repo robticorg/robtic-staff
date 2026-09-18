@@ -10,6 +10,7 @@ import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
 import { parseDuration } from "../../punishment/services/duration.service.ts";
 import { TicketModel, type Ticket } from "../models/ticket.model.ts";
 import { ACTIVE_TICKET_STATUSES, TicketLogAction, TicketStatus } from "../types/enums.ts";
+import { buildTicketNotice } from "../render/notice.ts";
 import { buildSleepDm } from "../render/sleep-dm.ts";
 import { ticketConfigService } from "./ticket-config.service.ts";
 import { canSleepTicket } from "./ticket-permissions.ts";
@@ -143,7 +144,7 @@ export class TicketSleepService {
     const channel = message.channel;
     if (channel.isTextBased() && "send" in channel) {
       await channel
-        .send({ content: M.sleep.cancelled(ticket.userId), allowedMentions: { parse: [] } })
+        .send(buildTicketNotice([M.sleep.cancelled(ticket.userId)], { tone: "success" }))
         .catch(() => undefined);
     }
 
@@ -218,7 +219,7 @@ export class TicketSleepService {
     const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
     if (channel?.isTextBased() && "send" in channel) {
       await channel
-        .send({ content: M.sleep.autoClosed, allowedMentions: { parse: [] } })
+        .send(buildTicketNotice([M.sleep.autoClosed], { tone: "neutral" }))
         .catch(() => undefined);
     }
 

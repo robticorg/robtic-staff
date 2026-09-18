@@ -2,6 +2,7 @@ import type { GuildMember } from "discord.js";
 import { logger } from "../../../shared/utils/logger.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
+import { buildTicketNotice } from "../render/notice.ts";
 import { buildTransferDm } from "../render/transfer-dm.ts";
 import { ticketService, type TransferTicketResult } from "./ticket.service.ts";
 
@@ -68,9 +69,11 @@ async function postChannelNote(
   if (!channel?.isTextBased() || !("send" in channel)) return;
 
   await channel
-    .send({
-      content: M.channelNote(result.previousClaimerId, target.id, result.reason),
-      allowedMentions: { users: [target.id] },
-    })
+    .send(
+      buildTicketNotice([M.channelNote(result.previousClaimerId, target.id, result.reason)], {
+        tone: "info",
+        mentions: [target.id],
+      }),
+    )
     .catch(() => undefined);
 }

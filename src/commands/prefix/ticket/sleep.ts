@@ -1,5 +1,6 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
+import { buildTicketNotice } from "../../../modules/tickets/render/notice.ts";
 import {
   resolveSleepDuration,
   ticketSleepService,
@@ -22,18 +23,23 @@ export default definePrefixCommand({
       durationMs,
     });
 
-    const lines = [
-      M.started(result.duration, result.dueAt),
-      result.dmDelivered ? null : M.dmFailed(ticket.userId),
-    ].filter((line): line is string => line !== null);
-
-    await ctx.reply(lines.join("\n"));
+    await ctx.replyWith(
+      buildTicketNotice(
+        [
+          M.started(result.duration, result.dueAt),
+          result.dmDelivered ? null : M.dmFailed(ticket.userId),
+        ],
+        { tone: "success" },
+      ),
+    );
 
     await ctx.channel
-      .send({
-        content: M.channelNote(ticket.userId, result.duration),
-        allowedMentions: { users: [ticket.userId] },
-      })
+      .send(
+        buildTicketNotice([M.channelNote(ticket.userId, result.duration)], {
+          tone: "info",
+          mentions: [ticket.userId],
+        }),
+      )
       .catch(() => undefined);
   },
 });

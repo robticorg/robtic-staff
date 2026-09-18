@@ -89,9 +89,6 @@ describe("log card rendering", () => {
     const card = buildServerTagLog({
       kind: "RESTRICTED",
       userId: USER,
-      savedRoleIds: [ROLE_A, ROLE_B],
-      removedRoleIds: [ROLE_A, ROLE_B],
-      blockedRoleIds: [],
       durationMs: 3 * DAY,
       expiresAt,
     });
@@ -102,7 +99,6 @@ describe("log card rendering", () => {
     for (const line of lines.slice(1)) expect(line).toMatch(/^\*\*[^*]+:\*\* /);
 
     expect(card).toContain(`<@${USER}> (\`${USER}\`)`);
-    expect(card).toContain("<@&role-a>، <@&role-b>");
     expect(card).toContain("3 أيام");
     expect(card).toContain(`<t:${Math.floor(expiresAt.getTime() / 1000)}:F>`);
   });
@@ -112,7 +108,6 @@ describe("log card rendering", () => {
       kind: "RESTORED",
       userId: USER,
       reason: StaffTagRestorationReason.TAG_REAPPLIED,
-      restoredRoleIds: [ROLE_A],
       missingRoleIds: [],
       blockedRoleIds: [],
       failed: false,
@@ -128,14 +123,34 @@ describe("log card rendering", () => {
       kind: "RESTORED",
       userId: USER,
       reason: StaffTagRestorationReason.DURATION_EXPIRED,
-      restoredRoleIds: [ROLE_A],
       missingRoleIds: [ROLE_B],
       blockedRoleIds: [],
       failed: false,
     });
 
-    expect(card).toContain(M.log.labels.missingRoles);
     expect(card).toContain(M.log.results.partial);
+  });
+
+  it("never lists individual roles — only the outcome", () => {
+    const cards = [
+      buildServerTagLog({
+        kind: "RESTRICTED",
+        userId: USER,
+        durationMs: 3 * DAY,
+        expiresAt: new Date(),
+      }),
+      buildServerTagLog({
+        kind: "RESTORED",
+        userId: USER,
+        reason: StaffTagRestorationReason.TAG_REAPPLIED,
+        missingRoleIds: [ROLE_A],
+        blockedRoleIds: [ROLE_B],
+        failed: false,
+      }),
+      buildServerTagLog({ kind: "REMOVED", userId: USER, pointsWiped: 12 }),
+    ];
+
+    for (const card of cards) expect(card).not.toMatch(/<@&/);
   });
 
   it("translates the staff status on a blocked restore", () => {
@@ -158,17 +173,15 @@ describe("log card rendering", () => {
     expect(card).toContain("UNKNOWN");
   });
 
-  it("renders an empty role list as the house em-dash placeholder", () => {
+  it("reports a failed restore", () => {
     const card = buildServerTagLog({
       kind: "RESTORED",
       userId: USER,
       reason: StaffTagRestorationReason.DURATION_EXPIRED,
-      restoredRoleIds: [],
       missingRoleIds: [],
       blockedRoleIds: [],
       failed: true,
     });
-    expect(card).toContain(`**${M.log.labels.restoredRoles}:** —`);
     expect(card).toContain(M.log.results.restoreFailed);
   });
 

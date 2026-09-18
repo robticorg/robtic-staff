@@ -12,9 +12,6 @@ export type ServerTagLogEvent =
   | {
       kind: "RESTRICTED";
       userId: UserId;
-      savedRoleIds: readonly RoleId[];
-      removedRoleIds: readonly RoleId[];
-      blockedRoleIds: readonly RoleId[];
       durationMs: number;
       expiresAt: Date;
     }
@@ -22,7 +19,7 @@ export type ServerTagLogEvent =
       kind: "RESTORED";
       userId: UserId;
       reason: StaffTagRestorationReason;
-      restoredRoleIds: readonly RoleId[];
+      /** Not listed in the log — only used to decide between a full and a partial restore. */
       missingRoleIds: readonly RoleId[];
       blockedRoleIds: readonly RoleId[];
       failed: boolean;
@@ -30,7 +27,6 @@ export type ServerTagLogEvent =
   | {
       kind: "REMOVED";
       userId: UserId;
-      removedRoleIds: readonly RoleId[];
       pointsWiped: number;
     }
   | { kind: "BLOCKED"; userId: UserId; staffStatus: string }
@@ -57,18 +53,12 @@ export function buildServerTagLog(event: ServerTagLogEvent): string {
     }
 
     case "RESTRICTED": {
-      const lines = [
+      return [
         L.headings.restricted,
         L.line(LB.member, L.target(event.userId)),
-        L.line(LB.savedRoles, L.roles(event.savedRoleIds)),
-        L.line(LB.removedRoles, L.roles(event.removedRoleIds)),
         L.line(LB.duration, formatArabicDuration(event.durationMs)),
         L.line(LB.expiresAt, `${L.absolute(event.expiresAt)} (${L.relative(event.expiresAt)})`),
-      ];
-      if (event.blockedRoleIds.length > 0) {
-        lines.push(L.line(LB.blockedRoles, L.roles(event.blockedRoleIds)));
-      }
-      return lines.join("\n");
+      ].join("\n");
     }
 
     case "REMOVED": {
@@ -76,25 +66,15 @@ export function buildServerTagLog(event: ServerTagLogEvent): string {
         L.headings.removed,
         L.line(LB.member, L.target(event.userId)),
         L.line(LB.reason, L.reasons.DURATION_EXPIRED),
-        L.line(LB.removedRoles, L.roles(event.removedRoleIds)),
         L.line(LB.pointsWiped, String(event.pointsWiped)),
       ].join("\n");
     }
 
     case "RESTORED": {
-      const lines = [
+      return [
         L.headings.restored,
         L.line(LB.member, L.target(event.userId)),
         L.line(LB.reason, L.reasons[event.reason] ?? event.reason),
-        L.line(LB.restoredRoles, L.roles(event.restoredRoleIds)),
-      ];
-      if (event.missingRoleIds.length > 0) {
-        lines.push(L.line(LB.missingRoles, L.roles(event.missingRoleIds)));
-      }
-      if (event.blockedRoleIds.length > 0) {
-        lines.push(L.line(LB.blockedRoles, L.roles(event.blockedRoleIds)));
-      }
-      lines.push(
         L.line(
           LB.result,
           event.failed
@@ -103,8 +83,7 @@ export function buildServerTagLog(event: ServerTagLogEvent): string {
               ? L.results.partial
               : L.results.done,
         ),
-      );
-      return lines.join("\n");
+      ].join("\n");
     }
 
     case "BLOCKED":

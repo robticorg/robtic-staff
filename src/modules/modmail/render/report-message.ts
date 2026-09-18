@@ -10,6 +10,7 @@ import {
 } from "discord.js";
 import { colors } from "../../../data/config/colors.ts";
 import { limits } from "../../../data/config/limits.ts";
+import { emojis } from "../../../data/emojis/index.ts";
 import { modmailMessages } from "../../../data/messages/modmail.ts";
 import type { ModmailCase } from "../models/modmail-case.model.ts";
 import { ModmailCaseStatus, ModmailCaseType } from "../types/enums.ts";
@@ -30,7 +31,10 @@ function accentFor(opts: ReportMessageOptions): number {
 }
 
 export function buildReportMessage(
-  kase: Pick<ModmailCase, "caseId" | "type" | "reportedUserId" | "reason" | "status">,
+  kase: Pick<
+    ModmailCase,
+    "caseId" | "type" | "reportedUserId" | "reason" | "description" | "status"
+  >,
   opts: ReportMessageOptions,
 ): BaseMessageOptions {
   const isStaffReport = kase.type === ModmailCaseType.STAFF_REPORT;
@@ -71,6 +75,15 @@ export function buildReportMessage(
   );
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(
+      `**${C.descriptionLabel}**\n${
+        kase.description
+          ? truncate(kase.description, limits.reportCardDescriptionMaxLength)
+          : C.reasonFallback
+      }`,
+    ),
+  );
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(
       `**${C.evidenceLabel}** ${C.evidenceCount(opts.evidenceCount)}`,
     ),
   );
@@ -92,8 +105,14 @@ export function buildReportMessage(
     ),
   );
 
+  container.addSeparatorComponents((s) =>
+    s.setDivider(true).setSpacing(SeparatorSpacingSize.Small),
+  );
+  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(C.replyHint));
+
+  const row = new ActionRowBuilder<ButtonBuilder>();
   if (!closed) {
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+    row.addComponents(
       new ButtonBuilder()
         .setCustomId(CustomId.claim(kase.caseId))
         .setLabel(opts.claimed ? C.claimedButton : C.claimButton)
@@ -108,8 +127,20 @@ export function buildReportMessage(
           .setStyle(ButtonStyle.Primary),
       );
     }
-    container.addActionRowComponents(row);
   }
+  row.addComponents(
+    new ButtonBuilder()
+      .setCustomId(CustomId.info(kase.caseId))
+      .setLabel(C.infoButton)
+      .setEmoji(emojis.locked)
+      .setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder()
+      .setCustomId(CustomId.status(kase.caseId, ModmailCaseStatus.CLOSED))
+      .setLabel(C.closeButton)
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(closed),
+  );
+  container.addActionRowComponents(row);
 
   return { components: [container], flags: MessageFlags.IsComponentsV2 } as BaseMessageOptions;
 }

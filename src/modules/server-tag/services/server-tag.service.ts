@@ -207,9 +207,6 @@ export class ServerTagService {
     await serverTagLogService.post(guildId, {
       kind: "RESTRICTED",
       userId: member.id,
-      savedRoleIds: snapshot,
-      removedRoleIds: removal.removed,
-      blockedRoleIds: removal.blocked,
       durationMs,
       expiresAt: restriction.expiresAt,
     });
@@ -287,7 +284,6 @@ export class ServerTagService {
       kind: "RESTORED",
       userId: member.id,
       reason,
-      restoredRoleIds: outcome.restored,
       missingRoleIds: outcome.missing,
       blockedRoleIds: outcome.blocked,
       failed: outcome.failed,
@@ -355,7 +351,6 @@ export class ServerTagService {
     await serverTagLogService.post(guildId, {
       kind: "REMOVED",
       userId: member.id,
-      removedRoleIds: savedRoleIds,
       pointsWiped: wipe.previousBalance,
     });
     await serverTagLogService.dm(member.id, M.dm.removedByExpiry);

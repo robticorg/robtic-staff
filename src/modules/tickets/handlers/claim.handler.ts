@@ -2,6 +2,7 @@ import { MessageFlags, type ButtonInteraction } from "discord.js";
 import { DomainError } from "../../../shared/utils/errors.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
+import { buildTicketNotice } from "../render/notice.ts";
 import { ticketConfigService } from "../services/ticket-config.service.ts";
 import { ticketService } from "../services/ticket.service.ts";
 
@@ -40,7 +41,11 @@ export async function handleTicketClaim(
     const channel = interaction.channel;
     if (channel?.isTextBased() && "send" in channel) {
       await channel
-        .send({ content: M.claim.threadNote(`<@${interaction.user.id}>`), allowedMentions: { parse: [] } })
+        .send(
+          buildTicketNotice([M.claim.threadNote(`<@${interaction.user.id}>`)], {
+            tone: "success",
+          }),
+        )
         .catch(() => undefined);
     }
   } catch (err) {

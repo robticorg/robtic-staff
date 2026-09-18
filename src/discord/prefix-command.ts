@@ -1,4 +1,12 @@
-import type { Guild, GuildMember, GuildTextBasedChannel, Message, Role, User } from "discord.js";
+import type {
+  BaseMessageOptions,
+  Guild,
+  GuildMember,
+  GuildTextBasedChannel,
+  Message,
+  Role,
+  User,
+} from "discord.js";
 
 export type PrefixCategory = "ticket" | "modmail" | "staff";
 
@@ -16,6 +24,8 @@ export interface PrefixContext {
   mentionedRoles: Role[];
 
   reply: (content: string) => Promise<Message>;
+  /** Reply with a pre-built payload — used for the Components V2 notice cards. */
+  replyWith: (options: BaseMessageOptions) => Promise<Message>;
 }
 
 export interface PrefixCommand {

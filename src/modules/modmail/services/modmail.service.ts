@@ -22,7 +22,6 @@ import { ModmailAuditAction, ModmailActorType } from "../types/enums.ts";
 import { requireModmailClient } from "../runtime.ts";
 import {
   buildReportMessage,
-  buildThreadOpener,
   renderReporterMessageForThread,
   renderStaffMessageForDm,
   renderSystemNote,
@@ -105,7 +104,6 @@ export class ModmailService {
     kase.threadId = thread.id;
     kase.reportMessageId = reportMessage.id;
 
-    await thread.send(buildThreadOpener(kase)).catch((err) => log.warn("thread opener failed", err));
     if (draft.evidence.length > 0) {
       await this.postAttachments(thread, renderSystemNote(M.thread.evidenceSubmittedNote), draft.evidence);
     }

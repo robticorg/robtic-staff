@@ -1,5 +1,6 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
+import { buildTicketNotice } from "../../../modules/tickets/render/notice.ts";
 import { canManageTicket } from "../../../modules/tickets/services/ticket-permissions.ts";
 import { ticketService } from "../../../modules/tickets/services/ticket.service.ts";
 import { PrefixAbort, resolveTicketContext } from "../_shared/guards.ts";
@@ -32,6 +33,10 @@ export default definePrefixCommand({
       users: allowedUsers,
       roles: allowedRoles,
     });
-    await ctx.reply(prefixMessages.ticket.removed(result.removed, result.skipped));
+    await ctx.replyWith(
+      buildTicketNotice([prefixMessages.ticket.removed(result.removed, result.skipped)], {
+        tone: result.skipped > 0 ? "warning" : "success",
+      }),
+    );
   },
 });

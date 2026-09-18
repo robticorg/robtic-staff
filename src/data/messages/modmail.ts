@@ -77,6 +77,7 @@ export const modmailMessages = {
     reporterLabel: "المُبلِّغ:",
     reporterPrivate: `${emojis.lock} مخفي`,
     reasonLabel: "السبب:",
+    descriptionLabel: "التفاصيل:",
     evidenceLabel: "الأدلة:",
     evidenceCount: (n: number) => `${n} ملف`,
     statusLabel: "الحالة:",
@@ -86,9 +87,13 @@ export const modmailMessages = {
     claimButton: "استلام",
     claimedButton: "مُستلَم",
     transferButton: "تحويل",
+    infoButton: "معلومات المُبلِّغ (أدمن)",
+    closeButton: "إغلاق",
     handlerLabel: "المسؤول:",
     handlerNone: "—",
     closedLabel: "مقفل",
+    replyHint:
+      "_الثريد تحت هذي الرسالة هو مكان الرد على المُبلِّغ. ابدأ السطر بـ `//` عشان تخلي ملاحظة داخلية ما تنرسل له._",
   },
 
   transfer: {
@@ -131,23 +136,6 @@ export const modmailMessages = {
       handlerMention
         ? `${emojis.lock} هذا البلاغ مُستلَم من ${handlerMention} — هو بس اللي يقدر يرد فيه.`
         : `${emojis.lock} لازم تستلم البلاغ أول عشان ترد فيه.`,
-    openerHeading: (caseId: string, isStaffReport: boolean) =>
-      `**${isStaffReport ? "بلاغ على ستاف" : "بلاغ"} \`${caseId}\`**`,
-    reportedLine: (reportedUserId: string) => `المُبلَّغ عنه: <@${reportedUserId}>`,
-    reporterLine: "المُبلِّغ: 👤 المُبلِّغ",
-    reasonHeading: "**السبب**",
-    descriptionHeading: "**التفاصيل**",
-    notProvided: NOT_PROVIDED,
-    evidenceLine: (n: number) =>
-      `**الأدلة:** ${n} ملف (منشور تحت)`,
-    replyHint:
-      "_اكتب هنا عشان ترسل للمُبلِّغ. ابدأ السطر بـ `//` عشان تخلي ملاحظة داخلية ما تنرسل له._",
-    infoButton: "معلومات المُبلِّغ (أدمن)",
-
-    statusButtons: {
-      close: "إغلاق",
-    },
-
     systemNote: (text: string) => `${emojis.system} ${text}`,
     claimedNote: (handlerMention: string) => `تم الاستلام من ${handlerMention}.`,
     statusNote: (status: string, actorMention: string) =>
