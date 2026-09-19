@@ -95,7 +95,9 @@ export const ticketMessages = {
     raced: `${E.error} تغيّر مستلِم التكت قبل شوي — افتح الخيارات مرة ثانية.`,
 
     done: (ticketId: string, userId: string) =>
-      `${E.success} تم تحويل \`${ticketId}\` إلى <@${userId}>.`,
+      `${E.success} تم تحويل \`${ticketId}\` إلى <@${userId}>. **+1 نقطة له.**`,
+    doneNoPoint: (ticketId: string, userId: string) =>
+      `${E.success} تم تحويل \`${ticketId}\` إلى <@${userId}>. (أخذ نقطته عن هذا التكت قبل)`,
     dmFailed: (userId: string) =>
       `${E.warning} ما قدرت أرسل رسالة خاصة لـ <@${userId}> — خاصه مغلق.`,
     channelNote: (fromUserId: string, toUserId: string, reason: string) =>

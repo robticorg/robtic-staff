@@ -50,4 +50,44 @@ describe("applyTicketClaimCredit", () => {
     expect(create).not.toHaveBeenCalled();
     expect(incrementCounters).not.toHaveBeenCalled();
   });
+
+  it("credits the handover target under their own staffId, not the previous claimer's", async () => {
+    const newClaimerId = new Types.ObjectId();
+    const { deps, add } = makeDeps(false);
+
+    await applyTicketClaimCredit(newClaimerId, "ticket-1", deps);
+
+    // The unique index is staffId + type + referenceId, so the same ticket id
+    // under a different staffId is a fresh award — that is what lets a handover
+    // pay the new claimer without touching the original claimer's point.
+    expect(add.mock.calls[0]![0]).toMatchObject({
+      staffId: newClaimerId,
+      referenceId: "ticket-1",
+      type: StaffPointTransactionType.TICKET_CLAIM,
+    });
+    expect(add.mock.calls[0]![0]!.staffId).not.toBe(staffId);
+  });
+});
+
+describe("handover credits the new claimer", () => {
+  it("awards through the same helper a direct claim uses", async () => {
+    const source = await Bun.file("src/modules/tickets/services/ticket.service.ts").text();
+
+    const transfer = source.slice(
+      source.indexOf("async transferTicket"),
+      source.indexOf("private async applyTransferOverwrites"),
+    );
+    expect(transfer.length).toBeGreaterThan(0);
+    expect(transfer).toContain("applyTicketClaimCredit(staff._id, ticketId)");
+    expect(transfer).toContain("pointAwarded");
+  });
+
+  it("tells the actor whether a point was actually awarded", async () => {
+    const flow = await Bun.file(
+      "src/modules/tickets/services/ticket-transfer-flow.ts",
+    ).text();
+
+    expect(flow).toContain("result.pointAwarded");
+    expect(flow).toContain("doneNoPoint");
+  });
 });

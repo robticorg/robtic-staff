@@ -94,6 +94,9 @@ export interface TransferTicketResult {
   ticket: TicketDoc;
   previousClaimerId: UserId;
   reason: string;
+
+  /** False when the new claimer already held this ticket before. */
+  pointAwarded: boolean;
 }
 
 export interface CloseTicketResult {
@@ -383,6 +386,13 @@ export class TicketService extends BaseRepository<Ticket> {
       .exec();
     if (!transferred) throw new ConflictError(M.transfer.raced, { ticketId });
 
+    // The new claimer now owns the ticket, so they earn the claim point the same
+    // way a direct `!claim` earns it. The `staffId + type + referenceId` unique
+    // index keeps this to one point per person per ticket, so handing a ticket
+    // back to someone who already held it awards nothing the second time. The
+    // previous claimer keeps the point they already earned.
+    const { pointAwarded } = await applyTicketClaimCredit(staff._id, ticketId);
+
     await this.applyTransferOverwrites(
       actor.guild,
       transferred,
@@ -400,7 +410,7 @@ export class TicketService extends BaseRepository<Ticket> {
       reason,
     });
 
-    return { ticket: transferred, previousClaimerId, reason };
+    return { ticket: transferred, previousClaimerId, reason, pointAwarded };
   }
 
   private async applyTransferOverwrites(

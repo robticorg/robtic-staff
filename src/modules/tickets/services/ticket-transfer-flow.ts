@@ -39,7 +39,9 @@ export async function performTicketTransfer(
 
   await postChannelNote(actor, result, target);
 
-  const done = M.done(ticketId, target.id);
+  const done = result.pointAwarded
+    ? M.done(ticketId, target.id)
+    : M.doneNoPoint(ticketId, target.id);
   return {
     result,
     dmDelivered,

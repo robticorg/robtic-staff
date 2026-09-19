@@ -1194,6 +1194,16 @@ never drift apart between them.
 > Not to be confused with `!transfer`, which moves a **staff member's position**
 > between accounts. Ticket handover is `!handover`; staff transfer is `!transfer`.
 
+**The new claimer earns the claim point.** A handover runs the same
+`applyTicketClaimCredit` a direct `!claim` runs, so whoever ends up owning the
+ticket is credited for it — `+1 TICKET_CLAIM`, one `StaffActivity`, one
+`ticketsClaimed` bump. The `staffId + type + referenceId` unique index keeps this
+honest in both directions: the **previous claimer keeps** the point they already
+earned (it is never clawed back), and handing a ticket **back** to someone who
+already held it awards nothing the second time. `transferTicket` returns
+`pointAwarded` so the confirmation says which of the two happened rather than
+always promising a point.
+
 Available only on panels with `claimer.transferable: true` and only once the
 ticket is **CLAIMED**. The receiver must be guild staff (`staffPermissionService
 .isStaff`) or an Administrator; bots, the current claimer and the ticket's own
