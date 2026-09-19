@@ -2,6 +2,9 @@ import { emojis } from "../emojis/index.ts";
 
 const E = emojis;
 
+/** `!check` only ever reports on staff below the OWNER boundary — say so on the card. */
+const PROMOTION_SCOPE = "النطاق: الستاف تحت رتبة الأونر";
+
 export const staffMessages = {
   points: {
     reportClaimReason: (caseId: string) => `استلام البلاغ ${caseId}`,
@@ -20,14 +23,17 @@ export const staffMessages = {
       "هذا الحد للفحص بس — ما راح يرقّي أحد تلقائياً ولا يغيّر نقاط أو رتب أي عضو ستاف.",
 
     notConfigured: `${E.warning} ما تم ضبط نقاط الترقية بعد — استخدم \`/promote-points points:<رقم>\` أول.`,
-    noStaff: `${E.warning} ما فيه أعضاء ستاف نشطين في هذا السيرفر.`,
+    noStaff: `${E.warning} ما فيه أعضاء ستاف نشطين تحت رتبة الأونر في هذا السيرفر.`,
 
-    header: (points: number) => `## فحص نقاط الترقية\nالمطلوب: **${points}** نقطة هذا الأسبوع`,
+    scope: PROMOTION_SCOPE,
+    header: (points: number) =>
+      `## فحص نقاط الترقية\nالمطلوب: **${points}** نقطة هذا الأسبوع\n${PROMOTION_SCOPE}`,
     headerPage: (points: number, page: number, pages: number) =>
-      `## فحص نقاط الترقية (${page}/${pages})\nالمطلوب: **${points}** نقطة هذا الأسبوع`,
-    entry: (displayName: string, weeklyPoints: number, decision: string) =>
+      `## فحص نقاط الترقية (${page}/${pages})\nالمطلوب: **${points}** نقطة هذا الأسبوع\n${PROMOTION_SCOPE}`,
+    entry: (displayName: string, userId: string, weeklyPoints: number, decision: string) =>
       [
         `**اسم الستاف:** ${displayName}`,
+        `**المنشن:** <@${userId}>`,
         `**نقاط هذا الأسبوع:** ${weeklyPoints}`,
         `**القرار:** ${decision}`,
       ].join("\n"),

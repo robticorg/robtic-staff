@@ -6,9 +6,20 @@ import type { GuildId, IdLike } from "../../../shared/types/index.ts";
 import { toObjectId } from "../../../shared/utils/id.ts";
 import { periodStart } from "../../../shared/utils/time.ts";
 import { staffConfigService } from "../../configuration/services/staff-config.service.ts";
+import { StaffTier } from "../../configuration/types/enums.ts";
+import { getHierarchy } from "../../configuration/utils/staff-levels.ts";
 import { StaffPointTransactionModel } from "../models/staff-point-transaction.model.ts";
 import { StaffModel } from "../models/staff.model.ts";
 import { StaffStatus } from "../types/enums.ts";
+
+/**
+ * `!check` reports on the staff a promotion decision actually applies to — every
+ * rung **below** the OWNER boundary. Owner and Ship tiers are left out. With no
+ * OWNER boundary configured there is no tier to exclude, so everyone is listed.
+ */
+export function belowLevelFilter(belowLevel: number | null): Record<string, unknown> {
+  return belowLevel === null ? {} : { currentRoleLevel: { $lt: belowLevel } };
+}
 
 /** Monday 00:00:00 in the guild timezone → now. */
 export interface WeekRange {
@@ -25,6 +36,8 @@ export interface StaffWeeklyPoints {
 
 export interface CheckEntry {
   displayName: string;
+  /** Rendered as a mention on the card. The staff `_id` stays internal. */
+  userId: string;
   weeklyPoints: number;
   eligible: boolean;
   decision: string;
@@ -80,14 +93,16 @@ export class StaffPromotionPointsService {
 
   /**
    * Weekly totals for every active staff member in the guild, summed inside MongoDB
-   * so no transaction document is ever pulled into memory.
+   * so no transaction document is ever pulled into memory. `belowLevel` trims the
+   * roster before the aggregation runs, so excluded staff cost nothing.
    */
   async getAllStaffWeeklyPoints(
     guildId: GuildId,
     now: Date = new Date(),
+    belowLevel: number | null = null,
   ): Promise<StaffWeeklyPoints[]> {
     const staff = await StaffModel.find(
-      { guildId, status: StaffStatus.ACTIVE },
+      { guildId, status: StaffStatus.ACTIVE, ...belowLevelFilter(belowLevel) },
       { userId: 1, currentRoleLevel: 1 },
     )
       .lean<ActiveStaffRow[]>()
@@ -127,13 +142,17 @@ export class StaffPromotionPointsService {
   }
 
   /**
-   * The full `!check` report — one entry per active staff member, ordered by staff
-   * hierarchy level then display name. Never exposes staff ids or Discord ids.
+   * The full `!check` report — one entry per active staff member **below the OWNER
+   * boundary**, ordered by staff hierarchy level then display name. Carries the
+   * Discord id so the card can mention them; the staff `_id` never leaves here.
    */
   async generateCheckResult(guild: Guild, now: Date = new Date()): Promise<CheckResult> {
+    const hierarchy = await getHierarchy(guild.id);
+    const ownerStartLevel = hierarchy.boundaryLevels[StaffTier.OWNER];
+
     const [requiredPoints, weekly] = await Promise.all([
       this.getRequiredPoints(guild.id),
-      this.getAllStaffWeeklyPoints(guild.id, now),
+      this.getAllStaffWeeklyPoints(guild.id, now, ownerStartLevel),
     ]);
 
     const members = await fetchMembers(
@@ -149,6 +168,7 @@ export class StaffPromotionPointsService {
           currentRoleLevel: row.currentRoleLevel,
           displayName:
             members.get(row.userId)?.displayName ?? staffMessages.promotionPoints.unknownMember,
+          userId: row.userId,
           weeklyPoints: row.weeklyPoints,
           eligible,
           decision: eligible

@@ -193,6 +193,7 @@ live on each `definePrefixCommand({ name })`; Arabic aliases are a central map i
 | `role_configs`             | Discord role → staff-system slot mapping            | mutable    |
 | `channel_configs`          | staff-system channel slot → Discord channel         | mutable    |
 | `staff_configs`            | guild-wide numeric staff settings (promotion points)| mutable    |
+| `warning_panel_deployments`| where the warning panel message lives, per guild    | mutable    |
 | `fast_access`              | `$command` shortcuts per guild + context            | mutable    |
 
 **The `staff` document never embeds reports, tickets, warnings, activities or
@@ -252,7 +253,9 @@ by not holding a Staff role.
 
 | Surface | Who |
 |---|---|
-| `/role · /channels · /points · /promote-points · /ticket-setup · /vacation-setup · /faq` | Administrator only |
+| `/role · /channels · /points · /promote-points · /warn-setup · /ticket-setup · /vacation-setup · /faq` | Administrator only |
+| Warning panel — تايم اوت · سجن · تحذير عضو | staff (`canActAsStaff`) |
+| Warning panel — تحذير ستاف | `canWarn()`: Staff Manager below Owner · Owner Manager at Owner · Administrator anywhere |
 | `!check` (alias `!فحص`) | **Staff Manager / Owner Manager** (admin folded in) |
 | `/scan · /fast-access` | Staff Manager (admin folded in) |
 | `!come` | **HIGHSTAFF tier and up** (`/role boundary tier:highstaff`) |
@@ -573,6 +576,149 @@ matches a missing field), so no historical warning is reinterpreted or lost.
 
 ---
 
+## Warning Management Panel (`/warn-setup`)
+
+`src/modules/warning-panel/` is an **interaction layer, not a second warning
+system.** Every rule — authorization, warning progression, category selection,
+points, appeals, role reconciliation — stays in the services it already lived in.
+The panel resolves inputs, calls those services, and reports what they returned.
+
+```
+/warn-setup                     → Administrator only; posts/updates the panel in
+                                  the configured WARN_PANEL channel
+إدارة العقوبات والتحذيرات        → one select menu, four actions:
+   تايم اوت عضو · سجن عضو · تحذير عضو · تحذير ستاف
+```
+
+The channel comes from the existing channel-config system
+(`/channels set type:لوحة إدارة العقوبات`) — no id is hardcoded, and `createPanel`
+refuses to deploy until it is configured.
+
+### The modals use native components, not typed ids
+
+discord.js 14.27 supports select menus and file uploads **inside modals**, so:
+
+| Field | Component | Why |
+|---|---|---|
+| المستخدم | `UserSelectMenuBuilder` in a `LabelBuilder` | no id to mistype or spoof |
+| السبب | `TextInputBuilder` (paragraph) | capped at `limits.reasonMaxLength` |
+| الدليل | `FileUploadBuilder` | managers attach proof; no pasted CDN links |
+| المدة | `TextInputBuilder` (short) | **timeout only** |
+| تحذير شفوي | `CheckboxBuilder` | **staff warn only** — see below |
+
+Evidence is required for all four actions (`minValues: 1`) and capped at
+`punishmentConfig.maxEvidenceShown`, reusing the punishment module's existing
+limit rather than defining a second one. All uploaded URLs are persisted on the
+punishment / warning record.
+
+### Verbal vs real staff warnings
+
+`!warn` issues a **real** staff warning unless the reason ends with a `=` marker,
+which makes it verbal. The panel exposes that same choice as a checkbox, default
+**unchecked = real**, so the panel and the prefix command have identical defaults
+and both reach `issueVerbalStaffWarning` / `issueDirectRealStaffWarning`. The
+verbal → 3 → real escalation, the fire-at-level-3 rule and the point award all
+run inside those services exactly as before.
+
+### Authorization is delegated, never reimplemented
+
+Staff warnings call `staffManagementAuthorizationService.canWarn(actor, target)`,
+which already encodes the required policy and recomputes the target's level from
+`getHierarchy` at decision time:
+
+| Actor | May warn |
+|---|---|
+| Staff Manager | `targetLevel < ownerStartLevel` |
+| Owner Manager | `ownerStartLevel <= targetLevel < shipStartLevel` |
+| Administrator | anything, including Ship |
+
+The manager **never picks** `STAFF` vs `OWNER`. `resolveWarningCategory` derives
+it from the target's live level against the Owner boundary, so the role set
+(`/role set type:رتبة تحذير الستاف 1|2|3` vs `…الأونر…`) follows automatically and
+cannot be steered from the client.
+
+Timeout, jail and user warnings require `canActAsStaff` — the same bar `!warn`
+uses for user warnings and the report flow uses for punishments.
+
+### Nothing is trusted from the client
+
+The select menu only decides **which modal opens**. On submit the service
+re-reads every value, re-fetches the target as a live `GuildMember`, and runs
+authorization again. Component visibility, cached levels and cached permissions
+are never treated as proof.
+
+### Execution order — success is never claimed early
+
+Timeout and jail go through `punishmentService.executeAction`, which already
+guarantees the required ordering: the record is created `PENDING`, the Discord
+call runs, and only a **confirmed** call transitions it to `EXECUTED`. A Discord
+failure lands on `FAILED` with `failureReason`, is audited, and the caller reports
+the failure — no success message, no successful punishment record.
+
+### `ModerationActionService` — one implementation, two entry points
+
+`!jail @user <reason>` (alias **`!سجن`**, attach the proof to the message) does
+exactly what the panel's سجن عضو does, because both call
+`moderationActionService.jail(...)`. That service owns the whole flow —
+create → execute → punishment log → warning-channel entry — so the panel and the
+command cannot drift apart. `timeout()` sits beside it for the same reason.
+
+`!jail` requires staff (`canActAsStaff`), a reason, and **at least one
+attachment**; it refuses self and bots, and reports a Discord failure rather than
+claiming success. A test asserts neither the panel nor the command calls
+`createPunishment` / `executeAction` directly, so a future change can't quietly
+reintroduce a second copy of the flow.
+
+User warnings are centralised the same way: `issueUserWarning` posts the
+warning-channel entry itself, so `!warn` and the panel produce an identical log
+rather than the panel adding one the prefix command doesn't.
+
+### One log channel
+
+All four actions post to `STAFF_WARN_ANNOUNCE`, the channel staff warnings
+already use. `StaffWarningLogService` grew one method, `sendModerationAction`,
+and its channel-resolution and send path were extracted so `send`, `sendVerbal`
+and the new entry share it — no second logging implementation, no second channel.
+
+Staff and Owner warnings keep their **exact** existing format. Timeout, jail and
+user warnings use the same plain-text shape plus the lines they need:
+
+```
+**تايم اوت <:Attention:…>**
+**منشن : <@USER_ID>**
+**السبب : REASON**
+**المدة : 1h**
+**الدليل : PROOF**
+**بواسطة : <@MOD_ID>**
+```
+
+No punishment id, warning id or staff id is ever rendered. The proof-trimming
+loop that keeps a message under 2000 characters now lives in one function
+(`composeWithProofLimit`) used by both formats.
+
+### Concurrency
+
+`punishmentService` is already atomic per record — `assertPunishmentTransition`
+plus a status-guarded `findOneAndUpdate` mean one punishment can never execute
+twice — and `staffPointService.add` dedupes by `referenceId`, so a warning can
+never award its point twice. On top of that the panel holds a short in-process
+lock keyed by `guild:actor:target:action`, which stops a double-click from
+creating two *different* records.
+
+### Tests
+
+Pure: the panel offers exactly the four actions and says **تايم اوت** (not
+توقيت); every modal uses `UserSelect` for the target and `FileUpload` for
+evidence; duration appears on timeout only and the verbal checkbox on staff warn
+only, defaulting to false; evidence min/max track the shared punishment limit;
+the four modal custom ids are distinct; duration parsing accepts the documented
+formats and **rejects** rather than clamps past Discord's 28-day cap and under
+its 1-minute floor; the moderation entries render target/reason/duration/evidence/
+moderator and leak no id; and the Staff / Owner / verbal warning layouts are
+asserted line-by-line so the shared composer cannot silently reshape them.
+
+---
+
 ## Reports — handler-owned, transferable, closed on decision
 
 The `#reports` card is a **Components V2 container** (accent follows state:
@@ -758,6 +904,8 @@ runtime check) and guild-only. All replies are ephemeral.
 /channels list                                → grouped ephemeral overview
 
 /vacation-setup                               → post / refresh the vacation panel here
+/warn-setup                                   → post / refresh the warning panel in
+                                                the configured WARN_PANEL channel
 ```
 
 `/role set` covers **22 slots** behind one `type:` dropdown — `START`, `END`,
@@ -1197,8 +1345,8 @@ runner.ts            parse → resolve → execute; DomainError → reply, else 
 _shared/             parse (mentions/ids/counts), guards, target resolution
 ticket/  claim close delete rename transcript add remove   → TicketService
 modmail/ end                                               → resolutionService.openResolution
-staff/   accept fire prompt demote warn unwarn warnings warns break unbreak
-         stats leaderboard                                → StaffStatisticsService (read-only)
+staff/   accept fire prompt demote warn unwarn warnings warns break unbreak jail
+         stats leaderboard check                          → StaffStatisticsService (read-only)
 ```
 
 | command | delegates to | notes |
@@ -1215,6 +1363,7 @@ staff/   accept fire prompt demote warn unwarn warnings warns break unbreak
 | `!prompt @user [n]` | `.promote` | `+1` (or `+n`), never past END |
 | `!demote @user [n]` | `.demote` | `-1` (or `-n`), floored at 0, keeps Staff role + `ACTIVE` at level 0 |
 | `!warn @user <reason>` | `warningActionService` | **channel-routed**: in `USER_WARNS` → `UserWarning` (+1 `USER_WARNING`, no staff roles); in `STAFF_WARNS` → managers only, `StaffWarning` at `activeCount+1` (cap 3) + warn role + issuer **+1 `STAFF_WARNING`**; anywhere else → **silent** |
+| `!jail @user <reason>` (`!سجن`) | `moderationActionService.jail` | staff-gated; **requires an attachment** as proof; refuses self and bots. Same call the panel's سجن عضو makes, so the `JAIL` role, punishment record and warning-channel entry are identical. A Discord failure is reported, never reported as success |
 | `!unwarn @user <id>` | `.revokeWarning` | never deletes — marks `REVOKED`/`REMOVED` with `revokedBy/removedBy` + reason; staff warn role re-pointed at the highest still-active level |
 | `!warnings [@user]` | read | own by default; others = staff only; staff warnings shown to managers / the warned staff |
 | `!warns <id>` | read | full detail incl. evidence; user warning = staff or the warned user; staff warning = managers or the warned staff |
@@ -1761,6 +1910,16 @@ transactions both count (`TICKET_CLAIM`, `REPORT_CLAIM`, `USER_WARNING`,
 `APPEAL_SUCCESS_PENALTY`, …) — weekly points are the **net** sum. Served by the
 existing `StaffPointTransaction {staffId, createdAt:-1}` index.
 
+### Who appears in the report
+
+Only staff **below the OWNER boundary** — Owner and Ship tiers are never listed,
+since a weekly point threshold isn't what their promotion turns on. The ceiling
+comes from `hierarchy.boundaryLevels[StaffTier.OWNER]` and is applied as
+`currentRoleLevel: { $lt: ownerStartLevel }` on the staff query, so excluded
+members are trimmed **before** the aggregation and cost nothing. With no OWNER
+boundary configured there is no tier to exclude and everyone is listed. The card
+states the scope in its header so a missing owner never reads as a bug.
+
 ### The decision
 
 Strictly `weeklyPoints >= promotionPointsRequired` → *مؤهل للترقية*, otherwise
@@ -1768,9 +1927,12 @@ Strictly `weeklyPoints >= promotionPointsRequired` → *مؤهل للترقية*
 
 ### Output
 
-Components V2, one block per staff member — display name, weekly points,
-decision. **No staff id, Discord id or database id is ever rendered** (there is a
-test asserting that). Ordering is `currentRoleLevel` DESC → display name ASC,
+Components V2, one block per staff member — display name, **mention**, weekly
+points, decision. The staff `_id` is never rendered (there is a test asserting
+that); the Discord id appears only inside the mention. The card sets no
+`allowedMentions`, so the prefix runner's `{ parse: [] }` default applies and the
+mentions are clickable pills that **ping nobody** — a 15-name report should not
+fire 15 notifications. Ordering is `currentRoleLevel` DESC → display name ASC,
 never by points. A V2 message caps at 40 components, so the roster is split at 15
 members per message.
 
@@ -1783,8 +1945,10 @@ members per message.
   `!check` command holds no business logic.
 - `modules/staff/render/check-card.ts`, copy in `data/messages/staff.ts`.
 - Pure tests: Monday/00:00/timezone week boundary, `>=` boundary incl. a negative
-  weekly net, validation rejects `0 / -1 / 1.5 / NaN / Infinity`, card renders
-  name+points+decision, leaks no identifier, splits a 31-member roster into 3
+  weekly net, validation rejects `0 / -1 / 1.5 / NaN / Infinity`, the owner-tier
+  ceiling (`belowLevelFilter` excludes the owner rung itself, lists everyone when
+  unconfigured), card renders name+points+decision, mentions every member, leaves
+  `allowedMentions` unset, leaks no database id, splits a 31-member roster into 3
   messages under the component cap.
 
 ---

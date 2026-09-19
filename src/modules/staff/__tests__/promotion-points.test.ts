@@ -6,6 +6,7 @@ import { assertPositiveInteger } from "../../configuration/services/staff-config
 import { buildCheckCards } from "../render/check-card.ts";
 import {
   StaffPromotionPointsService,
+  belowLevelFilter,
   type CheckEntry,
 } from "../services/staff-promotion-points.service.ts";
 
@@ -57,6 +58,27 @@ describe("evaluateEligibility", () => {
   });
 });
 
+describe("belowLevelFilter (owner tier and up are out of scope)", () => {
+  it("keeps only the rungs under the OWNER boundary", () => {
+    expect(belowLevelFilter(5)).toEqual({ currentRoleLevel: { $lt: 5 } });
+  });
+
+  it("lists everyone when no OWNER boundary is configured", () => {
+    expect(belowLevelFilter(null)).toEqual({});
+  });
+
+  it("excludes the owner rung itself, not just the ones above it", () => {
+    const { currentRoleLevel } = belowLevelFilter(5) as { currentRoleLevel: { $lt: number } };
+    const included = [0, 1, 4, 5, 6, 9].filter((level) => level < currentRoleLevel.$lt);
+    expect(included).toEqual([0, 1, 4]);
+  });
+
+  it("reports on nobody when the ladder starts at the owner boundary", () => {
+    const { currentRoleLevel } = belowLevelFilter(0) as { currentRoleLevel: { $lt: number } };
+    expect([0, 1, 2].filter((level) => level < currentRoleLevel.$lt)).toEqual([]);
+  });
+});
+
 describe("promotion points validation", () => {
   it("accepts positive integers", () => {
     expect(() => assertPositiveInteger(1)).not.toThrow();
@@ -71,8 +93,14 @@ describe("promotion points validation", () => {
 });
 
 describe("buildCheckCards", () => {
-  const entry = (displayName: string, weeklyPoints: number, eligible: boolean): CheckEntry => ({
+  const entry = (
+    displayName: string,
+    weeklyPoints: number,
+    eligible: boolean,
+    userId = "123456789012345678",
+  ): CheckEntry => ({
     displayName,
+    userId,
     weeklyPoints,
     eligible,
     decision: eligible ? "مؤهل للترقية" : "غير مؤهل للترقية",
@@ -88,13 +116,28 @@ describe("buildCheckCards", () => {
     expect(json).toContain("غير مؤهل للترقية");
   });
 
-  it("never leaks an identifier of any kind", () => {
+  it("mentions each staff member alongside their name", () => {
+    const [card] = buildCheckCards(10, [
+      entry("RoBo", 15, true, "111111111111111111"),
+      entry("Ahmed", 7, false, "222222222222222222"),
+    ]);
+    const json = JSON.stringify(card);
+
+    expect(json).toContain("<@111111111111111111>");
+    expect(json).toContain("<@222222222222222222>");
+  });
+
+  it("leaves mentions unpingable by not overriding allowedMentions", () => {
+    const [card] = buildCheckCards(10, [entry("RoBo", 15, true)]);
+    expect(card).not.toHaveProperty("allowedMentions");
+  });
+
+  it("never leaks a database identifier", () => {
     const [card] = buildCheckCards(10, [entry("RoBo", 15, true)]);
     const json = JSON.stringify(card);
 
     expect(json).not.toContain("staffId");
-    expect(json).not.toContain("userId");
-    expect(json).not.toMatch(/<@!?\d{17,20}>/);
+    expect(json).not.toContain("_id");
   });
 
   it("splits a large roster across messages instead of blowing the component cap", () => {

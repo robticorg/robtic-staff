@@ -19,7 +19,10 @@ const ENTRIES_PER_MESSAGE = 15;
 
 /**
  * One block per staff member, split across as many messages as the roster needs.
- * Nothing but the display name, the weekly total, and the decision goes out.
+ * Display name, mention, weekly total, decision — the staff `_id` never appears.
+ *
+ * No `allowedMentions` is set, so the prefix runner's `{ parse: [] }` default
+ * applies and the mentions render as clickable pills without pinging anyone.
  */
 export function buildCheckCards(
   requiredPoints: number,
@@ -47,7 +50,7 @@ export function buildCheckCards(
       );
       container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-          M.entry(entry.displayName, entry.weeklyPoints, entry.decision),
+          M.entry(entry.displayName, entry.userId, entry.weeklyPoints, entry.decision),
         ),
       );
     }

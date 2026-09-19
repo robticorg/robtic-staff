@@ -24,6 +24,10 @@ export const CHANNEL_SLOT_META: Record<ChannelConfigType, ChannelSlotMeta> = {
     label: "إعلان تحذيرات الستاف",
     group: "التحذيرات",
   },
+  [ChannelConfigType.WARN_PANEL]: {
+    label: "لوحة إدارة العقوبات",
+    group: "التحذيرات",
+  },
   [ChannelConfigType.PUNISHMENT_LOG]: { label: "لوق العقوبات", group: "العقوبات" },
   [ChannelConfigType.BAN_APPROVAL]: { label: "موافقة الباند", group: "العقوبات" },
   [ChannelConfigType.KICK_APPROVAL]: { label: "موافقة الكيك", group: "العقوبات" },

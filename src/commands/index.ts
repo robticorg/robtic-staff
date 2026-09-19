@@ -10,6 +10,7 @@ import pointsCommand from "./points/index.ts";
 import sleepCommand from "./sleep/index.ts";
 import ticketStatsCommand from "./ticket-stats/index.ts";
 import promotePointsCommand from "./promote-points/index.ts";
+import warnSetupCommand from "./warn-setup/index.ts";
 
 export const commands: SlashCommand[] = [
   roleCommand,
@@ -23,4 +24,5 @@ export const commands: SlashCommand[] = [
   sleepCommand,
   ticketStatsCommand,
   promotePointsCommand,
+  warnSetupCommand,
 ];

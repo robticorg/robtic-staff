@@ -22,8 +22,31 @@ export interface VerbalStaffWarnMessageInput {
   category?: StaffWarnCategory;
 }
 
-function compose(heading: string, targetId: UserId, reason: string, proof: string): string {
-  return [heading, M.mention(targetId), M.reason(reason), M.proof(proof)].join("\n");
+/**
+ * Builds `leading… / proof / trailing…` and drops proof URLs one at a time until
+ * the whole thing fits Discord's 2000-character message cap. Shared by the staff
+ * warning format and the timeout / jail / user-warning entries that sit in the
+ * same channel, so the truncation rule is defined once.
+ */
+export function composeWithProofLimit(
+  leadingLines: readonly string[],
+  evidence: readonly string[],
+  trailingLines: readonly string[] = [],
+): string {
+  const build = (proof: string) => [...leadingLines, M.proof(proof), ...trailingLines].join("\n");
+
+  const urls = evidence.filter((url) => url.trim().length > 0);
+  if (urls.length === 0) return build(M.noProof);
+
+  let kept = urls.length;
+  let message = build(urls.join(M.proofSeparator));
+
+  while (message.length > DISCORD_MESSAGE_LIMIT && kept > 1) {
+    kept -= 1;
+    message = build(urls.slice(0, kept).join(M.proofSeparator) + M.proofSeparator + M.truncated);
+  }
+
+  return message;
 }
 
 function composeWithLimit(
@@ -32,22 +55,7 @@ function composeWithLimit(
   reason: string,
   evidence: readonly string[],
 ): string {
-  const urls = evidence.filter((url) => url.trim().length > 0);
-
-  if (urls.length === 0) {
-    return compose(heading, targetId, reason, M.noProof);
-  }
-
-  let kept = urls.length;
-  let message = compose(heading, targetId, reason, urls.join(M.proofSeparator));
-
-  while (message.length > DISCORD_MESSAGE_LIMIT && kept > 1) {
-    kept -= 1;
-    const proof = urls.slice(0, kept).join(M.proofSeparator) + M.proofSeparator + M.truncated;
-    message = compose(heading, targetId, reason, proof);
-  }
-
-  return message;
+  return composeWithProofLimit([heading, M.mention(targetId), M.reason(reason)], evidence);
 }
 
 export function formatStaffWarningMessage(input: StaffWarnMessageInput): string {

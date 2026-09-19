@@ -8,6 +8,7 @@ import { routeVacationComponent } from "../modules/vacation/handlers/index.ts";
 import { routeStaffSupportComponent } from "../modules/staff-support/handlers/component-router.ts";
 import { routeAppealComponent } from "../modules/appeals/handlers/index.ts";
 import { routeGiftClaimComponent } from "../modules/gift-claims/handlers/index.ts";
+import { routeWarningPanelComponent } from "../modules/warning-panel/handlers/component-router.ts";
 
 const routers = [
   routeModmailComponent,
@@ -18,6 +19,7 @@ const routers = [
   routeStaffSupportComponent,
   routeAppealComponent,
   routeGiftClaimComponent,
+  routeWarningPanelComponent,
 ];
 
 export default defineEvent({

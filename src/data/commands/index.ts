@@ -12,6 +12,7 @@ export const CommandName = {
   SLEEP: "sleep",
   TICKET_STATS: "ticket-stats",
   PROMOTE_POINTS: "promote-points",
+  WARN_SETUP: "warn-setup",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -204,6 +205,9 @@ export const commandCopy = {
   },
   staffSetup: {
     description: "نشر أو تحديث لوحة دعم الستاف في هذا الروم",
+  },
+  warnSetup: {
+    description: "نشر أو تحديث لوحة إدارة العقوبات والتحذيرات في الروم المضبوط",
   },
   faq: {
     description: "إدارة الأسئلة الشائعة (FAQ) اللي تستخدمها التكتات",

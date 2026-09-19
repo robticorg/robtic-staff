@@ -12,6 +12,10 @@ import {
 } from "../types/enums.ts";
 import { warningCategoryOf } from "./warning-category.ts";
 import {
+  formatModerationLogMessage,
+  type ModerationLogInput,
+} from "../render/moderation-log-message.ts";
+import {
   formatStaffWarningMessage,
   formatVerbalStaffWarningMessage,
   staffWarnMessageWasTruncated,
@@ -40,7 +44,52 @@ export interface StaffWarningLogResult {
   messageId?: string;
 }
 
+export type SendModerationLogInput = ModerationLogInput & { guild: Guild };
+
 export class StaffWarningLogService {
+  /**
+   * Timeout / jail / user-warning entries land in the same channel as staff
+   * warnings — one configured channel for the whole moderation surface.
+   */
+  async sendModerationAction(input: SendModerationLogInput): Promise<StaffWarningLogResult> {
+    try {
+      const { guild, ...entry } = input;
+      const content = formatModerationLogMessage(entry);
+      if (staffWarnMessageWasTruncated(content)) {
+        log.warn(`${entry.kind} log proof list trimmed to fit Discord's limit`);
+      }
+      return await this.post(guild, content, entry.targetId);
+    } catch (err) {
+      log.error("moderation log post failed", err);
+      return { outcome: "send-failed" };
+    }
+  }
+
+  /** Resolves the one configured warning channel and posts to it. */
+  private async post(
+    guild: Guild,
+    content: string,
+    targetId: UserId,
+  ): Promise<StaffWarningLogResult> {
+    const channelId = await channelConfigService.getChannelId(
+      guild.id,
+      ChannelConfigType.STAFF_WARN_ANNOUNCE,
+    );
+    if (!channelId) {
+      log.warn(`STAFF_WARN_ANNOUNCE channel is not configured for guild ${guild.id}`);
+      return { outcome: "not-configured" };
+    }
+
+    const channel = await guild.channels.fetch(channelId).catch(() => null);
+    if (!channel || !channel.isTextBased()) {
+      log.warn(`STAFF_WARN_ANNOUNCE channel ${channelId} in ${guild.id} is missing or not text`);
+      return { outcome: "channel-unavailable" };
+    }
+
+    const message = await channel.send({ content, allowedMentions: { users: [targetId] } });
+    return { outcome: "sent", messageId: message.id };
+  }
+
   async send(input: SendStaffWarningLogInput): Promise<StaffWarningLogResult> {
     try {
       const warning = await StaffWarningModel.findById(toObjectId(input.warningId)).exec();

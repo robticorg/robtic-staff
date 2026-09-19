@@ -104,6 +104,18 @@ export const prefixMessages = {
     demoteUsage: `${E.warning} الطريقة: \`!تنزيل @عضو [عدد-المستويات]\``,
   },
 
+  jail: {
+    usage: `${E.warning} الطريقة: \`!سجن @عضو <السبب>\` — وأرفق الدليل مع الرسالة.`,
+    reasonRequired: `${E.warning} لازم تكتب سبب للسجن.`,
+    proofRequired: `${E.warning} لازم ترفق دليل (صورة/سكرين) مع السجن — بدون دليل ما ينفّذ.`,
+    self: `${E.error} ما تقدر تسجن نفسك.`,
+    bot: `${E.error} ما تقدر تسجن بوت.`,
+    jailed: (mention: string, reason: string) =>
+      `${E.success} تم سجن ${mention}.\nالسبب: ${reason}`,
+    failed: (reason: string) =>
+      `${E.error} ما تم تنفيذ السجن — ${reason}\nما انحفظت العقوبة كمنفّذة.`,
+  },
+
   warn: {
     userWarnUsage: `${E.warning} الطريقة: \`!تحذير @عضو <السبب>\``,
     reasonRequired: `${E.warning} لازم تكتب سبب للتحذير.`,

@@ -13,6 +13,18 @@ export const staffWarnChannelMessage = {
   proofSeparator: " ",
 
   truncated: "…",
+
+  /**
+   * Timeout / jail / user-warning entries share the staff-warning channel and its
+   * plain-text shape. The staff and owner warning headings above are untouched.
+   */
+  moderation: {
+    timeoutHeading: `**تايم اوت ${customEmojis.attention}**`,
+    jailHeading: `**سجن ${customEmojis.attention}**`,
+    userWarnHeading: `**تحذير عضو ${customEmojis.attention}**`,
+    duration: (duration: string) => `**المدة : ${duration}**`,
+    moderator: (userId: string) => `**بواسطة : <@${userId}>**`,
+  },
 } as const;
 
 export const warningMessages = {
