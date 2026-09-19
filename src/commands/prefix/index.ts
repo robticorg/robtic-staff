@@ -29,6 +29,7 @@ import staffPoints from "./staff/points.ts";
 import staffLeaderboard from "./staff/leaderboard.ts";
 import staffCheck from "./staff/check.ts";
 import staffJail from "./staff/jail.ts";
+import staffUnjail from "./staff/unjail.ts";
 
 export const prefixCommands: PrefixCommand[] = [
   ticketClaim,
@@ -60,4 +61,5 @@ export const prefixCommands: PrefixCommand[] = [
   staffLeaderboard,
   staffCheck,
   staffJail,
+  staffUnjail,
 ];

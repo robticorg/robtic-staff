@@ -24,11 +24,9 @@ export interface VerbalStaffWarnMessageInput {
 
 /**
  * Builds `leading… / proof / trailing…` and drops proof URLs one at a time until
- * the whole thing fits Discord's 2000-character message cap. Shared by the staff
- * warning format and the timeout / jail / user-warning entries that sit in the
- * same channel, so the truncation rule is defined once.
+ * the whole thing fits Discord's 2000-character message cap.
  */
-export function composeWithProofLimit(
+function composeWithProofLimit(
   leadingLines: readonly string[],
   evidence: readonly string[],
   trailingLines: readonly string[] = [],

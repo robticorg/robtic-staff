@@ -594,6 +594,36 @@ The channel comes from the existing channel-config system
 (`/channels set type:لوحة إدارة العقوبات`) — no id is hardcoded, and `createPanel`
 refuses to deploy until it is configured.
 
+### The stored message id, and clearing the select
+
+`/warn-setup` upserts `{guildId, key:"main", channelId, messageId}` into
+`warning_panel_deployments`, so the bot can find and re-edit its own panel after a
+restart instead of spamming a new one. Re-running the command edits that message;
+moving the panel to a different channel deletes the old one.
+
+That stored id exists because **a select menu keeps showing the option the manager
+picked.** `showModal` *is* the interaction response, so the same interaction can't
+also update the message — the fix is a separate edit, and the id is what makes
+that possible. `WarningPanelRefreshService` does it from two triggers:
+
+| Trigger | What it covers |
+|---|---|
+| after every use (`force: true`) | clears the menu for the manager who just used it — this is the one that matters |
+| periodic sweep, `refreshIntervalMs` | every stored panel, for a client still holding a stale selection |
+
+A `lastRefreshedAt` map suppresses an edit the service already made inside the
+interval, so the after-use refresh and the sweep don't double-edit the same
+message. A deleted message or channel returns `message-gone` / `channel-gone`
+rather than throwing, so one broken deployment can't kill the sweep.
+
+> **`refreshIntervalMs` is 5000 and that is aggressive.** The panel's content never
+> changes, so the sweep re-sends an identical payload — at 5s that is ~17,000 edits
+> per day per guild against Discord's per-channel edit limit, and it scales with
+> guild count. The after-use refresh already clears the menu at the only moment it
+> is actually stale. **Set `refreshIntervalMs: 0` in `src/data/warn-panel/config.ts`
+> to disable the sweep** and keep the after-use refresh, or raise it to something
+> like `300_000` if you want a slow safety net.
+
 ### The modals use native components, not typed ids
 
 discord.js 14.27 supports select menus and file uploads **inside modals**, so:
@@ -665,36 +695,44 @@ command cannot drift apart. `timeout()` sits beside it for the same reason.
 
 `!jail` requires staff (`canActAsStaff`), a reason, and **at least one
 attachment**; it refuses self and bots, and reports a Discord failure rather than
-claiming success. A test asserts neither the panel nor the command calls
-`createPunishment` / `executeAction` directly, so a future change can't quietly
-reintroduce a second copy of the flow.
+claiming success.
 
-User warnings are centralised the same way: `issueUserWarning` posts the
-warning-channel entry itself, so `!warn` and the panel produce an identical log
-rather than the panel adding one the prefix command doesn't.
+**`!unjail @user [reason]`** (alias **`!فك`**) lifts it through
+`moderationActionService.unjail`, which reverses the punishment record — removing
+the configured role and marking it `REVOKED` with an audit entry. Two details
+worth knowing:
 
-### One log channel
+- it resolves the target **by id, not as a member**, so a jail on someone who has
+  since left the guild can still be lifted instead of staying active forever;
+- if there is no punishment record but the member holds the jail role — jailed by
+  hand, or before the bot managed it — the role is removed anyway and the reply
+  says so, rather than reporting a reversal that did not happen.
 
-All four actions post to `STAFF_WARN_ANNOUNCE`, the channel staff warnings
-already use. `StaffWarningLogService` grew one method, `sendModerationAction`,
-and its channel-resolution and send path were extracted so `send`, `sendVerbal`
-and the new entry share it — no second logging implementation, no second channel.
+A test asserts that neither the panel nor either command calls
+`createPunishment` / `executeAction` / `reversePunishment` directly, so a future
+change can't quietly reintroduce a second copy of the flow. Two more assert the
+punishment and user-warning paths never touch `staffWarningLogService`, which is
+what would turn a log back into an announcement.
 
-Staff and Owner warnings keep their **exact** existing format. Timeout, jail and
-user warnings use the same plain-text shape plus the lines they need:
+### Logged vs announced
 
-```
-**تايم اوت <:Attention:…>**
-**منشن : <@USER_ID>**
-**السبب : REASON**
-**المدة : 1h**
-**الدليل : PROOF**
-**بواسطة : <@MOD_ID>**
-```
+**Only a staff warning is announced.** `STAFF_WARN_ANNOUNCE` is where the warned
+member sees their warning and gets pinged, so nothing else goes there:
 
-No punishment id, warning id or staff id is ever rendered. The proof-trimming
-loop that keeps a message under 2000 characters now lives in one function
-(`composeWithProofLimit`) used by both formats.
+| Action | Goes to | Announced? |
+|---|---|---|
+| تايم اوت عضو | `PUNISHMENT_LOG` | no |
+| سجن عضو / `!jail` | `PUNISHMENT_LOG` | no |
+| تحذير عضو / `!warn` (user) | `WARNING_LOG` (embed) | no |
+| تحذير ستاف / `!warn` (staff) | `WARNING_LOG` **+** `STAFF_WARN_ANNOUNCE` | **yes**, pings the member |
+
+Staff and Owner warnings keep their **exact** existing format in the announce
+channel — that part is untouched and pinned by line-by-line tests.
+
+Because a timeout or jail now appears in `PUNISHMENT_LOG` and nowhere else,
+`buildPunishmentLog` carries the two things that would otherwise be lost: the
+**duration** (timeout) and the **evidence** the moderator uploaded. Both lines are
+omitted when empty, so an approval-flow punishment logs exactly as it did before.
 
 ### Concurrency
 
@@ -716,6 +754,11 @@ formats and **rejects** rather than clamps past Discord's 28-day cap and under
 its 1-minute floor; the moderation entries render target/reason/duration/evidence/
 moderator and leak no id; and the Staff / Owner / verbal warning layouts are
 asserted line-by-line so the shared composer cannot silently reshape them.
+
+Refresh: an edit is issued for the stored message, a repeat inside the interval is
+skipped, `force` overrides that skip (so a use always clears the menu), a deleted
+message/channel is reported rather than thrown, and `refreshIntervalMs: 0` starts
+no timer.
 
 ---
 
@@ -1345,7 +1388,7 @@ runner.ts            parse → resolve → execute; DomainError → reply, else 
 _shared/             parse (mentions/ids/counts), guards, target resolution
 ticket/  claim close delete rename transcript add remove   → TicketService
 modmail/ end                                               → resolutionService.openResolution
-staff/   accept fire prompt demote warn unwarn warnings warns break unbreak jail
+staff/   accept fire prompt demote warn unwarn warnings warns break unbreak jail unjail
          stats leaderboard check                          → StaffStatisticsService (read-only)
 ```
 
@@ -1363,7 +1406,8 @@ staff/   accept fire prompt demote warn unwarn warnings warns break unbreak jail
 | `!prompt @user [n]` | `.promote` | `+1` (or `+n`), never past END |
 | `!demote @user [n]` | `.demote` | `-1` (or `-n`), floored at 0, keeps Staff role + `ACTIVE` at level 0 |
 | `!warn @user <reason>` | `warningActionService` | **channel-routed**: in `USER_WARNS` → `UserWarning` (+1 `USER_WARNING`, no staff roles); in `STAFF_WARNS` → managers only, `StaffWarning` at `activeCount+1` (cap 3) + warn role + issuer **+1 `STAFF_WARNING`**; anywhere else → **silent** |
-| `!jail @user <reason>` (`!سجن`) | `moderationActionService.jail` | staff-gated; **requires an attachment** as proof; refuses self and bots. Same call the panel's سجن عضو makes, so the `JAIL` role, punishment record and warning-channel entry are identical. A Discord failure is reported, never reported as success |
+| `!jail @user <reason>` (`!سجن`) | `moderationActionService.jail` | staff-gated; **requires an attachment** as proof; refuses self and bots. Same call the panel's سجن عضو makes, so the `JAIL` role and punishment record are identical. Logged to `PUNISHMENT_LOG`, never announced. A Discord failure is reported, never reported as success |
+| `!unjail @user [reason]` (`!فك`) | `moderationActionService.unjail` | staff-gated; reverses the record (role removed, `REVOKED`, audited). Resolves by **id** so a departed member's jail can still be lifted; falls back to removing a hand-assigned jail role when no record exists, and says which happened |
 | `!unwarn @user <id>` | `.revokeWarning` | never deletes — marks `REVOKED`/`REMOVED` with `revokedBy/removedBy` + reason; staff warn role re-pointed at the highest still-active level |
 | `!warnings [@user]` | read | own by default; others = staff only; staff warnings shown to managers / the warned staff |
 | `!warns <id>` | read | full detail incl. evidence; user warning = staff or the warned user; staff warning = managers or the warned staff |

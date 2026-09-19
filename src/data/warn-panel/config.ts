@@ -23,4 +23,16 @@ export const warnPanelConfig = {
    * a genuine second punishment.
    */
   submitLockMs: 10_000,
+
+  /**
+   * How often the stored panel message is re-edited so the select menu clears the
+   * option the last manager picked. `0` disables the sweeper entirely.
+   *
+   * The panel is also refreshed immediately after every use, which is what
+   * actually clears the menu for the manager who just used it. This sweep is the
+   * belt-and-braces pass for anyone whose client still shows a stale selection —
+   * it re-edits a message whose content never changes, so it is pure Discord API
+   * traffic. See `refreshIntervalMs` in the README before lowering it.
+   */
+  refreshIntervalMs: 5_000,
 } as const;

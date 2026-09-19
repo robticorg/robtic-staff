@@ -6,6 +6,8 @@ import { attachVacationClient } from "../modules/vacation/index.ts";
 import { attachAppealClient } from "../modules/appeals/index.ts";
 import { attachGiftClaimClient } from "../modules/gift-claims/index.ts";
 import { attachServerTagClient } from "../modules/server-tag/index.ts";
+import { attachWarningPanelClient } from "../modules/warning-panel/runtime.ts";
+import { warningPanelRefreshService } from "../modules/warning-panel/services/warning-panel-refresh.service.ts";
 import { vacationExpirationService } from "../modules/vacation/services/vacation-expiration.service.ts";
 import { serverTagExpirationService } from "../modules/server-tag/services/server-tag-expiration.service.ts";
 import { serverTagAuditService } from "../modules/server-tag/services/server-tag-audit.service.ts";
@@ -20,6 +22,7 @@ export function attachModuleClients(client: Client): void {
   attachAppealClient(client);
   attachGiftClaimClient(client);
   attachServerTagClient(client);
+  attachWarningPanelClient(client);
 }
 
 export function startModuleRuntime(): void {
@@ -28,6 +31,8 @@ export function startModuleRuntime(): void {
   serverTagExpirationService.start();
 
   ticketSleepService.start();
+
+  warningPanelRefreshService.start();
 }
 
 export function stopModuleRuntime(): void {
@@ -36,4 +41,5 @@ export function stopModuleRuntime(): void {
   serverTagAuditService.stop();
   ticketSleepService.stop();
   ladderSyncService.stop();
+  warningPanelRefreshService.stop();
 }

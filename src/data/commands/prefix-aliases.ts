@@ -30,4 +30,5 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   leaderboard: ["المتصدرين", "الترتيب", "توب"],
   check: ["فحص"],
   jail: ["سجن", "سجين"],
+  unjail: ["فك", "فك-سجن", "اطلاق"],
 };

@@ -24,6 +24,7 @@ import { staffManagementAuthorizationService } from "../../staff/services/staff-
 import { staffPermissionService } from "../../staff/services/staff-permissions.service.ts";
 import { warningActionService } from "../../warnings/services/warning-actions.service.ts";
 import { WarningPanelDeploymentModel } from "../models/warning-panel-deployment.model.ts";
+import { warningPanelRefreshService } from "./warning-panel-refresh.service.ts";
 import {
   buildJailModal,
   buildStaffWarnModal,
@@ -167,16 +168,35 @@ export class WarningPanelService {
 
     switch (action) {
       case WarnPanelAction.TIMEOUT:
-        return this.openTimeoutModal(interaction);
+        await this.openTimeoutModal(interaction);
+        break;
       case WarnPanelAction.JAIL:
-        return this.openJailModal(interaction);
+        await this.openJailModal(interaction);
+        break;
       case WarnPanelAction.USER_WARN:
-        return this.openUserWarningModal(interaction);
+        await this.openUserWarningModal(interaction);
+        break;
       case WarnPanelAction.STAFF_WARN:
-        return this.openStaffWarningModal(interaction);
+        await this.openStaffWarningModal(interaction);
+        break;
       default:
         await interaction.reply({ content: M.errors.unknownAction, flags: MessageFlags.Ephemeral });
+        return;
     }
+
+    // `showModal` is the interaction response, so the message can't also be
+    // updated through it. Editing it separately clears the option the manager
+    // just picked — without this the select stays stuck on their last choice.
+    void warningPanelRefreshService
+      .refreshDeployment(
+        {
+          guildId: interaction.guild.id,
+          channelId: interaction.channelId,
+          messageId: interaction.message.id,
+        },
+        { force: true, client: interaction.client },
+      )
+      .catch(() => undefined);
   }
 
   async openTimeoutModal(interaction: StringSelectMenuInteraction): Promise<void> {

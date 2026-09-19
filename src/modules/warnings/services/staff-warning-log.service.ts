@@ -12,10 +12,6 @@ import {
 } from "../types/enums.ts";
 import { warningCategoryOf } from "./warning-category.ts";
 import {
-  formatModerationLogMessage,
-  type ModerationLogInput,
-} from "../render/moderation-log-message.ts";
-import {
   formatStaffWarningMessage,
   formatVerbalStaffWarningMessage,
   staffWarnMessageWasTruncated,
@@ -44,28 +40,12 @@ export interface StaffWarningLogResult {
   messageId?: string;
 }
 
-export type SendModerationLogInput = ModerationLogInput & { guild: Guild };
-
 export class StaffWarningLogService {
   /**
-   * Timeout / jail / user-warning entries land in the same channel as staff
-   * warnings — one configured channel for the whole moderation surface.
+   * Resolves the configured staff-warning channel and posts to it. Only staff
+   * warnings reach this channel — timeouts, jails and user warnings are logged to
+   * PUNISHMENT_LOG / WARNING_LOG and never announced.
    */
-  async sendModerationAction(input: SendModerationLogInput): Promise<StaffWarningLogResult> {
-    try {
-      const { guild, ...entry } = input;
-      const content = formatModerationLogMessage(entry);
-      if (staffWarnMessageWasTruncated(content)) {
-        log.warn(`${entry.kind} log proof list trimmed to fit Discord's limit`);
-      }
-      return await this.post(guild, content, entry.targetId);
-    } catch (err) {
-      log.error("moderation log post failed", err);
-      return { outcome: "send-failed" };
-    }
-  }
-
-  /** Resolves the one configured warning channel and posts to it. */
   private async post(
     guild: Guild,
     content: string,

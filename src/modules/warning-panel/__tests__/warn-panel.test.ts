@@ -1,12 +1,8 @@
 import { describe, expect, it } from "bun:test";
-import { ComponentType } from "discord.js";
+import { ComponentType, type Client } from "discord.js";
 import { WarnPanelAction, warnPanelConfig } from "../../../data/warn-panel/config.ts";
 import { DomainError } from "../../../shared/utils/errors.ts";
 import { TIMEOUT_MAX_MS, TIMEOUT_MIN_MS } from "../../punishment/services/duration.service.ts";
-import {
-  ModerationLogKind,
-  formatModerationLogMessage,
-} from "../../warnings/render/moderation-log-message.ts";
 import {
   formatStaffWarningMessage,
   formatVerbalStaffWarningMessage,
@@ -20,6 +16,7 @@ import {
 } from "../render/modals.ts";
 import { buildWarningPanel } from "../render/panel.ts";
 import { WarningPanelService } from "../services/warning-panel.service.ts";
+import { WarningPanelRefreshService } from "../services/warning-panel-refresh.service.ts";
 
 const service = new WarningPanelService();
 
@@ -131,6 +128,93 @@ describe("warning panel modals", () => {
   });
 });
 
+describe("panel refresh", () => {
+  const deployment = { guildId: "g", channelId: "c", messageId: "m" };
+
+  function fakeClient(edits: { count: number }) {
+    return {
+      channels: {
+        fetch: async () => ({
+          isTextBased: () => true,
+          messages: {
+            fetch: async () => ({
+              edit: async () => {
+                edits.count += 1;
+              },
+            }),
+          },
+        }),
+      },
+    } as unknown as Client;
+  }
+
+  it("edits the stored message so the select clears", async () => {
+    const edits = { count: 0 };
+    const service = new WarningPanelRefreshService();
+
+    expect(await service.refreshDeployment(deployment, { client: fakeClient(edits) })).toBe(
+      "refreshed",
+    );
+    expect(edits.count).toBe(1);
+  });
+
+  it("skips an edit it already did inside the interval", async () => {
+    const edits = { count: 0 };
+    const service = new WarningPanelRefreshService();
+    const client = fakeClient(edits);
+
+    await service.refreshDeployment(deployment, { client });
+    expect(await service.refreshDeployment(deployment, { client })).toBe("skipped");
+    expect(edits.count).toBe(1);
+  });
+
+  it("still edits when the caller forces it, so a use always clears the menu", async () => {
+    const edits = { count: 0 };
+    const service = new WarningPanelRefreshService();
+    const client = fakeClient(edits);
+
+    await service.refreshDeployment(deployment, { client });
+    expect(await service.refreshDeployment(deployment, { client, force: true })).toBe("refreshed");
+    expect(edits.count).toBe(2);
+  });
+
+  it("reports a deleted message instead of throwing", async () => {
+    const service = new WarningPanelRefreshService();
+    const client = {
+      channels: {
+        fetch: async () => ({
+          isTextBased: () => true,
+          messages: { fetch: async () => null },
+        }),
+      },
+    } as unknown as Client;
+
+    expect(await service.refreshDeployment(deployment, { client })).toBe("message-gone");
+  });
+
+  it("reports a deleted channel instead of throwing", async () => {
+    const service = new WarningPanelRefreshService();
+    const client = {
+      channels: { fetch: async () => null },
+    } as unknown as Client;
+
+    expect(await service.refreshDeployment(deployment, { client })).toBe("channel-gone");
+  });
+
+  it("does not start a timer when the interval is disabled", () => {
+    const service = new WarningPanelRefreshService();
+    const original = warnPanelConfig.refreshIntervalMs;
+
+    try {
+      (warnPanelConfig as { refreshIntervalMs: number }).refreshIntervalMs = 0;
+      service.start();
+      expect(service.stop()).toBeUndefined();
+    } finally {
+      (warnPanelConfig as { refreshIntervalMs: number }).refreshIntervalMs = original;
+    }
+  });
+});
+
 describe("timeout duration validation", () => {
   it("accepts the documented formats through the shared parser", () => {
     expect(service.parseTimeoutDuration("5m")).toBe(5 * 60_000);
@@ -152,53 +236,6 @@ describe("timeout duration validation", () => {
   it("rejects anything under Discord's minimum", () => {
     expect(() => service.parseTimeoutDuration("30s")).toThrow(DomainError);
     expect(service.parseTimeoutDuration("1m")).toBe(TIMEOUT_MIN_MS);
-  });
-});
-
-describe("moderation log entries", () => {
-  const base = {
-    targetId: "111111111111111111",
-    reason: "سبب",
-    evidence: ["https://cdn.example/a.png"],
-    moderatorId: "222222222222222222",
-  };
-
-  it("renders timeout with duration and moderator", () => {
-    const content = formatModerationLogMessage({
-      ...base,
-      kind: ModerationLogKind.TIMEOUT,
-      duration: "1h",
-    });
-
-    expect(content).toContain("**تايم اوت");
-    expect(content).toContain("**منشن : <@111111111111111111>**");
-    expect(content).toContain("**السبب : سبب**");
-    expect(content).toContain("**المدة : 1h**");
-    expect(content).toContain("**الدليل : https://cdn.example/a.png**");
-    expect(content).toContain("**بواسطة : <@222222222222222222>**");
-  });
-
-  it("omits the duration line for jail and user warnings", () => {
-    for (const kind of [ModerationLogKind.JAIL, ModerationLogKind.USER_WARN]) {
-      expect(formatModerationLogMessage({ ...base, kind })).not.toContain("المدة");
-    }
-  });
-
-  it("exposes no punishment, warning or staff id", () => {
-    const content = formatModerationLogMessage({
-      ...base,
-      kind: ModerationLogKind.JAIL,
-    });
-    expect(content).not.toMatch(/punishmentId|warningId|staffId|_id/);
-  });
-
-  it("falls back to لا يوجد when evidence is empty", () => {
-    const content = formatModerationLogMessage({
-      ...base,
-      evidence: [],
-      kind: ModerationLogKind.JAIL,
-    });
-    expect(content).toContain("**الدليل : لا يوجد**");
   });
 });
 

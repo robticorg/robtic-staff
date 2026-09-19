@@ -94,6 +94,18 @@ export class PunishmentService extends BaseRepository<Punishment> {
     return this.model.find({ userId, guildId }).sort({ createdAt: -1 }).exec();
   }
 
+  /** The punishment of this type still in force, if any — newest first. */
+  findLatestExecuted(
+    guildId: GuildId,
+    userId: UserId,
+    type: PunishmentType,
+  ): Promise<PunishmentDoc | null> {
+    return this.model
+      .findOne({ guildId, userId, type, status: PunishmentStatus.EXECUTED })
+      .sort({ executedAt: -1, createdAt: -1 })
+      .exec();
+  }
+
   async getUserRecentPunishment(
     userId: UserId,
     guildId: GuildId,

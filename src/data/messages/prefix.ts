@@ -116,6 +116,17 @@ export const prefixMessages = {
       `${E.error} ما تم تنفيذ السجن — ${reason}\nما انحفظت العقوبة كمنفّذة.`,
   },
 
+  unjail: {
+    usage: `${E.warning} الطريقة: \`!فك @عضو [السبب]\``,
+    notJailed: (mention: string) => `${E.warning} ${mention} مو مسجون أصلاً.`,
+    released: (mention: string) => `${E.success} تم فك سجن ${mention}.`,
+    releasedRoleOnly: (mention: string) =>
+      `${E.success} تم شيل رتبة السجن عن ${mention}.\n${E.warning} ما فيه سجل عقوبة مرتبط فيه — كان مسجون يدوياً.`,
+    roleRemoveFailed: (mention: string, reason: string) =>
+      `${E.warning} تم تسجيل فك السجن عن ${mention}، بس ما قدرت أشيل الرتبة — ${reason}\nشيلها يدوياً.`,
+    defaultReason: (actorId: string) => `فك سجن بواسطة ${actorId}`,
+  },
+
   warn: {
     userWarnUsage: `${E.warning} الطريقة: \`!تحذير @عضو <السبب>\``,
     reasonRequired: `${E.warning} لازم تكتب سبب للتحذير.`,

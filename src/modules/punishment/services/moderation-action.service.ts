@@ -1,12 +1,12 @@
 import type { Guild, GuildMember } from "discord.js";
 import type { HydratedDocument } from "mongoose";
 import type { UserId } from "../../../shared/types/index.ts";
-import { ModerationLogKind } from "../../warnings/render/moderation-log-message.ts";
-import { staffWarningLogService } from "../../warnings/services/staff-warning-log.service.ts";
+import { RoleConfigType } from "../../configuration/types/enums.ts";
 import type { Punishment } from "../models/punishment.model.ts";
 import { PunishmentType } from "../types/enums.ts";
 import { durationService } from "./duration.service.ts";
 import { punishmentLogService } from "./punishment-log.service.ts";
+import { configuredRoleId } from "./punishment-permissions.ts";
 import { punishmentService } from "./punishment.service.ts";
 
 export interface ModerationActionInput {
@@ -30,6 +30,17 @@ export interface ModerationActionResult {
   duration?: string;
 }
 
+export interface UnjailResult {
+  /**
+   * `reversed` — a punishment record was lifted.
+   * `role-removed` — no record, but the member held the jail role.
+   * `not-jailed` — neither; nothing was changed.
+   */
+  outcome: "reversed" | "role-removed" | "not-jailed";
+  discordReversed?: boolean;
+  reversalError?: string;
+}
+
 /**
  * The one place a timeout or a jail is carried out, shared by the warning panel
  * and the `!jail` command so neither owns a private copy of the flow.
@@ -40,24 +51,60 @@ export interface ModerationActionResult {
  */
 export class ModerationActionService {
   timeout(input: TimeoutActionInput): Promise<ModerationActionResult> {
-    return this.run({
-      ...input,
-      type: PunishmentType.TIMEOUT,
-      kind: ModerationLogKind.TIMEOUT,
-      durationMs: input.durationMs,
-    });
+    return this.run({ ...input, type: PunishmentType.TIMEOUT, durationMs: input.durationMs });
   }
 
   jail(input: ModerationActionInput): Promise<ModerationActionResult> {
-    return this.run({ ...input, type: PunishmentType.JAIL, kind: ModerationLogKind.JAIL });
+    return this.run({ ...input, type: PunishmentType.JAIL });
+  }
+
+  /**
+   * Lifts a jail. The punishment record is the source of truth, so the normal path
+   * reverses it through `reversePunishment` — which removes the configured role and
+   * marks the record REVOKED with an audit entry.
+   *
+   * The fallback exists because a member can hold the jail role without a matching
+   * record: jailed by hand, or before the bot managed it. Refusing those would make
+   * the command useless exactly when someone needs it, so the role is removed and
+   * the result says so rather than pretending a punishment was reversed.
+   */
+  async unjail(input: {
+    guild: Guild;
+    target: GuildMember | null;
+    targetId: UserId;
+    actorId: UserId;
+    reason: string;
+  }): Promise<UnjailResult> {
+    const punishment = await punishmentService.findLatestExecuted(
+      input.guild.id,
+      input.targetId,
+      PunishmentType.JAIL,
+    );
+
+    if (punishment) {
+      const result = await punishmentService.reversePunishment(punishment.punishmentId, {
+        actorId: input.actorId,
+        reason: input.reason,
+      });
+      await punishmentLogService.record(result.punishment);
+      return {
+        outcome: "reversed",
+        discordReversed: result.discordReversed,
+        reversalError: result.reversalError,
+      };
+    }
+
+    const roleId = await configuredRoleId(input.guild.id, RoleConfigType.JAIL);
+    if (roleId && input.target?.roles.cache.has(roleId)) {
+      await input.target.roles.remove(roleId, input.reason);
+      return { outcome: "role-removed", discordReversed: true };
+    }
+
+    return { outcome: "not-jailed" };
   }
 
   private async run(
-    input: ModerationActionInput & {
-      type: PunishmentType;
-      kind: ModerationLogKind;
-      durationMs?: number;
-    },
+    input: ModerationActionInput & { type: PunishmentType; durationMs?: number },
   ): Promise<ModerationActionResult> {
     const punishment = await punishmentService.createPunishment({
       guildId: input.guild.id,
@@ -87,16 +134,9 @@ export class ModerationActionService {
     const duration =
       input.durationMs === undefined ? undefined : durationService.format(input.durationMs);
 
+    // Logged to PUNISHMENT_LOG and nowhere else. Timeouts and jails are not
+    // announced — only staff warnings get posted where the member sees them.
     await punishmentLogService.record(result.punishment);
-    await staffWarningLogService.sendModerationAction({
-      guild: input.guild,
-      kind: input.kind,
-      targetId: input.target.id,
-      reason: input.reason,
-      evidence: input.evidence,
-      moderatorId: input.actorId,
-      duration,
-    });
 
     return { executed: true, punishment: result.punishment, duration };
   }

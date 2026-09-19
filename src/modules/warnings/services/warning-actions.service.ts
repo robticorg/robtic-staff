@@ -6,7 +6,6 @@ import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { channelConfigService, roleConfigService } from "../../configuration/index.ts";
 import { ChannelConfigType, RoleConfigType } from "../../configuration/types/enums.ts";
 import { buildWarnLogEmbed, type WarnLogInput } from "../render/warn-log.ts";
-import { ModerationLogKind } from "../render/moderation-log-message.ts";
 import {
   StaffActivityType,
   StaffHistoryAction,
@@ -181,17 +180,8 @@ export class WarningActionService {
       warningId: ref,
     });
 
-    // The plain-text entry in the shared warning channel, so a user warning reads
-    // the same whether it came from `!warn` or the warning panel.
-    await staffWarningLogService.sendModerationAction({
-      guild: params.issuer.guild,
-      kind: ModerationLogKind.USER_WARN,
-      targetId: params.targetId,
-      reason: params.reason,
-      evidence: params.evidence,
-      moderatorId: params.issuer.id,
-    });
-
+    // WARNING_LOG only. A user warning is never announced where the member sees
+    // it — that is reserved for staff warnings.
     return { warningId: ref };
   }
 
