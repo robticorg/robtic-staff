@@ -605,6 +605,23 @@ ladder's roles — the crossing is the one case where touching the other categor
 is intended. No warning record is created, moved or deleted, so crossing back
 restores the other ladder's role.
 
+### `!unwarn` — argument first, channel second
+
+```
+!unwarn @user staff          → the member's current staff warning
+!unwarn @user <24-hex id>    → exactly that warning, staff or user
+!unwarn @user                → falls back to the channel (staff room → staff warn)
+```
+
+**Administrators may run it anywhere.** Non-admins are still restricted to the
+configured warn rooms and stay silent outside them, so the command never leaks
+into normal chat.
+
+The id check is a strict `/^[0-9a-fA-F]{24}$/`, deliberately narrower than
+`Types.ObjectId.isValid` — that helper also accepts any 12-character string,
+which would silently swallow the first word of a reason as if it were an id.
+`resolveUnwarnMode` is exported and unit-tested on its own for exactly this.
+
 **`!unwarn`** reads the category off the stored row and recalculates only that
 ladder. Rows written before this feature have no `category`; `warningCategoryOf`
 and `categoryFilter` treat them as `STAFF` (a Mongo `$in: [..., null]` also
@@ -1454,7 +1471,7 @@ staff/   accept fire prompt demote warn unwarn warnings warns break unbreak jail
 | `!warn @user <reason>` | `warningActionService` | **channel-routed**: in `USER_WARNS` → `UserWarning` (+1 `USER_WARNING`, no staff roles); in `STAFF_WARNS` → managers only, `StaffWarning` at `activeCount+1` (cap 3) + warn role + issuer **+1 `STAFF_WARNING`**; anywhere else → **silent** |
 | `!jail @user <reason>` (`!سجن`) | `moderationActionService.jail` | staff-gated; **requires an attachment** as proof; refuses self and bots. Same call the panel's سجن عضو makes, so the `JAIL` role and punishment record are identical. Logged to `PUNISHMENT_LOG`, never announced. A Discord failure is reported, never reported as success |
 | `!unjail @user [reason]` (`!فك`) | `moderationActionService.unjail` | staff-gated; reverses the record (role removed, `REVOKED`, audited). Resolves by **id** so a departed member's jail can still be lifted; falls back to removing a hand-assigned jail role when no record exists, and says which happened |
-| `!unwarn @user <id>` | `.revokeWarning` | never deletes — marks `REVOKED`/`REMOVED` with `revokedBy/removedBy` + reason; staff warn role re-pointed at the highest still-active level |
+| `!unwarn @user staff` / `!unwarn @user <id>` | `.revokeWarning` | the **argument** picks the target, not the channel: `staff` lifts the member's current staff warning, a 24-hex id lifts exactly that warning whether it is a staff or a user one. **Administrators can run it in any channel**; everyone else is still confined to the warn rooms and stays silent outside them. A bare call still falls back to the channel. Never deletes — marks `REVOKED`/`REMOVED` with `revokedBy/removedBy` + reason; staff warn role re-pointed at the highest still-active level |
 | `!warnings [@user]` | read | own by default; others = staff only; staff warnings shown to managers / the warned staff |
 | `!warns <id>` | read | full detail incl. evidence; user warning = staff or the warned user; staff warning = managers or the warned staff |
 | `!break @user <5m\|3d\|1w\|1M>` | `vacationService.createManualBreak` | managers only; snapshots + removes staff roles, adds the configured **vacation** role, `Staff.status=BREAK` (level kept), `BREAK` history/activity; rolls back on any Discord failure |

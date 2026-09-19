@@ -155,8 +155,12 @@ export const prefixMessages = {
     staffWarnRoleMissing: (level: number) =>
       `${E.error} رتبة تحذير الستاف ${level} مو مضبوطة (\`/role set type:رتبة تحذير الستاف\`).`,
 
-    unwarnUsage: `${E.warning} الطريقة: \`!الغاء-تحذير @عضو\` (تحذير ستاف) أو \`!الغاء-تحذير @عضو <آيدي-التحذير>\` (تحذير عضو)`,
-    unwarnWarningIdRequired: `${E.warning} حط آيدي التحذير: \`!الغاء-تحذير @عضو <آيدي-التحذير>\``,
+    unwarnUsage: [
+      `${E.warning} الطريقة:`,
+      "`!الغاء-تحذير @عضو staff` — يشيل تحذير الستاف الحالي",
+      "`!الغاء-تحذير @عضو <آيدي-التحذير>` — يشيل هذا التحذير بالذات (ستاف أو عضو)",
+    ].join("\n"),
+    unwarnWarningIdRequired: `${E.warning} حط آيدي التحذير، أو اكتب \`staff\` عشان تشيل تحذير الستاف: \`!الغاء-تحذير @عضو <staff | آيدي-التحذير>\``,
     noActiveRealWarning: (userMention: string) =>
       `${E.warning} ${userMention} ما عليه تحذير رسمي نشط نقدر نشيله.`,
     warningNotFound: `${E.error} ما فيه تحذير بهذا الآيدي.`,
