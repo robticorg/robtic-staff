@@ -254,7 +254,8 @@ by not holding a Staff role.
 | Surface | Who |
 |---|---|
 | `/role · /channels · /points · /promote-points · /warn-setup · /ticket-setup · /vacation-setup · /faq` | Administrator only |
-| Warning panel — تايم اوت · سجن · تحذير عضو | staff (`canActAsStaff`) |
+| Warning panel — تايم اوت · تحذير عضو | staff (`canActAsStaff`) |
+| Warning panel — سجن · `!jail` | staff, **non-staff targets only**, and only below the actor's own top role (Administrators unrestricted) |
 | Warning panel — تحذير ستاف | `canWarn()`: Staff Manager below Owner · Owner Manager at Owner · Administrator anywhere |
 | `!check` (alias `!فحص`) | **Staff Manager / Owner Manager** (admin folded in) |
 | `/scan · /fast-access` | Staff Manager (admin folded in) |
@@ -749,6 +750,30 @@ command cannot drift apart. `timeout()` sits beside it for the same reason.
 `!jail` requires staff (`canActAsStaff`), a reason, and **at least one
 attachment**; it refuses self and bots, and reports a Discord failure rather than
 claiming success.
+
+### Who may jail whom
+
+`decideJailAuthorization` is a pure rule both the panel and `!jail` run **before
+any record is written**, so a refusal leaves no `FAILED` punishment behind:
+
+| Actor | May jail |
+|---|---|
+| Administrator | anyone |
+| anyone else | **non-staff only**, and only someone whose top Discord role sits **strictly below** their own |
+
+Two rules, in order. **Staff are never jailed by other staff** — jail is a member
+punishment, and staff discipline runs through warnings instead. Then the ordinary
+moderation hierarchy: you cannot jail someone at or above your own rank.
+
+The yardstick is Discord **role position**, not the staff ladder, because the
+second rule has to cover high-ranking members who are not staff at all and
+therefore have no ladder level. Both inputs are resolved live at submit time —
+no cached level, no cached permission.
+
+> This guard is on **jail only**, which is what was asked for. `timeout` and
+> `unjail` still run on `canActAsStaff` alone, so any staffer can time out or
+> release anyone the bot outranks. Extending `canJail` to them is one call each
+> in `moderationActionService`.
 
 **`!unjail @user [reason]`** (alias **`!فك`**) lifts it through
 `moderationActionService.unjail`, which reverses the punishment record — removing
@@ -1469,7 +1494,7 @@ staff/   accept fire prompt demote warn unwarn warnings warns break unbreak jail
 | `!prompt @user [n]` | `.promote` | `+1` (or `+n`), never past END |
 | `!demote @user [n]` | `.demote` | `-1` (or `-n`), floored at 0, keeps Staff role + `ACTIVE` at level 0 |
 | `!warn @user <reason>` | `warningActionService` | **channel-routed**: in `USER_WARNS` → `UserWarning` (+1 `USER_WARNING`, no staff roles); in `STAFF_WARNS` → managers only, `StaffWarning` at `activeCount+1` (cap 3) + warn role + issuer **+1 `STAFF_WARNING`**; anywhere else → **silent** |
-| `!jail @user <reason>` (`!سجن`) | `moderationActionService.jail` | staff-gated; **requires an attachment** as proof; refuses self and bots. Same call the panel's سجن عضو makes, so the `JAIL` role and punishment record are identical. Logged to `PUNISHMENT_LOG`, never announced. A Discord failure is reported, never reported as success |
+| `!jail @user <reason>` (`!سجن`) | `moderationActionService.jail` | staff-gated, **non-staff targets only**, and only below the actor's own top role (Administrators unrestricted); **requires an attachment** as proof; refuses self and bots. Same call the panel's سجن عضو makes, so the `JAIL` role and punishment record are identical. Logged to `PUNISHMENT_LOG`, never announced. A Discord failure is reported, never reported as success |
 | `!unjail @user [reason]` (`!فك`) | `moderationActionService.unjail` | staff-gated; reverses the record (role removed, `REVOKED`, audited). Resolves by **id** so a departed member's jail can still be lifted; falls back to removing a hand-assigned jail role when no record exists, and says which happened |
 | `!unwarn @user staff` / `!unwarn @user <id>` | `.revokeWarning` | the **argument** picks the target, not the channel: `staff` lifts the member's current staff warning, a 24-hex id lifts exactly that warning whether it is a staff or a user one. **Administrators can run it in any channel**; everyone else is still confined to the warn rooms and stays silent outside them. A bare call still falls back to the channel. Never deletes — marks `REVOKED`/`REMOVED` with `revokedBy/removedBy` + reason; staff warn role re-pointed at the highest still-active level |
 | `!warnings [@user]` | read | own by default; others = staff only; staff warnings shown to managers / the warned staff |

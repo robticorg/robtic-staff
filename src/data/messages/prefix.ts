@@ -114,6 +114,11 @@ export const prefixMessages = {
       `${E.success} تم سجن ${mention}.\nالسبب: ${reason}`,
     failed: (reason: string) =>
       `${E.error} ما تم تنفيذ السجن — ${reason}\nما انحفظت العقوبة كمنفّذة.`,
+
+    denied: {
+      TARGET_IS_STAFF: `${E.error} ما تقدر تسجن عضو ستاف — عقوبات الستاف تمشي بالتحذيرات.`,
+      TARGET_OUTRANKS_ACTOR: `${E.error} ما تقدر تسجن عضو رتبته أعلى منك أو مثلك.`,
+    } as Record<string, string>,
   },
 
   unjail: {

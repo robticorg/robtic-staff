@@ -289,7 +289,7 @@ export class WarningPanelService {
       const result = await moderationActionService.timeout({
         guild: interaction.guild,
         target: fields.target,
-        actorId: interaction.user.id,
+        actor: interaction.member,
         reason: fields.reason,
         evidence: fields.evidence,
         durationMs,
@@ -309,11 +309,12 @@ export class WarningPanelService {
       const result = await moderationActionService.jail({
         guild: interaction.guild,
         target: fields.target,
-        actorId: interaction.user.id,
+        actor: interaction.member,
         reason: fields.reason,
         evidence: fields.evidence,
       });
 
+      if (result.denied) throw new WarnPanelError(M.errors.jailDenied[result.denied] ?? "");
       if (!result.executed) {
         throw new WarnPanelError(M.errors.jailFailed(result.failureReason ?? ""));
       }

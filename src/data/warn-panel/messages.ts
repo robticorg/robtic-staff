@@ -70,6 +70,11 @@ export const warnPanelMessages = {
     jailFailed: (reason: string) =>
       `${E.error} ما تم تنفيذ السجن — ${reason}\nما انحفظت العقوبة كمنفّذة.`,
 
+    jailDenied: {
+      TARGET_IS_STAFF: `${E.error} ما تقدر تسجن عضو ستاف — عقوبات الستاف تمشي بالتحذيرات.`,
+      TARGET_OUTRANKS_ACTOR: `${E.error} ما تقدر تسجن عضو رتبته أعلى منك أو مثلك.`,
+    } as Record<string, string>,
+
     inFlight: `${E.warning} فيه إجراء شغّال على نفس العضو الحين. انتظر ثواني وجرب مرة ثانية.`,
     crashed: `${E.error} صار خطأ وأنا أنفذ الإجراء. ما تم تنفيذ شي.`,
   },

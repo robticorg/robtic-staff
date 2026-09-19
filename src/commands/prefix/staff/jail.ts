@@ -29,11 +29,12 @@ export default definePrefixCommand({
     const result = await moderationActionService.jail({
       guild: ctx.guild,
       target,
-      actorId: ctx.member.id,
+      actor: ctx.member,
       reason,
       evidence,
     });
 
+    if (result.denied) throw new PrefixAbort(M.denied[result.denied]);
     if (!result.executed) {
       throw new PrefixAbort(M.failed(result.failureReason ?? ""));
     }

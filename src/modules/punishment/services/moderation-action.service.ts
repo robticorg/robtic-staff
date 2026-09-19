@@ -5,6 +5,7 @@ import { RoleConfigType } from "../../configuration/types/enums.ts";
 import type { Punishment } from "../models/punishment.model.ts";
 import { PunishmentType } from "../types/enums.ts";
 import { durationService } from "./duration.service.ts";
+import { canJail, type JailDenyReason } from "./jail-authorization.ts";
 import { punishmentLogService } from "./punishment-log.service.ts";
 import { configuredRoleId } from "./punishment-permissions.ts";
 import { punishmentService } from "./punishment.service.ts";
@@ -12,7 +13,8 @@ import { punishmentService } from "./punishment.service.ts";
 export interface ModerationActionInput {
   guild: Guild;
   target: GuildMember;
-  actorId: UserId;
+  /** The member acting, so hierarchy can be checked — not just their id. */
+  actor: GuildMember;
   reason: string;
   evidence: string[];
 }
@@ -24,10 +26,13 @@ export interface TimeoutActionInput extends ModerationActionInput {
 export interface ModerationActionResult {
   executed: boolean;
   failureReason?: string;
-  punishment: HydratedDocument<Punishment>;
+  punishment: HydratedDocument<Punishment> | null;
 
   /** Formatted for display — timeout only. */
   duration?: string;
+
+  /** Set when the actor was not allowed to act on this target at all. */
+  denied?: JailDenyReason;
 }
 
 export interface UnjailResult {
@@ -54,7 +59,15 @@ export class ModerationActionService {
     return this.run({ ...input, type: PunishmentType.TIMEOUT, durationMs: input.durationMs });
   }
 
-  jail(input: ModerationActionInput): Promise<ModerationActionResult> {
+  /**
+   * Jail runs the hierarchy check first: staff are not jailed by other staff, and
+   * nobody is jailed by someone they outrank. Refused before any record exists.
+   */
+  async jail(input: ModerationActionInput): Promise<ModerationActionResult> {
+    const decision = await canJail(input.actor, input.target);
+    if (!decision.allowed) {
+      return { executed: false, punishment: null, denied: decision.reason };
+    }
     return this.run({ ...input, type: PunishmentType.JAIL });
   }
 
@@ -112,7 +125,7 @@ export class ModerationActionService {
       type: input.type,
       reason: input.reason,
       evidence: input.evidence,
-      issuedBy: input.actorId,
+      issuedBy: input.actor.id,
       durationMs: input.durationMs,
     });
 
@@ -120,7 +133,7 @@ export class ModerationActionService {
       guild: input.guild,
       target: input.target,
       targetUser: input.target.user,
-      executorId: input.actorId,
+      executorId: input.actor.id,
     });
 
     if (!result.executed) {
