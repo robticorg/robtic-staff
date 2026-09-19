@@ -27,6 +27,7 @@ import staffUnbreak from "./staff/unbreak.ts";
 import staffStats from "./staff/stats.ts";
 import staffPoints from "./staff/points.ts";
 import staffLeaderboard from "./staff/leaderboard.ts";
+import staffCheck from "./staff/check.ts";
 
 export const prefixCommands: PrefixCommand[] = [
   ticketClaim,
@@ -56,4 +57,5 @@ export const prefixCommands: PrefixCommand[] = [
   staffStats,
   staffPoints,
   staffLeaderboard,
+  staffCheck,
 ];

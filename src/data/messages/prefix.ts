@@ -62,7 +62,7 @@ export const prefixMessages = {
   },
 
   staff: {
-    rolesNotConfigured: `${E.error} رتب الستاف المرقّمة مو مضبوطة. شغّل \`/role start\` و \`/role end\` أول.`,
+    rolesNotConfigured: `${E.error} رتب الستاف المرقّمة مو مضبوطة. شغّل \`/role set type:رتبة بداية الستاف\` و \`/role set type:رتبة نهاية الستاف\` أول.`,
     memberNotFound: `${E.error} هذا العضو مو موجود في السيرفر.`,
     notStaffMember: (userMention: string) => `${E.error} ${userMention} مو عضو ستاف.`,
     levelOutOfRange: (max: number) => `${E.error} المستوى لازم يكون بين 0 و ${max}.`,
@@ -77,7 +77,7 @@ export const prefixMessages = {
     duplicateStaffTier: `${E.error} حدد تصنيف واحد بس.`,
     levelAndTier: `${E.error} ما ينفع تحدد مستوى وتصنيف مع بعض — التصنيف نفسه يحدد المستوى.`,
     tierNotConfigured: (tierLabel: string, slug: string) =>
-      `${E.error} تصنيف **${tierLabel}** مو مضبوط. شغّل \`/role ${slug}\` وحدد أول رتبة فيه.`,
+      `${E.error} تصنيف **${tierLabel}** مو مضبوط. شغّل \`/role boundary tier:${slug}\` وحدد أول رتبة فيه.`,
     acceptedWithTier: (userMention: string, level: number, tierLabel: string) =>
       `${E.success} تم قبول ${userMention} كـ **${tierLabel}** على المستوى **${level}**.`,
     acceptedWithTierAndType: (
@@ -88,10 +88,10 @@ export const prefixMessages = {
     ) =>
       `${E.success} تم قبول ${userMention} كـ **${tierLabel}** ونوعه **${typeLabel}** على المستوى **${level}**.`,
     staffTypeRoleMissing: (typeLabel: string, slug: string) =>
-      `${E.error} رتبة نوع الستاف **${typeLabel}** مو مضبوطة. شغّل \`/role ${slug}\` أول.`,
+      `${E.error} رتبة نوع الستاف **${typeLabel}** مو مضبوطة. شغّل \`/role stafftype type:${slug}\` أول.`,
     fired: (userMention: string) => `${E.success} تم فصل ${userMention} من الستاف.`,
     blacklisted: (userMention: string) => `${E.success} تم فصل ${userMention} ووضعه في القائمة السوداء.`,
-    blacklistRoleMissing: `${E.error} رتبة البلاك ليست مو مضبوطة (\`/role blacklist\`).`,
+    blacklistRoleMissing: `${E.error} رتبة البلاك ليست مو مضبوطة (\`/role set type:رتبة البلاك ليست\`).`,
     promoted: (userMention: string, from: number, to: number) =>
       `${E.success} تمت ترقية ${userMention} **${from} → ${to}**.`,
     demoted: (userMention: string, from: number, to: number) =>
@@ -126,7 +126,7 @@ export const prefixMessages = {
     staffWarnTargetInactive: (userMention: string) =>
       `${E.error} ${userMention} مو عضو ستاف نشط، ما ينفع يتحذّر.`,
     staffWarnRoleMissing: (level: number) =>
-      `${E.error} رتبة تحذير الستاف ${level} مو مضبوطة (\`/role warn\`).`,
+      `${E.error} رتبة تحذير الستاف ${level} مو مضبوطة (\`/role set type:رتبة تحذير الستاف\`).`,
 
     unwarnUsage: `${E.warning} الطريقة: \`!الغاء-تحذير @عضو\` (تحذير ستاف) أو \`!الغاء-تحذير @عضو <آيدي-التحذير>\` (تحذير عضو)`,
     unwarnWarningIdRequired: `${E.warning} حط آيدي التحذير: \`!الغاء-تحذير @عضو <آيدي-التحذير>\``,

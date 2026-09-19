@@ -28,4 +28,5 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   stats: ["احصائياتي", "إحصائياتي", "احصائيات"],
   points: ["نقاطي", "نقاط", "بوينتس"],
   leaderboard: ["المتصدرين", "الترتيب", "توب"],
+  check: ["فحص"],
 };

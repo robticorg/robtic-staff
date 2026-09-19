@@ -1,94 +1,72 @@
 import type { ChatInputCommandInteraction, Role } from "discord.js";
 import { CommandOption } from "../../data/commands/index.ts";
 import { configMessages } from "../../data/messages/config.ts";
-import { ROLE_SLOT_LABELS } from "../../data/roles/index.ts";
+import { OWNER_WARN_SLOTS, ROLE_SLOT_LABELS } from "../../data/roles/index.ts";
 import { roleConfigService } from "../../modules/configuration/index.ts";
-import { RoleConfigType } from "../../modules/configuration/types/enums.ts";
+import { ROLE_CONFIG_TYPE_VALUES, RoleConfigType } from "../../modules/configuration/types/enums.ts";
 import { getHierarchy } from "../../modules/configuration/utils/staff-levels.ts";
 import { CommandError, requireGuild } from "../_shared/guards.ts";
 import { replySuccess } from "./responses.ts";
 
-const SLOTS = [
-  { option: CommandOption.WARN_1, type: RoleConfigType.OWNER_WARN_1, level: 1 },
-  { option: CommandOption.WARN_2, type: RoleConfigType.OWNER_WARN_2, level: 2 },
-  { option: CommandOption.WARN_3, type: RoleConfigType.OWNER_WARN_3, level: 3 },
-] as const;
+const OWNER_WARN_LEVEL: Partial<Record<RoleConfigType, number>> = {
+  [RoleConfigType.OWNER_WARN_1]: 1,
+  [RoleConfigType.OWNER_WARN_2]: 2,
+  [RoleConfigType.OWNER_WARN_3]: 3,
+};
 
-const RESERVED_TYPES: readonly RoleConfigType[] = [
-  RoleConfigType.START,
-  RoleConfigType.END,
-  RoleConfigType.STAFF,
-  RoleConfigType.IGNORE,
-  RoleConfigType.ACCESS,
-  RoleConfigType.ACCEPTED,
-  RoleConfigType.ASSIGN,
-  RoleConfigType.STAFF_TYPE,
-  RoleConfigType.BLACKLIST,
-  RoleConfigType.STAFF_MANAGER,
-  RoleConfigType.OWNER_MANAGER,
-  RoleConfigType.TRANSFER_MANAGER,
-  RoleConfigType.WARN_1,
-  RoleConfigType.WARN_2,
-  RoleConfigType.WARN_3,
-  RoleConfigType.MUTE,
-  RoleConfigType.JAIL,
-  RoleConfigType.CHAT_MANAGER,
-  RoleConfigType.VACATION,
-  RoleConfigType.APPEAL_MANAGER,
-  RoleConfigType.GIFT_MANAGER,
-  RoleConfigType.APPLY_MANAGER,
-  RoleConfigType.TAG,
-];
+/** Any slot other than the owner-warn trio is off-limits for an owner-warn role. */
+const RESERVED_TYPES: readonly RoleConfigType[] = ROLE_CONFIG_TYPE_VALUES.filter(
+  (type) => !OWNER_WARN_SLOTS.includes(type),
+);
 
-export async function handleOwnerWarns(
+/**
+ * One owner-warn slot at a time. The trio used to be set in a single call, so the
+ * "all three must differ" check compared the three arguments; now it compares the
+ * incoming role against whatever the other two slots already hold, which keeps the
+ * same guarantee — two owner-warn slots can never point at one role.
+ */
+export async function handleOwnerWarnSlot(
   interaction: ChatInputCommandInteraction,
+  type: RoleConfigType,
 ): Promise<void> {
   const guild = requireGuild(interaction);
   const M = configMessages.ownerWarns;
 
-  const roles = SLOTS.map((slot) => ({
-    ...slot,
-    role: interaction.options.getRole(slot.option, true) as Role,
-  }));
+  const role = interaction.options.getRole(CommandOption.ROLE, true) as Role;
 
-  const ids = roles.map((r) => r.role.id);
-  if (new Set(ids).size !== ids.length) throw new CommandError(M.duplicate);
+  if (role.id === guild.id) throw new CommandError(M.everyone);
+  if (role.managed) throw new CommandError(M.managed(role.id));
 
-  for (const { role } of roles) {
-    if (role.id === guild.id) throw new CommandError(M.everyone);
-    if (role.managed) throw new CommandError(M.managed(role.id));
-
-    const me = guild.members.me;
-    if (me && me.roles.highest.comparePositionTo(role) <= 0) {
-      throw new CommandError(M.unmanageable(role.id));
-    }
+  const me = guild.members.me;
+  if (me && me.roles.highest.comparePositionTo(role) <= 0) {
+    throw new CommandError(M.unmanageable(role.id));
   }
 
   const hierarchy = await getHierarchy(guild.id);
-  for (const { role } of roles) {
-    if (hierarchy.levelByRoleId.has(role.id)) throw new CommandError(M.onLadder(role.id));
+  if (hierarchy.levelByRoleId.has(role.id)) throw new CommandError(M.onLadder(role.id));
 
-    const current = await roleConfigService.get(guild.id, role.id);
-    if (!current) continue;
-
-    const isOwnWarnSlot =
-      current.type === RoleConfigType.OWNER_WARN_1 ||
-      current.type === RoleConfigType.OWNER_WARN_2 ||
-      current.type === RoleConfigType.OWNER_WARN_3;
-    if (isOwnWarnSlot) continue;
+  const current = await roleConfigService.get(guild.id, role.id);
+  if (current && current.type !== type) {
+    if (OWNER_WARN_SLOTS.includes(current.type)) throw new CommandError(M.duplicate);
     if (RESERVED_TYPES.includes(current.type)) {
       throw new CommandError(M.reserved(role.id, ROLE_SLOT_LABELS[current.type]));
     }
   }
 
-  for (const { role, type } of roles) {
-    await roleConfigService.setRole({ guildId: guild.id, roleId: role.id, type });
-  }
+  await roleConfigService.setRole({ guildId: guild.id, roleId: role.id, type });
+
+  const configured = await Promise.all(
+    OWNER_WARN_SLOTS.map((slot) => roleConfigService.getByType(guild.id, slot)),
+  );
 
   await replySuccess(
     interaction,
     M.configured,
-    ...roles.map(({ role, level }) => M.line(level, role.id)),
+    ...OWNER_WARN_SLOTS.map((slot, index) => {
+      const level = OWNER_WARN_LEVEL[slot] ?? index + 1;
+      const row = configured[index];
+      return row ? M.line(level, row.roleId) : M.lineUnset(level);
+    }),
     M.note,
   );
 }

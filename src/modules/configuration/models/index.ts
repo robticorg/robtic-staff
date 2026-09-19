@@ -13,3 +13,8 @@ export {
   type FastAccess,
   type FastAccessDocument,
 } from "./fast-access.model.ts";
+export {
+  StaffConfigModel,
+  type StaffConfig,
+  type StaffConfigDocument,
+} from "./staff-config.model.ts";

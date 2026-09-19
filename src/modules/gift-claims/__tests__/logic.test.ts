@@ -18,7 +18,7 @@ describe("decideGiftManager (§6, §17)", () => {
       decideGiftManager({ isAdministrator: false, hasPanelSupportRole: true, hasGiftManagerRole: false }),
     ).toBe(true);
   });
-  it("allows the /role giftmanager role", () => {
+  it("allows the /role set type:GIFT_MANAGER role", () => {
     expect(
       decideGiftManager({ isAdministrator: false, hasPanelSupportRole: false, hasGiftManagerRole: true }),
     ).toBe(true);

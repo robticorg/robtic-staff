@@ -35,3 +35,52 @@ export const ROLE_SLOT_LABELS: Record<RoleConfigType, string> = {
   [RoleConfigType.APPLY_MANAGER]: "رتبة مانجر التقديم",
   [RoleConfigType.TAG]: "رتبة التاق",
 };
+
+/**
+ * Every slot `/role set type:<…> role:@role` can write, in dropdown order.
+ * Discord caps a choice list at 25, so this list has deliberate headroom — the
+ * two lists that grow on their own (staff tiers, staff types) stay separate.
+ */
+export const ROLE_SET_SLOTS: readonly RoleConfigType[] = [
+  RoleConfigType.START,
+  RoleConfigType.END,
+  RoleConfigType.STAFF,
+  RoleConfigType.IGNORE,
+  RoleConfigType.BLACKLIST,
+  RoleConfigType.STAFF_MANAGER,
+  RoleConfigType.OWNER_MANAGER,
+  RoleConfigType.TRANSFER_MANAGER,
+  RoleConfigType.APPLY_MANAGER,
+  RoleConfigType.APPEAL_MANAGER,
+  RoleConfigType.GIFT_MANAGER,
+  RoleConfigType.CHAT_MANAGER,
+  RoleConfigType.MUTE,
+  RoleConfigType.JAIL,
+  RoleConfigType.VACATION,
+  RoleConfigType.TAG,
+  RoleConfigType.WARN_1,
+  RoleConfigType.WARN_2,
+  RoleConfigType.WARN_3,
+  RoleConfigType.OWNER_WARN_1,
+  RoleConfigType.OWNER_WARN_2,
+  RoleConfigType.OWNER_WARN_3,
+];
+
+/** Slots that take a level range rather than a single role — `/role range`. */
+export const ROLE_RANGE_SLOTS: readonly RoleConfigType[] = [
+  RoleConfigType.ACCEPTED,
+  RoleConfigType.ASSIGN,
+  RoleConfigType.ACCESS,
+];
+
+export const OWNER_WARN_SLOTS: readonly RoleConfigType[] = [
+  RoleConfigType.OWNER_WARN_1,
+  RoleConfigType.OWNER_WARN_2,
+  RoleConfigType.OWNER_WARN_3,
+];
+
+const toChoices = (slots: readonly RoleConfigType[]) =>
+  slots.map((type) => ({ name: ROLE_SLOT_LABELS[type], value: type as string }));
+
+export const ROLE_SET_CHOICES = toChoices(ROLE_SET_SLOTS);
+export const ROLE_RANGE_CHOICES = toChoices(ROLE_RANGE_SLOTS);

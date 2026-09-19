@@ -10,6 +10,7 @@ import { AppealModel } from "../modules/appeals/models/appeal.model.ts";
 import { RoleConfigModel } from "../modules/configuration/models/role-config.model.ts";
 import { ChannelConfigModel } from "../modules/configuration/models/channel-config.model.ts";
 import { FastAccessModel } from "../modules/configuration/models/fast-access.model.ts";
+import { StaffConfigModel } from "../modules/configuration/models/staff-config.model.ts";
 import { ModmailCaseModel } from "../modules/modmail/models/modmail-case.model.ts";
 import { ModmailMessageModel } from "../modules/modmail/models/modmail-message.model.ts";
 import { ModmailAttachmentModel } from "../modules/modmail/models/modmail-attachment.model.ts";
@@ -42,6 +43,7 @@ export const ALL_MODELS: Model<any>[] = [
   RoleConfigModel,
   ChannelConfigModel,
   FastAccessModel,
+  StaffConfigModel,
   ModmailCaseModel,
   ModmailMessageModel,
   ModmailAttachmentModel,

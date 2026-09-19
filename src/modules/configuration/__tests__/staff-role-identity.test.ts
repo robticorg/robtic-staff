@@ -50,7 +50,7 @@ describe.skipIf(!hasDb)("general @Staff marker vs numbered ladder rungs", () => 
     await RoleConfigModel.deleteMany({ guildId: GUILD });
   });
 
-  it("keeps the numbered ladder intact when /role staff runs afterwards", async () => {
+  it("keeps the numbered ladder intact when /role set type:STAFF runs afterwards", async () => {
     await roleConfigService.rebuildLadder(GUILD, LADDER);
     await setMarker();
 

@@ -38,7 +38,7 @@ export const punishmentMessages = {
     targetLeftForKick: `${E.error} هذا الشخص ما عاد في السيرفر — ما فيه شي نسويه كيك.`,
     targetNotInGuild: `${E.error} هذا الشخص ما عاد في السيرفر، فما يمكن تطبيق هذا الإجراء.`,
     roleNotConfigured: (which: string) =>
-      `${E.error} رتبة ${which} مو مضبوطة (\`/role ${which.toLowerCase()}\`). ما تم تنفيذ شي.`,
+      `${E.error} رتبة ${which} مو مضبوطة (\`/role set type:رتبة ${which === "Mute" ? "الميوت" : "السجن"}\`). ما تم تنفيذ شي.`,
     botMissingPermission: (perm: string) =>
       `${E.error} ناقصني صلاحية **${perm}**. ما تم تنفيذ شي.`,
     roleHierarchy: `${E.error} أعلى رتبة عندي مو فوق الهدف — ما أقدر أطبّق عليه.`,

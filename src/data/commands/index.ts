@@ -11,6 +11,7 @@ export const CommandName = {
   POINTS: "points",
   SLEEP: "sleep",
   TICKET_STATS: "ticket-stats",
+  PROMOTE_POINTS: "promote-points",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -27,31 +28,19 @@ export const TicketStatsSubcommand = {
 export type TicketStatsSubcommand =
   (typeof TicketStatsSubcommand)[keyof typeof TicketStatsSubcommand];
 
+/**
+ * Six subcommands, not twenty-five. Every single-role slot goes through `set`,
+ * every level-ranged slot through `range`; the two lists that grow on their own
+ * (tiers, staff types) keep their own subcommand so neither can eat the other's
+ * choice budget.
+ */
 export const RoleSubcommand = {
-  START: "start",
-  END: "end",
-  STAFF: "staff",
-  IGNORE: "ignore",
-  BLACKLIST: "blacklist",
-  STAFF_MANAGER: "staffmanager",
-  OWNER_MANAGER: "ownermanager",
-  TRANSFER_MANAGER: "transfermanager",
-  WARN: "warn",
-  OWNER_WARNS: "ownerwarns",
-  MUTE: "mute",
-  JAIL: "jail",
-  CHAT_MANAGER: "chatmanager",
-  VACATION: "vacation",
-  APPEAL_MANAGER: "appealmanager",
-  GIFT_MANAGER: "giftmanager",
-  APPLY_MANAGER: "applymanager",
-  TAG: "tag",
-  CHECK: "check",
-  ACCESS: "access",
-  ACCEPTED: "accepted",
-  ASSIGN: "assign",
+  SET: "set",
+  RANGE: "range",
   BOUNDARY: "boundary",
   STAFF_TYPE: "stafftype",
+  CHECK: "check",
+  LIST: "list",
 } as const;
 export type RoleSubcommand = (typeof RoleSubcommand)[keyof typeof RoleSubcommand];
 
@@ -96,71 +85,28 @@ export const CommandOption = {
   PANEL: "panel",
   TIME: "time",
   TIER: "tier",
+  POINTS: "points",
 } as const;
 
 export const commandCopy = {
   role: {
     description: `ضبط رتب ديسكورد اللي يستخدمها نظام ستاف ${branding.botName}`,
     sub: {
-      start: {
-        description: "ضبط أول رتبة ستاف مرقّمة (دايماً المستوى 0)",
-        option: "رتبة بداية الستاف",
-      },
-      end: {
-        description: "ضبط آخر رتبة ستاف مرقّمة؛ المستويات تنحسب من الترتيب",
-        option: "أعلى رتبة ستاف",
-      },
-      staff: {
-        description: "ضبط رتبة @Staff العامة (مو ضمن الترتيب المرقّم)",
-        option: "رتبة الستاف العامة",
-      },
-      ignore: {
-        description: "تحديد رتبة عشان عدّاد مستوى الستاف يتجاهلها",
-        option: "الرتبة اللي تنتجاهل",
-      },
-      blacklist: {
-        description: "ضبط الرتبة اللي تنعطى لأعضاء الستاف في البلاك ليست",
-        option: "رتبة البلاك ليست",
-      },
-      staffmanager: {
-        description: "ضبط الرتبة اللي تعطي صلاحيات مانجر الستاف",
-        option: "رتبة مانجر الستاف",
-      },
-      ownermanager: {
-        description: "ضبط رتبة مانجر الأونر (صلاحية أعلى من مانجر الستاف، وما توصل الشيب)",
-        option: "رتبة مانجر الأونر",
-      },
-      warn: {
-        description: "ضبط رتب تحذيرات الستاف الثلاث (للستاف بس، مو تحذيرات الأعضاء)",
+      set: {
+        description: "ضبط رتبة لخانة وحدة في نظام الستاف",
         options: {
-          warn1: "رتبة تحذير الستاف 1",
-          warn2: "رتبة تحذير الستاف 2",
-          warn3: "رتبة تحذير الستاف 3",
+          type: "الخانة اللي تبي تضبطها",
+          role: "الرتبة المطلوبة",
         },
       },
-      mute: {
-        description: "ضبط الرتبة اللي تنطبّق مع عقوبة الميوت",
-        option: "رتبة الميوت",
-      },
-      jail: {
-        description: "ضبط الرتبة اللي تنطبّق مع عقوبة السجن",
-        option: "رتبة السجن",
-      },
-      chatmanager: {
-        description: "ضبط رتبة مانجر الشات (يوافق على طلبات عقوبة الكيك)",
-        option: "رتبة مانجر الشات",
-      },
-      vacation: {
-        description: "ضبط الرتبة اللي تنعطى لأعضاء الستاف وهم في إجازة / بريك",
-        option: "رتبة الإجازة",
-      },
-      appealmanager: {
-        description: "ضبط الرتبة اللي تقدر تراجع استئنافات العقوبات (زيادة على مانجرات الستاف)",
-        option: "رتبة مانجر الاستئناف",
-      },
-      giftmanager: {
-        description: "ضبط الرتبة اللي تقدر تراجع طلبات الهدايا وتسلّمها",
-        option: "رتبة مانجر الهدايا",
+      range: {
+        description: "ضبط رتبة تنعطى تلقائياً لمستويات ستاف معيّنة (أو نطاق رتب وصول)",
+        options: {
+          type: "نوع الربط",
+          role: "الرتبة المطلوبة",
+          from: "أول رتبة ستاف مرقّمة في النطاق (اختياري)",
+          to: "آخر رتبة ستاف مرقّمة في النطاق (اختياري)",
+        },
       },
       boundary: {
         description: "تحديد أول رتبة في تصنيف (هاي ستاف / أونر / شيب)",
@@ -176,54 +122,19 @@ export const commandCopy = {
           role: "الرتبة اللي تنعطى لهذا النوع",
         },
       },
-      ownerwarns: {
-        description: "ضبط رتب تحذيرات ستاف الأونر (منفصلة عن تحذيرات الستاف العادية)",
-        options: {
-          warn1: "رتبة تحذير الأونر 1",
-          warn2: "رتبة تحذير الأونر 2",
-          warn3: "رتبة تحذير الأونر 3",
-        },
-      },
-      transfermanager: {
-        description: "ضبط الرتبة اللي تقدر تحوّل عضوية الستاف من عضو لعضو (!transfer)",
-        option: "رتبة مانجر التحويل",
-      },
-      applymanager: {
-        description: "ضبط الرتبة اللي تقدر تقبل طلبات التقديم (زيادة على مانجرات الستاف)",
-        option: "رتبة مانجر التقديم",
-      },
-      tag: {
-        description: "ضبط الرتبة اللي تنعطى تلقائياً لكل عضو يستخدم تاق السيرفر",
-        option: "رتبة التاق",
-      },
       check: {
         description: "عرض مستوى الرتبة وتصنيفها في سلّم الستاف",
         option: "الرتبة اللي تبي تفحصها",
       },
-      access: {
-        description: "إضافة رتب وصول للستاف (بدون مستوى) — رتبة وحدة أو نطاق كامل",
-        options: {
-          from: "أول رتبة في النطاق",
-          to: "آخر رتبة في النطاق",
-          role: "رتبة وحدة تنضاف لرتب الوصول",
-        },
+      list: {
+        description: "عرض كل الرتب المضبوطة في نظام الستاف",
       },
-      accepted: {
-        description: "ضبط الرتبة اللي تنعطى تلقائياً لأي عضو ينقبل في الستاف",
-        options: {
-          role: "رتبة قبول الستاف",
-          from: "أول رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
-          to: "آخر رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
-        },
-      },
-      assign: {
-        description: "ربط رتبة إضافية بمستويات ستاف معيّنة — تنعطى وتنشال تلقائياً",
-        options: {
-          role: "الرتبة الإضافية",
-          from: "أول رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
-          to: "آخر رتبة ستاف مرقّمة تستحق الرتبة (اختياري)",
-        },
-      },
+    },
+  },
+  promotePoints: {
+    description: "ضبط الحد الأدنى من النقاط الأسبوعية اللي تأهّل الستاف للترقية",
+    options: {
+      points: "الحد الأدنى من النقاط في الأسبوع (رقم صحيح موجب)",
     },
   },
   scan: {

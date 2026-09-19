@@ -35,7 +35,7 @@ export const hierarchyMessages = {
     note: "الفحص يحدّث المستوى الحالي بس — النقاط والتحذيرات والسجل ما تتغير.",
 
     inProgress: `${E.warning} فيه فحص شغّال حالياً لهذا السيرفر. انتظر لين يخلص.`,
-    staffRoleUnset: `${E.error} رتبة الستاف العامة مو مضبوطة. شغّل \`/role staff @role\` أول.`,
+    staffRoleUnset: `${E.error} رتبة الستاف العامة مو مضبوطة. شغّل \`/role set type:رتبة الستاف العامة role:@role\` أول.`,
     failed: `${E.error} ما قدرت أكمل الفحص. جرب مرة ثانية.`,
   },
 
@@ -57,16 +57,16 @@ export const hierarchyMessages = {
 
   boundary: {
     configured: (label: string) => `تم ضبط بداية مستوى ${label}.`,
-    notOnLadder: `${E.error} لازم تكون الرتبة ضمن سلّم رتب الستاف المرقّمة. اضبط السلّم عن طريق \`/role start\` و \`/role end\` أول.`,
+    notOnLadder: `${E.error} لازم تكون الرتبة ضمن سلّم رتب الستاف المرقّمة. اضبط السلّم عن طريق \`/role set type:رتبة بداية الستاف\` و \`/role set type:رتبة نهاية الستاف\` أول.`,
     outOfOrder: `${E.error} رتبة الشيب لازم تكون بعد رتبة الأونر وقبل نهاية مستويات الستاف، والهاي ستاف قبلهم.`,
     note: "هذي الرتبة تظل رتبة ستاف عادية — بس صارت أول رتبة في هذا التصنيف.",
   },
 
   problems: {
     heading: `${E.error} إعدادات سلّم الستاف ناقصة أو غير صحيحة:`,
-    START_NOT_CONFIGURED: "رتبة البداية مو مضبوطة — شغّل `/role start`.",
-    END_NOT_CONFIGURED: "رتبة النهاية مو مضبوطة — شغّل `/role end`.",
-    STAFF_ROLE_NOT_CONFIGURED: "رتبة الستاف العامة مو مضبوطة — شغّل `/role staff`.",
+    START_NOT_CONFIGURED: "رتبة البداية مو مضبوطة — شغّل `/role set type:رتبة بداية الستاف`.",
+    END_NOT_CONFIGURED: "رتبة النهاية مو مضبوطة — شغّل `/role set type:رتبة نهاية الستاف`.",
+    STAFF_ROLE_NOT_CONFIGURED: "رتبة الستاف العامة مو مضبوطة — شغّل `/role set type:رتبة الستاف العامة`.",
     BOUNDARY_NOT_ON_LADDER: (label: string) =>
       `رتبة بداية ${label} ما عادت ضمن السلّم المرقّم — أعد ضبطها.`,
     BOUNDARY_OUT_OF_ORDER: (label: string) =>

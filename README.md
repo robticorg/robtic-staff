@@ -192,6 +192,7 @@ live on each `definePrefixCommand({ name })`; Arabic aliases are a central map i
 | `appeals`                  | appeal prep — references a warning/punishment       | mutable    |
 | `role_configs`             | Discord role → staff-system slot mapping            | mutable    |
 | `channel_configs`          | staff-system channel slot → Discord channel         | mutable    |
+| `staff_configs`            | guild-wide numeric staff settings (promotion points)| mutable    |
 | `fast_access`              | `$command` shortcuts per guild + context            | mutable    |
 
 **The `staff` document never embeds reports, tickets, warnings, activities or
@@ -251,10 +252,11 @@ by not holding a Staff role.
 
 | Surface | Who |
 |---|---|
-| `/role · /channels · /points · /ticket-setup · /vacation-setup · /faq` | Administrator only |
+| `/role · /channels · /points · /promote-points · /ticket-setup · /vacation-setup · /faq` | Administrator only |
+| `!check` (alias `!فحص`) | **Staff Manager / Owner Manager** (admin folded in) |
 | `/scan · /fast-access` | Staff Manager (admin folded in) |
 | `!come` | **HIGHSTAFF tier and up** (`/role boundary tier:highstaff`) |
-| `!transfer` | **Transfer Manager** (`/role transfermanager`) |
+| `!transfer` | **Transfer Manager** (`/role set type:TRANSFER_MANAGER`) |
 | `!handover` + the ticket `[Transfer]` button | **the claimer of that ticket** |
 | `!sleep` / `/sleep` | **anyone holding that panel's support role**, plus the claimer |
 | `!close · !delete · !rename · !add · !remove`, ticket Options | the claimer |
@@ -298,6 +300,13 @@ TRANSFER_MANAGER · WARN_1/2/3`.
 - The general **`@Staff`** role is `type STAFF` with **no** level — not on the ladder.
 - **`IGNORE`** roles never carry a level and never consume one.
 
+**`/role list`** prints everything currently configured, read straight from
+`role_configs` (no cache): the numbered ladder with its levels, the tier
+boundaries, every single-role slot (`*غير مضبوط*` when empty), the access /
+ignored / level-ranged / staff-type roles. A configured role that no longer
+exists in the guild is flagged rather than silently dropped, which makes it the
+fastest way to spot a slot pointing at a deleted role.
+
 ```ts
 roleConfigService.getStaffRoleLevels(guildId)          // [{ roleId, level, type }] ascending
 roleConfigService.getStaffLevel(guildId, roleId)       // number | null
@@ -309,32 +318,41 @@ The command layer resolves/orders Discord roles (by position, minus IGNORE / the
 general STAFF role) and passes plain ids to the service — services stay
 Discord-free.
 
-### `/role` sits against Discord's 25-subcommand cap
+### `/role` is six subcommands, not twenty-five
 
-Discord allows a command **25 subcommands, hard**. `/role` is at **24**, so two
-things that used to be one-subcommand-each are now a single subcommand with a
-choice:
+Discord allows a command **25 subcommands, hard**, and `/role` had grown into all
+25 — one per slot. It is now **six**, because a slot is data, not a command name:
 
 | Before | Now |
 |---|---|
-| `/role highstaff` · `/role owner` · `/role ship` | `/role boundary tier:<…> role:@role` |
-| `/role max` · `/role dev` (generated per Staff Type) | `/role stafftype type:<…> role:@role` |
+| `/role start · end · staff · ignore · blacklist · staffmanager · ownermanager · transfermanager · applymanager · appealmanager · giftmanager · chatmanager · mute · jail · vacation · tag` | `/role set type:<slot> role:@role` |
+| `/role warn warn1: warn2: warn3:` · `/role ownerwarns warn1: warn2: warn3:` | `/role set type:<warn slot> role:@role` (one slot per call) |
+| `/role accepted · assign · access` | `/role range type:<slot> role: from: to:` |
+| `/role highstaff · owner · ship` | `/role boundary tier:<…> role:@role` |
+| `/role max · dev` (generated per Staff Type) | `/role stafftype type:<…> role:@role` |
 
-The staff-type one mattered most: those subcommands were **generated** from
-`STAFF_TYPE_DEFINITIONS`, so every new Staff Type silently ate a slot and would
-eventually break command registration at boot. As a choice list it costs one
-slot forever (choices cap at 25 too, with room to spare).
+The slot lists live in `src/data/roles/index.ts` (`ROLE_SET_SLOTS`,
+`ROLE_RANGE_SLOTS`) and the choices are derived from `ROLE_SLOT_LABELS`, so
+adding a `RoleConfigType` is a one-line data change — no builder edit, no
+subcommand budget.
 
-`src/commands/__tests__/command-limits.test.ts` asserts the caps — subcommands,
-options per subcommand, choices, and name/description lengths — for every
-registered command, so exceeding them fails the suite instead of crashing on
-deploy.
+**Why tiers and staff types keep their own subcommand.** Choice lists cap at 25
+too, so folding all of them into `set` would just move the ceiling. Staff types
+are **generated** from `STAFF_TYPE_DEFINITIONS` and tiers from
+`STAFF_TIER_KEYWORD_DEFINITIONS` — both grow on their own, and sharing one choice
+list would let either silently consume the other's headroom. Separate lists mean
+`set` stays at 22/25 no matter how many staff types get defined.
+
+`command-limits.test.ts` asserts the Discord caps for every registered command;
+`role-slots.test.ts` additionally asserts that every `RoleConfigType` is
+reachable through exactly one subcommand, so a new slot can't be added to the
+enum and silently left unconfigurable.
 
 ### The ladder follows Discord's role order automatically
 
 The ladder **is** the role order between START and END — it is derived, never
 typed in. `orderLadderRoles` (`configuration/utils/ladder-order.ts`) is the one
-pure function behind both `/role start|end` and the live sync, so they can never
+pure function behind both `/role set type:START|END` and the live sync, so they can never
 disagree. `LadderSyncService` re-derives the band on `roleCreate` / `roleUpdate`
 (position only) / `roleDelete`, and on every boot:
 
@@ -376,7 +394,7 @@ from comes from `StaffHierarchyService`, never from whatever roles look
 staff-ish.
 
 **Authorization** — `staffManagementAuthorizationService.canTransfer(actor, source, target)`:
-Administrator or the configured **Transfer Manager** role (`/role transfermanager`,
+Administrator or the configured **Transfer Manager** role (`/role set type:TRANSFER_MANAGER`,
 Administrators only). No level maths and no position maths — a Transfer Manager
 gains nothing by sitting higher in the Discord role list.
 
@@ -492,7 +510,7 @@ offline past the deadline is not an escape.
 | | `staff_warnings` | `user_warnings` |
 |---|---|---|
 | Subject | staff members | community users |
-| Discord roles | `WARN_1/2/3` roles (set via `/role warn`) | **none** |
+| Discord roles | `WARN_1/2/3` roles (set via `/role set type:WARN_1|2|3`) | **none** |
 | Levels | 1, 2, 3 (3 → future auto-fire) | n/a |
 | Origin | staff manager action | `source: DIRECT` or `source: REPORT` (+ `reportId`) |
 | Removal | `status: REMOVED` + `removedBy/removedAt/removalReason` | `status: REVOKED` + `revokedBy/revokedAt/revokeReason` |
@@ -512,10 +530,17 @@ reads it from the target's calculated level against the configured Owner
 boundary, so `!warn @user` alone decides. Ship tier also resolves to `OWNER`
 (there is no third role set, and only an Administrator can warn Ship anyway).
 
-`/role ownerwarns warn1: warn2: warn3:` configures `OWNER_WARN_1/2/3`
-(Administrators only). `/role warn` is untouched. Validation rejects duplicates,
-`@everyone`, managed roles, roles above the bot, ladder rungs, and any role
-already filling another Staff slot — the normal warn roles included.
+`/role set type:<رتبة تحذير الأونر 1|2|3> role:@role` configures
+`OWNER_WARN_1/2/3`, one slot per call (Administrators only). The normal
+`WARN_1/2/3` slots go through the same `set` and stay unvalidated, as before.
+
+Owner-warn validation still rejects `@everyone`, managed roles, roles above the
+bot, ladder rungs, and any role already filling another Staff slot — the normal
+warn roles included. The "all three must differ" rule survived the split: it used
+to compare the three arguments of one call, and now compares the incoming role
+against whatever the **other two slots already hold**, which is the same
+guarantee — two owner-warn slots can never point at one role. The reply prints
+the full trio after every write, so a half-configured set is visible.
 
 **Who can warn whom** — `staffManagementAuthorizationService.canWarn(actor, target)`,
 one decision point, levels from the hierarchy and never from role position:
@@ -721,21 +746,13 @@ Both commands are **Administrator-only** (`setDefaultMemberPermissions` +
 runtime check) and guild-only. All replies are ephemeral.
 
 ```
-/role start        role:@Role         → START slot, level 0
-/role end          role:@Role         → derives the whole numbered ladder from
-                                         Discord role positions between START and
-                                         END, skipping IGNORE / @Staff / managed
-                                         roles, then persists it (rebuildLadder)
-/role staff        role:@Role         → general @Staff role (no level)
-/role ignore       role:@Role         → IGNORE slot (never consumes a level)
-/role blacklist    role:@Role         → BLACKLIST slot (singleton)
-/role break        role:@Role         → BREAK slot (singleton)
-/role staffmanager role:@Role         → STAFF_MANAGER slot (future !commands)
-/role warn         warn1: warn2: warn3:→ WARN_1/2/3 staff-warning roles
-/role mute | jail | chatmanager       → MUTE / JAIL / CHAT_MANAGER slots (punishments)
-/role vacation     role:@Role         → VACATION slot (singleton, never a level)
-/role appealmanager role:@Role        → APPEAL_MANAGER slot (extra appeal reviewers)
-/role giftmanager  role:@Role         → GIFT_MANAGER slot (gift-claim reviewers)
+/role set    type:<slot> role:@Role    → every single-role slot, one dropdown
+/role range  type:<slot> role: from: to:
+                                       → the slots bound to a span of the ladder
+/role boundary tier:<…>  role:@Role    → first role of a tier (highstaff/owner/ship)
+/role stafftype type:<…> role:@Role    → the role for a Staff Type (max / dev / …)
+/role check  role:@Role                → what level & tier is this role?
+/role list                             → everything currently configured
 
 /channels set  type:<choice> channel:#chan   → ChannelConfig upsert (per guild+type)
 /channels list                                → grouped ephemeral overview
@@ -743,9 +760,25 @@ runtime check) and guild-only. All replies are ephemeral.
 /vacation-setup                               → post / refresh the vacation panel here
 ```
 
+`/role set` covers **22 slots** behind one `type:` dropdown — `START`, `END`,
+`STAFF`, `IGNORE`, `BLACKLIST`, the six manager slots, `MUTE`, `JAIL`,
+`VACATION`, `TAG`, `WARN_1/2/3` and `OWNER_WARN_1/2/3`. Most are a plain upsert;
+four branch inside `set.ts` because they always did:
+
+| Slot | What `set` still does |
+|---|---|
+| `START` | writes level 0, then re-derives the ladder if `END` already exists |
+| `END` | rebuilds the whole numbered ladder from Discord role positions |
+| `IGNORE` | stored without a level, so it never consumes a rung |
+| `OWNER_WARN_1/2/3` | the full validation trio (see the owner-warns section) |
+
+`/role range type:<ACCEPTED \| ASSIGN \| ACCESS>` takes an optional `from:` / `to:`
+pair. `role:` is optional on the builder because `ACCESS` accepts a from/to span
+of roles on its own; `ACCEPTED` and `ASSIGN` require it and say so.
+
 Gift Claim has **no command** — it is a `gift-claim` ticket panel, edited in
 `src/data/tickets/panels/gift-claim.ts` and deployed by `/ticket-setup`.
-`/role giftmanager` is an optional extra grant for the case-card buttons.
+`/role set type:GIFT_MANAGER` is an optional extra grant for the case-card buttons.
 
 Newer phases also register `/ticket-setup`, `/faq …`, `/fast-access …` and
 `/vacation-setup`. Any new slash command needs `bun run register-commands` to
@@ -1241,7 +1274,7 @@ are never consulted for history.
      stay inside the warning system — **no duplicate points**), plus a linked
      `Punishment(WARN, EXECUTED)` record via `metadata.warningId`.
    - **Timeout / Mute / Jail / No Action** → executed immediately by the bot.
-     Mute/Jail apply the **configured** `MUTE` / `JAIL` role (`/role mute|jail`,
+     Mute/Jail apply the **configured** `MUTE` / `JAIL` role (`/role set type:MUTE|JAIL`,
      no hardcoded IDs).
    - **Kick / Ban** → an approval request card is posted to the configured
      `KICK_APPROVAL` / `BAN_APPROVAL` channel; nothing executes yet.
@@ -1308,7 +1341,7 @@ hook for a future accepted appeal.
 
 ### Config
 
-`/role mute|jail|chatmanager` (`RoleConfigType.MUTE` / `JAIL` / `CHAT_MANAGER`,
+`/role set type:MUTE|JAIL|CHAT_MANAGER` (`RoleConfigType.MUTE` / `JAIL` / `CHAT_MANAGER`,
 singleton) and `/channels set` slots `PUNISHMENT_LOG`, `BAN_APPROVAL`,
 `KICK_APPROVAL`. A missing approval channel → the punishment is marked `FAILED`,
 logged, and staff are told; **nothing is executed**.
@@ -1333,7 +1366,7 @@ of truth**; Discord state is never consulted for history or expiry.
 
 ### Config
 
-- **`/role vacation @role`** — `RoleConfigType.VACATION` (singleton, **never** a
+- **`/role set type:VACATION role:@role`** — `RoleConfigType.VACATION` (singleton, **never** a
   numbered level, excluded from the ladder rebuild).
 - **`/channels set type:VACATION_REQUESTS #chan`** — where application requests
   are posted.
@@ -1457,7 +1490,7 @@ punishment (§3) — a decided or pending appeal blocks a new one.
 
 - **`/channels set type:APPEALS #chan`** — review channel. Unset ⇒ appeal
   creation is refused and the user is told the system is unavailable (§5).
-- **`/role appealmanager @role`** — extra reviewer role. Staff Managers can
+- **`/role set type:APPEAL_MANAGER role:@role`** — extra reviewer role. Staff Managers can
   always review (`AppealPermissionService.canReview`, extensible §16).
 
 ### Eligibility (`AppealService.canAppeal`, §6/§7/§33)
@@ -1575,7 +1608,7 @@ remove / reconfigure Gift Claim purely through this file (§13/§14).
 ### Permissions (`isGiftManager`, server-side on every button — §6/§17)
 
 `Administrator` **or** the `gift-claim` panel's `supportRoleId` **or** the
-`/role giftmanager` `RoleConfig` role. Ticket claim/close use the standard
+`/role set type:GIFT_MANAGER` `RoleConfig` role. Ticket claim/close use the standard
 `canClaimTicket` / `canManageTicket` against `panel.supportRoleId`.
 
 ### Proof (§4)
@@ -1687,6 +1720,72 @@ point sums + negatives + per-type breakdown, leaderboard ranking + `staffId`
 tie-break + fired/blacklisted excluded + break kept + guild isolation + limit /
 `totalRanked`, gift-claim counted once as ticket + separately in gift stats,
 zero-activity & unknown staff, detailed-vs-summary gating.
+
+---
+
+## Weekly Staff Promotion Points
+
+An **eligibility report, not a leaderboard, and not a promotion.** It answers one
+question per staff member: *did they earn enough points this week?* It never
+promotes anyone, never touches levels, roles, points or history — the existing
+promotion system (`!prompt`) still does all of that.
+
+```
+/promote-points points:<number>   → Administrator only; the weekly threshold
+!check  (alias !فحص)              → Staff Manager / Owner Manager (admin folded in)
+```
+
+### Configuration
+
+`promotionPointsRequired` lives on the guild-wide `staff_configs` document
+(`StaffConfigModel`, one per `guildId`), next to the role and channel configs.
+Validated as a **positive integer** — `0`, negatives, decimals and non-finite
+values are all rejected (`assertPositiveInteger`, and the slash option is an
+integer with `minValue: 1`). Saving invalidates only the cached requirement
+(`CONFIG_CACHE_TTL_MS`); no staff document, role or history is written.
+
+### The week (§3)
+
+`getCurrentWeekRange(now)` = **Monday 00:00:00 → now** in the configured
+`STAFF_TIMEZONE`. It delegates to `shared/utils/time.periodStart("week", …)` —
+the same centralized helper `staff-stats` uses, so the week boundary is defined
+in exactly one place.
+
+### Weekly points
+
+`StaffPointTransaction` is the source of truth — **never** the cached
+`Staff.points`. `getAllStaffWeeklyPoints` resolves the guild's ACTIVE staff
+`_id` set, then runs a single `$match` + `$group` (`$sum: "$amount"`) inside
+MongoDB; no transaction document is ever loaded into Node. Positive and negative
+transactions both count (`TICKET_CLAIM`, `REPORT_CLAIM`, `USER_WARNING`,
+`APPEAL_SUCCESS_PENALTY`, …) — weekly points are the **net** sum. Served by the
+existing `StaffPointTransaction {staffId, createdAt:-1}` index.
+
+### The decision
+
+Strictly `weeklyPoints >= promotionPointsRequired` → *مؤهل للترقية*, otherwise
+*غير مؤهل للترقية*. Nothing subjective, no level suggestion, no auto-promotion.
+
+### Output
+
+Components V2, one block per staff member — display name, weekly points,
+decision. **No staff id, Discord id or database id is ever rendered** (there is a
+test asserting that). Ordering is `currentRoleLevel` DESC → display name ASC,
+never by points. A V2 message caps at 40 components, so the roster is split at 15
+members per message.
+
+### Files / tests
+
+- `modules/configuration/{models/staff-config.model.ts, services/staff-config.service.ts}`
+- `modules/staff/services/staff-promotion-points.service.ts` — `configureRequiredPoints`,
+  `getRequiredPoints`, `getCurrentWeekRange`, `getWeeklyPoints`,
+  `getAllStaffWeeklyPoints`, `evaluateEligibility`, `generateCheckResult`. The
+  `!check` command holds no business logic.
+- `modules/staff/render/check-card.ts`, copy in `data/messages/staff.ts`.
+- Pure tests: Monday/00:00/timezone week boundary, `>=` boundary incl. a negative
+  weekly net, validation rejects `0 / -1 / 1.5 / NaN / Infinity`, card renders
+  name+points+decision, leaks no identifier, splits a 31-member roster into 3
+  messages under the component cap.
 
 ---
 

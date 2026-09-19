@@ -8,6 +8,31 @@ export const staffMessages = {
     ticketClaimReason: (ticketId: string) => `استلام التكت ${ticketId}`,
   },
 
+  promotionPoints: {
+    eligible: "مؤهل للترقية",
+    notEligible: "غير مؤهل للترقية",
+    unknownMember: "عضو غير موجود في السيرفر",
+
+    invalidPoints: `${E.error} لازم يكون عدد النقاط رقم صحيح موجب (1 فأكثر) — بدون كسور ولا أصفار ولا أرقام سالبة.`,
+    configured: (points: number) =>
+      `تم ضبط الحد الأدنى للترقية على **${points}** نقطة في الأسبوع.`,
+    configuredNote:
+      "هذا الحد للفحص بس — ما راح يرقّي أحد تلقائياً ولا يغيّر نقاط أو رتب أي عضو ستاف.",
+
+    notConfigured: `${E.warning} ما تم ضبط نقاط الترقية بعد — استخدم \`/promote-points points:<رقم>\` أول.`,
+    noStaff: `${E.warning} ما فيه أعضاء ستاف نشطين في هذا السيرفر.`,
+
+    header: (points: number) => `## فحص نقاط الترقية\nالمطلوب: **${points}** نقطة هذا الأسبوع`,
+    headerPage: (points: number, page: number, pages: number) =>
+      `## فحص نقاط الترقية (${page}/${pages})\nالمطلوب: **${points}** نقطة هذا الأسبوع`,
+    entry: (displayName: string, weeklyPoints: number, decision: string) =>
+      [
+        `**اسم الستاف:** ${displayName}`,
+        `**نقاط هذا الأسبوع:** ${weeklyPoints}`,
+        `**القرار:** ${decision}`,
+      ].join("\n"),
+  },
+
   authorization: {
     NOT_A_MANAGER: `${E.error} ما عندك صلاحية تستخدم أوامر إدارة الستاف.`,
     NOT_A_MANAGER_DEMOTE: `${E.error} ما عندك صلاحية تستخدم أمر الديموت.`,
@@ -105,7 +130,7 @@ export const staffMessages = {
       HIERARCHY_INVALID: () =>
         `${E.error} إعدادات سلّم الستاف ناقصة أو غير صحيحة — صحّحها قبل التحويل.`,
       LADDER_NOT_CONFIGURED: () =>
-        `${E.error} رتب الستاف المرقّمة مو مضبوطة. شغّل \`/role start\` و \`/role end\` أول.`,
+        `${E.error} رتب الستاف المرقّمة مو مضبوطة. شغّل \`/role set type:رتبة بداية الستاف\` و \`/role set type:رتبة نهاية الستاف\` أول.`,
       LEVEL_UNKNOWN: (source: string) =>
         `${E.error} ما قدرت أحدد مستوى ${source} في سلّم الستاف.`,
     },
