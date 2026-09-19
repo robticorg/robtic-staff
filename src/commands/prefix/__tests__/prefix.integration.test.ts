@@ -206,7 +206,8 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
     last = await verbal(target, manager, "3");
 
     expect(last.escalation?.level).toBe(1);
-    expect(last.escalation?.fired).toBe(false);
+    expect(last.escalation?.consequence.fired).toBe(false);
+    expect(last.escalation?.consequence.demoted).toBe(false);
     expect(target.roles.cache.has(WARN[1])).toBe(true);
 
     const managerStaff = await staffService.get("manager-sw", GUILD);
@@ -225,7 +226,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
     expect(converted).toBe(3);
   });
 
-  it("normal staff: 9 verbal warnings escalate to Warn 3 then Fire + Blacklist", async () => {
+  it("normal staff: 9 verbal warnings reach Warn 3, which demotes and clears the warnings", async () => {
     const target = fakeMember("staff-verbal-9");
     await staffManagementService.accept(target as never, SYSTEM_ACTOR, 2);
     const manager = fakeMember("manager-sw9");
@@ -234,15 +235,29 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
     for (let i = 1; i <= 9; i++) last = await verbal(target, manager, `v${i}`);
 
     expect(last!.escalation?.level).toBe(3);
-    expect(last!.escalation?.fired).toBe(true);
-    expect(last!.escalation?.blacklisted).toBe(true);
-    expect(target.roles.cache.has(BLACKLIST)).toBe(true);
+    expect(last!.escalation?.consequence.demoted).toBe(true);
+    expect(last!.escalation?.consequence.fromLevel).toBe(2);
+    expect(last!.escalation?.consequence.toLevel).toBe(1);
+    expect(last!.escalation?.consequence.fired).toBe(false);
+
+    // never blacklisted, still staff, and the warn role comes back off
+    expect(target.roles.cache.has(BLACKLIST)).toBe(false);
     expect(target.roles.cache.has(WARN[3])).toBe(false);
+
     const staff = await staffService.get("staff-verbal-9", GUILD);
-    expect(staff?.status).toBe(StaffStatus.BLACKLISTED);
+    expect(staff?.status).toBe(StaffStatus.ACTIVE);
+    expect(staff?.currentRoleLevel).toBe(1);
+
+    // warnings were spent, so the ladder restarts at zero
+    const active = await StaffWarningModel.countDocuments({
+      staffId: staff!._id,
+      type: "REAL",
+      status: "ACTIVE",
+    }).exec();
+    expect(active).toBe(0);
   });
 
-  it("new staff (level 0): first real warning fires + blacklists immediately, no Break", async () => {
+  it("new staff (level 0): warn 1 is just a warning — no instant fire", async () => {
     const target = fakeMember("staff-new-0");
     await staffManagementService.accept(target as never, SYSTEM_ACTOR, 0);
     const manager = fakeMember("manager-new");
@@ -251,11 +266,11 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
     for (let i = 1; i <= 3; i++) last = await verbal(target, manager, `n${i}`);
 
     expect(last!.escalation?.level).toBe(1);
-    expect(last!.escalation?.fired).toBe(true);
-    expect(target.roles.cache.has(BLACKLIST)).toBe(true);
-    expect(target.roles.cache.has(WARN[1])).toBe(false);
+    expect(last!.escalation?.consequence.fired).toBe(false);
+    expect(target.roles.cache.has(BLACKLIST)).toBe(false);
+    expect(target.roles.cache.has(WARN[1])).toBe(true);
     const staff = await staffService.get("staff-new-0", GUILD);
-    expect(staff?.status).toBe(StaffStatus.BLACKLISTED);
+    expect(staff?.status).toBe(StaffStatus.ACTIVE);
   });
 
   it("!unwarn on a real warning marks it REMOVED (never deletes) and recalculates the warn role", async () => {
@@ -324,7 +339,8 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
     });
 
     expect(result.level).toBe(1);
-    expect(result.fired).toBe(false);
+    expect(result.consequence.fired).toBe(false);
+    expect(result.consequence.demoted).toBe(false);
     expect(target.roles.cache.has(WARN[1])).toBe(true);
 
     const targetStaff = await staffService.get("staff-direct-real-1", GUILD);
@@ -339,7 +355,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
     expect(real?.source).toBe("MANUAL");
   });
 
-  it("direct real staff warning: reaching level 3 fires + blacklists", async () => {
+  it("direct real staff warning: reaching level 3 demotes and clears, never blacklists", async () => {
     const target = fakeMember("staff-direct-real-3");
     await staffManagementService.accept(target as never, SYSTEM_ACTOR, 2);
     const manager = fakeMember("manager-direct-3");
@@ -356,29 +372,41 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
     }
 
     expect(last!.level).toBe(3);
-    expect(last!.fired).toBe(true);
-    expect(last!.blacklisted).toBe(true);
-    expect(target.roles.cache.has(BLACKLIST)).toBe(true);
+    expect(last!.consequence.demoted).toBe(true);
+    expect(last!.consequence.fromLevel).toBe(2);
+    expect(last!.consequence.toLevel).toBe(1);
+    expect(last!.consequence.fired).toBe(false);
+    expect(last!.consequence.warningsCleared).toBe(3);
+    expect(target.roles.cache.has(BLACKLIST)).toBe(false);
+
     const staff = await staffService.get("staff-direct-real-3", GUILD);
-    expect(staff?.status).toBe(StaffStatus.BLACKLISTED);
+    expect(staff?.status).toBe(StaffStatus.ACTIVE);
+    expect(staff?.currentRoleLevel).toBe(1);
   });
 
-  it("direct real staff warning: new staff (level 0) fires immediately on the first one", async () => {
+  it("direct real staff warning: level 0 has nothing to demote to, so warn 3 fires without blacklisting", async () => {
     const target = fakeMember("staff-direct-real-0");
     await staffManagementService.accept(target as never, SYSTEM_ACTOR, 0);
     const manager = fakeMember("manager-direct-0");
 
-    const result = await warningActionService.issueDirectRealStaffWarning({
-      guild: target.guild,
-      target: target as never,
-      reason: "مخالفة",
-      issuer: manager as never,
-      evidence: ["https://cdn.discordapp.com/proof.png"],
-    });
+    let last;
+    for (let i = 1; i <= 3; i++) {
+      last = await warningActionService.issueDirectRealStaffWarning({
+        guild: target.guild,
+        target: target as never,
+        reason: `مخالفة ${i}`,
+        issuer: manager as never,
+        evidence: ["https://cdn.discordapp.com/proof.png"],
+      });
+    }
 
-    expect(result.level).toBe(1);
-    expect(result.fired).toBe(true);
-    expect(target.roles.cache.has(BLACKLIST)).toBe(true);
+    expect(last!.level).toBe(3);
+    expect(last!.consequence.fired).toBe(true);
+    expect(last!.consequence.demoted).toBe(false);
+    expect(target.roles.cache.has(BLACKLIST)).toBe(false);
+
+    const staff = await staffService.get("staff-direct-real-0", GUILD);
+    expect(staff?.status).toBe(StaffStatus.FIRED);
   });
 
   it("Fast Access: guild+command is unique; duplicate add is rejected", async () => {

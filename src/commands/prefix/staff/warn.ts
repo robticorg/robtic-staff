@@ -3,7 +3,10 @@ import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { staffPermissionService } from "../../../modules/staff/services/staff-permissions.service.ts";
 import { staffManagementAuthorizationService } from "../../../modules/staff/services/staff-management-authorization.service.ts";
 import { classifyWarnChannel } from "../../../modules/warnings/services/warn-channels.ts";
-import { warningActionService } from "../../../modules/warnings/services/warning-actions.service.ts";
+import {
+  warningActionService,
+  type WarningConsequence,
+} from "../../../modules/warnings/services/warning-actions.service.ts";
 import { PrefixAbort } from "../_shared/guards.ts";
 import { requireTargetMember } from "../_shared/target.ts";
 import {
@@ -60,7 +63,7 @@ export default definePrefixCommand({
         evidence,
       });
       const lines = [prefixMessages.warn.realRecorded(mention, result.level)];
-      if (result.fired) lines.push(prefixMessages.warn.firedMaxWarnings(mention));
+      lines.push(...consequenceLines(mention, result.consequence));
       await ctx.reply(lines.join("\n"));
       return;
     }
@@ -77,10 +80,23 @@ export default definePrefixCommand({
     if (result.escalation) {
       lines.push(prefixMessages.warn.convertedToReal(result.escalation.convertedVerbalCount));
       lines.push(prefixMessages.warn.realRecorded(mention, result.escalation.level));
-      if (result.escalation.fired) {
-        lines.push(prefixMessages.warn.firedMaxWarnings(mention));
-      }
+      lines.push(...consequenceLines(mention, result.escalation.consequence));
     }
     await ctx.reply(lines.join("\n"));
   },
 });
+
+/** Warn 3 costs a demotion, or removal when there is no level left to drop to. */
+function consequenceLines(mention: string, consequence: WarningConsequence): string[] {
+  if (consequence.fired) return [prefixMessages.warn.firedNoLevelLeft(mention)];
+  if (consequence.demoted) {
+    return [
+      prefixMessages.warn.demotedMaxWarnings(
+        mention,
+        consequence.fromLevel ?? 0,
+        consequence.toLevel ?? 0,
+      ),
+    ];
+  }
+  return [];
+}

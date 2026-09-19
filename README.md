@@ -514,12 +514,48 @@ offline past the deadline is not an escape.
 |---|---|---|
 | Subject | staff members | community users |
 | Discord roles | `WARN_1/2/3` roles (set via `/role set type:WARN_1|2|3`) | **none** |
-| Levels | 1, 2, 3 (3 → future auto-fire) | n/a |
+| Levels | 1, 2, 3 (3 → auto-demote, see below) | n/a |
 | Origin | staff manager action | `source: DIRECT` or `source: REPORT` (+ `reportId`) |
 | Removal | `status: REMOVED` + `removedBy/removedAt/removalReason` | `status: REVOKED` + `revokedBy/revokedAt/revokeReason` |
 
 Both keep evidence as `string[]` (multiple attachments) and are **soft-deleted** —
 historical rows are never destroyed.
+
+### What 3 warns costs: a demotion, never a blacklist
+
+Three verbal warnings convert into one real warning (`claimVerbalTriplet`, atomic
+and per-category). Real warnings then run 1 → 2 → 3, and **warn 3 is paid for
+with a demotion**:
+
+| Real level | Consequence |
+|---|---|
+| 1, 2 | the warn role moves; nothing else |
+| 3 | **demote one rung**, real warnings cleared, warn role comes off |
+| 3 at level 0 | nothing left to demote to → **removed from staff**, `status: FIRED` |
+
+**Warnings never blacklist anyone.** The only removal is the level-0 case, and it
+passes `blacklist: false`, so no blacklist role is ever handed out by the warning
+system. `!fire @user =` is still how you blacklist someone deliberately.
+
+After a warn-3 demotion the ladder **restarts at zero** — the three real warnings
+are marked `EXPIRED` (spent, not revoked, so history and `!warns` still show
+them) and the next offence starts again at warn 1:
+
+```
+warn 1 → WARN_1 role
+warn 2 → WARN_2 role
+warn 3 → demote 4 → 3, warnings cleared, role removed
+warn 4 → WARN_1 role   (cycle restarts)
+```
+
+Order matters in `applyWarningConsequence`: the warnings are expired **before**
+`demote` runs, because `demote` re-syncs the warn roles from the active warning
+level — with the warnings already spent, that same sync is what takes the warn-3
+role back off. A test asserts that ordering, and that `fire` is never called with
+the blacklist flag.
+
+The rule itself is a pure function, `decideWarningOutcome(level, staffRoleLevel)`
+→ `NONE | DEMOTE | FIRE`, so it can be read and tested without a database.
 
 ### Two staff warning ladders: `STAFF` and `OWNER`
 

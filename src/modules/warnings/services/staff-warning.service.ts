@@ -200,6 +200,27 @@ export class StaffWarningService extends BaseRepository<StaffWarning> {
       .exec();
   }
 
+  /**
+   * Marks every active real warning in a category as spent, so the member starts
+   * the ladder again from zero. Used when warn 3 has been paid for with a
+   * demotion — the warnings are consumed, not revoked, so `!unwarn` and the
+   * history still show they happened.
+   */
+  async expireRealWarnings(staffId: IdLike, category: WarningCategory): Promise<number> {
+    const result = await this.model
+      .updateMany(
+        {
+          staffId: toObjectId(staffId),
+          type: StaffWarningType.REAL,
+          status: WarningStatus.ACTIVE,
+          ...categoryFilter(category),
+        },
+        { $set: { status: WarningStatus.EXPIRED } },
+      )
+      .exec();
+    return result.modifiedCount ?? 0;
+  }
+
   async remove(input: RemoveStaffWarningInput): Promise<Doc> {
     const updated = await this.updateById(input.warningId, {
       $set: {

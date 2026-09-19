@@ -22,7 +22,10 @@ import {
 import { moderationActionService } from "../../punishment/services/moderation-action.service.ts";
 import { staffManagementAuthorizationService } from "../../staff/services/staff-management-authorization.service.ts";
 import { staffPermissionService } from "../../staff/services/staff-permissions.service.ts";
-import { warningActionService } from "../../warnings/services/warning-actions.service.ts";
+import {
+  warningActionService,
+  type WarningConsequence,
+} from "../../warnings/services/warning-actions.service.ts";
 import { WarningPanelDeploymentModel } from "../models/warning-panel-deployment.model.ts";
 import { warningPanelRefreshService } from "./warning-panel-refresh.service.ts";
 import {
@@ -76,6 +79,15 @@ function acquire(key: string): boolean {
 
 function release(key: string): void {
   inFlight.delete(key);
+}
+
+/** Warn 3 costs a demotion, or removal when there is no level left to drop to. */
+function consequenceLines(mention: string, consequence: WarningConsequence): string[] {
+  if (consequence.fired) return [M.success.fired(mention)];
+  if (consequence.demoted) {
+    return [M.success.demoted(mention, consequence.fromLevel ?? 0, consequence.toLevel ?? 0)];
+  }
+  return [];
 }
 
 /** An absent checkbox reads as unchecked rather than throwing. */
@@ -355,7 +367,7 @@ export class WarningPanelService {
           evidence: fields.evidence,
         });
         const lines = [M.success.staffWarnReal(mention, real.level)];
-        if (real.fired) lines.push(M.success.fired(mention));
+        lines.push(...consequenceLines(mention, real.consequence));
         return lines.join("\n");
       }
 
@@ -371,7 +383,7 @@ export class WarningPanelService {
       if (result.escalation) {
         lines.push(M.success.convertedToReal(result.escalation.convertedVerbalCount));
         lines.push(M.success.staffWarnReal(mention, result.escalation.level));
-        if (result.escalation.fired) lines.push(M.success.fired(mention));
+        lines.push(...consequenceLines(mention, result.escalation.consequence));
       }
       return lines.join("\n");
     });

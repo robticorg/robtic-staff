@@ -84,6 +84,9 @@ export const warnPanelMessages = {
       `${E.success} تم تسجيل **تحذير رسمي ${level}** على ${mention}.`,
     convertedToReal: (count: number) =>
       `${E.warning} تحوّلت ${count} تحذيرات شفوية إلى تحذير رسمي.`,
-    fired: (mention: string) => `${E.warning} تم فصل ${mention} — وصل الحد الأقصى للتحذيرات.`,
+    demoted: (mention: string, from: number, to: number) =>
+      `${E.warning} ${mention} وصل **3 تحذيرات** — تم تنزيله **${from} → ${to}** وتصفير تحذيراته.`,
+    fired: (mention: string) =>
+      `${E.error} ${mention} وصل **3 تحذيرات** وهو على المستوى 0 — ما فيه مستوى أقل، فتم فصله من الستاف.`,
   },
 } as const;

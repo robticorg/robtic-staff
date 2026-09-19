@@ -40,6 +40,7 @@ import {
   warnRoleTypes,
   warningCategoryOf,
 } from "./warning-category.ts";
+import { WarningOutcome, decideWarningOutcome } from "./warning-outcome.ts";
 import { getHierarchy, highestLevelFromRoleIds } from "../../configuration/utils/staff-levels.ts";
 import { StaffTier } from "../../configuration/types/enums.ts";
 
@@ -97,12 +98,25 @@ export interface IssueUserWarnResult {
   warningId: string;
 }
 
+/**
+ * What reaching warn 3 costs. A staff member is **demoted one level and their
+ * real warnings are cleared**, so the ladder restarts at zero. Nobody is
+ * blacklisted for warnings. Only a level-0 member — with nothing left to demote
+ * to — is removed from staff, and even then without the blacklist role.
+ */
+export interface WarningConsequence {
+  demoted: boolean;
+  fromLevel?: number;
+  toLevel?: number;
+  fired: boolean;
+  warningsCleared: number;
+}
+
 export interface EscalationResult {
   realWarningId: string;
   level: StaffWarningLevel;
   convertedVerbalCount: number;
-  fired: boolean;
-  blacklisted: boolean;
+  consequence: WarningConsequence;
 }
 
 export interface IssueVerbalStaffWarnResult {
@@ -115,11 +129,65 @@ export interface IssueVerbalStaffWarnResult {
 export interface IssueDirectRealStaffWarnResult {
   realWarningId: string;
   level: StaffWarningLevel;
-  fired: boolean;
-  blacklisted: boolean;
+  consequence: WarningConsequence;
 }
 
+const NO_CONSEQUENCE: WarningConsequence = {
+  demoted: false,
+  fired: false,
+  warningsCleared: 0,
+};
+
 export class WarningActionService {
+  /**
+   * The single place warn 3 is paid for. Below level 3 nothing happens beyond
+   * re-pointing the warn role.
+   *
+   * At level 3 the member is demoted one rung and their real warnings are
+   * cleared, so the next offence starts the ladder again at warn 1. The clearing
+   * happens **before** the demotion because `demote` re-syncs the warn roles from
+   * the active warning level — with the warnings already spent, that sync is what
+   * takes the warn-3 role back off.
+   *
+   * A level-0 member has nothing to demote to, so they are removed from staff —
+   * `blacklist: false`, because warnings never blacklist anyone.
+   */
+  private async applyWarningConsequence(input: {
+    target: GuildMember;
+    staffObjectId: Types.ObjectId;
+    staffRoleLevel: number;
+    level: StaffWarningLevel;
+    category: WarningCategory;
+    reason: string;
+  }): Promise<WarningConsequence> {
+    const outcome = decideWarningOutcome(input.level, input.staffRoleLevel);
+
+    if (outcome === WarningOutcome.NONE) {
+      await reconcileStaffWarnRoles(input.target, input.level, input.reason, input.category);
+      return NO_CONSEQUENCE;
+    }
+
+    if (outcome === WarningOutcome.FIRE) {
+      await staffManagementService.fire(input.target, SYSTEM_ACTOR, false);
+      return { demoted: false, fired: true, warningsCleared: 0 };
+    }
+
+    const warningsCleared = await staffWarningService.expireRealWarnings(
+      input.staffObjectId,
+      input.category,
+    );
+
+    const change = await staffManagementService.demote(input.target, SYSTEM_ACTOR, 1);
+
+    return {
+      demoted: change.changed,
+      fromLevel: change.from,
+      toLevel: change.to,
+      fired: false,
+      warningsCleared,
+    };
+  }
+
   private async postWarnLog(guild: Guild, input: WarnLogInput): Promise<void> {
     try {
       const channelId = await channelConfigService.getChannelId(
@@ -334,15 +402,16 @@ export class WarningActionService {
       targetId: params.target.id,
     });
 
-    const fired = (targetStaff.currentRoleLevel ?? 0) === 0 || level >= STAFF_WARNING_FIRE_LEVEL;
+    const consequence = await this.applyWarningConsequence({
+      target: params.target,
+      staffObjectId: targetStaff._id,
+      staffRoleLevel: targetStaff.currentRoleLevel ?? 0,
+      level,
+      category,
+      reason: `Real staff warning ${level}`,
+    });
 
-    if (fired) {
-      await staffManagementService.fire(params.target, SYSTEM_ACTOR, true);
-      return { realWarningId: ref, level, fired: true, blacklisted: true };
-    }
-
-    await reconcileStaffWarnRoles(params.target, level, `Real staff warning ${level}`, category);
-    return { realWarningId: ref, level, fired: false, blacklisted: false };
+    return { realWarningId: ref, level, consequence };
   }
 
   private async escalate(input: {
@@ -398,8 +467,6 @@ export class WarningActionService {
       },
     });
 
-    const fired = input.staffRoleLevel === 0 || level >= STAFF_WARNING_FIRE_LEVEL;
-
     await this.postWarnLog(input.guild, {
       kind: "REAL",
       targetId: input.target.id,
@@ -417,29 +484,20 @@ export class WarningActionService {
       targetId: input.target.id,
     });
 
-    if (fired) {
-      await staffManagementService.fire(input.target, SYSTEM_ACTOR, true);
-      return {
-        realWarningId: real._id.toString(),
-        level,
-        convertedVerbalCount: claimed.length,
-        fired: true,
-        blacklisted: true,
-      };
-    }
-
-    await reconcileStaffWarnRoles(
-      input.target,
+    const consequence = await this.applyWarningConsequence({
+      target: input.target,
+      staffObjectId: input.staffObjectId,
+      staffRoleLevel: input.staffRoleLevel,
       level,
-      `Real staff warning ${level}`,
-      input.category,
-    );
+      category: input.category,
+      reason: `Real staff warning ${level}`,
+    });
+
     return {
       realWarningId: real._id.toString(),
       level,
       convertedVerbalCount: claimed.length,
-      fired: false,
-      blacklisted: false,
+      consequence,
     };
   }
 

@@ -140,6 +140,10 @@ export const prefixMessages = {
       `${E.warning} تم تحويل ${count} تحذيرات شفوية إلى تحذير رسمي.`,
     realRecorded: (userMention: string, level: number) =>
       `${E.warning} تم تسجيل ${ordinalWarning(level)} على ${userMention}.`,
+    demotedMaxWarnings: (userMention: string, from: number, to: number) =>
+      `${E.warning} ${userMention} وصل **3 تحذيرات** — تم تنزيله **${from} → ${to}** وتصفير تحذيراته.`,
+    firedNoLevelLeft: (userMention: string) =>
+      `${E.error} ${userMention} وصل **3 تحذيرات** وهو على المستوى 0 — ما فيه مستوى أقل، فتم فصله من الستاف.`,
     firedMaxWarnings: (userMention: string) =>
       `${E.error} تم فصل ${userMention} ووضعه في القائمة السوداء بسبب وصوله للحد الأقصى من التحذيرات.`,
 
