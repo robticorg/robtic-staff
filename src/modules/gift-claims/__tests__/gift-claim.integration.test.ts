@@ -227,50 +227,6 @@ describe.skipIf(!hasDb)("Gift Claim (self-service modal + review channel)", () =
     expect(stored?.proof).toHaveLength(1);
   });
 
-  it("done: only after approval, needs a proof image, stores it, DMs the user with the file, bumps counter", async () => {
-    const claim = await openClaim("winner-5");
-    const gm = manager("gm-f");
-
-    await expect(
-      giftClaimService.fulfillClaim({
-        claimId: claim.claimId,
-        manager: gm,
-        proofUrl: "https://cdn.example/deliver.png",
-      }),
-    ).rejects.toThrow();
-
-    await giftClaimService.approveClaim({ claimId: claim.claimId, manager: gm });
-
-    await expect(
-      giftClaimService.fulfillClaim({ claimId: claim.claimId, manager: gm, proofUrl: "   " }),
-    ).rejects.toThrow();
-
-    const dmsBefore = spy.dms;
-    const results = await Promise.allSettled([
-      giftClaimService.fulfillClaim({
-        claimId: claim.claimId,
-        manager: gm,
-        proofUrl: "https://cdn.example/deliver.png",
-      }),
-      giftClaimService.fulfillClaim({
-        claimId: claim.claimId,
-        manager: gm,
-        proofUrl: "https://cdn.example/deliver2.png",
-      }),
-    ]);
-    expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
-
-    const stored = await GiftClaimModel.findOne({ claimId: claim.claimId }).exec();
-    expect(stored?.status).toBe(GiftClaimStatus.FULFILLED);
-    expect(stored?.fulfilledBy).toBe("gm-f");
-    expect(stored?.fulfillmentProof).toMatch(/deliver2?\.png$/);
-    expect(spy.dms).toBe(dmsBefore + 1);
-    expect(spy.dmFiles).toBeGreaterThanOrEqual(1);
-
-    const staff = await StaffModel.findOne({ userId: "gm-f", guildId: GUILD }).exec();
-    expect(staff?.giftClaimsHandled).toBe(1);
-  });
-
   it("persists across a fresh read (restart-safe)", async () => {
     const claim = await openClaim("winner-6", "Steam Gift");
     await giftClaimService.approveClaim({ claimId: claim.claimId, manager: manager("gm-g") });

@@ -3,38 +3,17 @@ import { branding } from "../config/branding.ts";
 
 const E = emojis;
 
-const MONTH_DAYS = 30;
-const YEAR_DAYS = 365;
-
-function countLabel(n: number, [one, two, few, many]: [string, string, string, string]): string {
-  if (n === 1) return one;
-  if (n === 2) return two;
-  if (n >= 3 && n <= 10) return `${n} ${few}`;
-  return `${n} ${many}`;
-}
-
-export function formatMembershipDuration(days: number): string {
-  const safe = Math.max(0, Math.floor(days));
-  if (safe < MONTH_DAYS) {
-    return safe === 0 ? "أقل من يوم" : countLabel(safe, ["يوم", "يومين", "أيام", "يوم"]);
-  }
-  const years = Math.floor(safe / YEAR_DAYS);
-  const months = Math.floor((safe % YEAR_DAYS) / MONTH_DAYS);
-  const monthText = countLabel(months, ["شهر", "شهرين", "أشهر", "شهر"]);
-  if (years === 0) return monthText;
-  const yearText = countLabel(years, ["سنة", "سنتين", "سنوات", "سنة"]);
-  return months === 0 ? yearText : `${yearText} و ${monthText}`;
-}
+export { formatElapsedDays as formatMembershipDuration } from "../messages/duration.ts";
 
 export const APPLICATION_TYPE_LABELS: Record<string, string> = {
-  NORMAL_APPLICATION: "تقديم إلى الستاف",
-  TRANSFER_APPLICATION: "نقل إلى الستاف",
+  NORMAL_APPLICATION: "تقديم كاداري جديد في خادم روبتيك",
+  TRANSFER_APPLICATION: "نقل رتبك من سيرفر اخر الى خادم روبتيك",
 };
 
 export const DEPARTMENT_LABELS: Record<string, string> = {
   DEVELOPER: "مبرمج",
   DESIGNER: "مصمم",
-  EDITOR: "مونتير",
+  EDITOR: "ممنتج",
   STAFF: "ستاف",
 };
 
@@ -72,16 +51,16 @@ export const staffApplicationMessages = {
     typePlaceholder: "اختر نوع الطلب",
     recruiterLabel: "مين عرفك على الفريق؟",
     recruiterDescription: "اختياري — اختر اللي عرفك على الفريق لو فيه أحد",
-    termsLabel: "أوافق على قوانين وشروط الستاف.",
+    termsLabel: "أوافق على قوانين وشروط الادارة.",
   },
 
   validation: {
-    termsRequired: `${E.error} لازم توافق على قوانين وشروط الستاف عشان تقدر تقدّم.`,
+    termsRequired: `${E.error} لازم توافق على قوانين وشروط الادارة عشان تقدر تقدّم.`,
     identityInvalid: `${E.error} اكتب اسمك وعمرك ومدينتك، كل وحدة في سطر. مثال:\nأحمد\n19\nالرياض`,
     ageInvalid: `${E.error} العمر لازم يكون رقم صحيح.`,
     typeRequired: `${E.error} لازم تختار نوع الطلب.`,
-    staffBlacklisted: `${E.error} ما تقدر تقدّم على الستاف لأنك في بلاك ليست الستاف.`,
-    alreadyStaff: `${E.error} أنت عضو ستاف أصلاً، ما تحتاج تقدّم.`,
+    staffBlacklisted: `${E.error} ما تقدر تقدّم على الادارة لأنك في بلاك ليست الادارة.`,
+    alreadyStaff: `${E.error} أنت اداري أصلاً، ما تحتاج تقدّم.`,
     alreadyOpen: (channelId: string) => `${E.warning} عندك طلب مفتوح أصلاً: <#${channelId}>.`,
     sessionExpired: `${E.warning} انتهت مدة الجلسة. ابدأ من جديد من لوحة التكتات.`,
     notYourSession: `${E.error} هذي الخطوة تخص صاحب الطلب بس.`,
@@ -105,9 +84,9 @@ export const staffApplicationMessages = {
 
   apply: {
     intro: [
-      "## التقديم إلى الستاف",
-      "شكرًا لاختيارك التقديم على فريقنا.",
-      "قبل ما نبدأ، تحتاج تكمل بعض المعلومات.",
+      "## التقديم إلى الادارة",
+      "اهلا بك في خادم روبتيك فرع الكوميونتي المخصصة لمسابقات الالعاب و غيرها",
+      "نشكرك لاختيارك روبتيك كمان لتكون فيه اداري نتمنى لك التوفيق في التقديم الخاص بك و نرحب بك في اي وقت",
       "اضغط الزر بالأسفل للبدء.",
     ],
     startButton: "ابدأ التقديم",
@@ -122,8 +101,9 @@ export const staffApplicationMessages = {
 
   transfer: {
     intro: [
-      "## النقل إلى الستاف",
-      "شكرًا لاختيارك التقديم للنقل إلى فريقنا.",
+      "## النقل إلى الادارة",
+      "اهلا بك في خادم روبتيك فرع الكوميونتي المخصصة لمسابقات الالعاب و غيرها",
+       "نشكرك لاختيارك روبتيك كمان لتكون فيه اداري نتمنى لك التوفيق في التقديم الخاص بك و نرحب بك في اي وقت",
       "قبل بدء الطلب، تأكد من توفر الشروط التالية:",
       "- السيرفر يجب أن يحتوي على 4000 عضو على الأقل.\n- يجب أن تكون رتبتك في السيرفر أونر أو أعلى حسب نظام النقل.\n- يجب توضيح ترتيب رتبتك في السيرفر.\n- يجب تقديم إثبات للرتبة والسيرفر.",
     ],
@@ -167,8 +147,8 @@ export const staffApplicationMessages = {
   },
 
   ticket: {
-    applicationHeader: (ticketId: string) => `# طلب تقديم · \`${ticketId}\``,
-    transferHeader: (ticketId: string) => `# طلب نقل · \`${ticketId}\``,
+    applicationHeader: (ticketId: string) => `## طلب تقديم · \`${ticketId}\``,
+    transferHeader: (ticketId: string) => `## طلب نقل · \`${ticketId}\``,
     applicationOpened: "تم فتح طلب تقديم جديد.\nبانتظار أحد المسؤولين لاستلام الطلب.",
     transferOpened: "تم فتح طلب نقل جديد.\nبانتظار أحد مسؤولي النقل لاستلام الطلب.",
     applicant: (userId: string) => `**المتقدم:** <@${userId}>`,

@@ -6,6 +6,16 @@ export const GIFT_CLAIM_PANEL_ID = "gift-claim";
 export const giftClaimConfig = {
   maxProofImages: 5,
 
+  delivery: {
+    maxProofFiles: 5,
+    maxProofBytes: 8 * 1024 * 1024,
+    maxAmountDigits: 15,
+    maxLinkLength: 500,
+    processingStaleMs: 5 * 60_000,
+    commandDraftTtlMs: 15 * 60_000,
+    deliveryChannelPrefix: "gift",
+  },
+
   caseAccentColor: {
     [GiftClaimStatus.PENDING]: colors.warning,
     [GiftClaimStatus.RE_REQUESTED]: colors.warning,

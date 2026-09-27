@@ -9,3 +9,14 @@ export {
   type GiftClaimAudit,
   type GiftClaimAuditDocument,
 } from "./gift-claim-audit.model.ts";
+export {
+  GiftDeliveryModel,
+  type GiftDelivery,
+  type GiftDeliveryDocument,
+  type GiftDeliveryProofRef,
+} from "./gift-delivery.model.ts";
+export {
+  GiftDeliveryProofModel,
+  type GiftDeliveryProof,
+  type GiftDeliveryProofDocument,
+} from "./gift-delivery-proof.model.ts";

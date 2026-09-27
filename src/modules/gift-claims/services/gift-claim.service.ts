@@ -1,4 +1,4 @@
-import { type GuildMember } from "discord.js";
+import { type AttachmentBuilder, type GuildMember } from "discord.js";
 import type { HydratedDocument } from "mongoose";
 import { BaseRepository } from "../../../shared/repository/base.repository.ts";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
@@ -10,7 +10,14 @@ import { ChannelConfigType } from "../../configuration/types/enums.ts";
 import { StaffActivityType, staffActivityService, staffService } from "../../staff/index.ts";
 import { GiftClaimModel, type GiftClaim } from "../models/gift-claim.model.ts";
 import { buildGiftClaimCaseCard } from "../render/case-card.ts";
-import { DECIDABLE_CLAIM_STATUSES, GiftClaimAuditAction, GiftClaimStatus } from "../types/enums.ts";
+import {
+  DECIDABLE_CLAIM_STATUSES,
+  GiftClaimAuditAction,
+  GiftClaimSource,
+  GiftClaimStatus,
+  type GiftDeliveryType,
+} from "../types/enums.ts";
+import { GiftDeliveryModel } from "../models/gift-delivery.model.ts";
 import { giftClaimAuditService } from "./gift-claim-audit.service.ts";
 import { giftClaimPermissionService } from "./gift-claim-permissions.ts";
 import { requireGiftClaimClient } from "../runtime.ts";
@@ -43,12 +50,30 @@ export interface ManagerActionInput {
   manager: GuildMember;
 }
 
-export interface RejectInput extends ManagerActionInput {
-  reason: string;
+export interface ApproveInput extends ManagerActionInput {
+  deliveryType?: GiftDeliveryType;
+  amount?: string;
 }
 
-export interface FulfillInput extends ManagerActionInput {
-  proofUrl: string;
+export interface CreateFromCommandInput {
+  guildId: GuildId;
+  staffId: UserId;
+  userId: UserId;
+  rewardName: string;
+  ticketId: string;
+  deliveryType: GiftDeliveryType;
+  amount?: string;
+}
+
+export interface CompleteDeliveryInput {
+  claimId: string;
+  actorId: UserId;
+  dm: string | null;
+  dmFiles?: (string | AttachmentBuilder)[];
+}
+
+export interface RejectInput extends ManagerActionInput {
+  reason: string;
 }
 
 export class GiftClaimService extends BaseRepository<GiftClaim> {
@@ -127,7 +152,7 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
     return { claim };
   }
 
-  async approveClaim(input: ManagerActionInput): Promise<{ claim: ClaimDoc }> {
+  async approveClaim(input: ApproveInput): Promise<{ claim: ClaimDoc }> {
     const claim = await this.forManager(input);
 
     const updated = await GiftClaimModel.findOneAndUpdate(
@@ -137,6 +162,8 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
           status: GiftClaimStatus.APPROVED,
           reviewedBy: input.manager.id,
           reviewedAt: new Date(),
+          ...(input.deliveryType ? { deliveryType: input.deliveryType } : {}),
+          ...(input.amount ? { amount: input.amount } : {}),
         },
       },
       { returnDocument: "after" },
@@ -178,40 +205,59 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
     return { claim: updated };
   }
 
-  async fulfillClaim(input: FulfillInput): Promise<{ claim: ClaimDoc }> {
-    const claim = await this.forManager(input);
-    const proofUrl = input.proofUrl.trim();
-    if (!proofUrl) throw new GiftClaimError("GIFT_FULFILL_PROOF", M.review.fulfillProofRequired);
+  async createFromCommand(input: CreateFromCommandInput): Promise<{ claim: ClaimDoc }> {
+    const claim = await GiftClaimModel.create({
+      guildId: input.guildId,
+      userId: input.userId,
+      rewardName: input.rewardName.slice(0, 200) || M.case.rewardFallback,
+      status: GiftClaimStatus.APPROVED,
+      source: GiftClaimSource.COMMAND,
+      ticketId: input.ticketId,
+      deliveryType: input.deliveryType,
+      ...(input.amount ? { amount: input.amount } : {}),
+      proof: [],
+      reviewedBy: input.staffId,
+      reviewedAt: new Date(),
+    });
 
+    await giftClaimAuditService.record({
+      claimId: claim.claimId,
+      guildId: input.guildId,
+      action: GiftClaimAuditAction.CREATED,
+      actorId: input.staffId,
+      userId: input.userId,
+      metadata: { source: GiftClaimSource.COMMAND, ticketId: input.ticketId },
+    });
+    await this.after(claim, input.staffId, {
+      audit: GiftClaimAuditAction.APPROVED,
+      activity: StaffActivityType.GIFT_CLAIM_APPROVE,
+      dm: null,
+    });
+    return { claim };
+  }
+
+  async completeFromDelivery(input: CompleteDeliveryInput): Promise<ClaimDoc | null> {
     const updated = await GiftClaimModel.findOneAndUpdate(
-      { claimId: claim.claimId, status: GiftClaimStatus.APPROVED },
+      { claimId: input.claimId, status: GiftClaimStatus.APPROVED },
       {
         $set: {
           status: GiftClaimStatus.FULFILLED,
-          fulfilledBy: input.manager.id,
+          fulfilledBy: input.actorId,
           fulfilledAt: new Date(),
-          fulfillmentProof: proofUrl,
         },
       },
       { returnDocument: "after" },
     ).exec();
-    if (!updated) {
-      const fresh = await this.getClaim(claim.claimId);
-      throw new ConflictError(
-        fresh && fresh.status !== GiftClaimStatus.FULFILLED
-          ? M.review.notApproved
-          : M.review.alreadyDecided,
-      );
-    }
+    if (!updated) return null;
 
-    await this.after(updated, input.manager.id, {
+    await this.after(updated, input.actorId, {
       audit: GiftClaimAuditAction.FULFILLED,
       activity: StaffActivityType.GIFT_CLAIM_FULFILL,
-      dm: M.dm.fulfilled,
-      dmFiles: [proofUrl],
+      dm: input.dm,
+      dmFiles: input.dmFiles,
       handledCounter: true,
     });
-    return { claim: updated };
+    return updated;
   }
 
   private async forManager(input: ManagerActionInput): Promise<ClaimDoc> {
@@ -231,8 +277,8 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
     opts: {
       audit: GiftClaimAuditAction;
       activity: StaffActivityType;
-      dm: string;
-      dmFiles?: string[];
+      dm: string | null;
+      dmFiles?: (string | AttachmentBuilder)[];
       handledCounter?: boolean;
     },
   ): Promise<void> {
@@ -258,10 +304,10 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       log.warn(`gift claim ${claim.claimId} staff bookkeeping failed`, err);
     }
     await this.refreshCase(claim.claimId);
-    await this.dm(claim.userId, opts.dm, opts.dmFiles);
+    if (opts.dm) await this.dm(claim.userId, opts.dm, opts.dmFiles);
   }
 
-  private async refreshCase(claimId: string): Promise<void> {
+  async refreshCase(claimId: string): Promise<void> {
     try {
       const claim = await this.getClaim(claimId);
       if (!claim?.channelId || !claim.messageId) return;
@@ -271,13 +317,18 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       if (!channel || !("messages" in channel)) return;
       const message = await channel.messages.fetch(claim.messageId).catch(() => null);
       if (!message) return;
-      await message.edit(buildGiftClaimCaseCard(claim));
+      const delivery = await GiftDeliveryModel.findOne({ claimId }).exec();
+      await message.edit(buildGiftClaimCaseCard(claim, delivery));
     } catch (err) {
       log.warn(`gift claim card refresh failed for ${claimId}`, err);
     }
   }
 
-  private async dm(userId: UserId, content: string, files?: string[]): Promise<void> {
+  private async dm(
+    userId: UserId,
+    content: string,
+    files?: (string | AttachmentBuilder)[],
+  ): Promise<void> {
     try {
       const user = await requireGiftClaimClient().users.fetch(userId);
       const dm = await user.createDM();

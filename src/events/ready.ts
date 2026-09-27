@@ -3,6 +3,7 @@ import { defineEvent } from "../discord/event.ts";
 import { logger } from "../shared/utils/logger.ts";
 import { ticketService, transcriptCache } from "../modules/tickets/index.ts";
 import { ladderSyncService } from "../modules/configuration/index.ts";
+import { giftDeliveryRecoveryService } from "../modules/gift-claims/services/delivery/gift-delivery-recovery.service.ts";
 import {
   serverTagAuditService,
   serverTagExpirationService,
@@ -31,6 +32,10 @@ export default defineEvent({
         .sync(guild)
         .catch((err) => log.warn(`ladder sync failed for ${guild.id}`, err));
     }
+
+    await giftDeliveryRecoveryService
+      .reconcileOnStartup()
+      .catch((err) => log.warn("gift delivery startup reconcile failed", err));
 
     await serverTagExpirationService
       .reconcileActive()

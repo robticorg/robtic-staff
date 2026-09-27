@@ -17,6 +17,7 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   accept: ["قبول", "قبل"],
   refuse: ["رفض"],
   verify: ["توثيق"],
+  gift: ["جائزة", "هدية"],
   from: ["من", "من-طرف", "جابه"],
   transfer: ["نقل"],
   fire: ["فصل", "طرد", "اقالة"],
@@ -32,6 +33,7 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   points: ["نقاطي", "نقاط", "بوينتس"],
   leaderboard: ["المتصدرين", "الترتيب", "توب"],
   check: ["فحص"],
+  "staff-check": ["فحص-ستاف", "معلومات-ستاف"],
   jail: ["سجن", "سجين"],
   unjail: ["فك", "فك-سجن", "اطلاق"],
 };

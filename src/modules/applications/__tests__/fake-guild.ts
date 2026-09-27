@@ -18,6 +18,7 @@ export class FakeChannel {
   readonly sent: SentMessage[] = [];
   readonly overwrites = new Map<string, any>();
   readonly createdWith: any[];
+  parentId: string | null = null;
   deleted = false;
 
   constructor(
@@ -124,6 +125,7 @@ export function makeGuild(id: string, categoryIds: readonly string[], roleIds: r
       create: async (options) => {
         channelCounter += 1;
         const channel = new FakeChannel(`${id}-ch${channelCounter}`, options.permissionOverwrites ?? []);
+        channel.parentId = options.parent ?? null;
         channels.set(channel.id, channel);
         return channel;
       },

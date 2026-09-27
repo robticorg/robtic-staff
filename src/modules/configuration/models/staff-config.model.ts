@@ -9,6 +9,8 @@ export interface StaffConfig {
   /** Minimum weekly points a staff member needs to count as promotion-eligible. */
   promotionPointsRequired?: number;
 
+  autoclaimEnabled?: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,6 +21,7 @@ const staffConfigSchema = new Schema<StaffConfig>(
   {
     guildId: { type: String, required: true },
     promotionPointsRequired: { type: Number, min: 1 },
+    autoclaimEnabled: { type: Boolean, default: false },
   },
   { timestamps: true, collection: "staff_configs" },
 );

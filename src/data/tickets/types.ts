@@ -1,5 +1,6 @@
 import type { ChannelId, RoleId } from "../../shared/types/index.ts";
 import type {
+  ChannelConfigType,
   FastAccessContext,
   RoleConfigType,
 } from "../../modules/configuration/types/enums.ts";
@@ -72,9 +73,13 @@ export interface TicketPanelConfig {
 
   blacklistSlot?: RoleConfigType | null;
 
+  independent?: boolean;
+
   createsChannel?: boolean;
 
   categoryId?: ChannelId;
+
+  categorySlot?: ChannelConfigType;
 
   logChannelId?: ChannelId;
 

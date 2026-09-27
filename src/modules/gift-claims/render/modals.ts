@@ -60,21 +60,3 @@ export function buildRejectModal(claimId: string): ModalBuilder {
       ),
     );
 }
-
-export function buildFulfillModal(claimId: string): ModalBuilder {
-  return new ModalBuilder()
-    .setCustomId(GiftClaimCustomId.fulfillModal(claimId))
-    .setTitle(C.fulfillModalTitle)
-    .addLabelComponents(
-      new LabelBuilder()
-        .setLabel(C.fulfillProofLabel)
-        .setDescription(C.fulfillProofDescription)
-        .setFileUploadComponent(
-          new FileUploadBuilder()
-            .setCustomId(GiftClaimModalField.fulfillProof)
-            .setMinValues(1)
-            .setMaxValues(1)
-            .setRequired(true),
-        ),
-    );
-}

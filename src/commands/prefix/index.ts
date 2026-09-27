@@ -16,6 +16,7 @@ import staffAccept from "./staff/accept.ts";
 import staffFrom from "./staff/from.ts";
 import staffRefuse from "./staff/refuse.ts";
 import staffVerify from "./staff/verify.ts";
+import staffGift from "./staff/gift.ts";
 import staffCome from "./staff/come.ts";
 import staffTransfer from "./staff/transfer.ts";
 import staffFire from "./staff/fire.ts";
@@ -31,6 +32,7 @@ import staffStats from "./staff/stats.ts";
 import staffPoints from "./staff/points.ts";
 import staffLeaderboard from "./staff/leaderboard.ts";
 import staffCheck from "./staff/check.ts";
+import staffProfileCheck from "./staff/staff-check.ts";
 import staffJail from "./staff/jail.ts";
 import staffUnjail from "./staff/unjail.ts";
 
@@ -52,6 +54,7 @@ export const prefixCommands: PrefixCommand[] = [
   staffFrom,
   staffRefuse,
   staffVerify,
+  staffGift,
   staffTransfer,
   staffFire,
   staffPrompt,
@@ -66,6 +69,7 @@ export const prefixCommands: PrefixCommand[] = [
   staffPoints,
   staffLeaderboard,
   staffCheck,
+  staffProfileCheck,
   staffJail,
   staffUnjail,
 ];

@@ -10,6 +10,7 @@ import {
   ChannelConfigType,
   channelConfigService,
 } from "../../modules/configuration/index.ts";
+import { CATEGORY_CHANNEL_CONFIG_TYPES } from "../../modules/configuration/types/enums.ts";
 import { CommandName, ChannelsSubcommand, CommandOption, commandCopy } from "../../data/commands/index.ts";
 import { commonMessages } from "../../data/messages/common.ts";
 import { configMessages } from "../../data/messages/config.ts";
@@ -39,7 +40,11 @@ const data = new SlashCommandBuilder()
         o
           .setName(CommandOption.CHANNEL)
           .setDescription(commandCopy.channels.sub.set.options.channel)
-          .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+          .addChannelTypes(
+            ChannelType.GuildText,
+            ChannelType.GuildAnnouncement,
+            ChannelType.GuildCategory,
+          )
           .setRequired(true),
       ),
   )
@@ -56,6 +61,15 @@ async function handleSet(interaction: ChatInputCommandInteraction): Promise<void
     throw new CommandError(configMessages.channels.unknownType(rawType));
   }
   const type = rawType as ChannelConfigType;
+
+  const wantsCategory = CATEGORY_CHANNEL_CONFIG_TYPES.includes(type);
+  const isCategory = channel.type === ChannelType.GuildCategory;
+  if (wantsCategory && !isCategory) {
+    throw new CommandError(configMessages.channels.categoryRequired);
+  }
+  if (!wantsCategory && isCategory) {
+    throw new CommandError(configMessages.channels.textRequired);
+  }
 
   await channelConfigService.set({ guildId: guild.id, type, channelId: channel.id });
   await replySuccess(

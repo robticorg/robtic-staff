@@ -1,7 +1,6 @@
 export const giftClaimComponents = {
   approveButton: "موافقة",
   rejectButton: "رفض",
-  doneButton: "تم التسليم",
 
   submitModalTitle: "طلب استلام هدية",
   rewardLabel: "وش الهدية اللي فزت فيها؟",
@@ -14,8 +13,4 @@ export const giftClaimComponents = {
   rejectModalTitle: "رفض طلب الهدية",
   rejectReasonLabel: "سبب الرفض",
   rejectReasonPlaceholder: "ليش هذا الطلب مرفوض؟",
-
-  fulfillModalTitle: "تأكيد تسليم الهدية",
-  fulfillProofLabel: "صورة تثبت تسليم الهدية",
-  fulfillProofDescription: "ارفع صورة وحدة تثبت إنك سلّمت الهدية.",
 } as const;

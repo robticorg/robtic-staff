@@ -8,7 +8,7 @@ import { logger } from "../../../shared/utils/logger.ts";
 import { giftClaimMessages } from "../../../data/gift-claim/messages.ts";
 import { giftClaimPermissionService } from "../services/gift-claim-permissions.ts";
 import { giftClaimService } from "../services/gift-claim.service.ts";
-import { buildFulfillModal, buildRejectModal } from "../render/modals.ts";
+import { buildRejectModal } from "../render/modals.ts";
 import { GiftClaimModalField } from "./component-ids.ts";
 
 const log = logger.child("gift-claim:review-handler");
@@ -42,20 +42,6 @@ export async function handleGiftClaimSubmitModal(
   }
 }
 
-export async function handleApprove(
-  interaction: ButtonInteraction,
-  claimId: string,
-): Promise<void> {
-  if (!interaction.inCachedGuild()) return;
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-  try {
-    await giftClaimService.approveClaim({ claimId, manager: interaction.member });
-    await interaction.editReply(R.approvedAck);
-  } catch (err) {
-    await replyError(interaction, err, "approve");
-  }
-}
-
 export async function handleRejectButton(
   interaction: ButtonInteraction,
   claimId: string,
@@ -80,36 +66,6 @@ export async function handleRejectModal(
     await interaction.editReply(R.rejectedAck);
   } catch (err) {
     await replyError(interaction, err, "reject");
-  }
-}
-
-export async function handleDone(
-  interaction: ButtonInteraction,
-  claimId: string,
-): Promise<void> {
-  if (!interaction.inCachedGuild()) return;
-  if (!(await giftClaimPermissionService.isGiftManager(interaction.member))) {
-    await interaction.reply({ content: R.notAuthorized, ...EPHEMERAL });
-    return;
-  }
-  await interaction.showModal(buildFulfillModal(claimId));
-}
-
-export async function handleFulfillModal(
-  interaction: ModalSubmitInteraction,
-  claimId: string,
-): Promise<void> {
-  if (!interaction.inCachedGuild()) return;
-  const proofUrl = firstUploadedUrl(interaction, GiftClaimModalField.fulfillProof);
-  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
-  try {
-    if (!proofUrl) {
-      throw new DomainError("GIFT_FULFILL_PROOF", R.fulfillProofRequired);
-    }
-    await giftClaimService.fulfillClaim({ claimId, manager: interaction.member, proofUrl });
-    await interaction.editReply(R.fulfilledAck);
-  } catch (err) {
-    await replyError(interaction, err, "fulfill");
   }
 }
 

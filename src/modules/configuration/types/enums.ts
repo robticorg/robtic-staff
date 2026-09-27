@@ -115,9 +115,21 @@ export const ChannelConfigType = {
   GIFT_CLAIMS: "GIFT_CLAIMS",
   SUPPORT: "SUPPORT",
   SERVER_TAG_LOG: "SERVER_TAG_LOG",
+
+  APPLICATION_CATEGORY: "APPLICATION_CATEGORY",
+  TRANSFER_CATEGORY: "TRANSFER_CATEGORY",
+
+  GIFT_DELIVERIES: "GIFT_DELIVERIES",
+  GIFT_DELIVERY_CATEGORY: "GIFT_DELIVERY_CATEGORY",
 } as const;
 export type ChannelConfigType = (typeof ChannelConfigType)[keyof typeof ChannelConfigType];
 export const CHANNEL_CONFIG_TYPE_VALUES = Object.values(ChannelConfigType);
+
+export const CATEGORY_CHANNEL_CONFIG_TYPES: readonly ChannelConfigType[] = [
+  ChannelConfigType.APPLICATION_CATEGORY,
+  ChannelConfigType.TRANSFER_CATEGORY,
+  ChannelConfigType.GIFT_DELIVERY_CATEGORY,
+];
 
 export const FastAccessContext = {
   MODMAIL: "MODMAIL",

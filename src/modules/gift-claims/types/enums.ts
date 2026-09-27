@@ -49,7 +49,48 @@ export const GiftClaimAuditAction = {
   APPROVED: "GIFT_CLAIM_APPROVED",
   REJECTED: "GIFT_CLAIM_REJECTED",
   FULFILLED: "GIFT_CLAIM_FULFILLED",
+  DELIVERY_FAILED: "GIFT_DELIVERY_FAILED",
+  DELIVERY_READY: "GIFT_DELIVERY_READY",
+  DELIVERY_CLAIMED: "GIFT_DELIVERY_CLAIMED",
 } as const;
 export type GiftClaimAuditAction =
   (typeof GiftClaimAuditAction)[keyof typeof GiftClaimAuditAction];
 export const GIFT_CLAIM_AUDIT_ACTION_VALUES = Object.values(GiftClaimAuditAction);
+
+export const GiftClaimSource = {
+  PANEL: "PANEL",
+  COMMAND: "COMMAND",
+} as const;
+export type GiftClaimSource = (typeof GiftClaimSource)[keyof typeof GiftClaimSource];
+export const GIFT_CLAIM_SOURCE_VALUES = Object.values(GiftClaimSource);
+
+export const GiftDeliveryType = {
+  CREDITS: "CREDITS",
+  LINK: "LINK",
+  OTHER: "OTHER",
+} as const;
+export type GiftDeliveryType = (typeof GiftDeliveryType)[keyof typeof GiftDeliveryType];
+export const GIFT_DELIVERY_TYPE_VALUES = Object.values(GiftDeliveryType);
+
+export const GiftDeliveryStatus = {
+  PENDING: "PENDING",
+  PROCESSING: "PROCESSING",
+  READY: "READY",
+  CLAIMED: "CLAIMED",
+  FULFILLED: "FULFILLED",
+  FAILED: "FAILED",
+} as const;
+export type GiftDeliveryStatus = (typeof GiftDeliveryStatus)[keyof typeof GiftDeliveryStatus];
+export const GIFT_DELIVERY_STATUS_VALUES = Object.values(GiftDeliveryStatus);
+
+export const RETRYABLE_DELIVERY_STATUSES: readonly GiftDeliveryStatus[] = [
+  GiftDeliveryStatus.PENDING,
+  GiftDeliveryStatus.FAILED,
+];
+
+export const LinkDeliveryPath = {
+  DM: "DM",
+  CHANNEL: "CHANNEL",
+} as const;
+export type LinkDeliveryPath = (typeof LinkDeliveryPath)[keyof typeof LinkDeliveryPath];
+export const LINK_DELIVERY_PATH_VALUES = Object.values(LinkDeliveryPath);

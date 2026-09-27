@@ -3,7 +3,12 @@ import { PermissionFlagsBits } from "discord.js";
 import mongoose from "mongoose";
 import { config } from "../../../config/index.ts";
 import { staffApplicationConfig } from "../../../data/staff-application/config.ts";
+import { staffApplicationMessages } from "../../../data/staff-application/messages.ts";
+import { supportPanel } from "../../../data/tickets/panels/support.ts";
 import { RoleConfigModel } from "../../configuration/models/role-config.model.ts";
+import { ChannelConfigModel } from "../../configuration/models/channel-config.model.ts";
+import { channelConfigService } from "../../configuration/services/channel-config.service.ts";
+import { ChannelConfigType } from "../../configuration/types/enums.ts";
 import { FastAccessModel } from "../../configuration/models/fast-access.model.ts";
 import { roleConfigService } from "../../configuration/services/role-config.service.ts";
 import { fastAccessService } from "../../configuration/services/fast-access.service.ts";
@@ -57,7 +62,13 @@ const GIRL_NOT_VERIFIED = "girl-not-verified";
 const GIRL_VERIFIED = "girl-verified";
 const STAFF_BLACKLIST = "staff-blacklist";
 const ALL_ROLES = [...LADDER, APPLY, TRANSFER, GIRLS, GIRL_NOT_VERIFIED, GIRL_VERIFIED, STAFF_BLACKLIST];
-const CATEGORIES = [staffApplicationConfig.applicationCategoryId, staffApplicationConfig.transferCategoryId];
+const CATEGORIES = [
+  staffApplicationConfig.applicationCategoryId,
+  staffApplicationConfig.transferCategoryId,
+  supportPanel.categoryId!,
+  "custom-apply-category",
+  "custom-transfer-category",
+];
 
 let guild: FakeGuild;
 let owner: FakeMember;
@@ -134,6 +145,7 @@ async function seed(): Promise<void> {
 async function cleanup(): Promise<void> {
   await Promise.all([
     RoleConfigModel.deleteMany({ guildId: GUILD }),
+    ChannelConfigModel.deleteMany({ guildId: GUILD }),
     FastAccessModel.deleteMany({ guildId: GUILD }),
     StaffApplicationModel.deleteMany({ guildId: GUILD }),
     ApplicationEvidenceModel.deleteMany({ guildId: GUILD }),
@@ -212,6 +224,40 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       expect(JSON.stringify(channel.sent.map((m) => m.payload))).toContain(`tk:roleClaim:${ticket!.ticketId}:${APPLY}`);
     });
 
+    it("opens in the category set with /channels, falling back to the default", async () => {
+      const first = applicant();
+      await staffApplicationService.submit(guild as never, first as never, draft(first.id), ApplicationDepartment.STAFF);
+      const fallback = await ticketFor(first.id);
+      expect(guild.channels.byId.get(fallback!.channelId)!.parentId).toBe(
+        staffApplicationConfig.applicationCategoryId,
+      );
+
+      await channelConfigService.set({ guildId: GUILD, type: ChannelConfigType.APPLICATION_CATEGORY, channelId: "custom-apply-category" });
+      await channelConfigService.set({ guildId: GUILD, type: ChannelConfigType.TRANSFER_CATEGORY, channelId: "custom-transfer-category" });
+      try {
+        const second = applicant();
+        await staffApplicationService.submit(guild as never, second as never, draft(second.id), ApplicationDepartment.STAFF);
+        const applied = await ticketFor(second.id);
+        expect(guild.channels.byId.get(applied!.channelId)!.parentId).toBe("custom-apply-category");
+
+        const third = applicant();
+        await staffTransferApplicationService.submit(
+          guild as never,
+          third as never,
+          draft(third.id, {
+            type: ApplicationType.TRANSFER_APPLICATION,
+            gender: undefined,
+            transfer: { memberCount: 12000, onlineCount: 1500, roleOrder: 5, invite: null },
+          }),
+          evidence(4),
+        );
+        const transferred = await ticketFor(third.id);
+        expect(guild.channels.byId.get(transferred!.channelId)!.parentId).toBe("custom-transfer-category");
+      } finally {
+        await ChannelConfigModel.deleteMany({ guildId: GUILD });
+      }
+    });
+
     it("stores no recruiter when the field was left empty", async () => {
       const member = applicant();
       await staffApplicationService.submit(guild as never, member as never, draft(member.id), ApplicationDepartment.STAFF);
@@ -246,14 +292,33 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       expect(application!.applicationStatus).toBe(ApplicationStatus.PENDING);
     });
 
+    it("does not count against the one-open-ticket rule for normal tickets", async () => {
+      const member = applicant();
+      await staffApplicationService.submit(guild as never, member as never, draft(member.id), ApplicationDepartment.STAFF);
+
+      expect(await ticketService.getOpenTicketForUser(GUILD, member.id)).toBeNull();
+      const { ticket } = await ticketService.createTicket({
+        guild: guild as never,
+        panel: supportPanel,
+        member: member as never,
+        answers: [],
+      });
+      expect(ticket.panelId).toBe("support");
+
+      const other = applicant();
+      await ticketService.createTicket({ guild: guild as never, panel: supportPanel, member: other as never, answers: [] });
+      await staffApplicationService.submit(guild as never, other as never, draft(other.id), ApplicationDepartment.STAFF);
+      expect((await appFor(other.id))!.ticketId).not.toBeNull();
+    });
+
     it("refuses the staff blacklist and existing staff", async () => {
       const blacklisted = applicant([STAFF_BLACKLIST]);
       await expect(
         staffApplicationService.submit(guild as never, blacklisted as never, draft(blacklisted.id), ApplicationDepartment.STAFF),
-      ).rejects.toThrow("بلاك ليست الستاف");
+      ).rejects.toThrow(staffApplicationMessages.validation.staffBlacklisted);
       await expect(
         staffApplicationService.submit(guild as never, highStaff as never, draft(highStaff.id), ApplicationDepartment.STAFF),
-      ).rejects.toThrow("عضو ستاف أصلاً");
+      ).rejects.toThrow(staffApplicationMessages.validation.alreadyStaff);
       expect(await appFor(blacklisted.id)).toBeNull();
     });
   });
@@ -314,7 +379,7 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       await ticketService.claimRole(ctx.ticket.ticketId, manager as never, TRANSFER);
       await expect(
         applicationDecisionService.accept(manager as never, await contextFor(member.id), null),
-      ).rejects.toThrow("غير مؤهل");
+      ).rejects.toThrow(staffApplicationMessages.decision.ineligible);
     });
 
     it("refuses too little evidence without creating anything", async () => {
@@ -324,9 +389,11 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
           guild as never,
           member as never,
           draft(member.id, { type: ApplicationType.TRANSFER_APPLICATION, gender: undefined, transfer: info }),
-          evidence(2),
+          evidence(staffApplicationConfig.evidence.minFiles - 1),
         ),
-      ).rejects.toThrow("4");
+      ).rejects.toThrow(
+        staffApplicationMessages.transfer.evidenceTooFew(staffApplicationConfig.evidence.minFiles),
+      );
       expect(await appFor(member.id)).toBeNull();
     });
   });
@@ -336,9 +403,9 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       const member = applicant();
       const check = (id: string) =>
         staffRecruitmentService.relationshipForNewApplication(guild as never, member.id, id, new Date());
-      await expect(check(highStaff.id)).rejects.toThrow("أونر أو أعلى");
-      await expect(check(member.id)).rejects.toThrow("نفسك");
-      await expect(check("nobody-here")).rejects.toThrow("مو موجود");
+      await expect(check(highStaff.id)).rejects.toThrow(staffApplicationMessages.recruiter.notEligible);
+      await expect(check(member.id)).rejects.toThrow(staffApplicationMessages.recruiter.self);
+      await expect(check("nobody-here")).rejects.toThrow(staffApplicationMessages.recruiter.notFound);
       expect((await check(owner.id)).recruiterStaffId).toBe(owner.id);
     });
 
@@ -352,7 +419,7 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
           draft(member.id, { recruiterStaffId: demoted.id, recruiterAssignedAt: new Date() }),
           ApplicationDepartment.STAFF,
         ),
-      ).rejects.toThrow("أونر أو أعلى");
+      ).rejects.toThrow(staffApplicationMessages.recruiter.notEligible);
       expect(await appFor(member.id)).toBeNull();
     });
 
@@ -394,10 +461,10 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       const secondOwner = addMember(guild, "owner-3", ["lvl-0", "lvl-1", "lvl-2", "lvl-3"]);
       await expect(
         staffRecruitmentService.setRecruiter({ actor: manager as never, application: fresh.application, recruiterId: secondOwner.id, replace: false }),
-      ).rejects.toThrow("من قبل");
+      ).rejects.toThrow(staffApplicationMessages.recruiter.alreadySet(owner.id));
       await expect(
         staffRecruitmentService.setRecruiter({ actor: manager as never, application: fresh.application, recruiterId: secondOwner.id, replace: true }),
-      ).rejects.toThrow("للأدمن");
+      ).rejects.toThrow(staffApplicationMessages.recruiter.replaceAdminOnly);
       expect(
         await staffRecruitmentService.setRecruiter({ actor: admin as never, application: fresh.application, recruiterId: secondOwner.id, replace: true }),
       ).toBe("REPLACED");
@@ -444,7 +511,7 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
 
       await expect(
         applicationDecisionService.accept(loser as never, await contextFor(member.id), null),
-      ).rejects.toThrow("استلم الطلب");
+      ).rejects.toThrow(staffApplicationMessages.decision.claimFirst);
 
       await expect(
         applicationDecisionService.accept(winner as never, await contextFor(member.id), {
@@ -527,7 +594,7 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       expect(await StaffModel.findOne({ guildId: GUILD, userId: member.id }).exec()).toBeNull();
       await expect(
         applicationDecisionService.accept(manager as never, await contextFor(member.id), null),
-      ).rejects.toThrow("من قبل");
+      ).rejects.toThrow(staffApplicationMessages.decision.alreadyDecided);
     });
 
     it("marks the application closed when its ticket closes", async () => {

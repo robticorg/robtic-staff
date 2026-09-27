@@ -8,13 +8,13 @@ export const staffApplicationConfig = {
 
   accentColor: colors.primary,
 
-  minimumAge: 10,
+  minimumAge: 13,
   maximumAge: 99,
 
   draftTtlMs: 30 * 60_000,
 
   evidence: {
-    minFiles: 4,
+    minFiles: 2,
     maxFiles: 10,
     maxFileBytes: 8 * 1024 * 1024,
   },
@@ -58,14 +58,14 @@ export const staffTransferRules: StaffTransferRules = {
   },
 
   memberCountBonus: [
-    { min: 10_000, levels: 1 },
-    { min: 25_000, levels: 2 },
-    { min: 50_000, levels: 3 },
+    { min: 4000, levels: 1 },
+    { min: 10000, levels: 2 },
+    { min: 20000, levels: 3 },
   ],
 
   onlineCountBonus: [
-    { min: 1_000, levels: 1 },
-    { min: 5_000, levels: 2 },
+    { min: 300, levels: 1 },
+    { min: 500, levels: 2 },
   ],
 
   membershipBonus: [

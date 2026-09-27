@@ -1,6 +1,7 @@
 import { colors } from "../config/colors.ts";
 import { UNSET_ID, type TicketPanelConfig } from "../tickets/types.ts";
 import {
+  ChannelConfigType,
   FastAccessContext,
   RoleConfigType,
 } from "../../modules/configuration/types/enums.ts";
@@ -22,13 +23,15 @@ const claimer = {
 
 export const staffApplicationPanel: TicketPanelConfig = {
   id: StaffApplicationWorkflow.STAFF_APPLICATION,
-  name: "التقديم أو النقل إلى الستاف",
-  description: "قدّم على فريق الستاف أو انقل خبرتك من سيرفر ثاني.",
+  name: "التقديم او النقل الى طاقم الاداري",
+  description: "قدّم على فريق الاداري أو انقل خبرتك من سيرفر ثاني.",
 
   supportRoleId: UNSET_ID,
+  independent: true,
   blacklistSlot: RoleConfigType.BLACKLIST,
   fastAccessContext: FastAccessContext.STAFF_APPLICATION,
   categoryId: staffApplicationConfig.applicationCategoryId,
+  categorySlot: ChannelConfigType.APPLICATION_CATEGORY,
   logChannelId: "1536249123265581056",
 
   questions: { enabled: false, items: [] },
@@ -44,14 +47,16 @@ export const staffApplicationPanel: TicketPanelConfig = {
 
 export const staffTransferApplicationPanel: TicketPanelConfig = {
   id: StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION,
-  name: "نقل إلى الستاف",
+  name: "نقل إلى الادارة",
   description: "طلب نقل من سيرفر ثاني.",
   hidden: true,
 
   supportRoleId: UNSET_ID,
+  independent: true,
   blacklistSlot: RoleConfigType.BLACKLIST,
   fastAccessContext: FastAccessContext.STAFF_TRANSFER,
   categoryId: staffApplicationConfig.transferCategoryId,
+  categorySlot: ChannelConfigType.TRANSFER_CATEGORY,
 
   questions: { enabled: false, items: [] },
   claimer,

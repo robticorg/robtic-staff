@@ -53,6 +53,10 @@ export function getPanel(panelId: string): TicketPanelConfig | undefined {
   return tickets.panels.find((p) => p.id === panelId);
 }
 
+export function independentPanelIds(): string[] {
+  return tickets.panels.filter((p) => p.independent).map((p) => p.id);
+}
+
 export function panelIds(): string[] {
   return tickets.panels.map((p) => p.id);
 }

@@ -39,6 +39,16 @@ export interface RawEnv {
   internalApiToken?: string;
   internalApiHost: string;
   internalApiPort: number;
+
+  autoclaimApiUrl?: string;
+  autoclaimApiToken?: string;
+  autoclaimTimeoutMs: number;
+  giftLinkSecret?: string;
+}
+
+function readPositiveInt(value: string | undefined, fallback: number): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
 function readPort(value: string | undefined, fallback: number): number {
@@ -66,6 +76,11 @@ export const rawEnv: RawEnv = {
   internalApiToken: process.env.INTERNAL_API_TOKEN || undefined,
   internalApiHost: process.env.INTERNAL_API_HOST ?? "127.0.0.1",
   internalApiPort: readPort(process.env.INTERNAL_API_PORT, 8787),
+
+  autoclaimApiUrl: process.env.AUTOCLAIM_API_URL || undefined,
+  autoclaimApiToken: process.env.AUTOCLAIM_API_TOKEN || undefined,
+  autoclaimTimeoutMs: readPositiveInt(process.env.AUTOCLAIM_TIMEOUT_MS, 15_000),
+  giftLinkSecret: process.env.GIFT_LINK_SECRET || undefined,
 };
 
 export function assertRuntimeEnv(): void {

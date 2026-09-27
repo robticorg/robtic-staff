@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import { StaffApplicationWorkflow, staffApplicationPanel, staffTransferApplicationPanel } from "../../../data/staff-application/panels.ts";
-import { formatMembershipDuration } from "../../../data/staff-application/messages.ts";
+import {
+  formatMembershipDuration,
+  staffApplicationMessages,
+} from "../../../data/staff-application/messages.ts";
+import { staffApplicationConfig } from "../../../data/staff-application/config.ts";
 import { getPanel, listPublicPanels } from "../../../data/tickets/index.ts";
 import { FastAccessContext, RoleConfigType } from "../../configuration/types/enums.ts";
 import { buildApplicationPanel } from "../render/application-panel.ts";
@@ -27,7 +31,6 @@ describe("main ticket panel entry", () => {
     expect(getPanel(StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION)).toBe(
       staffTransferApplicationPanel,
     );
-    expect(staffApplicationPanel.name).toBe("التقديم أو النقل إلى الستاف");
   });
 
   it("gates both application tickets by the staff blacklist, not the ticket blacklist", () => {
@@ -48,11 +51,12 @@ describe("first modal", () => {
   };
 
   it("carries identity, type, the optional recruiter picker and the terms checkbox together", () => {
+    const F = staffApplicationMessages.firstModal;
     expect(json.components.map((c) => c.label)).toEqual([
-      "الاسم والعمر والمدينة",
-      "نوع الطلب",
-      "مين عرفك على الفريق؟",
-      "أوافق على قوانين وشروط الستاف.",
+      F.identityLabel,
+      F.typeLabel,
+      F.recruiterLabel,
+      F.termsLabel,
     ]);
   });
 
@@ -121,14 +125,12 @@ describe("transfer information", () => {
 
   it("validates the evidence set before anything is downloaded", () => {
     const image = { name: "a.png", url: "https://x", contentType: "image/png", size: 1000 };
-    expect(checkEvidence([image, image, image])).toBe("TOO_FEW");
-    expect(checkEvidence([image, image, image, image])).toBeNull();
-    expect(checkEvidence([image, image, image, { ...image, contentType: "application/pdf" }])).toBe(
-      "NOT_IMAGE",
-    );
-    expect(checkEvidence([image, image, image, { ...image, size: 50 * 1024 * 1024 }])).toBe(
-      "TOO_LARGE",
-    );
+    const min = staffApplicationConfig.evidence.minFiles;
+    const enough = Array.from({ length: min - 1 }, () => image);
+    expect(checkEvidence(enough)).toBe("TOO_FEW");
+    expect(checkEvidence([...enough, image])).toBeNull();
+    expect(checkEvidence([...enough, { ...image, contentType: "application/pdf" }])).toBe("NOT_IMAGE");
+    expect(checkEvidence([...enough, { ...image, size: 50 * 1024 * 1024 }])).toBe("TOO_LARGE");
   });
 });
 

@@ -2,6 +2,7 @@ import { Events, type DMChannel, type GuildChannel } from "discord.js";
 import { defineEvent } from "../discord/event.ts";
 import { logger } from "../shared/utils/logger.ts";
 import { ticketService } from "../modules/tickets/services/ticket.service.ts";
+import { giftDeliveryRecoveryService } from "../modules/gift-claims/services/delivery/gift-delivery-recovery.service.ts";
 
 const log = logger.child("channelDelete");
 
@@ -18,5 +19,9 @@ export default defineEvent({
     } catch (err) {
       log.error(`manual ticket channel delete handling failed for ${channel.id}`, err);
     }
+
+    await giftDeliveryRecoveryService.onChannelDeleted(channel.id).catch((err) =>
+      log.error(`gift delivery channel recovery failed for ${channel.id}`, err),
+    );
   },
 });

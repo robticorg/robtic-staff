@@ -6,6 +6,31 @@ const E = emojis;
 const PROMOTION_SCOPE = "النطاق: الستاف تحت رتبة الأونر";
 
 export const staffMessages = {
+  profile: {
+    usage: `${E.warning} الطريقة: \`!staff-check @user\` أو \`!staff-check <id>\``,
+    notStaff: (userId: string) => `${E.error} <@${userId}> ما له سجل في الستاف.`,
+    title: (userId: string) => `## معلومات الستاف\n<@${userId}>`,
+    status: (label: string) => `**الحالة:** ${label}`,
+    level: (level: number, top: number) => `**ترتيب الرتبة:** المستوى ${level} من ${top}`,
+    role: (roleId: string) => `**الرتبة:** <@&${roleId}>`,
+    tier: (label: string) => `**التصنيف:** ${label}`,
+    acceptedBy: (userId: string) => `**قبله في الستاف:** <@${userId}>`,
+    acceptedBySystem: "**قبله في الستاف:** النظام",
+    acceptedAt: (date: Date) => `**تاريخ القبول:** <t:${Math.floor(date.getTime() / 1000)}:D>`,
+    staffFor: (duration: string) => `**مدة وجوده في الستاف:** ${duration}`,
+    lastPromotion: (date: Date, userId: string | null) =>
+      `**آخر ترقية:** <t:${Math.floor(date.getTime() / 1000)}:R>${userId ? ` بواسطة <@${userId}>` : " بواسطة النظام"}`,
+    noPromotion: "**آخر ترقية:** ما تمت ترقيته من يوم انقبل",
+    unknown: "غير معروف",
+    statuses: {
+      ACTIVE: "نشط",
+      BREAK: "في بريك",
+      FIRED: "مفصول",
+      BLACKLISTED: "بلاك ليست",
+      TRANSFERRED: "منقول لحساب ثاني",
+    } as Record<string, string>,
+  },
+
   points: {
     reportClaimReason: (caseId: string) => `استلام البلاغ ${caseId}`,
     ticketClaimReason: (ticketId: string) => `استلام التكت ${ticketId}`,

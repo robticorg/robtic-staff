@@ -4,9 +4,20 @@ export const GiftClaimCustomId = {
   submitModal: () => `${GC_NS}:submit`,
   approve: (claimId: string) => `${GC_NS}:approve:${claimId}`,
   reject: (claimId: string) => `${GC_NS}:reject:${claimId}`,
-  done: (claimId: string) => `${GC_NS}:done:${claimId}`,
   rejectModal: (claimId: string) => `${GC_NS}:rejmodal:${claimId}`,
-  fulfillModal: (claimId: string) => `${GC_NS}:fulmodal:${claimId}`,
+
+  type: (claimId: string, type: string) => `${GC_NS}:type:${claimId}:${type}`,
+  amountModal: (claimId: string) => `${GC_NS}:amount:${claimId}`,
+  deliver: (claimId: string) => `${GC_NS}:deliver:${claimId}`,
+  linkModal: (claimId: string) => `${GC_NS}:link:${claimId}`,
+  proofModal: (claimId: string) => `${GC_NS}:proof:${claimId}`,
+  retry: (claimId: string) => `${GC_NS}:retry:${claimId}`,
+  reveal: (deliveryId: string) => `${GC_NS}:reveal:${deliveryId}`,
+
+  cmdType: (draftId: string, type: string) => `${GC_NS}:ctype:${draftId}:${type}`,
+  cmdAmountModal: (draftId: string) => `${GC_NS}:camount:${draftId}`,
+  cmdLinkModal: (draftId: string) => `${GC_NS}:clink:${draftId}`,
+  cmdProofModal: (draftId: string) => `${GC_NS}:cproof:${draftId}`,
 } as const;
 
 export const GiftClaimModalField = {
@@ -14,7 +25,10 @@ export const GiftClaimModalField = {
   details: "details",
   proof: "proof",
   rejectReason: "rejectReason",
-  fulfillProof: "fulfillProof",
+  amount: "amount",
+  link: "link",
+  info: "info",
+  deliveryProof: "deliveryProof",
 } as const;
 
 export interface ParsedGcId {

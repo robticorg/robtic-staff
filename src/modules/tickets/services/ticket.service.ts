@@ -30,7 +30,11 @@ import { logger } from "../../../shared/utils/logger.ts";
 import { nextSequence } from "../../../shared/sequence.ts";
 import { limits } from "../../../data/config/limits.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
-import { panelIsAdminOnly, type TicketPanelConfig } from "../../../data/tickets/index.ts";
+import {
+  independentPanelIds,
+  panelIsAdminOnly,
+  type TicketPanelConfig,
+} from "../../../data/tickets/index.ts";
 import { StaffActivityType, staffActivityService, staffService } from "../../staff/index.ts";
 import { TicketModel, type Ticket, type TicketAnswer } from "../models/ticket.model.ts";
 import {
@@ -46,6 +50,7 @@ import { protectedTicketPrincipals } from "./ticket-permissions.ts";
 import { buildRoleClaimMessage } from "../render/role-claim.ts";
 import { isBlacklistedFor } from "./ticket-blacklist.ts";
 import { ticketEvents } from "./ticket-events.ts";
+import { channelConfigService } from "../../configuration/services/channel-config.service.ts";
 import { ticketLogService } from "./ticket-log.service.ts";
 import { transcriptService } from "./transcript.service.ts";
 import { transcriptCache } from "./transcript-cache.ts";
@@ -157,7 +162,12 @@ export class TicketService extends BaseRepository<Ticket> {
 
   getOpenTicketForUser(guildId: GuildId, userId: UserId): Promise<TicketDoc | null> {
     return this.model
-      .findOne({ guildId, userId, status: { $in: ACTIVE_TICKET_STATUSES as TicketStatus[] } })
+      .findOne({
+        guildId,
+        userId,
+        panelId: { $nin: independentPanelIds() },
+        status: { $in: ACTIVE_TICKET_STATUSES as TicketStatus[] },
+      })
       .sort({ createdAt: -1 })
       .exec();
   }
@@ -217,8 +227,9 @@ export class TicketService extends BaseRepository<Ticket> {
       });
     }
 
-    const category = panel.categoryId
-      ? await guild.channels.fetch(panel.categoryId).catch(() => null)
+    const categoryId = await this.categoryFor(guild.id, panel);
+    const category = categoryId
+      ? await guild.channels.fetch(categoryId).catch(() => null)
       : null;
     if (!category || category.type !== ChannelType.GuildCategory) {
       throw new DomainError("TICKET_CATEGORY_INVALID", M.create.categoryMissing);
@@ -274,6 +285,17 @@ export class TicketService extends BaseRepository<Ticket> {
     });
 
     return { ticket, channel: channel as GuildTextBasedChannel };
+  }
+
+  private async categoryFor(
+    guildId: GuildId,
+    panel: TicketPanelConfig,
+  ): Promise<ChannelId | undefined> {
+    if (panel.categorySlot) {
+      const configured = await channelConfigService.getChannelId(guildId, panel.categorySlot);
+      if (configured) return configured;
+    }
+    return panel.categoryId;
   }
 
   private baseOverwrites(

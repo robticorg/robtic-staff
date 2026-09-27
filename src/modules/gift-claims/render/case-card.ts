@@ -11,12 +11,37 @@ import {
 import { giftClaimComponents } from "../../../data/gift-claim/components.ts";
 import { giftClaimConfig } from "../../../data/gift-claim/config.ts";
 import { giftClaimMessages } from "../../../data/gift-claim/messages.ts";
+import {
+  GIFT_DELIVERY_STATUS_LABELS,
+  GIFT_DELIVERY_TYPE_LABELS,
+  giftDeliveryMessages,
+} from "../../../data/gift-claim/delivery-messages.ts";
 import type { GiftClaim } from "../models/gift-claim.model.ts";
-import { GiftClaimStatus, DECIDABLE_CLAIM_STATUSES } from "../types/enums.ts";
+import type { GiftDelivery } from "../models/gift-delivery.model.ts";
+import {
+  DECIDABLE_CLAIM_STATUSES,
+  GiftClaimStatus,
+  GiftDeliveryStatus,
+  GiftDeliveryType,
+  RETRYABLE_DELIVERY_STATUSES,
+} from "../types/enums.ts";
 import { GiftClaimCustomId } from "../handlers/component-ids.ts";
 
 const M = giftClaimMessages.case;
 const C = giftClaimComponents;
+const D = giftDeliveryMessages;
+
+type CardDelivery = Pick<GiftDelivery, "status" | "error"> | null | undefined;
+
+export function deliveryAction(
+  claim: Pick<GiftClaim, "status" | "deliveryType">,
+  delivery: CardDelivery,
+): "DELIVER" | "RETRY" | null {
+  if (claim.status !== GiftClaimStatus.APPROVED) return null;
+  const open = !delivery || RETRYABLE_DELIVERY_STATUSES.includes(delivery.status);
+  if (!open) return null;
+  return claim.deliveryType === GiftDeliveryType.CREDITS ? "RETRY" : "DELIVER";
+}
 
 export function buildGiftClaimCaseCard(
   claim: Pick<
@@ -31,7 +56,10 @@ export function buildGiftClaimCaseCard(
     | "reviewedBy"
     | "fulfilledBy"
     | "rejectionReason"
+    | "deliveryType"
+    | "amount"
   >,
+  delivery?: CardDelivery,
 ): BaseMessageOptions {
   const container = new ContainerBuilder().setAccentColor(
     giftClaimConfig.caseAccentColor[claim.status] ?? giftClaimConfig.caseAccentColor.PENDING,
@@ -50,6 +78,16 @@ export function buildGiftClaimCaseCard(
     ...(claim.reviewedBy ? [M.reviewedBy(claim.reviewedBy)] : []),
     ...(claim.fulfilledBy ? [M.fulfilledBy(claim.fulfilledBy)] : []),
     ...(claim.rejectionReason ? [M.rejectionReason(claim.rejectionReason)] : []),
+    ...(claim.deliveryType
+      ? [D.card.type(GIFT_DELIVERY_TYPE_LABELS[claim.deliveryType] ?? claim.deliveryType)]
+      : []),
+    ...(claim.amount ? [D.card.amount(claim.amount)] : []),
+    ...(delivery
+      ? [D.card.deliveryStatus(GIFT_DELIVERY_STATUS_LABELS[delivery.status] ?? delivery.status)]
+      : []),
+    ...(delivery?.status === GiftDeliveryStatus.FAILED && delivery.error
+      ? [D.card.deliveryError(delivery.error)]
+      : []),
   ];
   container.addTextDisplayComponents(new TextDisplayBuilder().setContent(info.join("\n")));
 
@@ -67,6 +105,7 @@ export function buildGiftClaimCaseCard(
   container.addTextDisplayComponents(new TextDisplayBuilder().setContent(proofLines.join("\n")));
 
   const decidable = (DECIDABLE_CLAIM_STATUSES as GiftClaimStatus[]).includes(claim.status);
+  const action = deliveryAction(claim, delivery);
   container.addActionRowComponents(
     new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
@@ -80,10 +119,14 @@ export function buildGiftClaimCaseCard(
         .setStyle(ButtonStyle.Danger)
         .setDisabled(!decidable),
       new ButtonBuilder()
-        .setCustomId(GiftClaimCustomId.done(claim.claimId))
-        .setLabel(C.doneButton)
+        .setCustomId(
+          action === "RETRY"
+            ? GiftClaimCustomId.retry(claim.claimId)
+            : GiftClaimCustomId.deliver(claim.claimId),
+        )
+        .setLabel(action === "RETRY" ? D.buttons.retry : D.buttons.deliver)
         .setStyle(ButtonStyle.Primary)
-        .setDisabled(claim.status !== GiftClaimStatus.APPROVED),
+        .setDisabled(action === null),
     ),
   );
 

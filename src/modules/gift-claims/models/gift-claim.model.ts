@@ -2,7 +2,14 @@ import mongoose, { Schema, type Model } from "mongoose";
 import type { HydratedDocument } from "mongoose";
 import type { GuildId, Timestamps, UserId } from "../../../shared/types/index.ts";
 import { shortId } from "../../../shared/utils/id.ts";
-import { GIFT_CLAIM_STATUS_VALUES, GiftClaimStatus } from "../types/enums.ts";
+import {
+  GIFT_CLAIM_SOURCE_VALUES,
+  GIFT_CLAIM_STATUS_VALUES,
+  GIFT_DELIVERY_TYPE_VALUES,
+  GiftClaimSource,
+  GiftClaimStatus,
+  type GiftDeliveryType,
+} from "../types/enums.ts";
 
 export interface ClaimProof {
   url: string;
@@ -18,6 +25,11 @@ export interface GiftClaim extends Timestamps {
   prize?: string;
 
   status: GiftClaimStatus;
+
+  source: GiftClaimSource;
+  ticketId?: string;
+  deliveryType?: GiftDeliveryType;
+  amount?: string;
 
   proof: ClaimProof[];
   fulfillmentProof?: string;
@@ -60,6 +72,16 @@ const giftClaimSchema = new Schema<GiftClaim>(
       required: true,
       index: true,
     },
+
+    source: {
+      type: String,
+      enum: GIFT_CLAIM_SOURCE_VALUES,
+      default: GiftClaimSource.PANEL,
+      required: true,
+    },
+    ticketId: { type: String },
+    deliveryType: { type: String, enum: GIFT_DELIVERY_TYPE_VALUES },
+    amount: { type: String, maxlength: 30 },
 
     proof: { type: [proofSchema], default: [] },
     fulfillmentProof: { type: String },

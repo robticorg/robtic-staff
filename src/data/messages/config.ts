@@ -75,6 +75,8 @@ export const configMessages = {
     slotLine: (type: string) => `الخانة:\n\`${type}\``,
     channelLine: (channelId: string) => `الروم:\n<#${channelId}>`,
     unknownType: (type: string) => `نوع روم غير معروف: \`${type}\``,
+    categoryRequired: "هذي الخانة تحتاج كاتيقوري، مو روم.",
+    textRequired: "هذي الخانة تحتاج روم نصي، مو كاتيقوري.",
     overviewTitle: (botName: string) => `**إعدادات رومات ${botName}**`,
     notConfigured: "*غير مضبوط*",
     entry: (label: string, value: string) => `${label}: ${value}`,

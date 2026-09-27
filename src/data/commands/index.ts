@@ -13,6 +13,7 @@ export const CommandName = {
   TICKET_STATS: "ticket-stats",
   PROMOTE_POINTS: "promote-points",
   WARN_SETUP: "warn-setup",
+  AUTOCLAIM: "autoclaim",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -130,6 +131,17 @@ export const commandCopy = {
       list: {
         description: "عرض كل الرتب المضبوطة في نظام الستاف",
       },
+    },
+  },
+  autoclaim: {
+    description: "تشغيل أو إيقاف التحويل التلقائي للكريدتس في الهدايا",
+    options: {
+      state: "الحالة",
+    },
+    choices: {
+      on: "تشغيل",
+      off: "إيقاف",
+      status: "عرض الحالة",
     },
   },
   promotePoints: {
