@@ -15,6 +15,9 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   come: ["تعال", "حضور", "نداء"],
 
   accept: ["قبول", "قبل"],
+  refuse: ["رفض"],
+  verify: ["توثيق"],
+  from: ["من", "من-طرف", "جابه"],
   transfer: ["نقل"],
   fire: ["فصل", "طرد", "اقالة"],
   prompt: ["ترقية", "رفع"],

@@ -7,6 +7,7 @@ const E = emojis;
 
 const RESTORATION_REASON_LABELS: Record<StaffTagRestorationReason, string> = {
   TAG_REAPPLIED: "رجع يستخدم تاق السيرفر",
+  DISPLAY_NAME_COMPLIANT: "صار اسمه في السيرفر فيه معرّف السيرفر",
   DURATION_EXPIRED: "انتهت مدة التقييد",
   STAFF_LIFECYCLE: "تغيّرت حالته في نظام الستاف",
   MANUAL: "إجراء يدوي",
@@ -26,17 +27,19 @@ export const serverTagMessages = {
   dm: {
     restricted: (durationMs: number, expiresAt: Date) =>
       [
-        `شلت تاق السيرفر من حسابك في **${branding.communityName}**، ولهذا تم سحب رتب الستاف منك مؤقتاً لمدة **${formatArabicDuration(durationMs)}**.`,
+        `حسابك ما عليه تاق السيرفر، واسمك في **${branding.communityName}** ما فيه معرّف السيرفر، ولهذا تم سحب رتب الستاف منك مؤقتاً لمدة **${formatArabicDuration(durationMs)}**.`,
         "",
-        "إذا رجعت تستخدم تاق السيرفر خلال هذي المدة، رتب الستاف حقك ترجع لك تلقائياً على طول.",
+        `إذا رجعت تستخدم تاق السيرفر، أو حطيت \`${branding.communityName}\` أو \`RTC\` أو \`RC\` في اسمك بالسيرفر خلال هذي المدة، رتب الستاف حقك ترجع لك تلقائياً على طول.`,
         "",
-        "وإذا ما رجعت التاق قبل ما تنتهي المدة، راح تنشال من الستاف نهائياً وتروح نقاطك كلها.",
+        "وإذا ما رجعت وحدة منهم قبل ما تنتهي المدة، راح تنشال من الستاف نهائياً وتروح نقاطك كلها.",
       ].join("\n"),
 
     restoredByTag: "رجعت تستخدم تاق السيرفر، وتمت إعادة رتب الستاف الخاصة بك.",
 
+    restoredByDisplayName: "صار اسمك في السيرفر فيه معرّف السيرفر، وتمت إعادة رتب الستاف الخاصة بك.",
+
     removedByExpiry: [
-      `انتهت مدة التقييد وما رجعت تاق السيرفر لحسابك في **${branding.communityName}**.`,
+      `انتهت مدة التقييد وما رجعت تاق السيرفر لحسابك ولا حطيت معرّف السيرفر في اسمك في **${branding.communityName}**.`,
       "",
       "تم شيلك من الستاف نهائياً، ورتب الستاف حقك ما راح ترجع، ونقاطك تم تصفيرها.",
       "",
@@ -51,7 +54,7 @@ export const serverTagMessages = {
     headings: {
       tagEnabled: `${E.success} **تاق السيرفر — تفعيل**`,
       tagDisabled: `${E.info} **تاق السيرفر — إزالة**`,
-      restricted: `${E.staff} **تقييد رتب الستاف بسبب التاق**`,
+      restricted: `${E.staff} **تقييد رتب الستاف — لا تاق ولا معرّف في الاسم**`,
       restored: `${E.success} **إعادة رتب الستاف**`,
       removed: `${E.error} **شيل من الستاف — انتهت مدة التاق**`,
       blocked: `${E.warning} **تعذّرت إعادة رتب الستاف**`,

@@ -103,6 +103,11 @@ export interface ActorAuthority {
   canTargetSelf: boolean;
 }
 
+function acceptCeiling(hierarchy: StaffHierarchy, actorLevel: number): number {
+  const actorTier = getTierForLevel(hierarchy, actorLevel);
+  return (hierarchy.boundaryLevels[actorTier] ?? 0) - 1;
+}
+
 export class StaffManagementAuthorizationService {
   isAdministrator(actor: GuildMember): boolean {
     const perms = actor.permissions;
@@ -314,10 +319,35 @@ export class StaffManagementAuthorizationService {
     const actorLevel = highestLevelFromRoleIds(hierarchy, actor.roles.cache.keys());
     if (actorLevel === null) return deny(DenyReason.ACTOR_NOT_STAFF);
 
-    const actorTier = getTierForLevel(hierarchy, actorLevel);
-    const actorTierStart = hierarchy.boundaryLevels[actorTier] ?? 0;
-    if (requestedLevel >= actorTierStart) return deny(DenyReason.LEVEL_ABOVE_AUTHORITY);
+    if (requestedLevel > acceptCeiling(hierarchy, actorLevel)) {
+      return deny(DenyReason.LEVEL_ABOVE_AUTHORITY);
+    }
 
+    return allow();
+  }
+
+  async canAcceptApplication(
+    actor: GuildMember,
+    target: GuildMember,
+    requestedLevel: number,
+    managerRoleIds: readonly string[],
+  ): Promise<AuthorizationDecision> {
+    const hierarchy = await getHierarchy(actor.guild.id);
+    const invalid = this.hierarchyGuard(hierarchy);
+    if (invalid) return invalid;
+
+    if (this.isAdministrator(actor)) return allow();
+    if (!managerRoleIds.some((roleId) => actor.roles.cache.has(roleId))) {
+      return deny(DenyReason.NOT_A_MANAGER);
+    }
+    if (actor.id === target.id) return deny(DenyReason.SELF_ACCEPT);
+
+    const actorLevel = highestLevelFromRoleIds(hierarchy, actor.roles.cache.keys());
+    if (actorLevel === null) return deny(DenyReason.ACTOR_NOT_STAFF);
+
+    if (requestedLevel > acceptCeiling(hierarchy, actorLevel)) {
+      return deny(DenyReason.LEVEL_ABOVE_AUTHORITY);
+    }
     return allow();
   }
 

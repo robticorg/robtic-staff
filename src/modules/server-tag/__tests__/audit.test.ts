@@ -62,3 +62,28 @@ describe("decideAuditAction", () => {
     expect(decideAuditAction({ ...base, isStaff: false })).toBe(TagAuditAction.NONE);
   });
 });
+
+describe("decideAuditAction with a display-name identifier", () => {
+  it("leaves untagged staff alone when their display name carries an identifier", () => {
+    expect(
+      decideAuditAction({ ...base, isStaff: true, displayNameCompliant: true }),
+    ).toBe(TagAuditAction.NONE);
+  });
+
+  it("lifts a restriction once the display name carries an identifier", () => {
+    expect(
+      decideAuditAction({
+        ...base,
+        isStaff: true,
+        hasActiveRestriction: true,
+        displayNameCompliant: true,
+      }),
+    ).toBe(TagAuditAction.LIFT);
+  });
+
+  it("still takes the tag role back from someone who stopped wearing the tag", () => {
+    expect(
+      decideAuditAction({ ...base, hasTagRole: true, isStaff: true, displayNameCompliant: true }),
+    ).toBe(TagAuditAction.REVOKE);
+  });
+});

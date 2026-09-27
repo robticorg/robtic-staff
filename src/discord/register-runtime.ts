@@ -13,6 +13,8 @@ import { serverTagExpirationService } from "../modules/server-tag/services/serve
 import { serverTagAuditService } from "../modules/server-tag/services/server-tag-audit.service.ts";
 import { ladderSyncService } from "../modules/configuration/services/ladder-sync.service.ts";
 import { ticketSleepService } from "../modules/tickets/services/ticket-sleep.service.ts";
+import { registerApplicationLifecycle } from "../modules/applications/services/application-lifecycle.ts";
+import { internalApiServer } from "../modules/internal-api/server.ts";
 
 export function attachModuleClients(client: Client): void {
   attachModmailClient(client);
@@ -23,6 +25,7 @@ export function attachModuleClients(client: Client): void {
   attachGiftClaimClient(client);
   attachServerTagClient(client);
   attachWarningPanelClient(client);
+  registerApplicationLifecycle();
 }
 
 export function startModuleRuntime(): void {
@@ -33,6 +36,8 @@ export function startModuleRuntime(): void {
   ticketSleepService.start();
 
   warningPanelRefreshService.start();
+
+  internalApiServer.start();
 }
 
 export function stopModuleRuntime(): void {
@@ -42,4 +47,5 @@ export function stopModuleRuntime(): void {
   ticketSleepService.stop();
   ladderSyncService.stop();
   warningPanelRefreshService.stop();
+  internalApiServer.stop();
 }

@@ -2,6 +2,13 @@ import type { Guild, GuildMember } from "discord.js";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { serverTagMessages } from "../../../data/server-tag/messages.ts";
+import {
+  IdentityComplianceReason,
+  isUsingGuildTag,
+  staffIdentityRequirementService,
+  type IdentityCompliance,
+  type TagUserLike,
+} from "../../staff-identity/index.ts";
 import { staffPermissionService } from "../../staff/services/staff-permissions.service.ts";
 import { staffService } from "../../staff/services/staff.service.ts";
 import { staffPointService } from "../../staff/services/staff-point.service.ts";
@@ -23,21 +30,11 @@ const log = logger.child("server-tag");
 const M = serverTagMessages;
 const BOT_ACTOR = "BOT";
 
-export interface PrimaryGuildLike {
-  identityEnabled?: boolean | null;
-  identityGuildId?: string | null;
-  tag?: string | null;
-}
-
-export interface TagUserLike {
-  primaryGuild?: PrimaryGuildLike | null;
-}
-
-export function isUsingGuildTag(user: TagUserLike | null | undefined, guildId: GuildId): boolean {
-  const pg = user?.primaryGuild;
-  if (!pg) return false;
-  return pg.identityEnabled === true && pg.identityGuildId === guildId;
-}
+export {
+  isUsingGuildTag,
+  type PrimaryGuildLike,
+  type TagUserLike,
+} from "../../staff-identity/index.ts";
 
 export function affectedGuildIds(
   oldUser: TagUserLike | null | undefined,
@@ -57,10 +54,24 @@ export type ServerTagOutcome =
   | "restricted"
   | "restored"
   | "staff-removed"
+  | "compliant"
   | "noop"
   | "member-gone"
   | "already"
   | "blocked";
+
+export async function fetchCurrentMember(guild: Guild, userId: UserId): Promise<GuildMember | null> {
+  return guild.members
+    .fetch({ user: userId, force: true })
+    .catch(() => guild.members.fetch(userId))
+    .catch(() => null);
+}
+
+function restorationReasonFor(compliance: IdentityCompliance): StaffTagRestorationReason {
+  return compliance.reason === IdentityComplianceReason.DISPLAY_NAME
+    ? StaffTagRestorationReason.DISPLAY_NAME_COMPLIANT
+    : StaffTagRestorationReason.TAG_REAPPLIED;
+}
 
 export class ServerTagService {
   detectTagState(
@@ -107,7 +118,7 @@ export class ServerTagService {
   }
 
   async handleTagRemoved(guild: Guild, userId: UserId): Promise<ServerTagOutcome> {
-    const member = await guild.members.fetch(userId).catch(() => null);
+    const member = await fetchCurrentMember(guild, userId);
     if (!member) {
       log.debug(`tag removed by ${userId} but they are not in guild ${guild.id}`);
       return "member-gone";
@@ -124,7 +135,34 @@ export class ServerTagService {
       return "removed";
     }
 
+    if (staffIdentityRequirementService.isIdentityCompliant(member).compliant) {
+      await serverTagLogService.post(guild.id, { kind: "TAG_DISABLED", userId, tagRoleId });
+      return "compliant";
+    }
+
     return this.applyStaffRestriction(member, tagRoleId);
+  }
+
+  async handleIdentityChange(guild: Guild, userId: UserId): Promise<ServerTagOutcome> {
+    const member = await fetchCurrentMember(guild, userId);
+    if (!member) return "member-gone";
+
+    const compliance = staffIdentityRequirementService.isIdentityCompliant(member);
+    const restriction = await staffTagRestrictionService.getActiveRestriction(guild.id, userId);
+
+    if (compliance.compliant) {
+      if (!restriction) return "noop";
+      return this.restoreRestriction(
+        member,
+        restriction,
+        StaffTagRestrictionStatus.RESTORED,
+        restorationReasonFor(compliance),
+      );
+    }
+
+    if (restriction) return "noop";
+    if (!(await staffPermissionService.isStaff(member))) return "noop";
+    return this.applyStaffRestriction(member, null);
   }
 
   async grantTagRole(member: GuildMember): Promise<string | null> {
@@ -265,12 +303,19 @@ export class ServerTagService {
 
     if (!claimed) return "already";
 
+    const managed = await roleSnapshotService.managedStaffRoleIds(guildId);
+    const restorable = claimed.savedRoleIds.filter(
+      (id) => managed.has(id) || !member.guild.roles.cache.has(id),
+    );
+
     const outcome = await roleSnapshotService.restoreStaffRoles(
       member,
-      claimed.savedRoleIds,
+      restorable,
       reason === StaffTagRestorationReason.TAG_REAPPLIED
         ? "Server Tag re-applied — staff roles restored"
-        : "Server Tag restriction expired — staff roles restored",
+        : reason === StaffTagRestorationReason.DISPLAY_NAME_COMPLIANT
+          ? "Display name carries a Robtic identifier — staff roles restored"
+          : "Server Tag restriction expired — staff roles restored",
     );
 
     await staffTagRestrictionService.markRolesRestored(
@@ -290,7 +335,11 @@ export class ServerTagService {
     });
 
     const note = outcome.missing.length > 0 ? `\n\n${M.dm.partialRestoreNote}` : "";
-    await serverTagLogService.dm(member.id, M.dm.restoredByTag + note);
+    const restoredDm =
+      reason === StaffTagRestorationReason.DISPLAY_NAME_COMPLIANT
+        ? M.dm.restoredByDisplayName
+        : M.dm.restoredByTag;
+    await serverTagLogService.dm(member.id, restoredDm + note);
 
     log.info(
       `restriction ${claimed.restrictionId} closed as ${status} (${reason}) — ` +
@@ -377,12 +426,13 @@ export class ServerTagService {
       return this.removeStaffPermanently(member, restriction);
     }
 
-    if (usingTag) {
+    const compliance = staffIdentityRequirementService.isIdentityCompliant(member);
+    if (compliance.compliant) {
       return this.restoreRestriction(
         member,
         restriction,
         StaffTagRestrictionStatus.RESTORED,
-        StaffTagRestorationReason.TAG_REAPPLIED,
+        restorationReasonFor(compliance),
       );
     }
 

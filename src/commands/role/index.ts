@@ -44,7 +44,7 @@ const data = new SlashCommandBuilder()
           .setName(CommandOption.TYPE)
           .setDescription(copy.sub.set.options.type)
           .setRequired(true)
-          .addChoices(...ROLE_SET_CHOICES),
+          .setAutocomplete(true),
       )
       .addRoleOption((o) =>
         o.setName(CommandOption.ROLE).setDescription(copy.sub.set.options.role).setRequired(true),
@@ -163,9 +163,27 @@ async function handleCheck(interaction: ChatInputCommandInteraction): Promise<vo
   await replySuccess(interaction, hierarchyMessages.roleCheck.title, ...view.lines);
 }
 
+function matchSetSlots(query: string): { name: string; value: string }[] {
+  const needle = query.trim().toLowerCase();
+  return ROLE_SET_CHOICES.filter(
+    (choice) =>
+      !needle ||
+      choice.name.toLowerCase().includes(needle) ||
+      choice.value.toLowerCase().includes(needle),
+  ).slice(0, 25);
+}
+
 export default defineCommand({
   data,
   requiredPermissions: PermissionFlagsBits.Administrator,
+  async autocomplete(interaction) {
+    const focused = interaction.options.getFocused(true);
+    if (focused.name !== CommandOption.TYPE) {
+      await interaction.respond([]);
+      return;
+    }
+    await interaction.respond(matchSetSlots(String(focused.value)));
+  },
   async execute(interaction) {
     requireGuild(interaction);
     requireAdministrator(interaction);

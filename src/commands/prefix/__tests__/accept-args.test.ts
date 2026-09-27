@@ -21,6 +21,7 @@ describe("parseAcceptArguments", () => {
   it("keeps plain acceptance working", () => {
     expect(parseAcceptArguments(args(MENTION), USER)).toEqual({
       level: null,
+      max: false,
       staffType: null,
       tier: null,
     });
@@ -29,6 +30,7 @@ describe("parseAcceptArguments", () => {
   it("keeps acceptance with a level working", () => {
     expect(parseAcceptArguments(args(`${MENTION} 3`), USER)).toEqual({
       level: 3,
+      max: false,
       staffType: null,
       tier: null,
     });
@@ -39,12 +41,42 @@ describe("parseAcceptArguments", () => {
   });
 
   it("reads an English type keyword", () => {
+    expect(parseAcceptArguments(args(`${MENTION} dev`), USER)).toEqual({
+      level: null,
+      max: false,
+      staffType: StaffType.DEV,
+      tier: null,
+    });
+  });
+
+  it("reads max as the top of the ladder, not a staff type", () => {
     expect(parseAcceptArguments(args(`${MENTION} max`), USER)).toEqual({
       level: null,
+      max: true,
+      staffType: null,
+      tier: null,
+    });
+    expect(parseAcceptArguments(args(`${MENTION} MAX ماكس`), USER)).toEqual({
+      level: null,
+      max: true,
       staffType: StaffType.MAX,
       tier: null,
     });
-    expect(parseAcceptArguments(args(`${MENTION} dev`), USER).staffType).toBe(StaffType.DEV);
+  });
+
+  it("rejects max together with a level or a tier", () => {
+    expect(parseAcceptArguments(args(`${MENTION} max 3`), USER).problem).toBe(
+      AcceptArgProblem.DUPLICATE_LEVEL,
+    );
+    expect(parseAcceptArguments(args(`${MENTION} 3 max`), USER).problem).toBe(
+      AcceptArgProblem.DUPLICATE_LEVEL,
+    );
+    expect(parseAcceptArguments(args(`${MENTION} max ship`), USER).problem).toBe(
+      AcceptArgProblem.LEVEL_AND_TIER,
+    );
+    expect(parseAcceptArguments(args(`${MENTION} ship max`), USER).problem).toBe(
+      AcceptArgProblem.LEVEL_AND_TIER,
+    );
   });
 
   it("maps Arabic keywords onto the same internal ids", () => {
@@ -53,34 +85,38 @@ describe("parseAcceptArguments", () => {
   });
 
   it("is case-insensitive for English keywords", () => {
-    for (const written of ["MAX", "Max", "mAx"]) {
+    for (const written of ["DEV", "Dev", "dEv"]) {
       expect(parseAcceptArguments(args(`${MENTION} ${written}`), USER).staffType).toBe(
-        StaffType.MAX,
+        StaffType.DEV,
       );
     }
   });
 
   it("accepts type then level", () => {
-    expect(parseAcceptArguments(args(`${MENTION} max 3`), USER)).toEqual({
+    expect(parseAcceptArguments(args(`${MENTION} ماكس 3`), USER)).toEqual({
       level: 3,
+      max: false,
       staffType: StaffType.MAX,
       tier: null,
     });
     expect(parseAcceptArguments(args(`${MENTION} dev 5`), USER)).toEqual({
       level: 5,
+      max: false,
       staffType: StaffType.DEV,
       tier: null,
     });
   });
 
   it("accepts level then type", () => {
-    expect(parseAcceptArguments(args(`${MENTION} 3 max`), USER)).toEqual({
+    expect(parseAcceptArguments(args(`${MENTION} 3 ماكس`), USER)).toEqual({
       level: 3,
+      max: false,
       staffType: StaffType.MAX,
       tier: null,
     });
     expect(parseAcceptArguments(args(`${MENTION} 5 dev`), USER)).toEqual({
       level: 5,
+      max: false,
       staffType: StaffType.DEV,
       tier: null,
     });
@@ -89,11 +125,13 @@ describe("parseAcceptArguments", () => {
   it("accepts an Arabic keyword together with a level, either order", () => {
     expect(parseAcceptArguments(args(`${MENTION} ماكس 3`), USER)).toEqual({
       level: 3,
+      max: false,
       staffType: StaffType.MAX,
       tier: null,
     });
     expect(parseAcceptArguments(args(`${MENTION} 3 مبرمج`), USER)).toEqual({
       level: 3,
+      max: false,
       staffType: StaffType.DEV,
       tier: null,
     });
@@ -103,6 +141,7 @@ describe("parseAcceptArguments", () => {
     for (const form of [MENTION, `<@!${USER}>`, USER]) {
       expect(parseAcceptArguments(args(`${form} 3`), USER)).toEqual({
         level: 3,
+        max: false,
         staffType: null,
         tier: null,
       });
@@ -116,6 +155,7 @@ describe("parseAcceptArguments", () => {
   it("ignores an unrelated user mention rather than failing", () => {
     expect(parseAcceptArguments(args(`${MENTION} <@999888777666555444> 2`), USER)).toEqual({
       level: 2,
+      max: false,
       staffType: null,
       tier: null,
     });
@@ -137,13 +177,13 @@ describe("parseAcceptArguments", () => {
     expect(parseAcceptArguments(args(`${MENTION} 2 3`), USER).problem).toBe(
       AcceptArgProblem.DUPLICATE_LEVEL,
     );
-    expect(parseAcceptArguments(args(`${MENTION} max dev`), USER).problem).toBe(
+    expect(parseAcceptArguments(args(`${MENTION} ماكس dev`), USER).problem).toBe(
       AcceptArgProblem.DUPLICATE_TYPE,
     );
   });
 
   it("tolerates the same type twice", () => {
-    expect(parseAcceptArguments(args(`${MENTION} max ماكس`), USER).staffType).toBe(StaffType.MAX);
+    expect(parseAcceptArguments(args(`${MENTION} ماكس ماكس`), USER).staffType).toBe(StaffType.MAX);
   });
 
   it("reads the English tier keywords", () => {
@@ -167,11 +207,13 @@ describe("parseAcceptArguments", () => {
   it("combines a tier with a staff type, either order", () => {
     expect(parseAcceptArguments(args(`${MENTION} ship dev`), USER)).toEqual({
       level: null,
+      max: false,
       staffType: StaffType.DEV,
       tier: StaffTier.SHIP,
     });
     expect(parseAcceptArguments(args(`${MENTION} مبرمج عليا`), USER)).toEqual({
       level: null,
+      max: false,
       staffType: StaffType.DEV,
       tier: StaffTier.HIGHSTAFF,
     });

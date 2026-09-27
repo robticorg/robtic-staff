@@ -9,6 +9,14 @@ export interface TicketAnswer {
   answer: string;
 }
 
+export interface TicketClaimableRole {
+  roleId: RoleId;
+  messageId?: string;
+  claimedBy?: UserId;
+  claimedAt?: Date;
+  closed?: boolean;
+}
+
 export interface Ticket extends Timestamps {
   ticketId: string;
   guildId: GuildId;
@@ -25,6 +33,8 @@ export interface Ticket extends Timestamps {
 
   addedUsers: UserId[];
   addedRoles: RoleId[];
+
+  claimableRoles: TicketClaimableRole[];
 
   transferredFrom?: UserId;
   transferredAt?: Date;
@@ -61,6 +71,17 @@ const answerSchema = new Schema<TicketAnswer>(
   { _id: false },
 );
 
+const claimableRoleSchema = new Schema<TicketClaimableRole>(
+  {
+    roleId: { type: String, required: true },
+    messageId: { type: String },
+    claimedBy: { type: String },
+    claimedAt: { type: Date },
+    closed: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
 const ticketSchema = new Schema<Ticket>(
   {
     ticketId: { type: String, required: true, unique: true },
@@ -83,6 +104,8 @@ const ticketSchema = new Schema<Ticket>(
 
     addedUsers: { type: [String], default: [] },
     addedRoles: { type: [String], default: [] },
+
+    claimableRoles: { type: [claimableRoleSchema], default: [] },
 
     transferredFrom: { type: String },
     transferredAt: { type: Date },

@@ -40,9 +40,18 @@ describe("/role slot tables", () => {
     }
   });
 
-  it("leaves headroom under the 25-choice cap", () => {
-    expect(ROLE_SET_CHOICES.length).toBeLessThan(DISCORD_MAX_CHOICES);
+  it("keeps the range choices under the 25-choice cap", () => {
     expect(ROLE_RANGE_CHOICES.length).toBeLessThan(DISCORD_MAX_CHOICES);
+  });
+
+  it("serves the set slots through autocomplete, so their count is not capped", () => {
+    const json = roleCommand.data.toJSON() as unknown as {
+      options?: { name: string; options?: { name: string; autocomplete?: boolean; choices?: unknown[] }[] }[];
+    };
+    const type = json.options?.find((s) => s.name === "set")?.options?.find((o) => o.name === "type");
+    expect(type?.autocomplete).toBe(true);
+    expect(type?.choices ?? []).toEqual([]);
+    expect(ROLE_SET_CHOICES.length).toBeGreaterThan(0);
   });
 });
 

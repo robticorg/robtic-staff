@@ -1,6 +1,7 @@
 import { appConfig } from "./app.ts";
 import { databaseConfig } from "./database.ts";
 import { discordConfig } from "./discord.ts";
+import { internalApiConfig } from "./internal-api.ts";
 import { assertRuntimeEnv } from "./env.ts";
 
 export interface AppConfig {
@@ -27,6 +28,6 @@ export const config: AppConfig = {
   env: appConfig.env,
 };
 
-export { appConfig, databaseConfig, discordConfig, assertRuntimeEnv };
+export { appConfig, databaseConfig, discordConfig, internalApiConfig, assertRuntimeEnv };
 export { rawEnv, type AppEnv } from "./env.ts";
 export type { PointsPeriod } from "../shared/utils/time.ts";

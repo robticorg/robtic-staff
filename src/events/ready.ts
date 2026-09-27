@@ -3,7 +3,10 @@ import { defineEvent } from "../discord/event.ts";
 import { logger } from "../shared/utils/logger.ts";
 import { ticketService, transcriptCache } from "../modules/tickets/index.ts";
 import { ladderSyncService } from "../modules/configuration/index.ts";
-import { serverTagAuditService } from "../modules/server-tag/index.ts";
+import {
+  serverTagAuditService,
+  serverTagExpirationService,
+} from "../modules/server-tag/index.ts";
 
 const log = logger.child("gateway");
 
@@ -28,6 +31,10 @@ export default defineEvent({
         .sync(guild)
         .catch((err) => log.warn(`ladder sync failed for ${guild.id}`, err));
     }
+
+    await serverTagExpirationService
+      .reconcileActive()
+      .catch((err) => log.warn("server tag startup reconcile failed", err));
 
     serverTagAuditService.start();
   },

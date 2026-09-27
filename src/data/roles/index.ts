@@ -16,7 +16,7 @@ export const ROLE_SLOT_LABELS: Record<RoleConfigType, string> = {
   [RoleConfigType.ACCEPTED]: "رتبة قبول الستاف",
   [RoleConfigType.ASSIGN]: "رتبة تلقائية حسب المستوى",
   [RoleConfigType.STAFF_TYPE]: "رتبة نوع الستاف",
-  [RoleConfigType.BLACKLIST]: "رتبة البلاك ليست",
+  [RoleConfigType.BLACKLIST]: "رتبة بلاك ليست الستاف",
   [RoleConfigType.STAFF_MANAGER]: "رتبة مانجر الستاف",
   [RoleConfigType.OWNER_MANAGER]: "رتبة مانجر الأونر",
   [RoleConfigType.TRANSFER_MANAGER]: "رتبة مانجر التحويل",
@@ -33,13 +33,21 @@ export const ROLE_SLOT_LABELS: Record<RoleConfigType, string> = {
   [RoleConfigType.APPEAL_MANAGER]: "رتبة مانجر الاستئناف",
   [RoleConfigType.GIFT_MANAGER]: "رتبة مانجر الهدايا",
   [RoleConfigType.APPLY_MANAGER]: "رتبة مانجر التقديم",
+  [RoleConfigType.DEVELOPER_MANAGER]: "رتبة مانجر المبرمجين",
+  [RoleConfigType.DESIGNER_MANAGER]: "رتبة مانجر المصممين",
+  [RoleConfigType.EDITOR_MANAGER]: "رتبة مانجر المونتيرية",
+  [RoleConfigType.GIRLS_MANAGER]: "رتبة إدارة البنات",
+  [RoleConfigType.GIRL_NOT_VERIFIED]: "رتبة بنت غير موثقة",
+  [RoleConfigType.GIRL_VERIFIED]: "رتبة بنت موثقة",
+  [RoleConfigType.TICKET_BLACKLIST]: "رتبة بلاك ليست التكتات",
+  [RoleConfigType.GIFT_BLACKLIST]: "رتبة بلاك ليست الهدايا",
   [RoleConfigType.TAG]: "رتبة التاق",
 };
 
 /**
- * Every slot `/role set type:<…> role:@role` can write, in dropdown order.
- * Discord caps a choice list at 25, so this list has deliberate headroom — the
- * two lists that grow on their own (staff tiers, staff types) stay separate.
+ * Every slot `/role set type:<…> role:@role` can write, in suggestion order.
+ * The list is served through autocomplete, so it is not bound by Discord's
+ * 25-choice cap; the two lists that grow on their own stay separate.
  */
 export const ROLE_SET_SLOTS: readonly RoleConfigType[] = [
   RoleConfigType.START,
@@ -51,6 +59,14 @@ export const ROLE_SET_SLOTS: readonly RoleConfigType[] = [
   RoleConfigType.OWNER_MANAGER,
   RoleConfigType.TRANSFER_MANAGER,
   RoleConfigType.APPLY_MANAGER,
+  RoleConfigType.DEVELOPER_MANAGER,
+  RoleConfigType.DESIGNER_MANAGER,
+  RoleConfigType.EDITOR_MANAGER,
+  RoleConfigType.GIRLS_MANAGER,
+  RoleConfigType.GIRL_NOT_VERIFIED,
+  RoleConfigType.GIRL_VERIFIED,
+  RoleConfigType.TICKET_BLACKLIST,
+  RoleConfigType.GIFT_BLACKLIST,
   RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
   RoleConfigType.CHAT_MANAGER,

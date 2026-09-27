@@ -5,6 +5,8 @@ import messageCreate from "./messageCreate.ts";
 import ready from "./ready.ts";
 import userUpdate from "./userUpdate.ts";
 import guildMemberAdd from "./guildMemberAdd.ts";
+import guildMemberUpdate from "./guildMemberUpdate.ts";
+import guildMemberRemove from "./guildMemberRemove.ts";
 import roleCreate from "./roleCreate.ts";
 import roleUpdate from "./roleUpdate.ts";
 import roleDelete from "./roleDelete.ts";
@@ -17,6 +19,8 @@ export const events: EventModule[] = [
   ready as EventModule,
   userUpdate as EventModule,
   guildMemberAdd as EventModule,
+  guildMemberUpdate as EventModule,
+  guildMemberRemove as EventModule,
   roleCreate as EventModule,
   roleUpdate as EventModule,
   roleDelete as EventModule,

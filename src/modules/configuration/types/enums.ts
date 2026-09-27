@@ -30,6 +30,14 @@ export const RoleConfigType = {
   APPEAL_MANAGER: "APPEAL_MANAGER",
   GIFT_MANAGER: "GIFT_MANAGER",
   APPLY_MANAGER: "APPLY_MANAGER",
+  DEVELOPER_MANAGER: "DEVELOPER_MANAGER",
+  DESIGNER_MANAGER: "DESIGNER_MANAGER",
+  EDITOR_MANAGER: "EDITOR_MANAGER",
+  GIRLS_MANAGER: "GIRLS_MANAGER",
+  GIRL_NOT_VERIFIED: "GIRL_NOT_VERIFIED",
+  GIRL_VERIFIED: "GIRL_VERIFIED",
+  TICKET_BLACKLIST: "TICKET_BLACKLIST",
+  GIFT_BLACKLIST: "GIFT_BLACKLIST",
   TAG: "TAG",
 } as const;
 export type RoleConfigType = (typeof RoleConfigType)[keyof typeof RoleConfigType];
@@ -62,6 +70,14 @@ export const SINGLETON_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
   RoleConfigType.APPLY_MANAGER,
+  RoleConfigType.DEVELOPER_MANAGER,
+  RoleConfigType.DESIGNER_MANAGER,
+  RoleConfigType.EDITOR_MANAGER,
+  RoleConfigType.GIRLS_MANAGER,
+  RoleConfigType.GIRL_NOT_VERIFIED,
+  RoleConfigType.GIRL_VERIFIED,
+  RoleConfigType.TICKET_BLACKLIST,
+  RoleConfigType.GIFT_BLACKLIST,
   RoleConfigType.TAG,
   RoleConfigType.ACCEPTED,
 ];
@@ -106,6 +122,9 @@ export const CHANNEL_CONFIG_TYPE_VALUES = Object.values(ChannelConfigType);
 export const FastAccessContext = {
   MODMAIL: "MODMAIL",
   SUPPORT: "SUPPORT",
+
+  STAFF_APPLICATION: "STAFF_APPLICATION",
+  STAFF_TRANSFER: "STAFF_TRANSFER",
 } as const;
 export type FastAccessContext = (typeof FastAccessContext)[keyof typeof FastAccessContext];
 export const FAST_ACCESS_CONTEXT_VALUES = Object.values(FastAccessContext);

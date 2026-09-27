@@ -5,6 +5,7 @@ import { replyEphemeralError } from "../../../libs/discord/index.ts";
 import { isTicketCustomId, parseTicketCustomId } from "./component-ids.ts";
 import { handlePanelSelect } from "./panel-select.handler.ts";
 import { handleQuestionContinue, handleQuestionModal } from "./question-modal.handler.ts";
+import { handleTicketRoleClaim } from "./role-claim.handler.ts";
 import { handleTicketClaim } from "./claim.handler.ts";
 import {
   handleOptionsAddUser,
@@ -75,6 +76,8 @@ async function dispatch(
         return handleQuestionContinue(interaction, args[0] ?? "", Number(args[1] ?? "1"));
       case "claim":
         return handleTicketClaim(interaction, args[0] ?? "");
+      case "roleClaim":
+        return handleTicketRoleClaim(interaction, args[0] ?? "", args[1] ?? "");
       case "options":
         return handleOptionsOpen(interaction, args[0] ?? "");
       case "optClose":

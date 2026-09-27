@@ -3,6 +3,9 @@ import { logger } from "../../../shared/utils/logger.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import { GIFT_CLAIM_PANEL_ID } from "../../../data/gift-claim/config.ts";
 import { giftClaimService } from "../../gift-claims/services/gift-claim.service.ts";
+import { StaffApplicationWorkflow } from "../../../data/staff-application/panels.ts";
+import { openApplicationEntry } from "../../applications/handlers/first-modal.handler.ts";
+import { isBlacklistedFor } from "../services/ticket-blacklist.ts";
 import { buildGiftClaimSubmitModal } from "../../gift-claims/render/modals.ts";
 import { runCreateTicket } from "../flow/create-ticket.flow.ts";
 import { buildTicketPanelMessage } from "../render/panel-message.ts";
@@ -37,8 +40,13 @@ export async function handlePanelSelect(interaction: StringSelectMenuInteraction
       return;
     }
 
+    if (panel.id === StaffApplicationWorkflow.STAFF_APPLICATION) {
+      await openApplicationEntry(interaction);
+      return;
+    }
+
     if (panel.id === GIFT_CLAIM_PANEL_ID) {
-      const gate = await giftClaimService.canCreate(interaction.guildId, interaction.user.id);
+      const gate = await giftClaimService.canCreate(interaction.member);
       if (!gate.ok) {
         await interaction.reply({
           content: gate.message ?? M.create.failed,
@@ -47,6 +55,11 @@ export async function handlePanelSelect(interaction: StringSelectMenuInteraction
         return;
       }
       await interaction.showModal(buildGiftClaimSubmitModal());
+      return;
+    }
+
+    if (await isBlacklistedFor(interaction.member, panel)) {
+      await interaction.reply({ content: M.blacklist.blocked, flags: MessageFlags.Ephemeral });
       return;
     }
 

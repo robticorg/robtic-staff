@@ -1,0 +1,149 @@
+import { afterAll, beforeAll, describe, expect, it } from "bun:test";
+import mongoose, { Types } from "mongoose";
+import { config } from "../../../config/index.ts";
+import { StaffModel } from "../../staff/models/staff.model.ts";
+import { StaffPointTransactionModel } from "../../staff/models/staff-point-transaction.model.ts";
+import { StaffPointTransactionType } from "../../staff/types/enums.ts";
+import { isAuthorized } from "../auth.ts";
+import { handlePointsRequest, type PointsDeps } from "../points.handler.ts";
+import { parsePointsRequest } from "../points-request.ts";
+import { routeInternalRequest } from "../server.ts";
+
+const GUILD = "123456789012345678";
+const USER = "223456789012345678";
+const TOKEN = "s3cret-token";
+
+describe("points request validation", () => {
+  it("fills safe defaults for type and reason", () => {
+    expect(parsePointsRequest({ guildId: GUILD, userId: USER, amount: 1 })).toEqual({
+      ok: true,
+      value: {
+        guildId: GUILD,
+        userId: USER,
+        amount: 1,
+        type: StaffPointTransactionType.OTHER,
+        reason: "Internal API",
+        idempotencyKey: null,
+      },
+    });
+  });
+
+  it("rejects bad ids, amounts, types and keys", () => {
+    const base = { guildId: GUILD, userId: USER, amount: 1 };
+    expect(parsePointsRequest(null).ok).toBe(false);
+    expect(parsePointsRequest({ ...base, guildId: "abc" }).ok).toBe(false);
+    expect(parsePointsRequest({ ...base, userId: undefined }).ok).toBe(false);
+    for (const amount of [0, 1.5, "1", 5000]) {
+      expect(parsePointsRequest({ ...base, amount }).ok).toBe(false);
+    }
+    expect(parsePointsRequest({ ...base, type: "FREE_MONEY" }).ok).toBe(false);
+    expect(parsePointsRequest({ ...base, idempotencyKey: "" }).ok).toBe(false);
+    expect(parsePointsRequest({ ...base, amount: -3 }).ok).toBe(true);
+  });
+});
+
+describe("points API authentication", () => {
+  it("accepts only the exact bearer token", () => {
+    expect(isAuthorized(`Bearer ${TOKEN}`, TOKEN)).toBe(true);
+    expect(isAuthorized("Bearer nope", TOKEN)).toBe(false);
+    expect(isAuthorized(TOKEN, TOKEN)).toBe(false);
+    expect(isAuthorized(null, TOKEN)).toBe(false);
+    expect(isAuthorized(`Bearer ${TOKEN}`, undefined)).toBe(false);
+  });
+
+  it("answers 401 / 404 / 405 / 400 before touching any points", async () => {
+    const url = "http://127.0.0.1/internal/staff/points";
+    const post = (headers: Record<string, string>, body: string) =>
+      routeInternalRequest(new Request(url, { method: "POST", headers, body }), TOKEN);
+
+    expect((await post({}, "{}")).status).toBe(401);
+    expect((await post({ authorization: "Bearer wrong" }, "{}")).status).toBe(401);
+    expect((await routeInternalRequest(new Request(url), TOKEN)).status).toBe(405);
+    expect((await routeInternalRequest(new Request("http://127.0.0.1/other"), TOKEN)).status).toBe(404);
+    expect((await post({ authorization: `Bearer ${TOKEN}` }, "not json")).status).toBe(400);
+
+    const bad = await post({ authorization: `Bearer ${TOKEN}` }, JSON.stringify({ userId: USER }));
+    expect(bad.status).toBe(400);
+    expect(JSON.stringify(await bad.json())).not.toContain(TOKEN);
+  });
+});
+
+describe("points handler", () => {
+  const staffId = new Types.ObjectId();
+  const calls: unknown[] = [];
+  const deps: PointsDeps = {
+    findStaff: async (_guildId, userId) => (userId === USER ? { _id: staffId } : null),
+    addPoints: async (input) => {
+      calls.push(input);
+      return { balance: 5, duplicate: false };
+    },
+  };
+
+  it("adds through the point transaction service with an idempotency reference", async () => {
+    const response = await handlePointsRequest(
+      { guildId: GUILD, userId: USER, amount: 2, idempotencyKey: "bot-a:42" },
+      deps,
+    );
+    expect(response).toEqual({ status: 200, body: { success: true, duplicate: false, balance: 5 } });
+    expect(calls.at(-1)).toMatchObject({
+      staffId,
+      amount: 2,
+      type: StaffPointTransactionType.OTHER,
+      referenceId: "api:bot-a:42",
+    });
+  });
+
+  it("answers 404 for unknown staff and 500 without details on failure", async () => {
+    const missing = await handlePointsRequest({ guildId: GUILD, userId: "323456789012345678", amount: 1 }, deps);
+    expect(missing.status).toBe(404);
+
+    const failing = await handlePointsRequest(
+      { guildId: GUILD, userId: USER, amount: 1 },
+      { ...deps, addPoints: async () => { throw new Error("db exploded at host x"); } },
+    );
+    expect(failing).toEqual({ status: 500, body: { success: false, error: "internal error" } });
+  });
+});
+
+let hasDb = false;
+try {
+  await mongoose.connect(config.mongoUri, {
+    dbName: `${config.mongoDbName}_test`,
+    serverSelectionTimeoutMS: 1500,
+  });
+  hasDb = true;
+} catch {
+  hasDb = false;
+}
+
+describe.skipIf(!hasDb)("points API with the real transaction store (MongoDB)", () => {
+  const API_GUILD = "423456789012345678";
+  const API_USER = "523456789012345678";
+
+  beforeAll(async () => {
+    await StaffPointTransactionModel.syncIndexes();
+    await StaffModel.deleteMany({ guildId: API_GUILD });
+    await StaffModel.create({ guildId: API_GUILD, userId: API_USER });
+  });
+
+  afterAll(async () => {
+    const staff = await StaffModel.findOne({ guildId: API_GUILD, userId: API_USER }).exec();
+    if (staff) await StaffPointTransactionModel.deleteMany({ staffId: staff._id });
+    await StaffModel.deleteMany({ guildId: API_GUILD });
+  });
+
+  it("writes one transaction per idempotency key and keeps the total in step", async () => {
+    const body = { guildId: API_GUILD, userId: API_USER, amount: 3, reason: "itest", idempotencyKey: "retry-1" };
+    const first = await handlePointsRequest(body);
+    const retry = await handlePointsRequest(body);
+
+    expect(first.status).toBe(200);
+    expect(first.body.duplicate).toBe(false);
+    expect(retry.status).toBe(200);
+    expect(retry.body.duplicate).toBe(true);
+
+    const staff = await StaffModel.findOne({ guildId: API_GUILD, userId: API_USER }).exec();
+    expect(staff!.points).toBe(3);
+    expect(await StaffPointTransactionModel.countDocuments({ staffId: staff!._id })).toBe(1);
+  });
+});

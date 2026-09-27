@@ -5,6 +5,10 @@ import { supportPanel } from "./panels/support.ts";
 import { giftClaimPanel } from "./panels/gift-claim.ts";
 import { minecraftPanel } from "./panels/minecraft.ts";
 import { staffSupportPanel } from "../staff-support/panels.ts";
+import {
+  staffApplicationPanel,
+  staffTransferApplicationPanel,
+} from "../staff-application/panels.ts";
 
 export * from "./types.ts";
 export { ticketMain } from "./main.ts";
@@ -18,6 +22,8 @@ export const tickets: TicketConfig = {
     giftClaimPanel,
 
     staffSupportPanel,
+    staffApplicationPanel,
+    staffTransferApplicationPanel,
   ],
 };
 

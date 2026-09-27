@@ -35,6 +35,15 @@ export interface RawEnv {
   prefix: string;
   fastAccessPrefix: string;
   modmailCasePrefix: string;
+
+  internalApiToken?: string;
+  internalApiHost: string;
+  internalApiPort: number;
+}
+
+function readPort(value: string | undefined, fallback: number): number {
+  const port = Number.parseInt(value ?? "", 10);
+  return Number.isInteger(port) && port > 0 && port < 65536 ? port : fallback;
 }
 
 export const rawEnv: RawEnv = {
@@ -53,6 +62,10 @@ export const rawEnv: RawEnv = {
   prefix: process.env.PREFIX ?? "!",
   fastAccessPrefix: process.env.FAST_ACCESS_PREFIX ?? "$",
   modmailCasePrefix: process.env.MODMAIL_CASE_PREFIX ?? "RPT-",
+
+  internalApiToken: process.env.INTERNAL_API_TOKEN || undefined,
+  internalApiHost: process.env.INTERNAL_API_HOST ?? "127.0.0.1",
+  internalApiPort: readPort(process.env.INTERNAL_API_PORT, 8787),
 };
 
 export function assertRuntimeEnv(): void {

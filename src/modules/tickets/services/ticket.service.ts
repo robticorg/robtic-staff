@@ -41,8 +41,11 @@ import {
 } from "../types/enums.ts";
 import { buildClosedTicketPanel } from "../render/closed-panel.ts";
 import { applyTicketClaimCredit } from "./ticket-claim-credit.ts";
-import { canClaimTicket, canTransferTicket } from "./ticket-permissions.ts";
+import { canClaimTicket, canTransferTicket, memberIsAdministrator } from "./ticket-permissions.ts";
 import { protectedTicketPrincipals } from "./ticket-permissions.ts";
+import { buildRoleClaimMessage } from "../render/role-claim.ts";
+import { isBlacklistedFor } from "./ticket-blacklist.ts";
+import { ticketEvents } from "./ticket-events.ts";
 import { ticketLogService } from "./ticket-log.service.ts";
 import { transcriptService } from "./transcript.service.ts";
 import { transcriptCache } from "./transcript-cache.ts";
@@ -50,6 +53,16 @@ import { transcriptCache } from "./transcript-cache.ts";
 const log = logger.child("tickets");
 const M = ticketMessages;
 const AUDIT_LOOKBACK_MS = 60_000;
+
+const VIEW_ONLY = {
+  ViewChannel: true,
+  ReadMessageHistory: true,
+  SendMessages: false,
+  AddReactions: false,
+  AttachFiles: false,
+} as const;
+
+const CLAIMABLE_STATUSES: readonly TicketStatus[] = [TicketStatus.OPEN, TicketStatus.CLAIMED];
 
 const GRANT_ACCESS = {
   ViewChannel: true,
@@ -67,6 +80,8 @@ export interface CreateTicketInput {
 
   additionalRoleIds?: readonly RoleId[];
 
+  claimableRoleIds?: readonly RoleId[];
+
   metadata?: Record<string, unknown>;
 
   duplicateScope?: "GUILD" | "PANEL";
@@ -80,6 +95,11 @@ export interface CreateTicketResult {
 export interface ClaimTicketResult {
   ticket: TicketDoc;
   pointAwarded: boolean;
+}
+
+export interface RoleClaimResult extends ClaimTicketResult {
+  roleId: RoleId;
+  tookTicket: boolean;
 }
 
 export interface TransferTicketInput {
@@ -183,6 +203,10 @@ export class TicketService extends BaseRepository<Ticket> {
   async createTicket(input: CreateTicketInput): Promise<CreateTicketResult> {
     const { guild, panel, member } = input;
 
+    if (await isBlacklistedFor(member, panel)) {
+      throw new DomainError("TICKET_BLACKLISTED", M.blacklist.blocked);
+    }
+
     const existing =
       input.duplicateScope === "PANEL"
         ? await this.getOpenTicketForUserInPanel(guild.id, member.id, panel.id)
@@ -201,6 +225,9 @@ export class TicketService extends BaseRepository<Ticket> {
     }
 
     const ticketId = await this.nextTicketId(guild.id);
+    const claimableRoleIds = [...new Set(input.claimableRoleIds ?? [])].filter((id) =>
+      guild.roles.cache.has(id),
+    );
 
     const channel = await guild.channels.create({
       name: ticketId,
@@ -211,6 +238,7 @@ export class TicketService extends BaseRepository<Ticket> {
         panel,
         member.id,
         input.additionalRoleIds ?? [],
+        claimableRoleIds,
       ),
       reason: `Ticket ${ticketId} (${panel.id}) for ${member.id}`,
     });
@@ -229,6 +257,7 @@ export class TicketService extends BaseRepository<Ticket> {
         answers: input.answers,
         addedUsers: [],
         addedRoles: [],
+        claimableRoles: claimableRoleIds.map((roleId) => ({ roleId })),
         ...(input.metadata ? { metadata: input.metadata } : {}),
       });
     } catch (err) {
@@ -252,9 +281,11 @@ export class TicketService extends BaseRepository<Ticket> {
     panel: TicketPanelConfig,
     creatorId: UserId,
     additionalRoleIds: readonly RoleId[] = [],
+    claimableRoleIds: readonly RoleId[] = [],
   ): OverwriteResolvable[] {
+    const claimable = new Set(claimableRoleIds);
     const extra = [...new Set(additionalRoleIds)].filter(
-      (id) => id !== panel.supportRoleId && guild.roles.cache.has(id),
+      (id) => id !== panel.supportRoleId && !claimable.has(id) && guild.roles.cache.has(id),
     );
 
     return [
@@ -273,6 +304,19 @@ export class TicketService extends BaseRepository<Ticket> {
         (id) =>
           ({ id, allow: accessBits(), type: OverwriteType.Role }) as OverwriteResolvable,
       ),
+      ...[...claimable].map(
+        (id) =>
+          ({
+            id,
+            allow: [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory],
+            deny: [
+              PermissionFlagsBits.SendMessages,
+              PermissionFlagsBits.AddReactions,
+              PermissionFlagsBits.AttachFiles,
+            ],
+            type: OverwriteType.Role,
+          }) as OverwriteResolvable,
+      ),
       { id: creatorId, allow: accessBits(), type: OverwriteType.Member },
       {
         id: guild.members.me?.id ?? guild.client.user.id,
@@ -288,6 +332,20 @@ export class TicketService extends BaseRepository<Ticket> {
     panel: TicketPanelConfig,
   ): Promise<ClaimTicketResult> {
     const ticket = await this.getTicketOrThrow(ticketId);
+
+    if (ticket.claimableRoles.length > 0) {
+      const open = ticket.claimableRoles.filter((slot) => !slot.claimedBy && !slot.closed);
+      const slot =
+        open.find((candidate) => member.roles.cache.has(candidate.roleId)) ??
+        (memberIsAdministrator(member) ? open[0] : undefined);
+      if (!slot) {
+        if (open.length === 0) {
+          throw new ConflictError(M.claim.alreadyClaimed(ticket.claimedByDiscordId ?? "someone"));
+        }
+        throw new ValidationError(M.claim.notEligible);
+      }
+      return this.claimRole(ticketId, member, slot.roleId);
+    }
 
     const gate = canClaimTicket(member, panel, ticket);
     if (!gate.ok) {
@@ -345,7 +403,9 @@ export class TicketService extends BaseRepository<Ticket> {
   ): Promise<void> {
     const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
     if (!channel || !("permissionOverwrites" in channel)) return;
-    await channel.permissionOverwrites.edit(panel.supportRoleId, { ViewChannel: false });
+    if (!panelIsAdminOnly(panel)) {
+      await channel.permissionOverwrites.edit(panel.supportRoleId, { ViewChannel: false });
+    }
     await channel.permissionOverwrites.edit(claimerId, {
       ViewChannel: true,
       SendMessages: true,
@@ -353,6 +413,158 @@ export class TicketService extends BaseRepository<Ticket> {
       AttachFiles: true,
       EmbedLinks: true,
     });
+  }
+
+  async claimRole(ticketId: string, member: GuildMember, roleId: RoleId): Promise<RoleClaimResult> {
+    const ticket = await this.getTicketOrThrow(ticketId);
+    if (ticket.guildId !== member.guild.id) throw new ValidationError(M.common.wrongGuild);
+
+    const slot = ticket.claimableRoles.find((candidate) => candidate.roleId === roleId);
+    if (!slot) throw new ValidationError(M.roleClaim.slotGone);
+    if (!CLAIMABLE_STATUSES.includes(ticket.status)) throw new ValidationError(M.claim.notOpen);
+    if (member.id === ticket.userId) throw new ValidationError(M.claim.cantClaimOwn);
+    if (!memberIsAdministrator(member) && !member.roles.cache.has(roleId)) {
+      throw new ValidationError(M.roleClaim.notRoleMember);
+    }
+    if (slot.claimedBy || slot.closed) throw new ConflictError(M.roleClaim.slotClosed);
+
+    const staff = await staffService.ensure(member.id, ticket.guildId);
+    const now = new Date();
+    const openSlot = {
+      $elemMatch: { roleId, claimedBy: { $exists: false }, closed: { $ne: true } },
+    };
+
+    let claimed = await this.model
+      .findOneAndUpdate(
+        {
+          ticketId,
+          status: TicketStatus.OPEN,
+          claimedBy: { $exists: false },
+          claimableRoles: openSlot,
+        },
+        {
+          $set: {
+            claimedBy: staff._id,
+            claimedByDiscordId: member.id,
+            status: TicketStatus.CLAIMED,
+            claimedAt: now,
+            "claimableRoles.$[mine].claimedBy": member.id,
+            "claimableRoles.$[mine].claimedAt": now,
+            "claimableRoles.$[other].closed": true,
+          },
+        },
+        {
+          returnDocument: "after",
+          arrayFilters: [
+            { "mine.roleId": roleId },
+            { "other.roleId": { $ne: roleId }, "other.claimedBy": { $exists: false } },
+          ],
+        },
+      )
+      .exec();
+    const tookTicket = !!claimed;
+
+    if (!claimed) {
+      claimed = await this.model
+        .findOneAndUpdate(
+          { ticketId, status: TicketStatus.CLAIMED, claimableRoles: openSlot },
+          {
+            $set: {
+              "claimableRoles.$[mine].claimedBy": member.id,
+              "claimableRoles.$[mine].claimedAt": now,
+            },
+          },
+          { returnDocument: "after", arrayFilters: [{ "mine.roleId": roleId }] },
+        )
+        .exec();
+    }
+    if (!claimed) throw new ConflictError(M.roleClaim.slotClosed);
+
+    const { pointAwarded } = await applyTicketClaimCredit(staff._id, ticketId);
+
+    await this.grantMemberAccess(member.guild, claimed.channelId, member.id).catch((err) =>
+      log.warn("role claim overwrite update failed", err),
+    );
+    await this.refreshRoleClaimMessages(member.guild, claimed);
+
+    const panel = await this.panelFor(claimed).catch(() => null);
+    if (panel) {
+      await ticketLogService.record(TicketLogAction.TICKET_CLAIMED, {
+        guild: member.guild,
+        panel,
+        ticketId,
+        actorId: member.id,
+      });
+    }
+    await ticketEvents.emitRoleClaimed({ guild: member.guild, ticket: claimed, roleId, claimerId: member.id });
+
+    return { ticket: claimed, pointAwarded, roleId, tookTicket };
+  }
+
+  async addClaimableRole(ticketId: string, guild: Guild, roleId: RoleId): Promise<TicketDoc> {
+    const ticket = await this.getTicketOrThrow(ticketId);
+    if (!CLAIMABLE_STATUSES.includes(ticket.status)) throw new ValidationError(M.claim.notOpen);
+    if (!guild.roles.cache.has(roleId)) throw new NotFoundError("role", { roleId });
+
+    const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
+    if (!channel || !("permissionOverwrites" in channel)) {
+      throw new NotFoundError("ticket channel", { ticketId });
+    }
+    await channel.permissionOverwrites.edit(roleId, VIEW_ONLY);
+
+    await this.model
+      .updateOne(
+        { ticketId, "claimableRoles.roleId": { $ne: roleId } },
+        { $push: { claimableRoles: { roleId } } },
+      )
+      .exec();
+    await this.announceClaimableRoles(ticketId, guild);
+    return this.getTicketOrThrow(ticketId);
+  }
+
+  async announceClaimableRoles(ticketId: string, guild: Guild): Promise<void> {
+    const ticket = await this.getTicketOrThrow(ticketId);
+    const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
+    if (!channel?.isTextBased() || !("send" in channel)) return;
+
+    for (const slot of ticket.claimableRoles) {
+      if (slot.messageId) continue;
+      const message = await channel
+        .send(buildRoleClaimMessage(ticketId, slot, ticket.claimedByDiscordId))
+        .catch((err) => {
+          log.warn(`role claim message for ${ticketId} failed`, err);
+          return null;
+        });
+      if (!message) continue;
+      await this.model
+        .updateOne(
+          { ticketId, "claimableRoles.roleId": slot.roleId },
+          { $set: { "claimableRoles.$.messageId": message.id } },
+        )
+        .exec();
+    }
+  }
+
+  private async refreshRoleClaimMessages(guild: Guild, ticket: Ticket): Promise<void> {
+    const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
+    if (!channel?.isTextBased()) return;
+    for (const slot of ticket.claimableRoles) {
+      if (!slot.messageId) continue;
+      const message = await channel.messages.fetch(slot.messageId).catch(() => null);
+      await message
+        ?.edit(buildRoleClaimMessage(ticket.ticketId, slot, ticket.claimedByDiscordId))
+        .catch((err) => log.warn(`role claim message refresh failed for ${ticket.ticketId}`, err));
+    }
+  }
+
+  private async grantMemberAccess(
+    guild: Guild,
+    channelId: ChannelId,
+    userId: UserId,
+  ): Promise<void> {
+    const channel = await guild.channels.fetch(channelId).catch(() => null);
+    if (!channel || !("permissionOverwrites" in channel)) return;
+    await channel.permissionOverwrites.edit(userId, GRANT_ACCESS);
   }
 
   async transferTicket(input: TransferTicketInput): Promise<TransferTicketResult> {
@@ -591,6 +803,7 @@ export class TicketService extends BaseRepository<Ticket> {
       ticketId,
       actorId,
     });
+    await ticketEvents.emitEnded({ guild, ticket: closed, actorId });
 
     let deleted = false;
     if (panel.close.delete) {
@@ -708,6 +921,7 @@ export class TicketService extends BaseRepository<Ticket> {
       ticketId,
       actorId,
     });
+    await ticketEvents.emitEnded({ guild, ticket: updated ?? ticket, actorId });
 
     return updated ?? ticket;
   }
@@ -756,6 +970,8 @@ export class TicketService extends BaseRepository<Ticket> {
     transcriptCache.untrack(input.channelId);
 
     if (!updated) return { handled: false, ticketId: ticket.ticketId };
+
+    await ticketEvents.emitEnded({ guild: input.guild, ticket: updated, actorId: actorId ?? "UNKNOWN" });
 
     await ticketLogService.record(TicketLogAction.TICKET_DELETED_MANUALLY, {
       guild: input.guild,

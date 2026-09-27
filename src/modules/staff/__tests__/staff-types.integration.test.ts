@@ -297,8 +297,9 @@ describe.skipIf(!hasDb)("Staff Types", () => {
   });
 
   it("resolves keywords in both languages and rejects unknown ones", () => {
-    expect(types.resolveKeyword("max")).toBe(StaffType.MAX);
+    expect(types.resolveKeyword("max")).toBeNull();
     expect(types.resolveKeyword("ماكس")).toBe(StaffType.MAX);
+    expect(types.resolveKeyword("dev")).toBe(StaffType.DEV);
     expect(types.resolveKeyword("مبرمج")).toBe(StaffType.DEV);
     expect(types.resolveKeyword("designer")).toBeNull();
     expect(types.isValidType(StaffType.MAX)).toBe(true);

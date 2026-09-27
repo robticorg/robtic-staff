@@ -1,98 +1,85 @@
-import { definePrefixCommand } from "../../../discord/prefix-command.ts";
+import { definePrefixCommand, type PrefixContext } from "../../../discord/prefix-command.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { STAFF_TIER_LABELS } from "../../../data/messages/hierarchy.ts";
-import { STAFF_TIER_KEYWORD_DEFINITIONS } from "../../../data/staff-tiers/index.ts";
+import { staffApplicationMessages } from "../../../data/staff-application/messages.ts";
 import { staffTypeLabel } from "../../../data/staff-types/index.ts";
-import { getLevelForTier } from "../../../modules/configuration/utils/staff-levels.ts";
+import type { StaffTier } from "../../../modules/configuration/types/enums.ts";
+import {
+  applicationContextService,
+  type ApplicationContext,
+} from "../../../modules/applications/services/application-context.service.ts";
+import { applicationDecisionService } from "../../../modules/applications/services/application-decision.service.ts";
+import {
+  acceptRequestFromArgs,
+  isEmptyAcceptRequest,
+  resolveAcceptRequest,
+} from "../../../modules/staff/services/staff-accept-request.ts";
 import {
   memberActor,
   staffManagementService,
+  type AcceptResult,
 } from "../../../modules/staff/services/staff-management.service.ts";
-import { staffTypeService } from "../../../modules/staff/services/staff-type.service.ts";
-import { AcceptArgProblem, parseAcceptArguments } from "../_shared/accept-args.ts";
 import { PrefixAbort, requireApplyManager } from "../_shared/guards.ts";
+import { extractUserIds } from "../_shared/parse.ts";
 import { requireTargetMember } from "../_shared/target.ts";
 
 const M = prefixMessages.staff;
+
+function acceptedReply(targetId: string, result: AcceptResult, tier: StaffTier | null): string {
+  const mention = `<@${targetId}>`;
+  const tierLabel = tier ? STAFF_TIER_LABELS[tier] : null;
+
+  if (tierLabel && result.staffType) {
+    return M.acceptedWithTierAndType(
+      mention,
+      result.level,
+      tierLabel,
+      staffTypeLabel(result.staffType),
+    );
+  }
+  if (tierLabel) return M.acceptedWithTier(mention, result.level, tierLabel);
+  if (result.staffType) {
+    return M.acceptedWithType(mention, result.level, staffTypeLabel(result.staffType));
+  }
+  return M.accepted(mention, result.level);
+}
+
+async function acceptInApplication(ctx: PrefixContext, application: ApplicationContext) {
+  const applicantId = application.application.userId;
+  const named = [...ctx.mentionedUsers.map((u) => u.id), ...extractUserIds(ctx.args)];
+  if (named.some((id) => id !== applicantId)) {
+    throw new PrefixAbort(staffApplicationMessages.decision.wrongTarget(applicantId));
+  }
+
+  const request = acceptRequestFromArgs(ctx.args, applicantId);
+  const outcome = await applicationDecisionService.accept(
+    ctx.member,
+    application,
+    isEmptyAcceptRequest(request) ? null : request,
+  );
+  await ctx.reply(acceptedReply(outcome.applicantId, outcome.result, request.tier));
+}
 
 export default definePrefixCommand({
   name: "accept",
   category: "staff",
   async execute(ctx) {
+    const application = await applicationContextService.forChannel(ctx.guild.id, ctx.channel.id);
+    if (application) return acceptInApplication(ctx, application);
+
     await requireApplyManager(ctx);
-    const target = await requireTargetMember(ctx, "!accept @user [level|tier] [type]");
+    const target = await requireTargetMember(ctx, "!accept @user [level|tier|max] [type]");
 
-    const parsed = parseAcceptArguments(ctx.args, target.id);
-    switch (parsed.problem) {
-      case AcceptArgProblem.UNKNOWN_TOKEN: {
-        const available = [
-          ...staffTypeService.getAvailableKeywords(),
-          ...STAFF_TIER_KEYWORD_DEFINITIONS.map((d) => d.slug),
-        ].join(", ");
-        throw new PrefixAbort(M.unknownStaffType(parsed.token ?? "", available));
-      }
-      case AcceptArgProblem.DUPLICATE_LEVEL:
-        throw new PrefixAbort(M.duplicateStaffLevel);
-      case AcceptArgProblem.DUPLICATE_TYPE:
-        throw new PrefixAbort(M.duplicateStaffType);
-      case AcceptArgProblem.DUPLICATE_TIER:
-        throw new PrefixAbort(M.duplicateStaffTier);
-      case AcceptArgProblem.LEVEL_AND_TIER:
-        throw new PrefixAbort(M.levelAndTier);
-    }
-
-    let level = parsed.level;
-    if (parsed.tier) {
-      const tierLevel = await getLevelForTier(ctx.guild.id, parsed.tier);
-      if (tierLevel === null) {
-        const slug =
-          STAFF_TIER_KEYWORD_DEFINITIONS.find((d) => d.tier === parsed.tier)?.slug ??
-          parsed.tier.toLowerCase();
-        throw new PrefixAbort(M.tierNotConfigured(STAFF_TIER_LABELS[parsed.tier], slug));
-      }
-      level = tierLevel;
-    }
-
-    if (parsed.staffType) {
-      const roleId = await staffTypeService.getConfiguredRole(ctx.guild.id, parsed.staffType);
-      if (!roleId) {
-        const definition = staffTypeService.definition(parsed.staffType);
-        throw new PrefixAbort(
-          M.staffTypeRoleMissing(
-            staffTypeLabel(parsed.staffType),
-            definition?.slug ?? parsed.staffType.toLowerCase(),
-          ),
-        );
-      }
-    }
-
+    const request = await resolveAcceptRequest(
+      ctx.guild.id,
+      acceptRequestFromArgs(ctx.args, target.id),
+    );
     const result = await staffManagementService.accept(
       target,
       memberActor(ctx.member),
-      level,
-      parsed.staffType,
+      request.level,
+      request.staffType,
     );
-
-    const mention = `<@${target.id}>`;
-    const tierLabel = parsed.tier ? STAFF_TIER_LABELS[parsed.tier] : null;
-
-    if (tierLabel && result.staffType) {
-      await ctx.reply(
-        M.acceptedWithTierAndType(
-          mention,
-          result.level,
-          tierLabel,
-          staffTypeLabel(result.staffType),
-        ),
-      );
-    } else if (tierLabel) {
-      await ctx.reply(M.acceptedWithTier(mention, result.level, tierLabel));
-    } else if (result.staffType) {
-      await ctx.reply(
-        M.acceptedWithType(mention, result.level, staffTypeLabel(result.staffType)),
-      );
-    } else {
-      await ctx.reply(M.accepted(mention, result.level));
-    }
+    await ctx.reply(acceptedReply(target.id, result, request.tier));
   },
 });

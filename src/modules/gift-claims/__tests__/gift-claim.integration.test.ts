@@ -47,8 +47,12 @@ class RoleCache extends Map<string, { id: string }> {
   }
 }
 
-function claimant(id: string) {
-  return { id, guild: { id: GUILD } } as never;
+const GIFT_BLACKLIST_ROLE = "gc-gift-blacklist-role";
+
+function claimant(id: string, roleIds: string[] = []) {
+  const cache = new RoleCache();
+  for (const roleId of roleIds) cache.set(roleId, { id: roleId });
+  return { id, guild: { id: GUILD }, roles: { cache } } as never;
 }
 
 function manager(id: string, isAdmin = true) {
@@ -164,15 +168,23 @@ describe.skipIf(!hasDb)("Gift Claim (self-service modal + review channel)", () =
     });
   });
 
-  it("canCreate: blocked while a claim is open, allowed again after it is rejected", async () => {
-    const claim = await openClaim("winner-2");
-    expect((await giftClaimService.canCreate(GUILD, "winner-2")).ok).toBe(false);
-    await giftClaimService.rejectClaim({
-      claimId: claim.claimId,
-      manager: manager("gm-z"),
-      reason: "fake",
+  it("canCreate: open claims never block, only the gift blacklist does", async () => {
+    await openClaim("winner-2");
+    expect((await giftClaimService.canCreate(claimant("winner-2"))).ok).toBe(true);
+
+    await RoleConfigModel.create({
+      guildId: GUILD,
+      roleId: GIFT_BLACKLIST_ROLE,
+      type: RoleConfigType.GIFT_BLACKLIST,
     });
-    expect((await giftClaimService.canCreate(GUILD, "winner-2")).ok).toBe(true);
+    try {
+      expect(
+        (await giftClaimService.canCreate(claimant("winner-2", [GIFT_BLACKLIST_ROLE]))).ok,
+      ).toBe(false);
+      expect((await giftClaimService.canCreate(claimant("winner-2"))).ok).toBe(true);
+    } finally {
+      await RoleConfigModel.deleteMany({ guildId: GUILD, type: RoleConfigType.GIFT_BLACKLIST });
+    }
   });
 
   it("approve → APPROVED + reviewedBy + activity; unauthorized refused; double approve → one wins", async () => {

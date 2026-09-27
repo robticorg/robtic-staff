@@ -72,7 +72,7 @@ export async function runCreateTicket(
 }
 
 function friendly(err: DomainError): string {
-  if (err.code === "CONFLICT") return err.message;
+  if (err.code === "CONFLICT" || err.code === "TICKET_BLACKLISTED") return err.message;
   if (err.code === "TICKET_CATEGORY_INVALID") return M.create.categoryMissing;
   if (err.code === "TICKET_PANEL_GONE") return M.create.unknownPanel;
   return M.create.failed;

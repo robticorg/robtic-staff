@@ -22,6 +22,10 @@ export const STAFF_TAG_MANAGED_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
   RoleConfigType.APPLY_MANAGER,
+  RoleConfigType.DEVELOPER_MANAGER,
+  RoleConfigType.DESIGNER_MANAGER,
+  RoleConfigType.EDITOR_MANAGER,
+  RoleConfigType.GIRLS_MANAGER,
   RoleConfigType.WARN_1,
   RoleConfigType.WARN_2,
   RoleConfigType.WARN_3,
@@ -29,6 +33,10 @@ export const STAFF_TAG_MANAGED_ROLE_TYPES: readonly RoleConfigType[] = [
 
 export const STAFF_TAG_PROTECTED_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.BLACKLIST,
+  RoleConfigType.TICKET_BLACKLIST,
+  RoleConfigType.GIFT_BLACKLIST,
+  RoleConfigType.GIRL_NOT_VERIFIED,
+  RoleConfigType.GIRL_VERIFIED,
   RoleConfigType.IGNORE,
   RoleConfigType.MUTE,
   RoleConfigType.JAIL,

@@ -1,4 +1,8 @@
 import type { ChannelId, RoleId } from "../../shared/types/index.ts";
+import type {
+  FastAccessContext,
+  RoleConfigType,
+} from "../../modules/configuration/types/enums.ts";
 
 export const UNSET_ID = "000000000000000000";
 
@@ -63,6 +67,10 @@ export interface TicketPanelConfig {
   hidden?: boolean;
 
   supportRoleId: RoleId;
+
+  fastAccessContext?: FastAccessContext;
+
+  blacklistSlot?: RoleConfigType | null;
 
   createsChannel?: boolean;
 

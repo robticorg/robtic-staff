@@ -10,7 +10,8 @@ import { modmailCaseService } from "../modmail/services/modmail-case.service.ts"
 import { modmailService } from "../modmail/services/modmail.service.ts";
 import { reportPermissionService } from "../modmail/services/report-permissions.service.ts";
 import { staffPermissionService } from "../staff/services/staff-permissions.service.ts";
-import { detectFastAccessContext } from "./context-detect.ts";
+import { memberIsAdministrator } from "../tickets/services/ticket-permissions.ts";
+import { detectFastAccessContext, type DetectedContext } from "./context-detect.ts";
 
 const log = logger.child("fast-access");
 
@@ -35,19 +36,18 @@ class FastAccessRunner {
     if (!entry) return { delivered: false, reason: "UNKNOWN" };
     if (!entry.enabled) return { delivered: false, reason: "DISABLED" };
 
-    if (!(await staffPermissionService.canActAsStaff(input.member))) {
-      return { delivered: false, reason: "NOT_STAFF" };
-    }
-
     const detected = await detectFastAccessContext(input.channelId, input.guildId);
     if (!detected || detected.context !== entry.contextType) {
       return { delivered: false, reason: "WRONG_CONTEXT" };
     }
 
+    const denied = await this.authorize(input.member, detected);
+    if (denied) return { delivered: false, reason: denied };
+
     const channel = await input.member.guild.channels.fetch(input.channelId).catch(() => null);
     if (!channel) return { delivered: false, reason: "WRONG_CONTEXT" };
 
-    if (detected.context === FastAccessContext.SUPPORT) {
+    if (detected.ticket) {
       if ("send" in channel) {
         await channel
           .send({ content: entry.message, allowedMentions: { parse: [] } })
@@ -72,6 +72,23 @@ class FastAccessRunner {
       thread: channel,
     });
     return { delivered: true, context: detected.context };
+  }
+
+  private async authorize(
+    member: GuildMember,
+    detected: DetectedContext,
+  ): Promise<"NOT_STAFF" | "NO_PERMISSION" | null> {
+    const ticket = detected.ticket;
+    if (ticket && ticket.claimableRoles.length > 0) {
+      const allowed =
+        memberIsAdministrator(member) ||
+        ticket.claimedByDiscordId === member.id ||
+        ticket.claimableRoles.some(
+          (slot) => slot.claimedBy === member.id || member.roles.cache.has(slot.roleId),
+        );
+      return allowed ? null : "NO_PERMISSION";
+    }
+    return (await staffPermissionService.canActAsStaff(member)) ? null : "NOT_STAFF";
   }
 }
 

@@ -19,7 +19,10 @@ import {
   fastAccessService,
   tryNormaliseFastAccessCommand,
 } from "../../modules/configuration/services/fast-access.service.ts";
-import { FastAccessContext } from "../../modules/configuration/types/enums.ts";
+import {
+  FAST_ACCESS_CONTEXT_VALUES,
+  FastAccessContext,
+} from "../../modules/configuration/types/enums.ts";
 import { staffPermissionService } from "../../modules/staff/services/staff-permissions.service.ts";
 import { CommandError, requireGuild, requireMember } from "../_shared/guards.ts";
 
@@ -53,6 +56,8 @@ const data = new SlashCommandBuilder()
           .addChoices(
             { name: "المودميل / البلاغات", value: FastAccessContext.MODMAIL },
             { name: "الدعم (التكتات)", value: FastAccessContext.SUPPORT },
+            { name: "التقديم على الستاف", value: FastAccessContext.STAFF_APPLICATION },
+            { name: "نقل الستاف", value: FastAccessContext.STAFF_TRANSFER },
           ),
       ),
   )
@@ -86,7 +91,7 @@ async function handleAdd(interaction: ChatInputCommandInteraction): Promise<void
   const command = tryNormaliseFastAccessCommand(rawCmd);
   if (!command) throw new CommandError(M.invalidCommand);
   if (!message.trim()) throw new CommandError(M.emptyMessage);
-  if (context !== FastAccessContext.MODMAIL && context !== FastAccessContext.SUPPORT) {
+  if (!FAST_ACCESS_CONTEXT_VALUES.includes(context)) {
     throw new CommandError(M.invalidContext);
   }
   if (await fastAccessService.existsForCommand(guild.id, command)) {

@@ -13,6 +13,9 @@ import ticketHandover from "./ticket/handover.ts";
 import modmailEnd from "./modmail/end.ts";
 
 import staffAccept from "./staff/accept.ts";
+import staffFrom from "./staff/from.ts";
+import staffRefuse from "./staff/refuse.ts";
+import staffVerify from "./staff/verify.ts";
 import staffCome from "./staff/come.ts";
 import staffTransfer from "./staff/transfer.ts";
 import staffFire from "./staff/fire.ts";
@@ -46,6 +49,9 @@ export const prefixCommands: PrefixCommand[] = [
 
   staffCome,
   staffAccept,
+  staffFrom,
+  staffRefuse,
+  staffVerify,
   staffTransfer,
   staffFire,
   staffPrompt,

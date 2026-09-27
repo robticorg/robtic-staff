@@ -15,9 +15,9 @@ export interface StaffTypeDefinition {
 export const STAFF_TYPE_DEFINITIONS: readonly StaffTypeDefinition[] = [
   {
     id: StaffType.MAX,
-    slug: "max",
+    slug: "ماكس",
     label: "ماكس",
-    keywords: ["max", "ماكس"],
+    keywords: ["ماكس"],
     description: "تحديد رتبة نوع الستاف: ماكس",
   },
   {

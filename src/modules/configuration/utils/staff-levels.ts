@@ -239,6 +239,12 @@ export function getNumberedStaffRoles(guildId: GuildId): Promise<StaffRoleLevel[
   return getHierarchy(guildId).then((h) => h.levels.map((r) => ({ ...r })));
 }
 
+export async function getMaxLevel(guildId: GuildId): Promise<number | null> {
+  const { levels } = await getHierarchy(guildId);
+  if (levels.length === 0) return null;
+  return Math.max(...levels.map((rung) => rung.level));
+}
+
 export async function getLevelForTier(
   guildId: GuildId,
   tier: StaffTierType,
@@ -287,6 +293,7 @@ export const staffHierarchyService = {
   getTierForLevel,
   getTierForRole,
   getLevelForTier,
+  getMaxLevel,
   highestLevelFromRoleIds,
   getAccessRoles,
   isAccessRole,

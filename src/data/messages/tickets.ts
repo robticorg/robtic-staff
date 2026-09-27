@@ -60,6 +60,21 @@ export const ticketMessages = {
     threadNote: (userMention: string) => `${E.staff} تم الاستلام من ${userMention}.`,
   },
 
+  roleClaim: {
+    waiting: (roleId: string) =>
+      `تمت إضافة <@&${roleId}> إلى التذكرة.
+بانتظار أحد المسؤولين لاستلام الطلب.`,
+    claimedBy: (userId: string) => `تم استلام الطلب بواسطة <@${userId}>.`,
+    button: "استلام الطلب",
+    notRoleMember: `${E.error} هذا الزر لأعضاء الرتبة المضافة بس.`,
+    slotGone: `${E.error} هذي الرتبة ما عادت مضافة لهذا التكت.`,
+    slotClosed: `${E.warning} تم استلام هذا الطلب من قبل.`,
+  },
+
+  blacklist: {
+    blocked: `${E.error} ما تقدر تفتح هذا النوع من التكتات لأنك في البلاك ليست.`,
+  },
+
   ticketButtons: {
     claim: "استلام",
     options: "خيارات",

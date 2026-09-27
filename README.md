@@ -960,6 +960,61 @@ the demission decision has already replaced.
 
 ---
 
+## Staff Applications and Transfers
+
+An option in the **existing main ticket panel** — «التقديم أو النقل إلى الستاف» —
+not a separate panel. Everything runs on `TicketService`; `src/modules/applications`
+only adds the application record and its flow.
+
+- **First modal**: الاسم والعمر والمدينة, نوع الطلب (تقديم / نقل), the optional
+  «مين عرفك على الفريق؟» user select, and the rules checkbox. The recruiter is
+  validated server-side (in the guild, not the applicant, Owner tier or above per
+  the hierarchy) on submit and again when the ticket is created.
+- **Apply**: continue → gender → department (Developer / Designer / Editor / Staff)
+  → `STAFF_APPLICATION` ticket. Managers: the department manager, falling back to the
+  Apply Manager; a girl's application also adds the Girls Manager and gives the
+  Girl Not Verified role. `!verify @user` / `!توثيق` (Girls Manager or admin) swaps
+  it for Girl Verified.
+- **Transfer**: conditions → member count, online count, numeric role order
+  (optional invite link to verify the counts) → 4–10 proof images, stored in
+  MongoDB → `STAFF_TRANSFER_APPLICATION` ticket for the Transfer Manager.
+  `StaffTransferEvaluationService` shows «الرتبة المتوقعة»; under 4000 members or a
+  role order below the Owner band marks the application ineligible.
+- **Claimable manager roles** (generic, in `TicketService`): each manager role can
+  view but not write, with its own «استلام الطلب» button. The first claim takes the
+  ticket (atomic, +1 `TICKET_CLAIM` point) and closes the other roles' buttons; a
+  role added later gets a fresh view-only slot. `!claim` picks the member's slot.
+- **Decisions** inside the ticket: `!accept` / `!accept 40` / `!accept max` /
+  `!accept owner` go through `staffManagementService.accept` with
+  `canAcceptApplication` (the manager's own tier ceiling still applies);
+  `!refuse <reason>` / `!رفض`. `!from @owner` sets the recruiter if none exists;
+  an administrator can replace one with `!from @owner replace`.
+- **Blacklists** (`/role set`): Ticket Blacklist blocks normal tickets, Staff
+  Blacklist (the existing blacklist role) blocks applications, Gift Blacklist
+  blocks gift claims. Blacklist roles and an active jail are restored on rejoin.
+
+## Internal points API
+
+`POST /internal/staff/points` with `Authorization: Bearer $INTERNAL_API_TOKEN`,
+served by `Bun.serve` on `INTERNAL_API_HOST:INTERNAL_API_PORT` (default
+`127.0.0.1:8787`, disabled without a token). Body: `guildId`, `userId`, `amount`,
+optional `type`, `reason`, `idempotencyKey`. Every award is a
+`StaffPointTransaction`; a repeated `idempotencyKey` is answered without a second
+transaction.
+
+## Staff identity requirement
+
+A staff member is compliant with **either** this server's official Server Tag
+(Discord's identity state, never the tag text) **or** an accepted identifier
+(`robtic`, `rtc`, `rc` — `src/data/staff-identity/config.ts`) in their server
+display name. `StaffIdentityRequirementService` folds styled text (NFKC, enclosed
+letters, a confusables table, decorations) before matching; `rc`/`rtc` match only
+as their own word or a case-separated part (`NameRC`, `RcName`), never inside
+words like `Marc` or `ARC`. Staff roles are restricted only when **both** are
+missing; tag changes (`userUpdate`) and display-name changes (`guildMemberUpdate`,
+global name via `userUpdate`) re-check the live member. Active restrictions are
+re-settled on startup.
+
 ## Appeals
 
 Fully implemented — see **[Appeal System](#appeal-system)**. A user appeals a

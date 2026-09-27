@@ -14,6 +14,9 @@ import { DECIDABLE_CLAIM_STATUSES, GiftClaimAuditAction, GiftClaimStatus } from 
 import { giftClaimAuditService } from "./gift-claim-audit.service.ts";
 import { giftClaimPermissionService } from "./gift-claim-permissions.ts";
 import { requireGiftClaimClient } from "../runtime.ts";
+import { giftClaimPanel } from "../../../data/tickets/panels/gift-claim.ts";
+import { ticketMessages } from "../../../data/messages/tickets.ts";
+import { isBlacklistedFor } from "../../tickets/services/ticket-blacklist.ts";
 
 const log = logger.child("gift-claim");
 const M = giftClaimMessages;
@@ -67,12 +70,15 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
     return GiftClaimModel.find({ guildId, userId }).sort({ createdAt: -1 }).exec();
   }
 
-  async canCreate(_guildId: GuildId, _userId: UserId): Promise<CanCreateResult> {
+  async canCreate(member: GuildMember): Promise<CanCreateResult> {
+    if (await isBlacklistedFor(member, giftClaimPanel)) {
+      return { ok: false, message: ticketMessages.blacklist.blocked };
+    }
     return { ok: true };
   }
 
   async createFromModal(input: CreateFromModalInput): Promise<{ claim: ClaimDoc }> {
-    const gate = await this.canCreate(input.guildId, input.member.id);
+    const gate = await this.canCreate(input.member);
     if (!gate.ok) {
       throw new GiftClaimError("GIFT_CLAIM_OPEN", gate.message ?? M.create.alreadyClaimed(""));
     }

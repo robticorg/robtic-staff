@@ -3,6 +3,7 @@ import type { RoleId } from "../../../shared/types/index.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { sleep } from "../../../shared/utils/sleep.ts";
 import { serverTagConfig } from "../../../data/server-tag/config.ts";
+import { staffIdentityRequirementService } from "../../staff-identity/index.ts";
 import { staffPermissionService } from "../../staff/services/staff-permissions.service.ts";
 import { getServerTagClient } from "../runtime.ts";
 import { isUsingGuildTag, serverTagService } from "./server-tag.service.ts";
@@ -27,6 +28,8 @@ export interface AuditMemberInput {
 
   isStaff: boolean;
   hasActiveRestriction: boolean;
+
+  displayNameCompliant?: boolean;
 }
 
 export function decideAuditAction(input: AuditMemberInput): TagAuditAction {
@@ -37,6 +40,9 @@ export function decideAuditAction(input: AuditMemberInput): TagAuditAction {
   }
 
   if (input.hasTagRole) return TagAuditAction.REVOKE;
+  if (input.displayNameCompliant) {
+    return input.hasActiveRestriction ? TagAuditAction.LIFT : TagAuditAction.NONE;
+  }
   if (input.isStaff && !input.hasActiveRestriction) return TagAuditAction.REVOKE;
   return TagAuditAction.NONE;
 }
@@ -97,6 +103,8 @@ export class ServerTagAuditService {
         hasTagRole: member.roles.cache.has(tagRoleId),
         isStaff: holdsStaffRole(member, staffRoleIds),
         hasActiveRestriction: restricted.has(member.id),
+        displayNameCompliant:
+          staffIdentityRequirementService.containsOfficialIdentifier(member.displayName) !== null,
       });
 
       if (action === TagAuditAction.NONE) {
@@ -149,9 +157,9 @@ export class ServerTagAuditService {
   }
 
   private apply(guild: Guild, userId: string, action: TagAuditAction): Promise<unknown> {
-    return action === TagAuditAction.REVOKE
-      ? serverTagService.handleTagRemoved(guild, userId)
-      : serverTagService.handleTagAdded(guild, userId);
+    if (action === TagAuditAction.REVOKE) return serverTagService.handleTagRemoved(guild, userId);
+    if (action === TagAuditAction.LIFT) return serverTagService.handleIdentityChange(guild, userId);
+    return serverTagService.handleTagAdded(guild, userId);
   }
 
   async auditAll(): Promise<AuditTally> {

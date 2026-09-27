@@ -4,7 +4,7 @@ import { serverTagMessages } from "../../../data/server-tag/messages.ts";
 import type { StaffTagRestrictionDocument } from "../models/staff-tag-restriction.model.ts";
 import { StaffTagRestorationReason, StaffTagRestrictionStatus } from "../types/enums.ts";
 import { getServerTagClient } from "../runtime.ts";
-import { serverTagService } from "./server-tag.service.ts";
+import { fetchCurrentMember, serverTagService } from "./server-tag.service.ts";
 import { staffTagRestrictionService } from "./staff-tag-restriction.service.ts";
 import { serverTagLogService } from "./server-tag-log.service.ts";
 
@@ -81,6 +81,28 @@ export class ServerTagExpirationService {
     if (outcome === "staff-removed") return "staff-removed";
     if (outcome === "already") return "already";
     return "blocked";
+  }
+
+  async reconcileActive(now: Date = new Date()): Promise<number> {
+    const client = getServerTagClient();
+    if (!client) return 0;
+
+    let settled = 0;
+    for (const guild of client.guilds.cache.values()) {
+      const staffIds = await staffTagRestrictionService.listActiveStaffIds(guild.id);
+      for (const staffId of staffIds) {
+        try {
+          const member = await fetchCurrentMember(guild, staffId);
+          if (!member) continue;
+          const outcome = await serverTagService.reconcileMember(member, now);
+          if (outcome === "restored" || outcome === "staff-removed") settled += 1;
+        } catch (err) {
+          log.error(`startup reconcile failed for ${staffId} in ${guild.id}`, err);
+        }
+      }
+    }
+    if (settled > 0) log.info(`startup reconcile settled ${settled} restriction(s)`);
+    return settled;
   }
 
   start(): void {

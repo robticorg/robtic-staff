@@ -1,6 +1,7 @@
 import type { TicketPanelConfig } from "../types.ts";
 import { colors } from "../../config/colors.ts";
 import { GIFT_CLAIM_PANEL_ID } from "../../gift-claim/config.ts";
+import { RoleConfigType } from "../../../modules/configuration/types/enums.ts";
 
 export const giftClaimPanel: TicketPanelConfig = {
   id: GIFT_CLAIM_PANEL_ID,
@@ -9,6 +10,7 @@ export const giftClaimPanel: TicketPanelConfig = {
   emoji: "<:white_money_nc:1486103487979978823>",
 
   supportRoleId: "1536111011004678304",
+  blacklistSlot: RoleConfigType.GIFT_BLACKLIST,
 
   createsChannel: false,
 

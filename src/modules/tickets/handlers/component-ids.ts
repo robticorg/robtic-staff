@@ -8,6 +8,7 @@ export const TicketCustomId = {
   questionContinue: (panelId: string, page: number) => `${TK_NS}:qMore:${panelId}:${page}`,
 
   claim: (ticketId: string) => `${TK_NS}:claim:${ticketId}`,
+  roleClaim: (ticketId: string, roleId: string) => `${TK_NS}:roleClaim:${ticketId}:${roleId}`,
 
   options: (ticketId: string) => `${TK_NS}:options:${ticketId}`,
 

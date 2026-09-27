@@ -140,6 +140,8 @@ export class StaffManagementService {
     actor: StaffActor,
     requestedLevel: number | null,
     staffType: StaffType | null = null,
+    provenance: Record<string, unknown> = {},
+    options: { managerRoleIds?: readonly string[] } = {},
   ): Promise<AcceptResult> {
     const guildId = member.guild.id;
     const ladder = await ladderFor(guildId);
@@ -152,7 +154,14 @@ export class StaffManagementService {
 
     if (actor.kind === "MEMBER") {
       enforce(
-        await staffManagementAuthorizationService.canAccept(actor.member, member, level),
+        options.managerRoleIds
+          ? await staffManagementAuthorizationService.canAcceptApplication(
+              actor.member,
+              member,
+              level,
+              options.managerRoleIds,
+            )
+          : await staffManagementAuthorizationService.canAccept(actor.member, member, level),
       );
     }
 
@@ -188,13 +197,13 @@ export class StaffManagementService {
       previousRoleLevel: previousLevel,
       newRoleLevel: level,
 
-      metadata: { staffType: staffType ?? null },
+      metadata: { ...provenance, staffType: staffType ?? null },
     });
     await staffActivityService.create({
       staffId: staff._id,
       type: StaffActivityType.ACCEPT,
       referenceId: member.id,
-      metadata: { level, staffType: staffType ?? null },
+      metadata: { ...provenance, level, staffType: staffType ?? null },
     });
 
     return { level, previousLevel, staffType };

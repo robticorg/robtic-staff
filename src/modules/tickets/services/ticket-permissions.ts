@@ -114,13 +114,17 @@ export function decideClosedTicketAccess(input: ClosedTicketContextInput): boole
 }
 
 export function protectedTicketPrincipals(
-  ticket: Pick<Ticket, "userId" | "claimedByDiscordId">,
+  ticket: Pick<Ticket, "userId" | "claimedByDiscordId"> & Partial<Pick<Ticket, "claimableRoles">>,
   panel: Pick<TicketPanelConfig, "supportRoleId">,
 ): Set<string> {
   const ids = new Set<string>([ticket.userId]);
 
   if (!isUnsetId(panel.supportRoleId)) ids.add(panel.supportRoleId);
   if (ticket.claimedByDiscordId) ids.add(ticket.claimedByDiscordId);
+  for (const slot of ticket.claimableRoles ?? []) {
+    ids.add(slot.roleId);
+    if (slot.claimedBy) ids.add(slot.claimedBy);
+  }
   return ids;
 }
 

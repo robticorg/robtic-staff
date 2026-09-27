@@ -7,6 +7,9 @@ import {
 } from "../../../data/server-tag/config.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
+import { staffAcceptedRoleService } from "../../staff/services/staff-accepted-role.service.ts";
+import { staffRoleAssignmentService } from "../../staff/services/staff-role-assignment.service.ts";
+import { staffTypeService } from "../../staff/services/staff-type.service.ts";
 
 const log = logger.child("server-tag:roles");
 
@@ -31,17 +34,26 @@ export class RoleSnapshotService {
     const managedSlots = STAFF_TAG_MANAGED_ROLE_TYPES.filter(
       (type) => type !== RoleConfigType.STAFF,
     );
-    const [ladder, generalRoleId, ...slots] = await Promise.all([
-      roleConfigService.getStaffRoleLevels(guildId),
-      roleConfigService.getGeneralStaffRoleId(guildId),
-      ...managedSlots.map((type) => roleConfigService.getByType(guildId, type)),
-    ]);
+    const [ladder, generalRoleId, accessRoleIds, accepted, assigned, typed, ...slots] =
+      await Promise.all([
+        roleConfigService.getStaffRoleLevels(guildId),
+        roleConfigService.getGeneralStaffRoleId(guildId),
+        roleConfigService.getAccessRoleIds(guildId),
+        staffAcceptedRoleService.getConfig(guildId),
+        staffRoleAssignmentService.getManagedRoleIds(guildId),
+        staffTypeService.getManagedRoleIds(guildId),
+        ...managedSlots.map((type) => roleConfigService.getByType(guildId, type)),
+      ]);
 
     const protectedIds = await this.protectedRoleIds(guildId);
 
     const ids = new Set<RoleId>();
     for (const rung of ladder) ids.add(rung.roleId);
     if (generalRoleId) ids.add(generalRoleId);
+    for (const id of accessRoleIds) ids.add(id);
+    if (accepted) ids.add(accepted.roleId);
+    for (const id of assigned) ids.add(id);
+    for (const id of typed) ids.add(id);
     for (const slot of slots) if (slot) ids.add(slot.roleId);
     for (const id of protectedIds) ids.delete(id);
     return ids;

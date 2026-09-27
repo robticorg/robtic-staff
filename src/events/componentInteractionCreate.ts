@@ -6,6 +6,7 @@ import { routeFaqComponent } from "../modules/tickets/handlers/faq-add.handler.t
 import { routePunishmentComponent } from "../modules/punishment/handlers/index.ts";
 import { routeVacationComponent } from "../modules/vacation/handlers/index.ts";
 import { routeStaffSupportComponent } from "../modules/staff-support/handlers/component-router.ts";
+import { routeApplicationComponent } from "../modules/applications/handlers/component-router.ts";
 import { routeAppealComponent } from "../modules/appeals/handlers/index.ts";
 import { routeGiftClaimComponent } from "../modules/gift-claims/handlers/index.ts";
 import { routeWarningPanelComponent } from "../modules/warning-panel/handlers/component-router.ts";
@@ -17,6 +18,7 @@ const routers = [
   routePunishmentComponent,
   routeVacationComponent,
   routeStaffSupportComponent,
+  routeApplicationComponent,
   routeAppealComponent,
   routeGiftClaimComponent,
   routeWarningPanelComponent,
