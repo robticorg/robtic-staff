@@ -22,6 +22,8 @@ import {
 import { UserWarningModel } from "../../../modules/warnings/models/user-warning.model.ts";
 import { StaffWarningModel } from "../../../modules/warnings/models/staff-warning.model.ts";
 import { warningActionService } from "../../../modules/warnings/services/warning-actions.service.ts";
+import { StaffTagRestrictionModel } from "../../../modules/server-tag/models/staff-tag-restriction.model.ts";
+import { StaffTagRestrictionKind } from "../../../modules/server-tag/types/enums.ts";
 
 let hasDb = false;
 try {
@@ -46,13 +48,17 @@ interface FakeMember {
   guild: any;
   roles: { cache: Map<string, { id: string }>; add: (i: unknown) => Promise<void>; remove: (i: unknown) => Promise<void> };
   permissions: { has: () => boolean };
+  displayName: string;
+  user: { id: string; primaryGuild: null };
 }
 
-function fakeMember(id: string, starting: string[] = []): FakeMember {
+function fakeMember(id: string, starting: string[] = [], displayName = `RTC ${id}`): FakeMember {
   const cache = new Map(starting.map((r) => [r, { id: r }]));
   const guildRoles = new Map(ALL_ROLE_IDS.map((r) => [r, { id: r, name: r }]));
   const member: FakeMember = {
     id,
+    displayName,
+    user: { id, primaryGuild: null },
     guild: {
       id: GUILD,
       roles: { cache: guildRoles, fetch: async (rid: string) => guildRoles.get(rid) ?? null },
@@ -95,6 +101,7 @@ async function cleanup(): Promise<void> {
     StaffHistoryModel.deleteMany({}),
     UserWarningModel.deleteMany({ guildId: GUILD }),
     StaffWarningModel.deleteMany({}),
+    StaffTagRestrictionModel.deleteMany({ guildId: GUILD }),
   ]);
 }
 
@@ -114,6 +121,26 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
     const staff = await staffService.get("staff-accept-1", GUILD);
     expect(staff?.status).toBe(StaffStatus.ACTIVE);
     expect(staff?.currentRoleLevel).toBe(2);
+  });
+
+  it("!accept without tag or identifier saves the staff record but holds the roles", async () => {
+    const member = fakeMember("staff-accept-untagged", [BLACKLIST], "Marc");
+    const result = await staffManagementService.accept(member as never, SYSTEM_ACTOR, 2);
+
+    expect(result.awaitingIdentity).not.toBeNull();
+    expect([...member.roles.cache.keys()]).toEqual([]);
+
+    const staff = await staffService.get(member.id, GUILD);
+    expect(staff?.status).toBe(StaffStatus.ACTIVE);
+    expect(staff?.currentRoleLevel).toBe(2);
+
+    const hold = await StaffTagRestrictionModel.findOne({
+      guildId: GUILD,
+      staffId: member.id,
+      isActive: true,
+    }).exec();
+    expect(hold?.kind).toBe(StaffTagRestrictionKind.AWAITING_IDENTITY);
+    expect([...(hold?.savedRoleIds ?? [])].sort()).toEqual(["r0", "r1", "r2", GENERAL].sort());
   });
 
   it("!prompt / !demote move the level and never exceed END or go below 0", async () => {

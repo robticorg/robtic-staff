@@ -1,4 +1,12 @@
-import { Events, type Interaction } from "discord.js";
+import {
+  ApplicationCommandOptionType,
+  Events,
+  type CommandInteractionOption,
+  type Interaction,
+} from "discord.js";
+import { AppError } from "../libs/errors/index.ts";
+import { ChannelConfigType } from "../modules/configuration/types/enums.ts";
+import { CommandLogOutcome, commandLogService } from "../modules/command-log/index.ts";
 import { defineEvent } from "../discord/event.ts";
 import { commandMap } from "../discord/registry.ts";
 import { handleGuardError } from "../commands/_shared/guards.ts";
@@ -30,15 +38,45 @@ export default defineEvent({
       return;
     }
 
+    let outcome: CommandLogOutcome = CommandLogOutcome.SUCCESS;
+    let detail: string | null = null;
     try {
       await command.execute(interaction);
     } catch (err) {
-      if (await handleGuardError(interaction, err)) return;
-      await handleInteractionError(interaction, err, {
-        scope: "slash-command",
-        action: interaction.commandName,
-        fallbackMessage: commonMessages.errors.commandCrashed,
+      detail = err instanceof AppError ? err.userMessage : err instanceof Error ? err.message : String(err);
+      if (await handleGuardError(interaction, err)) {
+        outcome = CommandLogOutcome.DENIED;
+      } else {
+        outcome = err instanceof AppError ? CommandLogOutcome.DENIED : CommandLogOutcome.ERROR;
+        await handleInteractionError(interaction, err, {
+          scope: "slash-command",
+          action: interaction.commandName,
+          fallbackMessage: commonMessages.errors.commandCrashed,
+        });
+      }
+    }
+
+    if (interaction.guild) {
+      void commandLogService.record(interaction.guild, {
+        slot: ChannelConfigType.COMMAND_LOG,
+        invocation: interaction.toString(),
+        actorId: interaction.user.id,
+        channelId: interaction.channelId,
+        targetIds: userOptionIds(interaction.options.data),
+        outcome,
+        detail,
       });
     }
   },
 });
+
+function userOptionIds(options: readonly CommandInteractionOption[]): string[] {
+  const ids: string[] = [];
+  for (const option of options) {
+    if (option.type === ApplicationCommandOptionType.User && typeof option.value === "string") {
+      ids.push(option.value);
+    }
+    if (option.options) ids.push(...userOptionIds(option.options));
+  }
+  return ids;
+}

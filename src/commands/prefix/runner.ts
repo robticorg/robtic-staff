@@ -9,7 +9,12 @@ import { prefixCommandAliases } from "../../data/commands/prefix-aliases.ts";
 import { prefixlessCommands } from "../../data/commands/prefixless.ts";
 import { prefixCommands } from "./index.ts";
 import { PrefixAbort } from "./_shared/guards.ts";
-import { parseBareMessage, parsePrefixMessage } from "./_shared/parse.ts";
+import { extractUserIds, parseBareMessage, parsePrefixMessage } from "./_shared/parse.ts";
+import {
+  CommandLogOutcome,
+  commandLogService,
+  prefixLogSlot,
+} from "../../modules/command-log/index.ts";
 
 const log = logger.child("prefix");
 
@@ -80,17 +85,36 @@ export async function runPrefixCommand(message: Message): Promise<boolean> {
       }),
   };
 
+  let outcome: CommandLogOutcome = CommandLogOutcome.SUCCESS;
+  let detail: string | null = null;
   try {
     await command.execute(ctx);
   } catch (err) {
     if (err instanceof PrefixAbort) {
+      outcome = CommandLogOutcome.DENIED;
+      detail = err.message || null;
       if (err.message) await safeMessageReply(message, err.message);
     } else if (err instanceof AppError) {
+      outcome = CommandLogOutcome.DENIED;
+      detail = err.userMessage;
       await safeMessageReply(message, err.userMessage);
     } else {
+      outcome = CommandLogOutcome.ERROR;
+      detail = err instanceof Error ? err.message : String(err);
       log.error(`!${parsed.commandName} failed`, err);
       await safeMessageReply(message, prefixMessages.common.genericError);
     }
   }
+
+  void commandLogService.record(message.guild, {
+    slot: prefixLogSlot(command.name, command.category),
+    invocation: message.content,
+    actorId: member.id,
+    channelId: message.channelId,
+    targetIds: [...ctx.mentionedUsers.map((u) => u.id), ...extractUserIds(ctx.args)],
+    outcome,
+    detail,
+    url: message.url,
+  });
   return true;
 }

@@ -1,21 +1,10 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { statsMessages } from "../../../data/messages/stats.ts";
-import {
-  StatsPeriod,
-  buildStatsText,
-  canViewStats,
-  parseStatsPeriod,
-  staffStatisticsService,
-} from "../../../modules/staff-stats/index.ts";
+import { canViewStats } from "../../../modules/staff-stats/index.ts";
+import { StatsView } from "../../../modules/staff-stats/handlers/component-ids.ts";
+import { renderStatsView } from "../../../modules/staff-stats/handlers/stats-view.ts";
 import { PrefixAbort } from "../_shared/guards.ts";
 import { firstUserTarget } from "../_shared/parse.ts";
-
-const PERIOD_WORDS = new Set([
-  "d", "day", "daily", "today",
-  "w", "week", "weekly",
-  "m", "month", "monthly",
-  "a", "all", "alltime", "all-time", "total",
-]);
 
 export default definePrefixCommand({
   name: "stats",
@@ -30,17 +19,13 @@ export default definePrefixCommand({
       throw new PrefixAbort(viewingSelf ? statsMessages.notStaff : statsMessages.managerOnlyOthers);
     }
 
-    const periodArg = ctx.args.find((a) => PERIOD_WORDS.has(a.toLowerCase()));
-    const period = periodArg ? parseStatsPeriod(periodArg) : StatsPeriod.ALL_TIME;
+    const card = await renderStatsView(
+      ctx.guild,
+      { viewerId: ctx.member.id, targetId },
+      StatsView.HOME,
+    );
+    if (!card) throw new PrefixAbort(statsMessages.noStaffRecord(`<@${targetId}>`));
 
-    const stats = await staffStatisticsService.getStaffStats({
-      guildId: ctx.guild.id,
-      staffId: targetId,
-      period,
-      detailed: access.detailed,
-    });
-    if (!stats.found) throw new PrefixAbort(statsMessages.noStaffRecord(`<@${targetId}>`));
-
-    await ctx.reply(buildStatsText(stats));
+    await ctx.replyWith(card);
   },
 });

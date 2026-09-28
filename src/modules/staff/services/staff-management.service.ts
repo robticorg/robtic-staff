@@ -24,7 +24,8 @@ import {
 } from "./staff-management-authorization.service.ts";
 import { staffAcceptedRoleService } from "./staff-accepted-role.service.ts";
 import { staffRoleAssignmentService } from "./staff-role-assignment.service.ts";
-import { syncStaffRoles } from "./staff-role-sync.service.ts";
+import { planStaffRoles, syncStaffRoles } from "./staff-role-sync.service.ts";
+import { staffIdentityRequirementService } from "../../staff-identity/index.ts";
 import { staffTypeService } from "./staff-type.service.ts";
 import type { StaffType } from "../types/enums.ts";
 
@@ -98,6 +99,9 @@ export interface AcceptResult {
   previousLevel: number;
 
   staffType: StaffType | null;
+
+  /** Accepted without a server tag or identifier in their name — roles are held until they add one. */
+  awaitingIdentity: { dmSent: boolean } | null;
 }
 export interface FireResult {
   blacklist: boolean;
@@ -178,16 +182,31 @@ export class StaffManagementService {
       ...(staffType ? { staffType } : {}),
     });
 
-    await syncStaffRoles(member, level, `Accepted as staff by ${actorId(actor)}`, {
-      clearBlacklist: true,
-    });
+    const reason = `Accepted as staff by ${actorId(actor)}`;
+    let awaitingIdentity: AcceptResult["awaitingIdentity"] = null;
 
-    if (staffType) {
-      await staffTypeService.assignType(
-        member,
-        staffType,
-        `Accepted as ${staffType} staff by ${actorId(actor)}`,
+    if (staffIdentityRequirementService.isIdentityCompliant(member).compliant) {
+      await syncStaffRoles(member, level, reason, { clearBlacklist: true });
+
+      if (staffType) {
+        await staffTypeService.assignType(
+          member,
+          staffType,
+          `Accepted as ${staffType} staff by ${actorId(actor)}`,
+        );
+      }
+    } else {
+      const plan = await planStaffRoles(guildId, level, { clearBlacklist: true });
+      const typeRoleId = staffType
+        ? await staffTypeService.getConfiguredRole(guildId, staffType)
+        : null;
+      const held = [...plan.add, ...(typeRoleId ? [typeRoleId] : [])];
+
+      await applyRoles(member, [], [...plan.remove, ...held], reason);
+      const { serverTagService } = await import(
+        "../../server-tag/services/server-tag.service.ts"
       );
+      awaitingIdentity = await serverTagService.holdUntilIdentity(member, held);
     }
 
     await staffHistoryService.record({
@@ -197,7 +216,11 @@ export class StaffManagementService {
       previousRoleLevel: previousLevel,
       newRoleLevel: level,
 
-      metadata: { ...provenance, staffType: staffType ?? null },
+      metadata: {
+        ...provenance,
+        staffType: staffType ?? null,
+        awaitingIdentity: awaitingIdentity !== null,
+      },
     });
     await staffActivityService.create({
       staffId: staff._id,
@@ -206,7 +229,7 @@ export class StaffManagementService {
       metadata: { ...provenance, level, staffType: staffType ?? null },
     });
 
-    return { level, previousLevel, staffType };
+    return { level, previousLevel, staffType, awaitingIdentity };
   }
 
   async fire(member: GuildMember, actor: StaffActor, blacklist: boolean): Promise<FireResult> {

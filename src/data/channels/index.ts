@@ -40,6 +40,11 @@ export const CHANNEL_SLOT_META: Record<ChannelConfigType, ChannelSlotMeta> = {
   [ChannelConfigType.TRANSFER_CATEGORY]: { label: "كاتيقوري النقل", group: "التقديم" },
   [ChannelConfigType.GIFT_DELIVERIES]: { label: "روم تسليم الهدايا", group: "المكافآت" },
   [ChannelConfigType.GIFT_DELIVERY_CATEGORY]: { label: "كاتيقوري تسليم الهدايا", group: "المكافآت" },
+  [ChannelConfigType.COMMAND_LOG]: { label: "لوق الأوامر (العام)", group: "اللوقات" },
+  [ChannelConfigType.JAIL_LOG]: { label: "لوق السجن", group: "اللوقات" },
+  [ChannelConfigType.STAFF_LOG]: { label: "لوق أوامر الستاف", group: "اللوقات" },
+  [ChannelConfigType.WARN_COMMAND_LOG]: { label: "لوق أوامر التحذير", group: "اللوقات" },
+  [ChannelConfigType.TICKET_LOG]: { label: "لوق أوامر التكتات", group: "اللوقات" },
 };
 
 export const CHANNEL_GROUP_ORDER: readonly string[] = [
@@ -51,6 +56,7 @@ export const CHANNEL_GROUP_ORDER: readonly string[] = [
   "المكافآت",
   "الدعم",
   "التقديم",
+  "اللوقات",
 ];
 
 export const CHANNEL_TYPE_CHOICES = CHANNEL_CONFIG_TYPE_VALUES.map((value) => ({

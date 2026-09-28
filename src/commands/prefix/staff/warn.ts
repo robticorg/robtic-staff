@@ -11,6 +11,7 @@ import { PrefixAbort } from "../_shared/guards.ts";
 import { requireTargetMember } from "../_shared/target.ts";
 import {
   evidenceUrls,
+  isProofExempt,
   loadWarnChannels,
   splitVerbalMarker,
   textAfterTarget,
@@ -50,7 +51,10 @@ export default definePrefixCommand({
 
     const { reason, isVerbal } = splitVerbalMarker(rawReason);
     if (!reason) throw new PrefixAbort(prefixMessages.warn.reasonRequired);
-    if (evidence.length === 0) throw new PrefixAbort(prefixMessages.warn.proofRequired);
+    const proofExempt = await isProofExempt(ctx.member);
+    if (evidence.length === 0 && !proofExempt) {
+      throw new PrefixAbort(prefixMessages.warn.proofRequired);
+    }
 
     const mention = `<@${target.id}>`;
 
@@ -61,6 +65,7 @@ export default definePrefixCommand({
         reason,
         issuer: ctx.member,
         evidence,
+        proofExempt,
       });
       const lines = [prefixMessages.warn.realRecorded(mention, result.level)];
       lines.push(...consequenceLines(mention, result.consequence));
@@ -74,6 +79,7 @@ export default definePrefixCommand({
       reason,
       issuer: ctx.member,
       evidence,
+      proofExempt,
     });
 
     const lines = [prefixMessages.warn.verbalRecorded(mention, reason)];

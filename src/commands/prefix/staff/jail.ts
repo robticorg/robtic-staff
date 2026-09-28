@@ -4,7 +4,7 @@ import { moderationActionService } from "../../../modules/punishment/services/mo
 import { staffPermissionService } from "../../../modules/staff/services/staff-permissions.service.ts";
 import { PrefixAbort } from "../_shared/guards.ts";
 import { requireTargetMember } from "../_shared/target.ts";
-import { evidenceUrls, textAfterTarget } from "../_shared/warn-config.ts";
+import { evidenceUrls, isProofExempt, textAfterTarget } from "../_shared/warn-config.ts";
 
 const M = prefixMessages.jail;
 
@@ -24,7 +24,9 @@ export default definePrefixCommand({
     if (!reason) throw new PrefixAbort(M.reasonRequired);
 
     const evidence = evidenceUrls(ctx.message);
-    if (evidence.length === 0) throw new PrefixAbort(M.proofRequired);
+    if (evidence.length === 0 && !(await isProofExempt(ctx.member))) {
+      throw new PrefixAbort(M.proofRequired);
+    }
 
     const result = await moderationActionService.jail({
       guild: ctx.guild,

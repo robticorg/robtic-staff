@@ -121,6 +121,12 @@ export const ChannelConfigType = {
 
   GIFT_DELIVERIES: "GIFT_DELIVERIES",
   GIFT_DELIVERY_CATEGORY: "GIFT_DELIVERY_CATEGORY",
+
+  COMMAND_LOG: "COMMAND_LOG",
+  JAIL_LOG: "JAIL_LOG",
+  STAFF_LOG: "STAFF_LOG",
+  WARN_COMMAND_LOG: "WARN_COMMAND_LOG",
+  TICKET_LOG: "TICKET_LOG",
 } as const;
 export type ChannelConfigType = (typeof ChannelConfigType)[keyof typeof ChannelConfigType];
 export const CHANNEL_CONFIG_TYPE_VALUES = Object.values(ChannelConfigType);

@@ -4,7 +4,9 @@ import type { GuildId, RoleId, Timestamps, UserId } from "../../../shared/types/
 import { shortId } from "../../../shared/utils/id.ts";
 import {
   STAFF_TAG_RESTORATION_REASON_VALUES,
+  STAFF_TAG_RESTRICTION_KIND_VALUES,
   STAFF_TAG_RESTRICTION_STATUS_VALUES,
+  StaffTagRestrictionKind,
   StaffTagRestrictionStatus,
   type StaffTagRestorationReason,
 } from "../types/enums.ts";
@@ -13,6 +15,8 @@ export interface StaffTagRestriction extends Timestamps {
   restrictionId: string;
   guildId: GuildId;
   staffId: UserId;
+
+  kind: StaffTagRestrictionKind;
 
   savedRoleIds: RoleId[];
 
@@ -41,6 +45,13 @@ const staffTagRestrictionSchema = new Schema<StaffTagRestriction>(
     restrictionId: { type: String, required: true, unique: true, default: () => shortId(10) },
     guildId: { type: String, required: true, index: true },
     staffId: { type: String, required: true, index: true },
+
+    kind: {
+      type: String,
+      enum: STAFF_TAG_RESTRICTION_KIND_VALUES,
+      default: StaffTagRestrictionKind.TAG_REMOVED,
+      required: true,
+    },
 
     savedRoleIds: { type: [String], default: [] },
 

@@ -90,6 +90,85 @@ export const statsMessages = {
       `${E.success} تم تصفير نقاط **${resetCount}** من أصل **${totalStaff}** عضو ستاف.`,
   },
 
+  card: {
+    title: (userId: string) => `## احصائيات <@${userId}>`,
+    tier: (label: string) => `**الرتبة:** ${label}`,
+    staffType: (label: string) => `**النوع:** ${label}`,
+    levelRole: (roleId: string | null, level: number) =>
+      roleId
+        ? `**رتبة المستوى:** <@&${roleId}> (المستوى ${level})`
+        : `**رتبة المستوى:** المستوى ${level}`,
+    lastRoleBeforeFire: (roleId: string | null, level: number) =>
+      roleId
+        ? `**آخر رتبة قبل الطرد:** <@&${roleId}> (المستوى ${level})`
+        : `**آخر رتبة قبل الطرد:** المستوى ${level}`,
+    acceptedBy: (userId: string | null) => `**قبله:** ${userId ? `<@${userId}>` : "النظام"}`,
+    acceptedAt: (at: Date) => `**تاريخ القبول:** <t:${Math.floor(at.getTime() / 1000)}:D>`,
+    firedBy: (userId: string | null, at: Date | null) =>
+      `**طرده:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` — <t:${Math.floor(at.getTime() / 1000)}:D>` : ""}`,
+    status: (label: string) => `**الحالة:** ${label}`,
+    totalPoints: (n: number) => `**إجمالي النقاط:** ${n}`,
+
+    statuses: {
+      ACTIVE: "اداري",
+      BREAK: "اداري (في بريك)",
+      FIRED: "مطرود",
+      BLACKLISTED: "مطرود (بلاك ليست)",
+      TRANSFERRED: "منقول",
+    } as Record<string, string>,
+
+    buttons: {
+      weeks: "النقاط الأسبوعية",
+      actions: "إحصائيات الأعمال",
+      tickets: "إحصائيات التكتات",
+      recent: "آخر النشاطات",
+      back: "رجوع",
+      prev: "السابق",
+      next: "التالي",
+    },
+
+    weeks: {
+      heading: (userId: string) => `## النقاط الأسبوعية — <@${userId}>`,
+      page: (page: number, pages: number) => `-# صفحة ${page} من ${pages}`,
+      week: (index: number, start: Date, end: Date, total: number) =>
+        `### الأسبوع ${index} — **${total}** نقطة\n-# <t:${Math.floor(start.getTime() / 1000)}:D> ← <t:${Math.floor(end.getTime() / 1000)}:D>`,
+      empty: "ما فيه نقاط في هذا الأسبوع.",
+      none: "ما عنده أي نقاط مسجّلة.",
+    },
+
+    actions: {
+      heading: (userId: string) => `## إحصائيات الأعمال — <@${userId}>`,
+      reportsGroup: "__البلاغات__",
+      staffGroup: "__إدارة الستاف__",
+      punishGroup: "__العقوبات والتحذيرات__",
+      otherGroup: "__أخرى__",
+      staffAccepted: "الستاف اللي قبلهم",
+      applicationsRefused: "التقديمات اللي رفضها",
+      staffFired: "الستاف اللي طردهم",
+      staffPromoted: "الترقيات",
+      staffDemoted: "التنزيلات",
+      girlsVerified: "البنات اللي وثّقهن",
+      jails: "السجن",
+      vacationsDecided: "الإجازات اللي قرّرها",
+    },
+
+    tickets: {
+      heading: (userId: string) => `## إحصائيات التكتات — <@${userId}>`,
+      totals: (claimed: number, completed: number, open: number) =>
+        `استلم **${claimed}** · أكمل **${completed}** · مفتوح حالياً **${open}**`,
+      panel: (name: string) => `### ${name}`,
+      panelRow: (stat: { claimed: number; completed: number; open: number }) =>
+        `استلم **${stat.claimed}** · أكمل **${stat.completed}** · مفتوح **${stat.open}**`,
+      empty: "ما استلم أي تكت.",
+    },
+
+    recent: {
+      heading: (userId: string) => `## آخر النشاطات — <@${userId}>`,
+    },
+
+    notYours: `${E.error} هذي الأزرار لصاحب الأمر بس — اكتب \`!stats\` بنفسك.`,
+  },
+
   labels: {
     memberFallback: "هذا العضو",
     today: "اليوم",
@@ -144,5 +223,6 @@ export const ACTIVITY_LABELS: Record<string, string> = {
   APPEAL_CLAIM: "استلم استئناف",
   APPEAL_ACCEPTED: "قبل استئناف",
   APPEAL_REJECTED: "رفض استئناف",
+  GIRL_VERIFY: "وثّق بنت",
   OTHER: "نشاط",
 };

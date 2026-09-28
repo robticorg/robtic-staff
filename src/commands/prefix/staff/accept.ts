@@ -1,6 +1,7 @@
 import { definePrefixCommand, type PrefixContext } from "../../../discord/prefix-command.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { STAFF_TIER_LABELS } from "../../../data/messages/hierarchy.ts";
+import { serverTagMessages } from "../../../data/server-tag/messages.ts";
 import { staffApplicationMessages } from "../../../data/staff-application/messages.ts";
 import { staffTypeLabel } from "../../../data/staff-types/index.ts";
 import type { StaffTier } from "../../../modules/configuration/types/enums.ts";
@@ -26,6 +27,12 @@ import { requireTargetMember } from "../_shared/target.ts";
 const M = prefixMessages.staff;
 
 function acceptedReply(targetId: string, result: AcceptResult, tier: StaffTier | null): string {
+  const line = acceptedLine(targetId, result, tier);
+  if (!result.awaitingIdentity) return line;
+  return `${line}\n${serverTagMessages.notice.awaitingIdentity(targetId, result.awaitingIdentity.dmSent)}`;
+}
+
+function acceptedLine(targetId: string, result: AcceptResult, tier: StaffTier | null): string {
   const mention = `<@${targetId}>`;
   const tierLabel = tier ? STAFF_TIER_LABELS[tier] : null;
 

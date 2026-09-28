@@ -48,6 +48,7 @@ export const StaffActivityType = {
   GIFT_CLAIM_REJECT: "GIFT_CLAIM_REJECT",
   GIFT_CLAIM_RE_REQUEST: "GIFT_CLAIM_RE_REQUEST",
   GIFT_CLAIM_FULFILL: "GIFT_CLAIM_FULFILL",
+  GIRL_VERIFY: "GIRL_VERIFY",
   OTHER: "OTHER",
 } as const;
 export type StaffActivityType = (typeof StaffActivityType)[keyof typeof StaffActivityType];

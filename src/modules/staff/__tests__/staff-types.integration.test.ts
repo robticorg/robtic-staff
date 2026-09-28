@@ -76,6 +76,7 @@ function addMember(guild: ReturnType<typeof makeGuild>, id: string, roleIds: str
   const member = {
     id,
     guild,
+    displayName: `RTC ${id}`,
     permissions: { has: () => false },
     roles: {
       cache,

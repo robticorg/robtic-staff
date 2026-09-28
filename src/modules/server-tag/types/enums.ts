@@ -10,6 +10,16 @@ export type StaffTagRestrictionStatus =
   (typeof StaffTagRestrictionStatus)[keyof typeof StaffTagRestrictionStatus];
 export const STAFF_TAG_RESTRICTION_STATUS_VALUES = Object.values(StaffTagRestrictionStatus);
 
+export const StaffTagRestrictionKind = {
+  /** Staff dropped the tag/identifier — timed; expiry removes them from staff. */
+  TAG_REMOVED: "TAG_REMOVED",
+  /** Freshly accepted without a tag/identifier — roles held until they comply, never expires. */
+  AWAITING_IDENTITY: "AWAITING_IDENTITY",
+} as const;
+export type StaffTagRestrictionKind =
+  (typeof StaffTagRestrictionKind)[keyof typeof StaffTagRestrictionKind];
+export const STAFF_TAG_RESTRICTION_KIND_VALUES = Object.values(StaffTagRestrictionKind);
+
 export const StaffTagRestorationReason = {
   TAG_REAPPLIED: "TAG_REAPPLIED",
 

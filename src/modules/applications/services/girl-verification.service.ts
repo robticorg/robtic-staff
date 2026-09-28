@@ -15,6 +15,9 @@ import {
 } from "../shared/enums.ts";
 import { StaffApplicationModel } from "../shared/staff-application.model.ts";
 import { applicationTicketService } from "./application-ticket.service.ts";
+import { staffService } from "../../staff/services/staff.service.ts";
+import { staffActivityService } from "../../staff/services/staff-activity.service.ts";
+import { StaffActivityType } from "../../staff/types/enums.ts";
 
 const log = logger.child("applications:girls");
 const V = staffApplicationMessages.verify;
@@ -73,7 +76,23 @@ export class GirlVerificationService {
     }
 
     await this.recordOnApplications(actor, target);
+    await this.recordActivity(actor, target);
     log.info(`girls verification: ${target.id} verified by ${actor.id} in ${guildId}`);
+  }
+
+  /** Credits the verifier on their staff stats — counted by the !stats "actions" view. */
+  private async recordActivity(actor: GuildMember, target: GuildMember): Promise<void> {
+    try {
+      const staff = await staffService.get(actor.id, actor.guild.id);
+      if (!staff) return;
+      await staffActivityService.create({
+        staffId: staff._id,
+        type: StaffActivityType.GIRL_VERIFY,
+        referenceId: target.id,
+      });
+    } catch (err) {
+      log.warn(`girls verification activity for ${actor.id} not recorded`, err);
+    }
   }
 
   private async recordOnApplications(actor: GuildMember, target: GuildMember): Promise<void> {

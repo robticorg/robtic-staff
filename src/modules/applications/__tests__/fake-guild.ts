@@ -151,7 +151,7 @@ export function addMember(
     id,
     guild,
     user: { id, bot: false, primaryGuild: null },
-    displayName: id,
+    displayName: `RTC ${id}`,
     joinedAt: options.joinedAt ?? new Date(Date.now() - 100 * 86_400_000),
     client: guild.client,
     roles: {

@@ -10,7 +10,11 @@ import {
   type StaffTagRestriction,
   type StaffTagRestrictionDocument,
 } from "../models/staff-tag-restriction.model.ts";
-import { StaffTagRestorationReason, StaffTagRestrictionStatus } from "../types/enums.ts";
+import {
+  StaffTagRestorationReason,
+  StaffTagRestrictionKind,
+  StaffTagRestrictionStatus,
+} from "../types/enums.ts";
 
 const log = logger.child("server-tag:restriction");
 
@@ -19,6 +23,7 @@ export interface CreateRestrictionInput {
   staffId: UserId;
   savedRoleIds: readonly RoleId[];
 
+  kind?: StaffTagRestrictionKind;
   durationMs?: number;
   now?: Date;
 }
@@ -52,7 +57,11 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
   }
 
   listExpirable(now: Date, limit: number): Promise<StaffTagRestrictionDocument[]> {
-    return StaffTagRestrictionModel.find({ isActive: true, expiresAt: { $lte: now } })
+    return StaffTagRestrictionModel.find({
+      isActive: true,
+      kind: { $ne: StaffTagRestrictionKind.AWAITING_IDENTITY },
+      expiresAt: { $lte: now },
+    })
       .sort({ expiresAt: 1 })
       .limit(limit)
       .exec();
@@ -78,6 +87,7 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
       const restriction = await StaffTagRestrictionModel.create({
         guildId: input.guildId,
         staffId: input.staffId,
+        kind: input.kind ?? StaffTagRestrictionKind.TAG_REMOVED,
         savedRoleIds: [...input.savedRoleIds],
         startedAt: now,
         expiresAt,
@@ -92,6 +102,17 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
       }
       throw err;
     }
+  }
+
+  async addSavedRoles(
+    restriction: StaffTagRestrictionDocument,
+    roleIds: readonly RoleId[],
+  ): Promise<void> {
+    if (roleIds.length === 0) return;
+    await StaffTagRestrictionModel.updateOne(
+      { _id: restriction._id, isActive: true },
+      { $addToSet: { savedRoleIds: { $each: [...roleIds] } } },
+    ).exec();
   }
 
   async claimForClosure(input: CloseRestrictionInput): Promise<StaffTagRestrictionDocument | null> {

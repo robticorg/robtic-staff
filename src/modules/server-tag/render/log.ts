@@ -15,6 +15,7 @@ export type ServerTagLogEvent =
       durationMs: number;
       expiresAt: Date;
     }
+  | { kind: "AWAITING_IDENTITY"; userId: UserId }
   | {
       kind: "RESTORED";
       userId: UserId;
@@ -60,6 +61,9 @@ export function buildServerTagLog(event: ServerTagLogEvent): string {
         L.line(LB.expiresAt, `${L.absolute(event.expiresAt)} (${L.relative(event.expiresAt)})`),
       ].join("\n");
     }
+
+    case "AWAITING_IDENTITY":
+      return [L.headings.awaitingIdentity, L.line(LB.member, L.target(event.userId))].join("\n");
 
     case "REMOVED": {
       return [

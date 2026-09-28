@@ -19,6 +19,7 @@ import {
 import type { StaffTagRestrictionDocument } from "../models/staff-tag-restriction.model.ts";
 import {
   StaffTagRestorationReason,
+  StaffTagRestrictionKind,
   StaffTagRestrictionStatus,
   TagTransition,
 } from "../types/enums.ts";
@@ -196,6 +197,39 @@ export class ServerTagService {
     return removed ? tagRoleId : null;
   }
 
+  /**
+   * Parks the staff roles a fresh accept would have granted until the member wears the
+   * server tag or an identifier in their name. Unlike a tag-removal restriction it never
+   * expires — handleTagAdded / handleIdentityChange release it.
+   */
+  async holdUntilIdentity(
+    member: GuildMember,
+    roleIds: readonly string[],
+  ): Promise<{ dmSent: boolean }> {
+    const guildId = member.guild.id;
+    const created = await staffTagRestrictionService.createRestriction({
+      guildId,
+      staffId: member.id,
+      savedRoleIds: roleIds,
+      kind: StaffTagRestrictionKind.AWAITING_IDENTITY,
+      durationMs: 0,
+    });
+
+    if (created.outcome === "already-active") {
+      if (created.restriction) {
+        await staffTagRestrictionService.addSavedRoles(created.restriction, roleIds);
+      }
+    } else {
+      await serverTagLogService.post(guildId, { kind: "AWAITING_IDENTITY", userId: member.id });
+      log.info(
+        `accept of ${member.id} in ${guildId} held — ${roleIds.length} role(s) wait for tag/identifier`,
+      );
+    }
+
+    const dmSent = await serverTagLogService.dm(member.id, M.dm.awaitingIdentity);
+    return { dmSent };
+  }
+
   private async applyStaffRestriction(
     member: GuildMember,
     tagRoleId: string | null,
@@ -336,9 +370,11 @@ export class ServerTagService {
 
     const note = outcome.missing.length > 0 ? `\n\n${M.dm.partialRestoreNote}` : "";
     const restoredDm =
-      reason === StaffTagRestorationReason.DISPLAY_NAME_COMPLIANT
-        ? M.dm.restoredByDisplayName
-        : M.dm.restoredByTag;
+      claimed.kind === StaffTagRestrictionKind.AWAITING_IDENTITY
+        ? M.dm.grantedAfterAccept
+        : reason === StaffTagRestorationReason.DISPLAY_NAME_COMPLIANT
+          ? M.dm.restoredByDisplayName
+          : M.dm.restoredByTag;
     await serverTagLogService.dm(member.id, restoredDm + note);
 
     log.info(
@@ -422,7 +458,10 @@ export class ServerTagService {
     const restriction = await staffTagRestrictionService.getActiveRestriction(guildId, member.id);
     if (!restriction) return usingTag ? "granted" : "noop";
 
-    if (restriction.expiresAt.getTime() <= now.getTime()) {
+    if (
+      restriction.kind !== StaffTagRestrictionKind.AWAITING_IDENTITY &&
+      restriction.expiresAt.getTime() <= now.getTime()
+    ) {
       return this.removeStaffPermanently(member, restriction);
     }
 
