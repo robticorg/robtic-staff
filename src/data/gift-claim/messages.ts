@@ -12,6 +12,7 @@ export const giftClaimMessages = {
     channelNotConfigured: `${E.error} نظام الهدايا مو مضبوط. اطلب من الأدمن يشغّل \`/channels set type:GIFT_CLAIMS\`.`,
     proofRequired: `${E.error} لازم ترفع صورة تثبت إنك فزت بالهدية.`,
     rewardRequired: `${E.error} لازم تكتب اسم الهدية.`,
+    deliveryTypeRequired: `${E.error} لازم تختار نوع الجائزة.`,
     submittedAck: `${E.success} تم إرسال طلبك — مانجر الهدايا راح يراجعه ويردّ عليك بالخاص.`,
   },
 

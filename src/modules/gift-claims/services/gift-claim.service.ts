@@ -43,6 +43,7 @@ export interface CreateFromModalInput {
   rewardName: string;
   prize?: string;
   proofUrl: string;
+  deliveryType?: GiftDeliveryType;
 }
 
 export interface ManagerActionInput {
@@ -127,6 +128,7 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       status: GiftClaimStatus.PENDING,
       proof: [{ url: input.proofUrl, uploadedAt: new Date() }],
       channelId,
+      ...(input.deliveryType ? { deliveryType: input.deliveryType } : {}),
     });
 
     try {

@@ -7,6 +7,10 @@ import {
   LabelBuilder,
   MessageFlags,
   ModalBuilder,
+  SectionBuilder,
+  SeparatorSpacingSize,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
   TextInputBuilder,
   TextInputStyle,
   type BaseMessageOptions,
@@ -54,12 +58,42 @@ export function buildDeliveryTypeMenu(
   };
 }
 
-export function buildDeliveryTypeMenuMessage(
-  hint: string,
-  customIdFor: (type: GiftDeliveryType) => string,
-): BaseMessageOptions {
+export function buildGiftCommandMenu(input: {
+  selectCustomId: string;
+  userId: string;
+  avatarUrl: string;
+  info: string | null;
+}): BaseMessageOptions {
+  const container = new ContainerBuilder().setAccentColor(colors.primary);
+  container.addSectionComponents(
+    new SectionBuilder()
+      .addTextDisplayComponents(
+        (t) => t.setContent(M.typeMenu.sectionTitle),
+        (t) => t.setContent(M.typeMenu.sectionTarget(input.userId)),
+        (t) => t.setContent(input.info ? M.typeMenu.sectionNote(input.info) : M.typeMenu.selectPrompt),
+      )
+      .setThumbnailAccessory((thumb) => thumb.setURL(input.avatarUrl)),
+  );
+  container.addSeparatorComponents((s) => s.setDivider(true).setSpacing(SeparatorSpacingSize.Small));
+  container.addActionRowComponents(
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(
+      new StringSelectMenuBuilder()
+        .setCustomId(input.selectCustomId)
+        .setPlaceholder(M.typeMenu.selectPlaceholder)
+        .setMinValues(1)
+        .setMaxValues(1)
+        .addOptions(
+          GIFT_DELIVERY_TYPE_VALUES.map((type) =>
+            new StringSelectMenuOptionBuilder()
+              .setLabel(GIFT_DELIVERY_TYPE_LABELS[type] ?? type)
+              .setDescription(M.typeMenu.optionDescriptions[type] ?? type)
+              .setValue(type),
+          ),
+        ),
+    ),
+  );
   return {
-    components: [typeMenuContainer(hint, customIdFor)],
+    components: [container],
     flags: MessageFlags.IsComponentsV2,
     allowedMentions: { parse: [] },
   } as BaseMessageOptions;
@@ -76,6 +110,19 @@ function infoField(): LabelBuilder {
   );
 }
 
+function proofField(): LabelBuilder {
+  return new LabelBuilder()
+    .setLabel(M.modals.proofLabel)
+    .setDescription(M.modals.proofDescription)
+    .setFileUploadComponent(
+      new FileUploadBuilder()
+        .setCustomId(GiftClaimModalField.deliveryProof)
+        .setMinValues(1)
+        .setMaxValues(giftClaimConfig.delivery.maxProofFiles)
+        .setRequired(true),
+    );
+}
+
 export function buildAmountModal(customId: string, prefill?: string | null): ModalBuilder {
   const input = new TextInputBuilder()
     .setCustomId(GiftClaimModalField.amount)
@@ -87,7 +134,10 @@ export function buildAmountModal(customId: string, prefill?: string | null): Mod
   return new ModalBuilder()
     .setCustomId(customId)
     .setTitle(M.modals.amountTitle)
-    .addLabelComponents(new LabelBuilder().setLabel(M.modals.amountLabel).setTextInputComponent(input));
+    .addLabelComponents(
+      new LabelBuilder().setLabel(M.modals.amountLabel).setTextInputComponent(input),
+      proofField(),
+    );
 }
 
 export function buildLinkModal(customId: string): ModalBuilder {
@@ -104,6 +154,7 @@ export function buildLinkModal(customId: string): ModalBuilder {
           .setRequired(true),
       ),
       infoField(),
+      proofField(),
     );
 }
 
@@ -111,19 +162,7 @@ export function buildProofModal(customId: string): ModalBuilder {
   return new ModalBuilder()
     .setCustomId(customId)
     .setTitle(M.modals.proofTitle)
-    .addLabelComponents(
-      new LabelBuilder()
-        .setLabel(M.modals.proofLabel)
-        .setDescription(M.modals.proofDescription)
-        .setFileUploadComponent(
-          new FileUploadBuilder()
-            .setCustomId(GiftClaimModalField.deliveryProof)
-            .setMinValues(1)
-            .setMaxValues(giftClaimConfig.delivery.maxProofFiles)
-            .setRequired(true),
-        ),
-      infoField(),
-    );
+    .addLabelComponents(proofField(), infoField());
 }
 
 export function buildLinkDeliveryMessage(input: {

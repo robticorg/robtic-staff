@@ -8,6 +8,7 @@ import { logger } from "../../../shared/utils/logger.ts";
 import { giftClaimMessages } from "../../../data/gift-claim/messages.ts";
 import { giftClaimPermissionService } from "../services/gift-claim-permissions.ts";
 import { giftClaimService } from "../services/gift-claim.service.ts";
+import { deliveryTypeFrom } from "./delivery.handler.ts";
 import { buildRejectModal } from "../render/modals.ts";
 import { GiftClaimModalField } from "./component-ids.ts";
 
@@ -23,11 +24,15 @@ export async function handleGiftClaimSubmitModal(
   const reward = safeField(interaction, GiftClaimModalField.reward);
   const details = safeField(interaction, GiftClaimModalField.details);
   const proofUrl = firstUploadedUrl(interaction, GiftClaimModalField.proof);
+  const deliveryType = deliveryTypeFrom(selectedValue(interaction, GiftClaimModalField.deliveryType));
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   try {
     if (!reward) throw new DomainError("GIFT_REWARD_REQUIRED", giftClaimMessages.create.rewardRequired);
     if (!proofUrl) throw new DomainError("GIFT_PROOF_REQUIRED", giftClaimMessages.create.proofRequired);
+    if (!deliveryType) {
+      throw new DomainError("GIFT_TYPE_REQUIRED", giftClaimMessages.create.deliveryTypeRequired);
+    }
 
     await giftClaimService.createFromModal({
       guildId: interaction.guildId,
@@ -35,6 +40,7 @@ export async function handleGiftClaimSubmitModal(
       rewardName: reward,
       prize: details || undefined,
       proofUrl,
+      deliveryType,
     });
     await interaction.editReply(giftClaimMessages.create.submittedAck);
   } catch (err) {
@@ -80,6 +86,14 @@ async function replyError(
     if (interaction.deferred || interaction.replied) await interaction.editReply(content);
     else await interaction.reply({ content, ...EPHEMERAL });
   } catch {
+  }
+}
+
+function selectedValue(interaction: ModalSubmitInteraction, id: string): string | undefined {
+  try {
+    return interaction.fields.getStringSelectValues(id)[0];
+  } catch {
+    return undefined;
   }
 }
 

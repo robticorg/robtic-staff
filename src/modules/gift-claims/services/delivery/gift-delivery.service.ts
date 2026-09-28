@@ -1,4 +1,4 @@
-import { AttachmentBuilder, type GuildMember } from "discord.js";
+import type { GuildMember } from "discord.js";
 import type { HydratedDocument } from "mongoose";
 import { ConflictError } from "../../../../shared/utils/errors.ts";
 import { giftClaimMessages } from "../../../../data/gift-claim/messages.ts";
@@ -24,7 +24,12 @@ import { parseCreditAmount } from "./gift-delivery-input.ts";
 import { giftDeliveriesChannel } from "./gift-deliveries-channel.ts";
 import { giftDeliveryRepository } from "./gift-delivery.repository.ts";
 import { linkDeliveryService, type LinkDeliveryResult } from "./link-delivery.service.ts";
-import { manualGiftDeliveryService, type UploadedProof } from "./manual-gift-delivery.service.ts";
+import { manualGiftDeliveryService } from "./manual-gift-delivery.service.ts";
+import {
+  giftDeliveryProofService,
+  type StoredProofFile,
+  type UploadedProof,
+} from "./gift-delivery-proof.service.ts";
 
 const M = giftDeliveryMessages;
 type ClaimDoc = HydratedDocument<GiftClaim>;
@@ -65,11 +70,15 @@ export class GiftDeliveryService {
     manager: GuildMember;
     type: GiftDeliveryType;
     amount?: string | null;
+    proof?: readonly UploadedProof[];
   }): Promise<ApproveOutcome> {
     const amount = input.type === GiftDeliveryType.CREDITS ? this.requireAmount(input.amount) : undefined;
+    let proof: StoredProofFile[] = [];
     if (amount) {
+      giftDeliveryProofService.assertValid(input.proof ?? []);
       await assertAutoclaimEnabled(input.manager.guild.id);
       await giftDeliveriesChannel.resolve(input.manager.guild.id);
+      proof = await giftDeliveryProofService.fetch(input.proof ?? []);
     }
     const { claim } = await giftClaimService.approveClaim({
       claimId: input.claimId,
@@ -80,7 +89,10 @@ export class GiftDeliveryService {
     const delivery = await this.openDelivery(claim, input.type);
 
     if (input.type === GiftDeliveryType.CREDITS) {
-      return { kind: "CREDITS", result: await this.runCredits(claim, delivery, input.manager.id) };
+      return {
+        kind: "CREDITS",
+        result: await this.runCredits(claim, delivery, input.manager.id, proof),
+      };
     }
     await giftClaimService.refreshCase(claim.claimId);
     return { kind: "AWAITING_DELIVERY", type: input.type };
@@ -102,10 +114,18 @@ export class GiftDeliveryService {
     return claim;
   }
 
-  async deliverCredits(claimId: string, actor: GuildMember): Promise<CreditDeliveryResult> {
+  async deliverCredits(
+    claimId: string,
+    actor: GuildMember,
+    uploads: readonly UploadedProof[] = [],
+  ): Promise<CreditDeliveryResult> {
     const claim = await this.claimFor(claimId, actor, GiftDeliveryType.CREDITS);
     const delivery = await this.openDelivery(claim, GiftDeliveryType.CREDITS);
-    return this.runCredits(claim, delivery, actor.id);
+    const proof =
+      uploads.length > 0 || delivery.proof.length === 0
+        ? await giftDeliveryProofService.fetch(uploads)
+        : [];
+    return this.runCredits(claim, delivery, actor.id, proof);
   }
 
   async deliverLink(input: {
@@ -113,11 +133,20 @@ export class GiftDeliveryService {
     actor: GuildMember;
     link: string;
     info: string | null;
+    proof: readonly UploadedProof[];
   }): Promise<LinkDeliveryResult> {
     const claim = await this.claimFor(input.claimId, input.actor, GiftDeliveryType.LINK);
     const delivery = await this.openDelivery(claim, GiftDeliveryType.LINK);
     try {
-      const result = await linkDeliveryService.deliver(delivery, input.actor.id, input.link, input.info);
+      giftDeliveryProofService.assertValid(input.proof);
+      const proof = await giftDeliveryProofService.fetch(input.proof);
+      const result = await linkDeliveryService.deliver(
+        delivery,
+        input.actor.id,
+        input.link,
+        input.info,
+        proof,
+      );
       await giftClaimAuditService.record({
         claimId: claim.claimId,
         guildId: claim.guildId,
@@ -151,7 +180,7 @@ export class GiftDeliveryService {
         claimId: claim.claimId,
         actorId: input.actor.id,
         dm: giftClaimMessages.dm.fulfilled,
-        dmFiles: files.map((file) => new AttachmentBuilder(file.data, { name: file.filename })),
+        dmFiles: giftDeliveryProofService.attachments(files),
       });
       return done;
     } finally {
@@ -181,8 +210,9 @@ export class GiftDeliveryService {
     claim: ClaimDoc,
     delivery: GiftDeliveryDocument,
     staffId: string,
+    proof: readonly StoredProofFile[],
   ): Promise<CreditDeliveryResult> {
-    const result = await creditDeliveryService.deliver(delivery, staffId);
+    const result = await creditDeliveryService.deliver(delivery, staffId, proof);
     if (result.ok) {
       await giftClaimService.completeFromDelivery({
         claimId: claim.claimId,

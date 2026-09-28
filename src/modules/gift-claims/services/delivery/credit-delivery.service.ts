@@ -11,6 +11,7 @@ import {
   type StartTransfer,
 } from "./autoclaim.client.ts";
 import { giftDeliveriesChannel } from "./gift-deliveries-channel.ts";
+import { giftDeliveryProofService, type StoredProofFile } from "./gift-delivery-proof.service.ts";
 import { giftDeliveryRepository } from "./gift-delivery.repository.ts";
 
 const log = logger.child("gift-delivery:credits");
@@ -53,7 +54,11 @@ export class CreditDeliveryService {
     this.transfer = transfer;
   }
 
-  async deliver(delivery: GiftDeliveryDocument, staffId: string): Promise<CreditDeliveryResult> {
+  async deliver(
+    delivery: GiftDeliveryDocument,
+    staffId: string,
+    proof: readonly StoredProofFile[] = [],
+  ): Promise<CreditDeliveryResult> {
     if (!delivery.amount) {
       throw new GiftClaimError("GIFT_AMOUNT_MISSING", M.errors.amountInvalid);
     }
@@ -65,6 +70,13 @@ export class CreditDeliveryService {
       const fresh = await giftDeliveryRepository.findById(delivery.deliveryId);
       assertDeliveryNotBusy(fresh ?? delivery);
       throw new ConflictError(M.errors.inProgress);
+    }
+
+    try {
+      await giftDeliveryProofService.attach(locked, staffId, proof);
+    } catch (err) {
+      await giftDeliveryRepository.markFailed(locked.deliveryId, "PROOF_SAVE_FAILED");
+      throw err;
     }
 
     let outcome;
@@ -103,6 +115,7 @@ export class CreditDeliveryService {
     });
     await giftDeliveriesChannel.post(locked.guildId, {
       content: M.log.creditsDone(locked.userId, locked.amount!, locked.claimId),
+      files: giftDeliveryProofService.attachments(proof),
     });
     log.info(`credit delivery ${locked.deliveryId} fulfilled (${locked.amount}) by ${staffId}`);
     return { ok: true, delivery: fulfilled ?? locked };

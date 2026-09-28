@@ -14,7 +14,7 @@ export const GiftClaimCustomId = {
   retry: (claimId: string) => `${GC_NS}:retry:${claimId}`,
   reveal: (deliveryId: string) => `${GC_NS}:reveal:${deliveryId}`,
 
-  cmdType: (draftId: string, type: string) => `${GC_NS}:ctype:${draftId}:${type}`,
+  cmdType: (draftId: string) => `${GC_NS}:ctype:${draftId}`,
   cmdAmountModal: (draftId: string) => `${GC_NS}:camount:${draftId}`,
   cmdLinkModal: (draftId: string) => `${GC_NS}:clink:${draftId}`,
   cmdProofModal: (draftId: string) => `${GC_NS}:cproof:${draftId}`,
@@ -22,6 +22,7 @@ export const GiftClaimCustomId = {
 
 export const GiftClaimModalField = {
   reward: "reward",
+  deliveryType: "deliveryType",
   details: "details",
   proof: "proof",
   rejectReason: "rejectReason",

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { deliveryAction } from "../render/case-card.ts";
+import { buildGiftClaimSubmitModal } from "../render/modals.ts";
 import { buildLinkDeliveryMessage } from "../render/delivery-components.ts";
 import {
   TransferFailure,
@@ -8,7 +9,8 @@ import {
 } from "../services/delivery/autoclaim.client.ts";
 import { parseCreditAmount, parseGiftLink } from "../services/delivery/gift-delivery-input.ts";
 import { decryptGiftSecret, encryptGiftSecret } from "../services/delivery/gift-secret.ts";
-import { checkProof } from "../services/delivery/manual-gift-delivery.service.ts";
+import { checkProof } from "../services/delivery/gift-delivery-proof.service.ts";
+import { buildAmountModal, buildGiftCommandMenu, buildLinkModal, buildProofModal } from "../render/delivery-components.ts";
 import { GiftClaimStatus, GiftDeliveryStatus, GiftDeliveryType } from "../types/enums.ts";
 
 describe("credit amount", () => {
@@ -138,12 +140,60 @@ describe("claim card delivery button", () => {
   });
 });
 
+describe("gift claim modal", () => {
+  it("asks the member for the reward type with a required select", () => {
+    const json = buildGiftClaimSubmitModal().toJSON() as unknown as {
+      components: { component: { custom_id: string; type: number; required?: boolean; options?: { value: string }[] } }[];
+    };
+    const select = json.components.map((c) => c.component).find((c) => c.custom_id === "deliveryType");
+    expect(select?.type).toBe(3);
+    expect(select?.required).toBe(true);
+    expect(select?.options?.map((o) => o.value)).toEqual([
+      GiftDeliveryType.CREDITS,
+      GiftDeliveryType.LINK,
+      GiftDeliveryType.OTHER,
+    ]);
+    expect(json.components.length).toBeLessThanOrEqual(5);
+  });
+});
+
 describe("delivery inputs", () => {
-  it("requires at least one proof file under the size limit", () => {
+  it("requires exactly one proof file under the size limit", () => {
     const file = { name: "p.png", url: "https://x", contentType: "image/png", size: 10 };
     expect(checkProof([])).toBe("MISSING");
     expect(checkProof([file])).toBeNull();
+    expect(checkProof([file, file])).toBe("TOO_MANY");
     expect(checkProof([{ ...file, size: 100 * 1024 * 1024 }])).toBe("TOO_LARGE");
+  });
+
+  it("asks for one proof file in every delivery modal", () => {
+    for (const modal of [buildAmountModal("a"), buildLinkModal("b"), buildProofModal("c")]) {
+      const json = modal.toJSON() as unknown as {
+        components: { component: { custom_id: string; min_values?: number; max_values?: number } }[];
+      };
+      const upload = json.components.map((c) => c.component).find((c) => c.custom_id === "deliveryProof");
+      expect(upload?.min_values).toBe(1);
+      expect(upload?.max_values).toBe(1);
+    }
+  });
+
+  it("builds the !gift menu as a V2 section with a type select, no embed", () => {
+    const menu = buildGiftCommandMenu({
+      selectCustomId: "gc:ctype:d1",
+      userId: "123",
+      avatarUrl: "https://cdn.discordapp.com/avatars/123/a.png",
+      info: null,
+    });
+    expect(menu.embeds).toBeUndefined();
+    const [container] = (menu.components ?? []).map((c) => ("toJSON" in c ? c.toJSON() : c)) as {
+      components: { type: number; accessory?: { type: number; media: { url: string } }; components?: { type: number; custom_id?: string; options?: { value: string; label: string }[] }[] }[];
+    }[];
+    const section = container!.components.find((c) => c.type === 9);
+    expect(section?.accessory?.type).toBe(11);
+    expect(section?.accessory?.media.url).toContain("avatars/123");
+    const select = container!.components.flatMap((c) => c.components ?? []).find((c) => c.type === 3);
+    expect(select?.custom_id).toBe("gc:ctype:d1");
+    expect(select?.options?.map((o) => o.label)).toEqual(["كريدتس", "نيترو | إفكت", "أخرى"]);
   });
 
   it("puts only the delivery id in the reveal button", () => {

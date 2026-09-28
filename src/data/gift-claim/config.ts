@@ -7,7 +7,7 @@ export const giftClaimConfig = {
   maxProofImages: 5,
 
   delivery: {
-    maxProofFiles: 5,
+    maxProofFiles: 1,
     maxProofBytes: 8 * 1024 * 1024,
     maxAmountDigits: 15,
     maxLinkLength: 500,

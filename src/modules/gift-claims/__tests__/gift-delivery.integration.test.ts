@@ -27,7 +27,7 @@ import { creditDeliveryService } from "../services/delivery/credit-delivery.serv
 import { giftCommandService } from "../services/delivery/gift-command.service.ts";
 import { giftDeliveryRecoveryService } from "../services/delivery/gift-delivery-recovery.service.ts";
 import { giftDeliveryService } from "../services/delivery/gift-delivery.service.ts";
-import { manualGiftDeliveryService } from "../services/delivery/manual-gift-delivery.service.ts";
+import { giftDeliveryProofService } from "../services/delivery/gift-delivery-proof.service.ts";
 import {
   GiftClaimSource,
   GiftClaimStatus,
@@ -80,7 +80,8 @@ creditDeliveryService.useTransfer(async (options, context) => {
   const ok = transferQueue.length ? transferQueue.shift()! : true;
   return ok ? { ok: true, messageId: message.id } : { ok: false, reason: transferFailure, messageId: message.id };
 });
-manualGiftDeliveryService.useDownloader(async () => Buffer.from([1, 2, 3]));
+giftDeliveryProofService.useDownloader(async () => Buffer.from([1, 2, 3]));
+const PROOF = [{ name: "proof.png", url: "https://cdn.example/proof.png", contentType: "image/png", size: 3 }];
 
 async function claimFor(userId: string, overrides: Record<string, unknown> = {}) {
   return GiftClaimModel.create({
@@ -175,12 +176,13 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
         claimId: claim.claimId,
         manager: manager as never,
         type: GiftDeliveryType.CREDITS,
-        amount: "500,000",
-      });
+        amount: "500,000", proof: PROOF, });
 
       expect(outcome.kind).toBe("CREDITS");
       expect(transferCalls).toHaveLength(1);
       expect(transferCalls[0]!.options).toEqual({ userId: winner.id, guildId: GUILD, channelId: DELIVERIES, amount: "500000" });
+      expect((await deliveryOf(claim.claimId))!.proof).toHaveLength(1);
+      expect(world.channels.get(DELIVERIES)!.sent.at(-1)!.payload.files).toHaveLength(1);
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.FULFILLED);
       const delivery = await deliveryOf(claim.claimId);
       expect(delivery!.status).toBe(GiftDeliveryStatus.FULFILLED);
@@ -194,8 +196,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
         claimId: claim.claimId,
         manager: manager as never,
         type: GiftDeliveryType.CREDITS,
-        amount: "1000",
-      });
+        amount: "1000", proof: PROOF, });
       expect(outcome.kind === "CREDITS" && outcome.result.ok).toBe(false);
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.APPROVED);
       const failed = await deliveryOf(claim.claimId);
@@ -221,8 +222,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
         claimId: claim.claimId,
         manager: manager as never,
         type: GiftDeliveryType.CREDITS,
-        amount: "10",
-      });
+        amount: "10", proof: PROOF, });
       expect((await deliveryOf(claim.claimId))!.error).toBe(TransferFailure.TIMEOUT);
     });
 
@@ -230,15 +230,15 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
       const claim = await claimFor(winner.id);
       transferDelayMs = 30;
       const approvals = await Promise.allSettled([
-        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" }),
-        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" }),
+        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF }),
+        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF }),
       ]);
       expect(approvals.filter((r) => r.status === "fulfilled")).toHaveLength(1);
       expect(transferCalls).toHaveLength(1);
 
       const second = await claimFor(winner.id);
       transferQueue = [false];
-      await giftDeliveryService.approveWithType({ claimId: second.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" });
+      await giftDeliveryService.approveWithType({ claimId: second.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF });
       const retries = await Promise.allSettled([
         giftDeliveryService.deliverCredits(second.claimId, manager as never),
         giftDeliveryService.deliverCredits(second.claimId, manager as never),
@@ -250,12 +250,12 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
     it("refuses an invalid amount or a missing Deliveries Channel before approving", async () => {
       const claim = await claimFor(winner.id);
       await expect(
-        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "Nitro" }),
+        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "Nitro", proof: PROOF }),
       ).rejects.toThrow(E.amountInvalid);
 
       world.channels.delete(DELIVERIES);
       await expect(
-        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" }),
+        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF }),
       ).rejects.toThrow(E.deliveriesChannelMissing);
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.PENDING);
       expect(transferCalls).toHaveLength(0);
@@ -268,7 +268,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
 
         const claim = await claimFor(winner.id);
         await expect(
-          giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" }),
+          giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF }),
         ).rejects.toThrow(E.autoclaimOff);
         expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.PENDING);
 
@@ -279,7 +279,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
 
         await staffConfigService.setAutoclaimEnabled(GUILD, true);
         transferQueue = [false];
-        await giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" });
+        await giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF });
         await staffConfigService.setAutoclaimEnabled(GUILD, false);
         await expect(giftDeliveryService.deliverCredits(claim.claimId, manager as never)).rejects.toThrow(E.autoclaimOff);
         expect(transferCalls).toHaveLength(1);
@@ -314,7 +314,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
   describe("LINK", () => {
     it("DMs a reveal button, stores the link encrypted, and leaks it nowhere", async () => {
       const claim = await approvedLink(winner);
-      const result = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: "حساب: Ahmed" });
+      const result = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: "حساب: Ahmed", proof: PROOF });
 
       expect(result.location.deliveryPath).toBe(LinkDeliveryPath.DM);
       const dm = world.dms.get(winner.id)!;
@@ -334,7 +334,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
 
     it("reveals only to the owner, exactly once", async () => {
       const claim = await approvedLink(winner);
-      const { delivery } = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null });
+      const { delivery } = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null, proof: PROOF });
 
       for (const other of [world.member("random"), staffMember, manager, admin]) {
         await expect(giftDeliveryService.reveal(delivery.deliveryId, other.id)).rejects.toThrow(E.notOwner);
@@ -358,10 +358,20 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
       expect(revealMessages(winner.id)[0]!.edits.length).toBeGreaterThan(0);
     });
 
+    it("stores the proof without posting it where the link could leak", async () => {
+      const claim = await approvedLink(winner);
+      await expect(
+        giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null, proof: [] }),
+      ).rejects.toThrow(E.proofRequired);
+      await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null, proof: PROOF });
+      expect((await deliveryOf(claim.claimId))!.proof).toHaveLength(1);
+      expect(world.channels.get(DELIVERIES)!.sent.every((m) => !m.payload.files?.length)).toBe(true);
+    });
+
     it("refuses an invalid link without changing anything", async () => {
       const claim = await approvedLink(winner);
       await expect(
-        giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: "discord.gift/abc", info: null }),
+        giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: "discord.gift/abc", info: null, proof: PROOF }),
       ).rejects.toThrow(E.linkInvalid);
       expect((await deliveryOf(claim.claimId))!.status).toBe(GiftDeliveryStatus.PENDING);
     });
@@ -369,7 +379,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
     it("falls back to a private channel when DMs are closed, still owner-only", async () => {
       world.closedDms.add(winner.id);
       const claim = await approvedLink(winner);
-      const result = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null });
+      const result = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null, proof: PROOF });
 
       expect(result.location.deliveryPath).toBe(LinkDeliveryPath.CHANNEL);
       const channel = world.channels.get(result.location.deliveryChannelId)!;
@@ -390,12 +400,12 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
       try {
         const claim = await approvedLink(winner);
         await expect(
-          giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null }),
+          giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null, proof: PROOF }),
         ).rejects.toThrow(E.deliveryCategoryMissing);
         expect((await deliveryOf(claim.claimId))!.status).toBe(GiftDeliveryStatus.FAILED);
 
         world.closedDms.delete(winner.id);
-        const retry = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null });
+        const retry = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null, proof: PROOF });
         expect(retry.location.deliveryPath).toBe(LinkDeliveryPath.DM);
       } finally {
         await ChannelConfigModel.create({ guildId: GUILD, type: ChannelConfigType.GIFT_DELIVERY_CATEGORY, channelId: CATEGORY });
@@ -404,7 +414,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
 
     it("restores a deleted delivery message on the same record", async () => {
       const claim = await approvedLink(winner);
-      const { delivery, location } = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null });
+      const { delivery, location } = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null, proof: PROOF });
       await world.dms.get(winner.id)!.store.get(location.deliveryMessageId)!.delete();
 
       await giftDeliveryRecoveryService.onMessageDeleted(location.deliveryMessageId);
@@ -419,7 +429,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
     it("recreates a deleted private channel with the same permissions", async () => {
       world.closedDms.add(winner.id);
       const claim = await approvedLink(winner);
-      const { location } = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null });
+      const { location } = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null, proof: PROOF });
       await world.channels.get(location.deliveryChannelId)!.delete();
 
       await giftDeliveryRecoveryService.onChannelDeleted(location.deliveryChannelId);
@@ -433,7 +443,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
 
     it("repairs unclaimed deliveries on restart and leaves claimed ones alone", async () => {
       const claim = await approvedLink(winner);
-      const { location } = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null });
+      const { location } = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null, proof: PROOF });
       await world.dms.get(winner.id)!.store.get(location.deliveryMessageId)!.delete();
 
       await giftDeliveryRecoveryService.reconcileOnStartup();
@@ -441,7 +451,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
 
       const other = nextWinner();
       const second = await approvedLink(other);
-      const done = await giftDeliveryService.deliverLink({ claimId: second.claimId, actor: manager as never, link: LINK, info: null });
+      const done = await giftDeliveryService.deliverLink({ claimId: second.claimId, actor: manager as never, link: LINK, info: null, proof: PROOF });
       await giftDeliveryService.reveal(done.delivery.deliveryId, other.id);
       await world.dms.get(other.id)!.store.get(done.location.deliveryMessageId)!.delete();
 
@@ -477,6 +487,15 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
       await expect(
         giftDeliveryService.deliverOther({ claimId: claim.claimId, actor: manager as never, uploads: proof, info: null }),
       ).rejects.toThrow(E.alreadyDelivered);
+    });
+
+    it("accepts exactly one proof file", async () => {
+      const claim = await claimFor(winner.id);
+      await giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.OTHER });
+      await expect(
+        giftDeliveryService.deliverOther({ claimId: claim.claimId, actor: manager as never, uploads: [...proof, ...proof], info: null }),
+      ).rejects.toThrow(E.proofTooMany);
+      expect((await deliveryOf(claim.claimId))!.status).toBe(GiftDeliveryStatus.PENDING);
     });
 
     it("refuses someone who is not a Gift Manager on a panel claim", async () => {
@@ -531,7 +550,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
         amount: taken.info!,
       });
       expect(claim.source).toBe(GiftClaimSource.COMMAND);
-      const result = await giftDeliveryService.deliverCredits(claim.claimId, staffMember as never);
+      const result = await giftDeliveryService.deliverCredits(claim.claimId, staffMember as never, PROOF);
       expect(result.ok).toBe(true);
       expect(transferCalls.at(-1)!.options.channelId).toBe(DELIVERIES);
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.FULFILLED);
@@ -552,7 +571,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
         rewardName: taken.info!,
         type: GiftDeliveryType.LINK,
       });
-      const { delivery } = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: staffMember as never, link: LINK, info: null });
+      const { delivery } = await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: staffMember as never, link: LINK, info: null, proof: PROOF });
 
       await expect(giftDeliveryService.reveal(delivery.deliveryId, staffMember.id)).rejects.toThrow(E.notOwner);
       expect((await giftDeliveryService.reveal(delivery.deliveryId, winner.id)).link).toBe(LINK);

@@ -2,10 +2,14 @@ import {
   FileUploadBuilder,
   LabelBuilder,
   ModalBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
   TextInputBuilder,
   TextInputStyle,
 } from "discord.js";
 import { giftClaimComponents } from "../../../data/gift-claim/components.ts";
+import { GIFT_DELIVERY_TYPE_LABELS } from "../../../data/gift-claim/delivery-messages.ts";
+import { GIFT_DELIVERY_TYPE_VALUES } from "../types/enums.ts";
 import { GiftClaimCustomId, GiftClaimModalField } from "../handlers/component-ids.ts";
 
 const C = giftClaimComponents;
@@ -23,6 +27,21 @@ export function buildGiftClaimSubmitModal(): ModalBuilder {
           .setMinLength(2)
           .setMaxLength(200)
           .setRequired(true),
+      ),
+      new LabelBuilder().setLabel(C.deliveryTypeLabel).setStringSelectMenuComponent(
+        new StringSelectMenuBuilder()
+          .setCustomId(GiftClaimModalField.deliveryType)
+          .setPlaceholder(C.deliveryTypePlaceholder)
+          .setMinValues(1)
+          .setMaxValues(1)
+          .setRequired(true)
+          .addOptions(
+            GIFT_DELIVERY_TYPE_VALUES.map((type) =>
+              new StringSelectMenuOptionBuilder()
+                .setLabel(GIFT_DELIVERY_TYPE_LABELS[type] ?? type)
+                .setValue(type),
+            ),
+          ),
       ),
       new LabelBuilder().setLabel(C.detailsLabel).setTextInputComponent(
         new TextInputBuilder()

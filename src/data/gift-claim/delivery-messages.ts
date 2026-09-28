@@ -4,7 +4,7 @@ const E = emojis;
 
 export const GIFT_DELIVERY_TYPE_LABELS: Record<string, string> = {
   CREDITS: "كريدتس",
-  LINK: "رابط",
+  LINK: "نيترو | إفكت",
   OTHER: "أخرى",
 };
 
@@ -20,6 +20,16 @@ export const GIFT_DELIVERY_STATUS_LABELS: Record<string, string> = {
 export const giftDeliveryMessages = {
   typeMenu: {
     title: "## نوع الجائزة",
+    sectionTitle: "## 🎁 جائزة جديدة",
+    sectionTarget: (userId: string) => `الجائزة لـ <@${userId}>`,
+    sectionNote: (info: string) => `**ملاحظة:** ${info}`,
+    selectPrompt: "اختر نوع الجائزة من القائمة تحت.",
+    selectPlaceholder: "اختر نوع الجائزة",
+    optionDescriptions: {
+      CREDITS: "تحويل كريدتس تلقائي",
+      LINK: "رابط نيترو أو إفكت يوصل للعضو بالخاص",
+      OTHER: "تسليم يدوي مع إثبات",
+    } as Record<string, string>,
     claimHint: "اختر نوع الجائزة عشان نكمّل الموافقة والتسليم.",
     commandHint: (userId: string, info: string | null) =>
       info ? `الجائزة لـ <@${userId}>\n**المعلومات:** ${info}` : `الجائزة لـ <@${userId}>`,
@@ -35,8 +45,8 @@ export const giftDeliveryMessages = {
     infoLabel: "معلومات إضافية",
     infoPlaceholder: "اسم الحساب، طريقة الاستلام، أو أي تفاصيل يحتاجها العضو",
     proofTitle: "تسليم الجائزة",
-    proofLabel: "إثبات التسليم",
-    proofDescription: "ارفع صورة أو ملف يثبت إنك سلّمت الجائزة.",
+    proofLabel: "الإثبات",
+    proofDescription: "ارفع صورة أو ملف واحد بس كإثبات.",
   },
 
   buttons: {
@@ -48,7 +58,8 @@ export const giftDeliveryMessages = {
   errors: {
     amountInvalid: `${E.error} المبلغ لازم يكون رقم صحيح أكبر من صفر.`,
     linkInvalid: `${E.error} رابط الهدية غير صالح. لازم يبدأ بـ https://`,
-    proofRequired: `${E.error} لازم ترفع إثبات التسليم.`,
+    proofRequired: `${E.error} لازم ترفع إثبات واحد.`,
+    proofTooMany: `${E.error} ارفع إثبات واحد بس.`,
     proofTooLarge: `${E.error} ملف الإثبات كبير. صغّره وجرب مرة ثانية.`,
     proofDownloadFailed: `${E.error} ما قدرت أحفظ ملف الإثبات. جرب مرة ثانية.`,
     deliveriesChannelMissing: `${E.error} روم تسليم الهدايا مو مضبوط. شغّل \`/channels set\` أول.`,

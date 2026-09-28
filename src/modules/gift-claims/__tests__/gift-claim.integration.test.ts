@@ -9,7 +9,7 @@ import { StaffModel } from "../../staff/models/staff.model.ts";
 import { StaffActivityModel } from "../../staff/models/staff-activity.model.ts";
 import { GiftClaimAuditModel } from "../models/gift-claim-audit.model.ts";
 import { GiftClaimModel } from "../models/gift-claim.model.ts";
-import { GiftClaimStatus } from "../types/enums.ts";
+import { GiftClaimStatus, GiftDeliveryType } from "../types/enums.ts";
 import { attachGiftClaimClient } from "../runtime.ts";
 import { giftClaimService } from "../services/gift-claim.service.ts";
 
@@ -149,6 +149,20 @@ describe.skipIf(!hasDb)("Gift Claim (self-service modal + review channel)", () =
     const audits = await GiftClaimAuditModel.find({ claimId: claim.claimId }).exec();
     expect(audits.map((a) => a.action)).toContain("GIFT_CLAIM_CREATED");
     expect(spy.dms).toBe(1);
+  });
+
+  it("createFromModal: keeps the reward type the member picked", async () => {
+    const { claim } = await giftClaimService.createFromModal({
+      guildId: GUILD,
+      member: claimant("winner-type"),
+      rewardName: "Nitro",
+      proofUrl: "https://cdn.example/win-type.png",
+      deliveryType: GiftDeliveryType.LINK,
+    });
+    expect(claim.deliveryType).toBe(GiftDeliveryType.LINK);
+    expect((await GiftClaimModel.findOne({ claimId: claim.claimId }).exec())!.deliveryType).toBe(
+      GiftDeliveryType.LINK,
+    );
   });
 
   it("createFromModal: refused when the GIFT_CLAIMS channel is not configured", async () => {

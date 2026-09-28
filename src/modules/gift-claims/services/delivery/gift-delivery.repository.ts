@@ -95,14 +95,20 @@ export class GiftDeliveryRepository {
   markFulfilled(
     deliveryId: string,
     fields: Pick<GiftDelivery, "deliveredBy"> &
-      Partial<Pick<GiftDelivery, "additionalInfo" | "auditMessageId">> & {
-        proof?: GiftDeliveryProofRef[];
-      },
+      Partial<Pick<GiftDelivery, "additionalInfo" | "auditMessageId">>,
   ): Promise<GiftDeliveryDocument | null> {
     return GiftDeliveryModel.findOneAndUpdate(
       { deliveryId, status: GiftDeliveryStatus.PROCESSING },
       { $set: { ...fields, status: GiftDeliveryStatus.FULFILLED, deliveredAt: new Date() } },
       { returnDocument: "after" },
+    ).exec();
+  }
+
+  async addProof(deliveryId: string, refs: readonly GiftDeliveryProofRef[]): Promise<void> {
+    if (refs.length === 0) return;
+    await GiftDeliveryModel.updateOne(
+      { deliveryId },
+      { $push: { proof: { $each: [...refs] } } },
     ).exec();
   }
 

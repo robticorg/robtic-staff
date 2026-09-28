@@ -30,7 +30,8 @@ const log = logger.child("gift-claim:components");
 export async function routeGiftClaimComponent(interaction: Interaction): Promise<boolean> {
   const isButton = interaction.isButton();
   const isModal = interaction.isModalSubmit();
-  if (!isButton && !isModal) return false;
+  const isSelect = interaction.isStringSelectMenu();
+  if (!isButton && !isModal && !isSelect) return false;
   if (!isGiftClaimCustomId(interaction.customId)) return false;
 
   const parsed = parseGiftClaimCustomId(interaction.customId);
@@ -56,7 +57,9 @@ export async function routeGiftClaimComponent(interaction: Interaction): Promise
       else if (action === "deliver") await handleDeliverButton(interaction, id);
       else if (action === "retry") await handleRetry(interaction, id);
       else if (action === "reveal") await handleReveal(interaction, id);
-      else if (action === "ctype") await handleCommandType(interaction, id, args[1]);
+      else return false;
+    } else if (interaction.isStringSelectMenu()) {
+      if (action === "ctype") await handleCommandType(interaction, id);
       else return false;
     } else return false;
   } catch (err) {

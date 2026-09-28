@@ -1,7 +1,7 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { giftDeliveryMessages } from "../../../data/gift-claim/delivery-messages.ts";
 import { GiftClaimCustomId } from "../../../modules/gift-claims/handlers/component-ids.ts";
-import { buildDeliveryTypeMenuMessage } from "../../../modules/gift-claims/render/delivery-components.ts";
+import { buildGiftCommandMenu } from "../../../modules/gift-claims/render/delivery-components.ts";
 import { giftCommandService } from "../../../modules/gift-claims/services/delivery/gift-command.service.ts";
 import { extractUserIds } from "../_shared/parse.ts";
 import { requireTargetId } from "../_shared/target.ts";
@@ -24,10 +24,14 @@ export default definePrefixCommand({
       info: info || null,
     });
 
+    const target = await ctx.guild.members.fetch(userId);
     await ctx.replyWith(
-      buildDeliveryTypeMenuMessage(M.typeMenu.commandHint(userId, draft.info), (type) =>
-        GiftClaimCustomId.cmdType(draft.draftId, type),
-      ),
+      buildGiftCommandMenu({
+        selectCustomId: GiftClaimCustomId.cmdType(draft.draftId),
+        userId,
+        avatarUrl: target.displayAvatarURL({ size: 128 }),
+        info: draft.info,
+      }),
     );
   },
 });

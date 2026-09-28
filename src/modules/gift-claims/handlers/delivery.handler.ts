@@ -19,6 +19,7 @@ import { giftClaimService } from "../services/gift-claim.service.ts";
 import type { CreditDeliveryResult } from "../services/delivery/credit-delivery.service.ts";
 import { parseCreditAmount } from "../services/delivery/gift-delivery-input.ts";
 import { giftDeliveryService } from "../services/delivery/gift-delivery.service.ts";
+import { giftDeliveryRepository } from "../services/delivery/gift-delivery.repository.ts";
 import type { LinkDeliveryResult } from "../services/delivery/link-delivery.service.ts";
 import {
   DECIDABLE_CLAIM_STATUSES,
@@ -79,6 +80,10 @@ export async function handleApprove(interaction: ButtonInteraction, claimId: str
     await interaction.reply({ content: R.alreadyDecided, ...EPHEMERAL });
     return;
   }
+  if (claim.deliveryType) {
+    await handleTypeChoice(interaction, claimId, claim.deliveryType);
+    return;
+  }
   await interaction.reply(
     buildDeliveryTypeMenu(M.typeMenu.claimHint, (type) => GiftClaimCustomId.type(claimId, type)),
   );
@@ -120,11 +125,19 @@ export async function handleAmountModal(
   if (!interaction.inCachedGuild()) return;
   await interaction.deferReply(EPHEMERAL);
   try {
+    const proof = modalUploads(interaction, GiftClaimModalField.deliveryProof);
+    const current = await giftClaimService.getClaim(claimId);
+    if (current?.status === GiftClaimStatus.APPROVED) {
+      const result = await giftDeliveryService.deliverCredits(claimId, interaction.member, proof);
+      await interaction.editReply(creditAck(result, current.amount ?? ""));
+      return;
+    }
     const outcome = await giftDeliveryService.approveWithType({
       claimId,
       manager: interaction.member,
       type: GiftDeliveryType.CREDITS,
       amount: modalText(interaction, GiftClaimModalField.amount),
+      proof,
     });
     const claim = await giftClaimService.getClaim(claimId);
     await interaction.editReply(
@@ -173,6 +186,7 @@ export async function handleLinkModal(
       actor: interaction.member,
       link: modalText(interaction, GiftClaimModalField.link),
       info: modalText(interaction, GiftClaimModalField.info) || null,
+      proof: modalUploads(interaction, GiftClaimModalField.deliveryProof),
     });
     await interaction.editReply(linkAck(result));
   } catch (err) {
@@ -201,6 +215,12 @@ export async function handleProofModal(
 
 export async function handleRetry(interaction: ButtonInteraction, claimId: string): Promise<void> {
   if (!interaction.inCachedGuild()) return;
+  const delivery = await giftDeliveryRepository.findByClaim(claimId);
+  if (!delivery || delivery.proof.length === 0) {
+    const claim = await giftClaimService.getClaim(claimId);
+    await interaction.showModal(buildAmountModal(GiftClaimCustomId.amountModal(claimId), claim?.amount));
+    return;
+  }
   if (!interaction.deferred && !interaction.replied) await interaction.deferReply(EPHEMERAL);
   try {
     const result = await giftDeliveryService.deliverCredits(claimId, interaction.member);

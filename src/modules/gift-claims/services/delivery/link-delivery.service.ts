@@ -11,6 +11,7 @@ import { giftDeliveriesChannel } from "./gift-deliveries-channel.ts";
 import { giftDeliveryRepository, type DeliveryLocation } from "./gift-delivery.repository.ts";
 import { decryptGiftSecret, encryptGiftSecret } from "./gift-secret.ts";
 import { linkDeliveryMessageService } from "./link-delivery-message.service.ts";
+import { giftDeliveryProofService, type StoredProofFile } from "./gift-delivery-proof.service.ts";
 
 const log = logger.child("gift-delivery:link");
 const M = giftDeliveryMessages;
@@ -38,6 +39,7 @@ export class LinkDeliveryService {
     staffId: string,
     rawLink: string,
     rawInfo: string | null,
+    proof: readonly StoredProofFile[],
   ): Promise<LinkDeliveryResult> {
     const link = parseGiftLink(rawLink);
     if (!link) throw new GiftClaimError("GIFT_LINK_INVALID", M.errors.linkInvalid);
@@ -48,6 +50,13 @@ export class LinkDeliveryService {
       const fresh = await giftDeliveryRepository.findById(delivery.deliveryId);
       assertDeliveryNotBusy(fresh ?? delivery);
       throw new ConflictError(M.errors.inProgress);
+    }
+
+    try {
+      await giftDeliveryProofService.attach(locked, staffId, proof);
+    } catch (err) {
+      await giftDeliveryRepository.markFailed(locked.deliveryId, "PROOF_SAVE_FAILED");
+      throw err;
     }
 
     await giftDeliveryRepository.storeSecret(locked.deliveryId, {

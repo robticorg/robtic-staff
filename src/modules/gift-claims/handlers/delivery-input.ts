@@ -1,5 +1,5 @@
 import type { ModalSubmitInteraction } from "discord.js";
-import type { UploadedProof } from "../services/delivery/manual-gift-delivery.service.ts";
+import type { UploadedProof } from "../services/delivery/gift-delivery-proof.service.ts";
 
 export function modalText(interaction: ModalSubmitInteraction, id: string): string {
   try {

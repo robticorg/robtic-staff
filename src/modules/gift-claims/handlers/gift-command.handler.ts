@@ -1,8 +1,12 @@
-import { MessageFlags, type ButtonInteraction, type ModalSubmitInteraction } from "discord.js";
+import {
+  MessageFlags,
+  type ModalSubmitInteraction,
+  type StringSelectMenuInteraction,
+} from "discord.js";
 import { giftDeliveryMessages } from "../../../data/gift-claim/delivery-messages.ts";
 import { buildAmountModal, buildLinkModal, buildProofModal } from "../render/delivery-components.ts";
 import { giftCommandService } from "../services/delivery/gift-command.service.ts";
-import { checkProof } from "../services/delivery/manual-gift-delivery.service.ts";
+import { giftDeliveryProofService } from "../services/delivery/gift-delivery-proof.service.ts";
 import { parseCreditAmount, parseGiftLink } from "../services/delivery/gift-delivery-input.ts";
 import { giftDeliveryService } from "../services/delivery/gift-delivery.service.ts";
 import { GiftDeliveryType } from "../types/enums.ts";
@@ -13,32 +17,13 @@ import { modalText, modalUploads } from "./delivery-input.ts";
 const M = giftDeliveryMessages;
 const EPHEMERAL = { flags: MessageFlags.Ephemeral } as const;
 
-async function sendCredits(
-  interaction: ButtonInteraction<"cached"> | ModalSubmitInteraction<"cached">,
-  draftId: string,
-  amount: string,
-): Promise<void> {
-  const draft = await giftCommandService.take(draftId, interaction.member);
-  const claim = await giftDeliveryService.createCommandClaim({
-    staff: interaction.member,
-    userId: draft.userId,
-    ticketId: draft.ticketId,
-    rewardName: M.command.rewardName(draft.info),
-    type: GiftDeliveryType.CREDITS,
-    amount,
-  });
-  const result = await giftDeliveryService.deliverCredits(claim.claimId, interaction.member);
-  await interaction.editReply(creditAck(result, claim.amount ?? amount));
-}
-
 export async function handleCommandType(
-  interaction: ButtonInteraction,
+  interaction: StringSelectMenuInteraction,
   draftId: string,
-  rawType: string | undefined,
 ): Promise<void> {
   if (!interaction.inCachedGuild()) return;
   try {
-    const type = deliveryTypeFrom(rawType);
+    const type = deliveryTypeFrom(interaction.values[0]);
     if (!type) {
       await interaction.reply({ content: M.errors.typeRequired, ...EPHEMERAL });
       return;
@@ -47,20 +32,13 @@ export async function handleCommandType(
 
     if (type === GiftDeliveryType.LINK) {
       await interaction.showModal(buildLinkModal(GiftClaimCustomId.cmdLinkModal(draftId)));
-      return;
-    }
-    if (type === GiftDeliveryType.OTHER) {
+    } else if (type === GiftDeliveryType.OTHER) {
       await interaction.showModal(buildProofModal(GiftClaimCustomId.cmdProofModal(draftId)));
-      return;
+    } else {
+      await interaction.showModal(
+        buildAmountModal(GiftClaimCustomId.cmdAmountModal(draftId), parseCreditAmount(draft.info)),
+      );
     }
-
-    const amount = parseCreditAmount(draft.info);
-    if (!amount) {
-      await interaction.showModal(buildAmountModal(GiftClaimCustomId.cmdAmountModal(draftId)));
-      return;
-    }
-    await interaction.deferReply(EPHEMERAL);
-    await sendCredits(interaction, draftId, amount);
   } catch (err) {
     await replyDeliveryError(interaction, err, "command type");
   }
@@ -74,7 +52,20 @@ export async function handleCommandAmountModal(
   await interaction.deferReply(EPHEMERAL);
   try {
     const amount = giftDeliveryService.requireAmount(modalText(interaction, GiftClaimModalField.amount));
-    await sendCredits(interaction, draftId, amount);
+    const proof = modalUploads(interaction, GiftClaimModalField.deliveryProof);
+    giftDeliveryProofService.assertValid(proof);
+
+    const draft = await giftCommandService.take(draftId, interaction.member);
+    const claim = await giftDeliveryService.createCommandClaim({
+      staff: interaction.member,
+      userId: draft.userId,
+      ticketId: draft.ticketId,
+      rewardName: M.command.rewardName(draft.info),
+      type: GiftDeliveryType.CREDITS,
+      amount,
+    });
+    const result = await giftDeliveryService.deliverCredits(claim.claimId, interaction.member, proof);
+    await interaction.editReply(creditAck(result, claim.amount ?? amount));
   } catch (err) {
     await replyDeliveryError(interaction, err, "command credits");
   }
@@ -92,6 +83,9 @@ export async function handleCommandLinkModal(
       await interaction.editReply(M.errors.linkInvalid);
       return;
     }
+    const proof = modalUploads(interaction, GiftClaimModalField.deliveryProof);
+    giftDeliveryProofService.assertValid(proof);
+
     const draft = await giftCommandService.take(draftId, interaction.member);
     const claim = await giftDeliveryService.createCommandClaim({
       staff: interaction.member,
@@ -105,6 +99,7 @@ export async function handleCommandLinkModal(
       actor: interaction.member,
       link,
       info: modalText(interaction, GiftClaimModalField.info) || null,
+      proof,
     });
     await interaction.editReply(linkAck(result));
   } catch (err) {
@@ -120,10 +115,8 @@ export async function handleCommandProofModal(
   await interaction.deferReply(EPHEMERAL);
   try {
     const uploads = modalUploads(interaction, GiftClaimModalField.deliveryProof);
-    if (checkProof(uploads)) {
-      await interaction.editReply(M.errors.proofRequired);
-      return;
-    }
+    giftDeliveryProofService.assertValid(uploads);
+
     const draft = await giftCommandService.take(draftId, interaction.member);
     const claim = await giftDeliveryService.createCommandClaim({
       staff: interaction.member,
