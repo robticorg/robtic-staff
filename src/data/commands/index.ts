@@ -14,6 +14,7 @@ export const CommandName = {
   PROMOTE_POINTS: "promote-points",
   WARN_SETUP: "warn-setup",
   AUTOCLAIM: "autoclaim",
+  INTAKE: "intake",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -68,7 +69,15 @@ export const FastAccessSubcommand = {
 export type FastAccessSubcommand =
   (typeof FastAccessSubcommand)[keyof typeof FastAccessSubcommand];
 
+export const IntakeSubcommand = {
+  CLOSE: "close",
+  OPEN: "open",
+  LIST: "list",
+} as const;
+export type IntakeSubcommand = (typeof IntakeSubcommand)[keyof typeof IntakeSubcommand];
+
 export const CommandOption = {
+  TARGET: "target",
   ROLE: "role",
   CHANNEL: "channel",
   TYPE: "type",

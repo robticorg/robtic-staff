@@ -14,6 +14,7 @@ import { applicationDraftStore } from "../shared/application-draft.store.ts";
 import { ApplicationField } from "../shared/component-ids.ts";
 import { APPLICATION_TYPE_VALUES, ApplicationType } from "../shared/enums.ts";
 import { replyWithError } from "./reply.ts";
+import { intakeService } from "../../intake/services/intake.service.ts";
 
 const V = staffApplicationMessages.validation;
 const EPHEMERAL = { flags: MessageFlags.Ephemeral } as const;
@@ -85,6 +86,7 @@ export async function handleFirstModal(interaction: ModalSubmitInteraction): Pro
   }
 
   try {
+    await intakeService.assertApplicationOpen(interaction.guildId, type as ApplicationType);
     await applicationEligibilityService.assertCanApply(interaction.member);
     const submittedAt = new Date();
     const recruiter = await staffRecruitmentService.relationshipForNewApplication(

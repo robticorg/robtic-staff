@@ -33,9 +33,11 @@ export const verifiedPanel: TicketPanelConfig = {
   ticketMessage: {
     accentColor: colors.info,
     text: [
-      "انت يا حلوة استني الموثقة تجيك و تراجع تكتك و تعطيك رتبة التوثيق",
-      "الرجاء التحلي بالصبر و عدم ازعاج الموثقة او المسؤولين و سيتم رد عليكي في اسرع وقت",
+      "أهلًا بك في قسم التوثيق، يرجى الانتظار حتى تقوم الموثقة بمراجعة طلبك ومنحك رتبة التوثيق.",
+      "يرجى التحلي بالصبر وعدم إزعاج الموثقة أو المسؤولين، وسيتم الرد عليك في أقرب وقت.",
+      "",
+      "Welcome to the Verification Department. Please wait while our verifier reviews your request and grants you the verification role.",
+      "Please be patient and avoid repeatedly contacting the verifier or staff. You will receive a response as soon as possible.",
     ],
-    footer: "لا تشارك كلمات السر أو التوكنات.",
   },
 };

@@ -3,6 +3,8 @@ import { colors } from "./colors.ts";
 export const punishmentConfig = {
   evidenceWindowDays: 3,
   maxEvidenceShown: 10,
+  jailSweepIntervalMs: 60_000,
+  jailSweepBatchSize: 50,
   approvalColors: {
     pending: colors.warning,
     approved: colors.success,

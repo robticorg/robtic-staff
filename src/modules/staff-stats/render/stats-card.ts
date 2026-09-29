@@ -91,6 +91,7 @@ export function overviewLines(o: StaffCardOverview): string[] {
   lines.push(C.status(C.statuses[o.status] ?? o.status));
   if (o.fired) lines.push(C.firedBy(o.fired.by, o.fired.at));
   lines.push(C.totalPoints(o.totalPoints));
+  if (o.breakPoints !== 0) lines.push(C.breakPoints(o.breakPoints));
   return lines;
 }
 

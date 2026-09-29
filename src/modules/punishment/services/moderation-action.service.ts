@@ -63,12 +63,28 @@ export class ModerationActionService {
    * Jail runs the hierarchy check first: staff are not jailed by other staff, and
    * nobody is jailed by someone they outrank. Refused before any record exists.
    */
-  async jail(input: ModerationActionInput): Promise<ModerationActionResult> {
+  async jail(input: ModerationActionInput & { durationMs?: number }): Promise<ModerationActionResult> {
     const decision = await canJail(input.actor, input.target);
     if (!decision.allowed) {
       return { executed: false, punishment: null, denied: decision.reason };
     }
     return this.run({ ...input, type: PunishmentType.JAIL });
+  }
+
+  /**
+   * Lifts a timed jail whose time is up: removes the role and marks the record
+   * EXPIRED. A member who left keeps the record expired too, so rejoining
+   * doesn't put the role back.
+   */
+  async expireJail(guild: Guild, punishment: HydratedDocument<Punishment>): Promise<boolean> {
+    const member = await guild.members.fetch(punishment.userId).catch(() => null);
+    const roleId = await configuredRoleId(guild.id, RoleConfigType.JAIL);
+    if (member && roleId && member.roles.cache.has(roleId)) {
+      await member.roles.remove(roleId, `Jail ${punishment.punishmentId} time is up`);
+    }
+    const expired = await punishmentService.markExpired(punishment.punishmentId);
+    await punishmentLogService.record(expired);
+    return true;
   }
 
   /**

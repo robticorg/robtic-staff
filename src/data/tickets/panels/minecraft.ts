@@ -52,8 +52,11 @@ export const minecraftPanel: TicketPanelConfig = {
   ticketMessage: {
     accentColor: colors.warning,
     text: [
-      "اهلا بك في الدعم الفني المخصصة بماينكرافت، فريق الدعم الفني جاهز لمساعدتك في حل مشاكلك.",
-      "الرجاء توضيح مشكلتك اكثر قدر ممكن، وكن صبورًا أثناء انتظار الرد.",
+      "أهلًا بك في دعم Minecraft، فريق الدعم جاهز لمساعدتك في حل مشكلتك.",
+      "يرجى توضيح المشكلة بالتفصيل قدر الإمكان، والتحلي بالصبر أثناء انتظار الرد.",
+      "",
+      "Welcome to Minecraft Support. Our support team is ready to help you resolve your issue.",
+      "Please describe your issue in as much detail as possible and be patient while waiting for a response.",
     ],
   },
 };

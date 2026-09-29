@@ -9,6 +9,10 @@ services:
       - /home/robtic/robtic-staff/.env
     environment:
       NODE_ENV: production
+    ports:
+      # Internal points API (POST /internal/staff/points), open to the internet.
+      # For VPS-only access use "127.0.0.1:8787:8787" instead.
+      - "8787:8787"
     # src/index.ts shuts down on SIGTERM by destroying the gateway client and
     # closing Mongo — both hit the network, so give it more than the 10s default.
     stop_grace_period: 30s

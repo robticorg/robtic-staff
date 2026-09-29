@@ -84,10 +84,15 @@ export const staffApplicationMessages = {
 
   apply: {
     intro: [
-      "## التقديم إلى الادارة",
-      "اهلا بك في خادم روبتيك فرع الكوميونتي المخصصة لمسابقات الالعاب و غيرها",
-      "نشكرك لاختيارك روبتيك كمان لتكون فيه اداري نتمنى لك التوفيق في التقديم الخاص بك و نرحب بك في اي وقت",
-      "اضغط الزر بالأسفل للبدء.",
+      "## التقديم إلى الإدارة",
+      "أهلًا بك في قسم التقديم للإدارة في Robtic Community.",
+      "-# نشكرك على اهتمامك بالانضمام إلى فريق الإدارة، ونتمنى لك التوفيق في طلبك.",
+      "اضغط على الزر بالأسفل للبدء.",
+      "",
+      "## Staff Application",
+      "Welcome to the Robtic Community staff application.",
+      "-# Thank you for your interest in joining our staff team. We wish you the best of luck with your application.",
+      "Click the button below to get started.",
     ],
     startButton: "ابدأ التقديم",
     genderPrompt: "## وش جنسك؟",
@@ -101,11 +106,10 @@ export const staffApplicationMessages = {
 
   transfer: {
     intro: [
-      "## النقل إلى الادارة",
-      "اهلا بك في خادم روبتيك فرع الكوميونتي المخصصة لمسابقات الالعاب و غيرها",
-       "نشكرك لاختيارك روبتيك كمان لتكون فيه اداري نتمنى لك التوفيق في التقديم الخاص بك و نرحب بك في اي وقت",
-      "قبل بدء الطلب، تأكد من توفر الشروط التالية:",
-      "- السيرفر يجب أن يحتوي على 4000 عضو على الأقل.\n- يجب أن تكون رتبتك في السيرفر أونر أو أعلى حسب نظام النقل.\n- يجب توضيح ترتيب رتبتك في السيرفر.\n- يجب تقديم إثبات للرتبة والسيرفر.",
+      "## النقل إلى الإدارة | Staff Transfer",
+      "أهلًا بك في قسم نقل الإدارة في Robtic Community. قبل بدء الطلب، يجب أن يحتوي السيرفر على 4000 عضو على الأقل، وأن تكون رتبتك Owner أو أعلى، مع توضيح رتبتك وتقديم إثبات للسيرفر والرتبة.",
+      "Welcome to the Robtic Community Staff Transfer. Before applying, the server must have at least 4,000 members, and you must hold the Owner role or higher, with proof of your role and server.",
+      "نتمنى لك التوفيق في طلبك. | We wish you the best of luck with your application.",
     ],
     startButton: "ابدأ طلب النقل",
     modalTitle: "معلومات النقل",

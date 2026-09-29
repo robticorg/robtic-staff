@@ -112,17 +112,21 @@ export class VacationService extends BaseRepository<Vacation> {
       throw new VacationError("VACATION_ROLE_UNSET", M.break.roleNotConfigured);
     }
 
-    if (await this.getOpenVacation(guildId, member.id)) {
-      throw new VacationError("VACATION_ALREADY_OPEN", M.break.alreadyOnVacation(`<@${member.id}>`));
-    }
-
     if (!(await staffPermissionService.isStaff(member))) {
       throw new VacationError("VACATION_TARGET_NOT_STAFF", M.break.targetNotStaff(`<@${member.id}>`));
     }
 
+    // A manager's !break overrides a break *request* still waiting for a decision —
+    // e.g. one whose card was deleted by mistake and can no longer be answered.
+    const open = await this.getOpenVacation(guildId, member.id);
+    if (open && !(await this.supersedePendingRequest(open, actorId))) {
+      throw new VacationError("VACATION_ALREADY_OPEN", M.break.alreadyOnVacation(`<@${member.id}>`));
+    }
+
     const snap = await vacationRoleService.fullSnapshot(member, guildId);
     const snapshot = snap.staffRoleIds;
-    const accessSnapshot = snap.accessRoleIds;
+    // Ignored roles ride with the access roles: removed for the break, restored after it.
+    const accessSnapshot = [...snap.accessRoleIds, ...snap.ignoredRoleIds];
     const acceptedSnapshot = snap.acceptedRoleIds;
     const assignedSnapshot = snap.assignedRoleIds;
     const typeSnapshot = snap.typeRoleIds;
@@ -322,7 +326,8 @@ export class VacationService extends BaseRepository<Vacation> {
 
     const snap = await vacationRoleService.fullSnapshot(target, vacation.guildId);
     const snapshot = snap.staffRoleIds;
-    const accessSnapshot = snap.accessRoleIds;
+    // Ignored roles ride with the access roles: removed for the break, restored after it.
+    const accessSnapshot = [...snap.accessRoleIds, ...snap.ignoredRoleIds];
     const acceptedSnapshot = snap.acceptedRoleIds;
     const assignedSnapshot = snap.assignedRoleIds;
     const typeSnapshot = snap.typeRoleIds;
@@ -567,6 +572,37 @@ export class VacationService extends BaseRepository<Vacation> {
     await this.dm(vacation.staffId, { content: M.dm.completed });
 
     return "completed";
+  }
+
+  /**
+   * Cancels an undecided break request so a manual break can take its place.
+   * Only requests (source APPLICATION) still PENDING qualify — an active break,
+   * or another !break mid-activation, is left alone. Atomic, so a manager
+   * approving the request at the same moment wins and this returns false.
+   */
+  private async supersedePendingRequest(open: VacationDocument, actorId: string): Promise<boolean> {
+    if (open.status !== VacationStatus.PENDING || open.source !== VacationSource.APPLICATION) {
+      return false;
+    }
+    const cancelled = await VacationModel.findOneAndUpdate(
+      { _id: open._id, status: VacationStatus.PENDING, source: VacationSource.APPLICATION },
+      {
+        $set: {
+          status: VacationStatus.CANCELLED,
+          isOpen: false,
+          endedBy: actorId,
+          endedAt: new Date(),
+          metadata: { ...(open.metadata ?? {}), supersededByManualBreak: true },
+        },
+      },
+      { returnDocument: "after" },
+    ).exec();
+    if (!cancelled) return false;
+
+    log.info(`request ${open.vacationId} for ${open.staffId} replaced by a manual break from ${actorId}`);
+    // If the card still exists anywhere, show it as cancelled so nobody can act on it.
+    await this.refreshRequestCard(open.vacationId);
+    return true;
   }
 
   private async abortActivation(

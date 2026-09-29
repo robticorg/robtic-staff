@@ -12,6 +12,7 @@ import { buildTicketPanelMessage } from "../render/panel-message.ts";
 import { ticketConfigService } from "../services/ticket-config.service.ts";
 import { ticketService } from "../services/ticket.service.ts";
 import { ticketDraftStore } from "./draft-store.ts";
+import { IntakeClosedError, intakeService } from "../../intake/services/intake.service.ts";
 import { buildQuestionModal } from "../render/question-modal.ts";
 
 const M = ticketMessages;
@@ -37,6 +38,14 @@ export async function handlePanelSelect(interaction: StringSelectMenuInteraction
 
     if (!panel || panel.hidden) {
       await interaction.reply({ content: M.create.unknownPanel, flags: MessageFlags.Ephemeral });
+      return;
+    }
+
+    try {
+      await intakeService.assertPanelOpen(interaction.guildId, panel.id);
+    } catch (err) {
+      if (!(err instanceof IntakeClosedError)) throw err;
+      await interaction.reply({ content: err.message, flags: MessageFlags.Ephemeral });
       return;
     }
 

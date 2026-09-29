@@ -23,6 +23,9 @@ export interface StaffRoleSnapshot {
   assignedRoleIds: RoleId[];
 
   typeRoleIds: RoleId[];
+
+  /** "Ignored" roles (never counted as a level) the member holds — the bot can manage all of them. */
+  ignoredRoleIds: RoleId[];
   currentRoleLevel: number | null;
   createdAt: Date;
 }
@@ -34,6 +37,7 @@ export function emptySnapshot(): StaffRoleSnapshot {
     acceptedRoleIds: [],
     assignedRoleIds: [],
     typeRoleIds: [],
+    ignoredRoleIds: [],
     currentRoleLevel: null,
     createdAt: new Date(),
   };
@@ -47,8 +51,19 @@ export function snapshotRoleIds(snapshot: StaffRoleSnapshot): RoleId[] {
       ...snapshot.acceptedRoleIds,
       ...snapshot.assignedRoleIds,
       ...snapshot.typeRoleIds,
+      ...snapshot.ignoredRoleIds,
     ]),
   ];
+}
+
+/** Ignored roles the member holds that the bot is able to take off (and put back). */
+export function heldIgnoredRoles(
+  member: GuildMember,
+  ignoredRoleIds: Iterable<RoleId>,
+): RoleId[] {
+  return [...ignoredRoleIds].filter(
+    (id) => member.roles.cache.has(id) && botCanManage(member, id),
+  );
 }
 
 export async function captureStaffRoleSnapshot(
@@ -78,6 +93,7 @@ export async function captureStaffRoleSnapshot(
     acceptedRoleIds,
     assignedRoleIds: held.filter((id) => managed.has(id)),
     typeRoleIds: held.filter((id) => typeRoles.has(id)),
+    ignoredRoleIds: heldIgnoredRoles(member, hierarchy.ignoredRoleIds),
     currentRoleLevel: highestLevelFromRoleIds(hierarchy, held),
     createdAt: new Date(),
   };

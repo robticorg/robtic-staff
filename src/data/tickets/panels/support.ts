@@ -43,8 +43,11 @@ export const supportPanel: TicketPanelConfig = {
   ticketMessage: {
     accentColor: colors.warning,
     text: [
-      "اهلا بك في الـدعـم الـفـنـي، فريق الدعم الفني جاهز لمساعدتك في حل مشاكلك.",
-      "لأمانك، لا تنشر أبداً كلمات السر أو أكواد التحقق (2FA) أو أرقام بطاقات الدفع في هذا التكت.",
+      "أهلًا بك في الدعم الفني، فريقنا جاهز لمساعدتك في حل مشكلتك.",
+      "لأمانك، لا تشارك كلمات المرور أو أكواد التحقق (2FA) أو بيانات الدفع داخل التذكرة.",
+      "",
+      "Welcome to Technical Support. Our team is ready to help you resolve your issue.",
+      "For your security, never share passwords, 2FA codes, or payment information in your ticket.",
     ],
   },
 };

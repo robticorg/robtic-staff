@@ -106,6 +106,19 @@ export class PunishmentService extends BaseRepository<Punishment> {
       .exec();
   }
 
+  /** Timed jails whose time is up and whose role still needs lifting. */
+  listExpiredJails(now: Date, limit: number): Promise<PunishmentDoc[]> {
+    return this.model
+      .find({
+        type: PunishmentType.JAIL,
+        status: PunishmentStatus.EXECUTED,
+        expiresAt: { $lte: now },
+      })
+      .sort({ expiresAt: 1 })
+      .limit(limit)
+      .exec();
+  }
+
   async getUserRecentPunishment(
     userId: UserId,
     guildId: GuildId,
@@ -438,7 +451,10 @@ export class PunishmentService extends BaseRepository<Punishment> {
           );
         }
         await ctx.target!.roles.add(roleId, reason);
-        return undefined;
+        // A timed jail is lifted by the jail expiry sweeper once this passes.
+        return punishment.type === PunishmentType.JAIL && punishment.duration
+          ? new Date(Date.now() + punishment.duration)
+          : undefined;
       }
       case PunishmentType.KICK: {
         await ctx.target!.kick(reason);

@@ -30,6 +30,7 @@ import { logger } from "../../../shared/utils/logger.ts";
 import { nextSequence } from "../../../shared/sequence.ts";
 import { limits } from "../../../data/config/limits.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
+import { StaffApplicationWorkflow } from "../../../data/staff-application/panels.ts";
 import {
   independentPanelIds,
   panelIsAdminOnly,
@@ -212,6 +213,13 @@ export class TicketService extends BaseRepository<Ticket> {
 
   async createTicket(input: CreateTicketInput): Promise<CreateTicketResult> {
     const { guild, panel, member } = input;
+
+    // Backstop for every entry point (panel menu, staff-support buttons, applications).
+    const { intakeService } = await import("../../intake/services/intake.service.ts");
+    await intakeService.assertPanelOpen(guild.id, panel.id);
+    if (panel.id === StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION) {
+      await intakeService.assertPanelOpen(guild.id, StaffApplicationWorkflow.STAFF_APPLICATION);
+    }
 
     if (await isBlacklistedFor(member, panel)) {
       throw new DomainError("TICKET_BLACKLISTED", M.blacklist.blocked);

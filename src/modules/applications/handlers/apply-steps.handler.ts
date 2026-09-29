@@ -12,6 +12,7 @@ import {
   type ApplicationDepartment,
 } from "../shared/enums.ts";
 import { errorText } from "./reply.ts";
+import { intakeService } from "../../intake/services/intake.service.ts";
 
 const M = staffApplicationMessages;
 
@@ -57,6 +58,8 @@ export async function handleDepartment(interaction: StringSelectMenuInteraction)
 
   await interaction.update(flowUpdate(statusStep(M.apply.creating)));
   try {
+    await intakeService.assertApplicationOpen(interaction.guildId, ApplicationType.NORMAL_APPLICATION);
+    await intakeService.assertDepartmentOpen(interaction.guildId, value as ApplicationDepartment);
     const opened = await staffApplicationService.submit(
       interaction.guild,
       interaction.member,

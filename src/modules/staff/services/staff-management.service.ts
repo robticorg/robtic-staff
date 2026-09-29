@@ -25,6 +25,7 @@ import {
 import { staffAcceptedRoleService } from "./staff-accepted-role.service.ts";
 import { staffRoleAssignmentService } from "./staff-role-assignment.service.ts";
 import { planStaffRoles, syncStaffRoles } from "./staff-role-sync.service.ts";
+import { heldIgnoredRoles } from "./staff-role-snapshot.ts";
 import { staffIdentityRequirementService } from "../../staff-identity/index.ts";
 import { staffTypeService } from "./staff-type.service.ts";
 import type { StaffType } from "../types/enums.ts";
@@ -261,11 +262,14 @@ export class StaffManagementService {
 
     const accessRoleIds = await roleConfigService.getAccessRoleIds(guildId);
     const acceptedConfig = await staffAcceptedRoleService.getConfig(guildId);
+    // Only the ones the bot can manage — one role above the bot would fail the whole removal.
+    const ignoredRoleIds = heldIgnoredRoles(member, await roleConfigService.getIgnoredRoleIds(guildId));
 
     const remove = [
       ...ladder.map((r) => r.roleId),
       ...(general ? [general] : []),
       ...accessRoleIds,
+      ...ignoredRoleIds,
       ...(acceptedConfig ? [acceptedConfig.roleId] : []),
 
       ...(await staffRoleAssignmentService.getManagedRoleIds(guildId)),

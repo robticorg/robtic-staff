@@ -22,6 +22,10 @@ export function buildPunishmentLog(punishment: Punishment): string {
   if (punishment.duration) {
     lines.push(L.line("المدة", formatDuration(punishment.duration)));
   }
+  if (punishment.expiresAt) {
+    const at = Math.floor(punishment.expiresAt.getTime() / 1000);
+    lines.push(L.line("ينتهي", `<t:${at}:f> (<t:${at}:R>)`));
+  }
   if (punishment.evidence?.length) {
     lines.push(
       L.line("الدليل", punishment.evidence.slice(0, punishmentConfig.maxEvidenceShown).join(" ")),

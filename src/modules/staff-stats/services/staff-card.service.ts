@@ -14,6 +14,7 @@ import { StaffHistoryModel } from "../../staff/models/staff-history.model.ts";
 import { StaffPointTransactionModel } from "../../staff/models/staff-point-transaction.model.ts";
 import type { StaffDocument } from "../../staff/models/staff.model.ts";
 import { staffProfileService } from "../../staff/services/staff-profile.service.ts";
+import { staffBreakPointService } from "../../staff/services/staff-break-point.service.ts";
 import { staffService } from "../../staff/services/staff.service.ts";
 import {
   StaffActivityType,
@@ -42,6 +43,8 @@ export interface StaffCardOverview {
   /** Set once they've been fired or blacklisted — the role they held right before. */
   fired: { by: UserId | null; at: Date | null; level: number; roleId: RoleId | null } | null;
   totalPoints: number;
+  /** Earned while on break — shown on its own, never part of totalPoints. */
+  breakPoints: number;
 }
 
 export interface WeekPoints {
@@ -134,7 +137,7 @@ export class StaffCardService {
     const isOut =
       staff.status === StaffStatus.FIRED || staff.status === StaffStatus.BLACKLISTED;
 
-    const [profile, hierarchy, member, lastFire, totalPoints] = await Promise.all([
+    const [profile, hierarchy, member, lastFire, totalPoints, breakPoints] = await Promise.all([
       staffProfileService.get(guild, userId),
       getHierarchy(guild.id),
       guild.members.fetch(userId).catch(() => null),
@@ -147,6 +150,7 @@ export class StaffCardService {
             .exec()
         : Promise.resolve(null),
       statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.ALL_TIME)),
+      staffBreakPointService.total(staffObjId),
     ]);
 
     const user = member?.user ?? (await guild.client.users.fetch(userId).catch(() => null));
@@ -177,6 +181,7 @@ export class StaffCardService {
           }
         : null,
       totalPoints,
+      breakPoints,
     };
   }
 

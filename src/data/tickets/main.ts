@@ -15,7 +15,12 @@ export const ticketMain: TicketMainConfig = {
     accentColor: colors.primary,
     text: [
       `## دعم ${branding.communityName}`,
-      "تحتاج مساعدة؟ اختر القسم اللي يناسب مشكلتك من تحت وراح ينفتح لك تكت.",
+      "تحتاج مساعدة؟ اختر القسم المناسب لمشكلتك من الأسفل لفتح تذكرة.",
+      "-# يرجى توضيح مشكلتك بوضوح، وفتح تذكرة واحدة فقط لكل موضوع. يُمنع استخدام التذاكر للمزاح أو منشن فريق الدعم بشكل متكرر، مع احترام فريق الدعم وعدم مشاركة أي معلومات خاصة.",
+      "",
+      `## ${branding.communityName} Support`,
+      "Need help? Select the appropriate category below to open a ticket.",
+      "-# Please describe your issue clearly and create only one ticket per topic. Do not use tickets for jokes or repeatedly mention the support team. Please respect our support team and never share private information.",
     ],
     footer: branding.footers.support,
   },

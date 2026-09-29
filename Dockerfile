@@ -15,4 +15,7 @@ COPY src ./src
 
 USER bun
 
+# Internal points API (POST /internal/staff/points) — 0.0.0.0:8787 by default.
+EXPOSE 8787
+
 CMD ["bun", "src/index.ts"]

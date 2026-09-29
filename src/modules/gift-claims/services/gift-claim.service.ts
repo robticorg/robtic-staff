@@ -97,6 +97,15 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
   }
 
   async canCreate(member: GuildMember): Promise<CanCreateResult> {
+    const { intakeService, IntakeClosedError } = await import(
+      "../../intake/services/intake.service.ts"
+    );
+    try {
+      await intakeService.assertPanelOpen(member.guild.id, giftClaimPanel.id);
+    } catch (err) {
+      if (err instanceof IntakeClosedError) return { ok: false, message: err.message };
+      throw err;
+    }
     if (await isBlacklistedFor(member, giftClaimPanel)) {
       return { ok: false, message: ticketMessages.blacklist.blocked };
     }

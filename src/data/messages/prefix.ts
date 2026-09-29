@@ -105,8 +105,12 @@ export const prefixMessages = {
   },
 
   jail: {
-    usage: `${E.warning} الطريقة: \`!سجن @عضو <السبب>\` — وأرفق الدليل مع الرسالة.`,
-    reasonRequired: `${E.warning} لازم تكتب سبب للسجن.`,
+    usage: `${E.warning} الطريقة: \`!سجن @عضو <السبب> [المدة مثل 2h أو 3d]\` — وأرفق الدليل مع الرسالة.`,
+    reasonRequired: `${E.warning} لازم تكتب سبب للسجن، أو مدة مثل \`3d\`.`,
+    noReason: "بدون سبب",
+    durationOutOfRange: `${E.warning} مدة السجن لازم تكون بين دقيقة و 365 يوم.`,
+    jailedFor: (mention: string, reason: string, duration: string, until: Date) =>
+      `${E.success} تم سجن ${mention} لمدة **${duration}**.\nالسبب: ${reason}\nينفك السجن تلقائياً <t:${Math.floor(until.getTime() / 1000)}:R>.`,
     proofRequired: `${E.warning} لازم ترفق دليل (صورة/سكرين) مع السجن — بدون دليل ما ينفّذ.`,
     self: `${E.error} ما تقدر تسجن نفسك.`,
     bot: `${E.error} ما تقدر تسجن بوت.`,

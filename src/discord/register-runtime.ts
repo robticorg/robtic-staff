@@ -11,6 +11,7 @@ import { warningPanelRefreshService } from "../modules/warning-panel/services/wa
 import { vacationExpirationService } from "../modules/vacation/services/vacation-expiration.service.ts";
 import { serverTagExpirationService } from "../modules/server-tag/services/server-tag-expiration.service.ts";
 import { serverTagAuditService } from "../modules/server-tag/services/server-tag-audit.service.ts";
+import { jailExpirationService } from "../modules/punishment/services/jail-expiration.service.ts";
 import { ladderSyncService } from "../modules/configuration/services/ladder-sync.service.ts";
 import { ticketSleepService } from "../modules/tickets/services/ticket-sleep.service.ts";
 import { registerApplicationLifecycle } from "../modules/applications/services/application-lifecycle.ts";
@@ -33,6 +34,8 @@ export function startModuleRuntime(): void {
 
   serverTagExpirationService.start();
 
+  jailExpirationService.start();
+
   ticketSleepService.start();
 
   warningPanelRefreshService.start();
@@ -43,6 +46,7 @@ export function startModuleRuntime(): void {
 export function stopModuleRuntime(): void {
   vacationExpirationService.stop();
   serverTagExpirationService.stop();
+  jailExpirationService.stop();
   serverTagAuditService.stop();
   ticketSleepService.stop();
   ladderSyncService.stop();

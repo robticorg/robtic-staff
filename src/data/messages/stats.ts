@@ -108,6 +108,7 @@ export const statsMessages = {
       `**طرده:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` — <t:${Math.floor(at.getTime() / 1000)}:D>` : ""}`,
     status: (label: string) => `**الحالة:** ${label}`,
     totalPoints: (n: number) => `**إجمالي النقاط:** ${n}`,
+    breakPoints: (n: number) => `**نقاط البريك:** ${n} (ما تنحسب مع الإجمالي)`,
 
     statuses: {
       ACTIVE: "اداري",

@@ -4,7 +4,7 @@ import { config } from "../../../config/index.ts";
 import { StaffModel } from "../../staff/models/staff.model.ts";
 import { StaffPointTransactionModel } from "../../staff/models/staff-point-transaction.model.ts";
 import { StaffPointTransactionType } from "../../staff/types/enums.ts";
-import { isAuthorized } from "../auth.ts";
+import { FailedAuthLimiter, isAuthorized } from "../auth.ts";
 import { handlePointsRequest, type PointsDeps } from "../points.handler.ts";
 import { parsePointsRequest } from "../points-request.ts";
 import { routeInternalRequest } from "../server.ts";
@@ -66,16 +66,56 @@ describe("points API authentication", () => {
     expect(bad.status).toBe(400);
     expect(JSON.stringify(await bad.json())).not.toContain(TOKEN);
   });
+
+  it("blocks an IP after too many wrong tokens, even with the right one", async () => {
+    const limiter = new FailedAuthLimiter(3, 60_000);
+    const url = "http://127.0.0.1/internal/staff/points";
+    const send = (token: string, ip: string) =>
+      routeInternalRequest(
+        new Request(url, { method: "POST", headers: { authorization: `Bearer ${token}` }, body: "x" }),
+        TOKEN,
+        ip,
+        limiter,
+      );
+
+    for (let i = 0; i < 3; i += 1) expect((await send("wrong", "1.2.3.4")).status).toBe(401);
+    expect((await send(TOKEN, "1.2.3.4")).status).toBe(429);
+    // Another IP is unaffected (400 = got past auth to body parsing).
+    expect((await send(TOKEN, "5.6.7.8")).status).toBe(400);
+  });
+
+  it("needs no auth header when no token is configured", async () => {
+    const url = "http://127.0.0.1/internal/staff/points";
+    const res = await routeInternalRequest(
+      new Request(url, { method: "POST", body: JSON.stringify({ userId: USER }) }),
+      undefined,
+      "1.2.3.4",
+    );
+    // 400 = got past auth to validation (guildId missing), not 401.
+    expect(res.status).toBe(400);
+  });
+
+  it("lets a blocked IP back in once the window passes", () => {
+    const limiter = new FailedAuthLimiter(1, 1_000);
+    limiter.recordFailure("9.9.9.9", 0);
+    expect(limiter.isBlocked("9.9.9.9", 500)).toBe(true);
+    expect(limiter.isBlocked("9.9.9.9", 1_000)).toBe(false);
+  });
 });
 
 describe("points handler", () => {
   const staffId = new Types.ObjectId();
   const calls: unknown[] = [];
+  const breakCalls: unknown[] = [];
   const deps: PointsDeps = {
     findStaff: async (_guildId, userId) => (userId === USER ? { _id: staffId } : null),
     addPoints: async (input) => {
       calls.push(input);
       return { balance: 5, duplicate: false };
+    },
+    addBreakPoints: async (input) => {
+      breakCalls.push(input);
+      return { breakPoints: 3, duplicate: false };
     },
   };
 
@@ -84,7 +124,10 @@ describe("points handler", () => {
       { guildId: GUILD, userId: USER, amount: 2, idempotencyKey: "bot-a:42" },
       deps,
     );
-    expect(response).toEqual({ status: 200, body: { success: true, duplicate: false, balance: 5 } });
+    expect(response).toEqual({
+      status: 200,
+      body: { success: true, ignored: false, onBreak: false, duplicate: false, balance: 5 },
+    });
     expect(calls.at(-1)).toMatchObject({
       staffId,
       amount: 2,
@@ -93,10 +136,43 @@ describe("points handler", () => {
     });
   });
 
-  it("answers 404 for unknown staff and 500 without details on failure", async () => {
-    const missing = await handlePointsRequest({ guildId: GUILD, userId: "323456789012345678", amount: 1 }, deps);
-    expect(missing.status).toBe(404);
+  it("ignores users who aren't staff (or no longer are) without adding points", async () => {
+    const ignored = { status: 200, body: { success: true, ignored: true, reason: "not staff" } };
+    const before = calls.length;
 
+    const notStaff = await handlePointsRequest({ guildId: GUILD, userId: "323456789012345678", amount: 1 }, deps);
+    expect(notStaff).toEqual(ignored);
+
+    for (const status of ["FIRED", "BLACKLISTED", "TRANSFERRED"]) {
+      const res = await handlePointsRequest(
+        { guildId: GUILD, userId: USER, amount: 1 },
+        { ...deps, findStaff: async () => ({ _id: staffId, status }) },
+      );
+      expect(res).toEqual(ignored);
+    }
+    expect(calls.length).toBe(before);
+  });
+
+  it("records staff on break as break points, never as real points", async () => {
+    const before = calls.length;
+    const onBreak = await handlePointsRequest(
+      { guildId: GUILD, userId: USER, amount: 1, idempotencyKey: "k1" },
+      { ...deps, findStaff: async () => ({ _id: staffId, status: "BREAK" }) },
+    );
+    expect(onBreak).toEqual({
+      status: 200,
+      body: { success: true, ignored: false, onBreak: true, duplicate: false, breakPoints: 3 },
+    });
+    expect(calls.length).toBe(before);
+    expect(breakCalls.at(-1)).toMatchObject({
+      staffId,
+      guildId: GUILD,
+      amount: 1,
+      referenceId: "api:k1",
+    });
+  });
+
+  it("answers 500 without details on failure", async () => {
     const failing = await handlePointsRequest(
       { guildId: GUILD, userId: USER, amount: 1 },
       { ...deps, addPoints: async () => { throw new Error("db exploded at host x"); } },

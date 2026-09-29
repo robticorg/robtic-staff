@@ -59,6 +59,28 @@ export function parseDuration(input: string): number | null {
   return total;
 }
 
+export const JAIL_MIN_MS = MIN;
+export const JAIL_MAX_MS = 365 * DAY;
+
+const UNIT_TOKEN = /^(\d+[wdhms])+$/i;
+
+/**
+ * Pulls a duration like `3d`, `2h` or `1d12h` off the end (or start) of free text.
+ * A unit is required, so a bare number in a reason is never read as a duration.
+ */
+export function takeDurationToken(text: string): { rest: string; durationMs: number | null } {
+  const tokens = text.trim().split(/\s+/).filter(Boolean);
+  for (const index of [tokens.length - 1, 0]) {
+    const token = tokens[index];
+    if (!token || !UNIT_TOKEN.test(token)) continue;
+    const ms = parseDuration(token);
+    if (ms === null) continue;
+    tokens.splice(index, 1);
+    return { rest: tokens.join(" "), durationMs: ms };
+  }
+  return { rest: tokens.join(" "), durationMs: null };
+}
+
 export function clampTimeout(ms: number): number {
   return Math.min(TIMEOUT_MAX_MS, Math.max(TIMEOUT_MIN_MS, Math.floor(ms)));
 }
@@ -84,6 +106,7 @@ export function formatDuration(ms: number): string {
 
 export const durationService = {
   parse: parseDuration,
+  takeToken: takeDurationToken,
   clampTimeout,
   format: formatDuration,
   presets: TIMEOUT_PRESETS,

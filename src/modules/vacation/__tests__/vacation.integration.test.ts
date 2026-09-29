@@ -220,6 +220,35 @@ describe.skipIf(!hasDb)("Vacation system (MongoDB + Discord fakes)", () => {
     expect(await VacationModel.countDocuments({ guildId: GUILD, staffId: "staff-2" })).toBe(1);
   });
 
+  it("!break replaces a break request nobody answered (e.g. its card was deleted)", async () => {
+    const guild = makeGuild();
+    attachFakeClient(guild);
+    const target = addMember(guild, "staff-stuck", [R_START, R_STAFF]);
+
+    const { vacation: request } = await vacationService.createApplication({
+      guildId: GUILD,
+      member: target as never,
+      reasonInput: "Exams",
+      durationInput: "7",
+    });
+
+    const { vacation } = await vacationService.createManualBreak({
+      guildId: GUILD,
+      member: target as never,
+      actorId: "mgr-1",
+      durationInput: "3d",
+    });
+
+    expect(vacation.status).toBe(VacationStatus.ACTIVE);
+    const old = await VacationModel.findOne({ vacationId: request.vacationId }).exec();
+    expect(old?.status).toBe(VacationStatus.CANCELLED);
+    expect(old?.isOpen).toBe(false);
+    expect(old?.metadata?.supersededByManualBreak).toBe(true);
+    expect(
+      await VacationModel.countDocuments({ guildId: GUILD, staffId: "staff-stuck", isOpen: true }),
+    ).toBe(1);
+  });
+
   it("!break: missing vacation role → nothing is created", async () => {
     await RoleConfigModel.deleteOne({ guildId: GUILD, type: RoleConfigType.VACATION });
     const guild = makeGuild();

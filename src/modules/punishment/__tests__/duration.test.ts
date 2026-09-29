@@ -5,7 +5,35 @@ import {
   clampTimeout,
   formatDuration,
   parseDuration,
+  takeDurationToken,
 } from "../services/duration.service.ts";
+
+describe("takeDurationToken (!jail time)", () => {
+  const H = 3_600_000;
+  const D = 86_400_000;
+
+  it("reads a time on its own", () => {
+    expect(takeDurationToken("3d")).toEqual({ rest: "", durationMs: 3 * D });
+  });
+
+  it("reads a time at the end of the reason", () => {
+    expect(takeDurationToken("he try to make a spam 2h")).toEqual({
+      rest: "he try to make a spam",
+      durationMs: 2 * H,
+    });
+    expect(takeDurationToken("reason reason 4d")).toEqual({ rest: "reason reason", durationMs: 4 * D });
+  });
+
+  it("reads a time at the start of the reason and combined units", () => {
+    expect(takeDurationToken("1d12h spam")).toEqual({ rest: "spam", durationMs: 36 * H });
+  });
+
+  it("never treats a bare number or plain words as a time", () => {
+    expect(takeDurationToken("spam 5")).toEqual({ rest: "spam 5", durationMs: null });
+    expect(takeDurationToken("toxic")).toEqual({ rest: "toxic", durationMs: null });
+    expect(takeDurationToken("")).toEqual({ rest: "", durationMs: null });
+  });
+});
 
 describe("parseDuration", () => {
   it("treats bare digits as minutes", () => {
