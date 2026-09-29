@@ -75,7 +75,7 @@ export const rawEnv: RawEnv = {
 
   internalApiToken: process.env.INTERNAL_API_TOKEN || undefined,
   internalApiHost: process.env.INTERNAL_API_HOST || "0.0.0.0",
-  internalApiPort: readPort(process.env.INTERNAL_API_PORT, 8787),
+  internalApiPort: readPort(process.env.INTERNAL_API_PORT, 8788),
 
   autoclaimApiUrl: process.env.AUTOCLAIM_API_URL || undefined,
   autoclaimApiToken: process.env.AUTOCLAIM_API_TOKEN || undefined,

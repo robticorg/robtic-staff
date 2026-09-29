@@ -11,8 +11,9 @@ services:
       NODE_ENV: production
     ports:
       # Internal points API (POST /internal/staff/points), open to the internet.
-      # For VPS-only access use "127.0.0.1:8787:8787" instead.
-      - "8787:8787"
+      # Port 8788 (8787 is taken by robtic-guard on the VPS).
+      # For VPS-only access use "127.0.0.1:8788:8788" instead.
+      - "8788:8788"
     # src/index.ts shuts down on SIGTERM by destroying the gateway client and
     # closing Mongo — both hit the network, so give it more than the 10s default.
     stop_grace_period: 30s

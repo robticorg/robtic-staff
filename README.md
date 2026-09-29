@@ -995,12 +995,20 @@ only adds the application record and its flow.
 
 ## Internal points API
 
-`POST /internal/staff/points` with `Authorization: Bearer $INTERNAL_API_TOKEN`,
-served by `Bun.serve` on `INTERNAL_API_HOST:INTERNAL_API_PORT` (default
-`127.0.0.1:8787`, disabled without a token). Body: `guildId`, `userId`, `amount`,
-optional `type`, `reason`, `idempotencyKey`. Every award is a
-`StaffPointTransaction`; a repeated `idempotencyKey` is answered without a second
-transaction.
+`POST /internal/staff/points`, served by `Bun.serve` on
+`INTERNAL_API_HOST:INTERNAL_API_PORT` (default `0.0.0.0:8788`, always on;
+docker-compose publishes `8788:8788`). No token by default — set
+`INTERNAL_API_TOKEN` to require `Authorization: Bearer <token>` (10 wrong tokens
+from one IP block it for 10 minutes). Body: `guildId`, `userId`, `amount`,
+optional `type`, `reason`, `idempotencyKey`.
+
+- Active staff: a `StaffPointTransaction` (`onBreak: false`, `balance`).
+- Staff on break: a `StaffBreakPoint` instead — never counted in totals,
+  leaderboards or the points balance (`onBreak: true`, `breakPoints`).
+- Not staff / fired / blacklisted / transferred: `200` with `ignored: true`,
+  nothing recorded.
+
+A repeated `idempotencyKey` is answered without a second record.
 
 ## Staff identity requirement
 
