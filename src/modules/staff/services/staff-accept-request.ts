@@ -5,7 +5,11 @@ import { STAFF_TIER_LABELS } from "../../../data/messages/hierarchy.ts";
 import { STAFF_TIER_KEYWORD_DEFINITIONS } from "../../../data/staff-tiers/index.ts";
 import { staffTypeLabel } from "../../../data/staff-types/index.ts";
 import type { StaffTier } from "../../configuration/types/enums.ts";
-import { getLevelForTier, getMaxLevel } from "../../configuration/utils/staff-levels.ts";
+import {
+  getHierarchy,
+  getLevelForTier,
+  getMaxLevel,
+} from "../../configuration/utils/staff-levels.ts";
 import type { StaffType } from "../types/enums.ts";
 import { AcceptArgProblem, parseAcceptArguments } from "./staff-accept-args.ts";
 import { staffTypeService } from "./staff-type.service.ts";
@@ -67,6 +71,12 @@ export function isEmptyAcceptRequest(request: AcceptRequest): boolean {
   );
 }
 
+/** The level of the configured END role; the top of the ladder if no END role is set. */
+export async function resolveEndLevel(guildId: GuildId): Promise<number | null> {
+  const { endLevel } = await getHierarchy(guildId);
+  return endLevel ?? getMaxLevel(guildId);
+}
+
 export async function resolveAcceptRequest(
   guildId: GuildId,
   request: AcceptRequest,
@@ -74,7 +84,7 @@ export async function resolveAcceptRequest(
   let level = request.level;
 
   if (request.max) {
-    const maxLevel = await getMaxLevel(guildId);
+    const maxLevel = await resolveEndLevel(guildId);
     if (maxLevel === null) throw new AcceptRequestError(M.rolesNotConfigured);
     level = maxLevel;
   }

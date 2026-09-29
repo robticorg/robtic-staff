@@ -15,7 +15,8 @@ export const AcceptArgProblem = {
 } as const;
 export type AcceptArgProblem = (typeof AcceptArgProblem)[keyof typeof AcceptArgProblem];
 
-export const MAX_LEVEL_KEYWORDS: ReadonlySet<string> = new Set(["max"]);
+/** "Top of the ladder" — resolves to the configured END role's level. */
+export const MAX_LEVEL_KEYWORDS: ReadonlySet<string> = new Set(["max", "ماكس"]);
 
 export interface ParsedAcceptArguments {
   level: number | null;

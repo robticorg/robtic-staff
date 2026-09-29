@@ -15,6 +15,7 @@ export const CommandName = {
   WARN_SETUP: "warn-setup",
   AUTOCLAIM: "autoclaim",
   INTAKE: "intake",
+  INFO: "info",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -76,8 +77,18 @@ export const IntakeSubcommand = {
 } as const;
 export type IntakeSubcommand = (typeof IntakeSubcommand)[keyof typeof IntakeSubcommand];
 
+export const InfoSubcommand = {
+  SETUP: "setup",
+  ADD: "add",
+  REMOVE: "remove",
+  SEE: "see",
+  PAGE_GROUP: "page",
+  PAGE_ADD: "add",
+} as const;
+
 export const CommandOption = {
   TARGET: "target",
+  INFO: "info",
   ROLE: "role",
   CHANNEL: "channel",
   TYPE: "type",

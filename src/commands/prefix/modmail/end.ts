@@ -16,14 +16,11 @@ export default definePrefixCommand({
   name: "end",
   category: "modmail",
   async execute(ctx) {
-    if (!ctx.channel.isThread()) {
-      throw new PrefixAbort(prefixMessages.modmail.notAThread);
-    }
+    // Only means something inside a report thread — ignore it anywhere else.
+    if (!ctx.channel.isThread()) throw new PrefixAbort();
     const thread = ctx.channel;
     const kase = await modmailCaseService.getByThreadId(thread.id);
-    if (!kase || kase.guildId !== ctx.guild.id) {
-      throw new PrefixAbort(prefixMessages.modmail.notAThread);
-    }
+    if (!kase || kase.guildId !== ctx.guild.id) throw new PrefixAbort();
 
     try {
       await resolutionService.openResolution(kase.caseId, ctx.member, thread);

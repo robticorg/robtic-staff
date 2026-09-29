@@ -56,12 +56,16 @@ describe("parseAcceptArguments", () => {
       staffType: null,
       tier: null,
     });
-    expect(parseAcceptArguments(args(`${MENTION} MAX ماكس`), USER)).toEqual({
+    // "ماكس" is the same as "max": the END role — not the separate MAX type role.
+    expect(parseAcceptArguments(args(`${MENTION} ماكس`), USER)).toEqual({
       level: null,
       max: true,
-      staffType: StaffType.MAX,
+      staffType: null,
       tier: null,
     });
+    expect(parseAcceptArguments(args(`${MENTION} MAX ماكس`), USER).problem).toBe(
+      AcceptArgProblem.DUPLICATE_LEVEL,
+    );
   });
 
   it("rejects max together with a level or a tier", () => {
@@ -80,8 +84,8 @@ describe("parseAcceptArguments", () => {
   });
 
   it("maps Arabic keywords onto the same internal ids", () => {
-    expect(parseAcceptArguments(args(`${MENTION} ماكس`), USER).staffType).toBe(StaffType.MAX);
     expect(parseAcceptArguments(args(`${MENTION} مبرمج`), USER).staffType).toBe(StaffType.DEV);
+    expect(parseAcceptArguments(args(`${MENTION} ديف`), USER).staffType).toBe(StaffType.DEV);
   });
 
   it("is case-insensitive for English keywords", () => {
@@ -93,10 +97,10 @@ describe("parseAcceptArguments", () => {
   });
 
   it("accepts type then level", () => {
-    expect(parseAcceptArguments(args(`${MENTION} ماكس 3`), USER)).toEqual({
+    expect(parseAcceptArguments(args(`${MENTION} مبرمج 3`), USER)).toEqual({
       level: 3,
       max: false,
-      staffType: StaffType.MAX,
+      staffType: StaffType.DEV,
       tier: null,
     });
     expect(parseAcceptArguments(args(`${MENTION} dev 5`), USER)).toEqual({
@@ -108,10 +112,10 @@ describe("parseAcceptArguments", () => {
   });
 
   it("accepts level then type", () => {
-    expect(parseAcceptArguments(args(`${MENTION} 3 ماكس`), USER)).toEqual({
+    expect(parseAcceptArguments(args(`${MENTION} 3 مبرمج`), USER)).toEqual({
       level: 3,
       max: false,
-      staffType: StaffType.MAX,
+      staffType: StaffType.DEV,
       tier: null,
     });
     expect(parseAcceptArguments(args(`${MENTION} 5 dev`), USER)).toEqual({
@@ -123,10 +127,10 @@ describe("parseAcceptArguments", () => {
   });
 
   it("accepts an Arabic keyword together with a level, either order", () => {
-    expect(parseAcceptArguments(args(`${MENTION} ماكس 3`), USER)).toEqual({
+    expect(parseAcceptArguments(args(`${MENTION} ديف 3`), USER)).toEqual({
       level: 3,
       max: false,
-      staffType: StaffType.MAX,
+      staffType: StaffType.DEV,
       tier: null,
     });
     expect(parseAcceptArguments(args(`${MENTION} 3 مبرمج`), USER)).toEqual({
@@ -173,17 +177,26 @@ describe("parseAcceptArguments", () => {
     );
   });
 
-  it("rejects two levels and two different types", () => {
+  it("rejects two levels, including ماكس (= max) with a number", () => {
     expect(parseAcceptArguments(args(`${MENTION} 2 3`), USER).problem).toBe(
       AcceptArgProblem.DUPLICATE_LEVEL,
     );
-    expect(parseAcceptArguments(args(`${MENTION} ماكس dev`), USER).problem).toBe(
-      AcceptArgProblem.DUPLICATE_TYPE,
+    expect(parseAcceptArguments(args(`${MENTION} ماكس 3`), USER).problem).toBe(
+      AcceptArgProblem.DUPLICATE_LEVEL,
     );
   });
 
+  it("combines ماكس (the END role) with a type", () => {
+    expect(parseAcceptArguments(args(`${MENTION} ماكس dev`), USER)).toEqual({
+      level: null,
+      max: true,
+      staffType: StaffType.DEV,
+      tier: null,
+    });
+  });
+
   it("tolerates the same type twice", () => {
-    expect(parseAcceptArguments(args(`${MENTION} ماكس ماكس`), USER).staffType).toBe(StaffType.MAX);
+    expect(parseAcceptArguments(args(`${MENTION} dev مبرمج`), USER).staffType).toBe(StaffType.DEV);
   });
 
   it("reads the English tier keywords", () => {
@@ -270,10 +283,17 @@ describe("Staff Type registry", () => {
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 
-  it("includes each definition's own slug among its keywords", () => {
+  it("includes each typed-in definition's own slug among its keywords", () => {
+    // MAX has no keywords on purpose — "max"/"ماكس" means the END role.
     for (const definition of STAFF_TYPE_DEFINITIONS) {
+      if (definition.keywords.length === 0) continue;
       expect(definition.keywords).toContain(definition.slug);
     }
+  });
+
+  it("never lets a type claim a max keyword", () => {
+    expect(STAFF_TYPE_BY_KEYWORD.has("max")).toBe(false);
+    expect(STAFF_TYPE_BY_KEYWORD.has("ماكس")).toBe(false);
   });
 
   it("stores internal ids, never Arabic keywords", () => {

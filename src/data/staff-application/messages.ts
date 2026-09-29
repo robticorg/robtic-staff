@@ -88,7 +88,6 @@ export const staffApplicationMessages = {
       "أهلًا بك في قسم التقديم للإدارة في Robtic Community.",
       "-# نشكرك على اهتمامك بالانضمام إلى فريق الإدارة، ونتمنى لك التوفيق في طلبك.",
       "اضغط على الزر بالأسفل للبدء.",
-      "",
       "## Staff Application",
       "Welcome to the Robtic Community staff application.",
       "-# Thank you for your interest in joining our staff team. We wish you the best of luck with your application.",

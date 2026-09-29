@@ -1,4 +1,4 @@
-import type { GuildMember, Message } from "discord.js";
+import { PermissionFlagsBits, type GuildMember, type Message } from "discord.js";
 import { channelConfigService } from "../../../modules/configuration/index.ts";
 import { ChannelConfigType, StaffTier } from "../../../modules/configuration/types/enums.ts";
 import {
@@ -7,10 +7,11 @@ import {
 } from "../../../modules/configuration/utils/staff-levels.ts";
 import type { WarnChannelConfig } from "../../../modules/warnings/services/warn-channels.ts";
 
-/** Staff at this tier or above may !jail / !warn without attaching proof. */
+/** Staff at this tier or above (and administrators) need no reason or proof for !jail / !warn. */
 export const PROOF_EXEMPT_TIER = StaffTier.SHIP;
 
 export async function isProofExempt(member: GuildMember): Promise<boolean> {
+  if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
   const hierarchy = await getHierarchy(member.guild.id);
   const threshold = hierarchy.boundaryLevels[PROOF_EXEMPT_TIER];
   if (threshold === null) return false;

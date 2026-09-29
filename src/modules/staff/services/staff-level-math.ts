@@ -44,3 +44,34 @@ export function rawDemoteLevel(currentLevel: number, amount: number | null): num
   const step = amount === null || amount <= 0 ? 1 : amount;
   return currentLevel - step;
 }
+
+/** How far to move: a number of steps (null = 1), or straight to a level (e.g. a tier's first level). */
+export type LevelMove = number | null | { level: number };
+
+export interface MoveResolution {
+  to: number;
+  /**
+   * The explicit level lies the wrong way — promoting an owner "to high" would be a
+   * demotion. Nothing should change.
+   */
+  wrongWay: boolean;
+}
+
+export function resolveMove(
+  direction: "promote" | "demote",
+  currentLevel: number,
+  move: LevelMove,
+  ladder: readonly LadderRung[],
+): MoveResolution {
+  if (move !== null && typeof move === "object") {
+    const wrongWay = direction === "promote" ? move.level <= currentLevel : move.level >= currentLevel;
+    return { to: wrongWay ? currentLevel : move.level, wrongWay };
+  }
+  return {
+    to:
+      direction === "promote"
+        ? resolvePromoteLevel(currentLevel, move, ladder)
+        : rawDemoteLevel(currentLevel, move),
+    wrongWay: false,
+  };
+}

@@ -61,6 +61,8 @@ export function parseDuration(input: string): number | null {
 
 export const JAIL_MIN_MS = MIN;
 export const JAIL_MAX_MS = 365 * DAY;
+/** !jail without a time — the jail still ends by itself after this. */
+export const JAIL_DEFAULT_MS = 28 * DAY;
 
 const UNIT_TOKEN = /^(\d+[wdhms])+$/i;
 

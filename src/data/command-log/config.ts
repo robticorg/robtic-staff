@@ -17,6 +17,7 @@ export const PREFIX_COMMAND_LOG_SLOTS: Readonly<Record<string, ChannelConfigType
   break: ChannelConfigType.STAFF_LOG,
   unbreak: ChannelConfigType.STAFF_LOG,
   gift: ChannelConfigType.STAFF_LOG,
+  back: ChannelConfigType.STAFF_LOG,
 
   warn: ChannelConfigType.WARN_COMMAND_LOG,
   unwarn: ChannelConfigType.WARN_COMMAND_LOG,

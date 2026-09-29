@@ -30,7 +30,10 @@ export interface FlowMessageInput {
 
 function container(input: FlowMessageInput): ContainerBuilder {
   const box = new ContainerBuilder().setAccentColor(staffApplicationConfig.accentColor);
-  for (const block of input.blocks) box.addTextDisplayComponents((t) => t.setContent(block));
+  // Discord rejects an empty text block, which would stop the whole step from sending.
+  for (const block of input.blocks) {
+    if (block.trim()) box.addTextDisplayComponents((t) => t.setContent(block));
+  }
 
   if (input.select) {
     const select = input.select;

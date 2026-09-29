@@ -2,6 +2,7 @@ import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { moderationActionService } from "../../../modules/punishment/services/moderation-action.service.ts";
 import {
+  JAIL_DEFAULT_MS,
   JAIL_MAX_MS,
   JAIL_MIN_MS,
   formatDuration,
@@ -26,18 +27,20 @@ export default definePrefixCommand({
     if (target.id === ctx.member.id) throw new PrefixAbort(M.self);
     if (target.user.bot) throw new PrefixAbort(M.bot);
 
-    // "!jail @user spam 2h", "!jail @user 3d" — the time is optional; without it the jail is permanent.
-    const { rest, durationMs } = takeDurationToken(textAfterTarget(ctx.rest));
-    if (durationMs !== null && (durationMs < JAIL_MIN_MS || durationMs > JAIL_MAX_MS)) {
+    // "!jail @user spam 2h", "!jail @user 3d", "!jail @user" — no time means 28 days.
+    const { rest, durationMs: givenMs } = takeDurationToken(textAfterTarget(ctx.rest));
+    if (givenMs !== null && (givenMs < JAIL_MIN_MS || givenMs > JAIL_MAX_MS)) {
       throw new PrefixAbort(M.durationOutOfRange);
     }
-    if (!rest && durationMs === null) throw new PrefixAbort(M.reasonRequired);
+    const durationMs = givenMs ?? JAIL_DEFAULT_MS;
+
+    // Administrators and Ship+ jail on the spot: no reason, no proof.
+    const exempt = await isProofExempt(ctx.member);
+    if (!rest && givenMs === null && !exempt) throw new PrefixAbort(M.reasonRequired);
     const reason = rest || M.noReason;
 
     const evidence = evidenceUrls(ctx.message);
-    if (evidence.length === 0 && !(await isProofExempt(ctx.member))) {
-      throw new PrefixAbort(M.proofRequired);
-    }
+    if (evidence.length === 0 && !exempt) throw new PrefixAbort(M.proofRequired);
 
     const result = await moderationActionService.jail({
       guild: ctx.guild,
@@ -45,7 +48,7 @@ export default definePrefixCommand({
       actor: ctx.member,
       reason,
       evidence,
-      ...(durationMs !== null ? { durationMs } : {}),
+      durationMs,
     });
 
     if (result.denied) throw new PrefixAbort(M.denied[result.denied]);
@@ -56,7 +59,7 @@ export default definePrefixCommand({
     const mention = `<@${target.id}>`;
     const until = result.punishment?.expiresAt;
     await ctx.reply(
-      durationMs !== null && until
+      until
         ? M.jailedFor(mention, reason, formatDuration(durationMs), until)
         : M.jailed(mention, reason),
     );

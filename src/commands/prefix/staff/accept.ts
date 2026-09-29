@@ -20,6 +20,8 @@ import {
   staffManagementService,
   type AcceptResult,
 } from "../../../modules/staff/services/staff-management.service.ts";
+import { staffService } from "../../../modules/staff/services/staff.service.ts";
+import { StaffStatus } from "../../../modules/staff/types/enums.ts";
 import { PrefixAbort, requireApplyManager } from "../_shared/guards.ts";
 import { extractUserIds } from "../_shared/parse.ts";
 import { requireTargetMember } from "../_shared/target.ts";
@@ -76,6 +78,13 @@ export default definePrefixCommand({
 
     await requireApplyManager(ctx);
     const target = await requireTargetMember(ctx, "!accept @user [level|tier|max] [type]");
+
+    // Accept is for bringing someone in. Current staff (active or on break) are
+    // moved with !promote / !demote; fired members come back with !back or a new accept.
+    const existing = await staffService.get(target.id, ctx.guild.id);
+    if (existing && (existing.status === StaffStatus.ACTIVE || existing.status === StaffStatus.BREAK)) {
+      throw new PrefixAbort(M.alreadyStaff(`<@${target.id}>`));
+    }
 
     const request = await resolveAcceptRequest(
       ctx.guild.id,

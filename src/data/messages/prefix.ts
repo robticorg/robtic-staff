@@ -97,15 +97,35 @@ export const prefixMessages = {
     demoted: (userMention: string, from: number, to: number) =>
       `${E.success} تم تنزيل ${userMention} **${from} → ${to}**.`,
     alreadyMaxLevel: (userMention: string) => `${E.warning} ${userMention} وصل أعلى مستوى أصلاً.`,
+    alreadyStaff: (userMention: string) =>
+      `${E.warning} ${userMention} ستاف أصلاً — استخدم \`!promote\` أو \`!demote\` لتغيير رتبته.`,
+    promoteTierNotHigher: (userMention: string, tierLabel: string, level: number) =>
+      `${E.warning} ${userMention} رتبته **${tierLabel}** أو أعلى أصلاً (المستوى ${level}) — ما راح ينزل بالترقية.`,
+    demoteTierNotLower: (userMention: string, tierLabel: string, level: number) =>
+      `${E.warning} ${userMention} رتبته **${tierLabel}** أو أقل أصلاً (المستوى ${level}) — ما راح يرتفع بالتنزيل.`,
+    tierTokenUnknown: (token: string, available: string) =>
+      `${E.error} ما فهمت \`${token}\` — اكتب عدد مستويات أو وحدة من: ${available}.`,
+
+    backUsage: `${E.warning} الطريقة: \`!back @عضو\``,
+    backNoRecord: (userMention: string) =>
+      `${E.error} ${userMention} ما له سجل ستاف سابق — استخدم \`!accept\`.`,
+    backNothingToDo: (userMention: string) =>
+      `${E.warning} ${userMention} ستاف ورتبه كاملة أصلاً.`,
+    backBlacklisted: (userMention: string) =>
+      `${E.error} ${userMention} في البلاك ليست — ما ينفع يرجع بـ \`!back\`.`,
+    backOnBreak: (userMention: string) =>
+      `${E.warning} ${userMention} في بريك — استخدم \`!unbreak\` لإرجاع رتبه.`,
+    backDone: (userMention: string, level: number) =>
+      `${E.success} تم إرجاع ${userMention} للستاف على المستوى **${level}** مع رتبه.`,
     alreadyMinLevel: (userMention: string) => `${E.warning} ${userMention} على المستوى 0 أصلاً. استخدم \`!فصل\` عشان تشيله.`,
     acceptUsage: `${E.warning} الطريقة: \`!قبول @عضو [المستوى]\``,
     fireUsage: `${E.warning} الطريقة: \`!فصل @عضو\` للفصل العادي · \`!فصل @عضو =\` للفصل + القائمة السوداء`,
-    promoteUsage: `${E.warning} الطريقة: \`!ترقية @عضو [عدد-المستويات]\``,
-    demoteUsage: `${E.warning} الطريقة: \`!تنزيل @عضو [عدد-المستويات]\``,
+    promoteUsage: `${E.warning} الطريقة: \`!ترقية @عضو [عدد-المستويات | high | owner | ship | max]\``,
+    demoteUsage: `${E.warning} الطريقة: \`!تنزيل @عضو [عدد-المستويات | high | owner | ship]\``,
   },
 
   jail: {
-    usage: `${E.warning} الطريقة: \`!سجن @عضو <السبب> [المدة مثل 2h أو 3d]\` — وأرفق الدليل مع الرسالة.`,
+    usage: `${E.warning} الطريقة: \`!سجن @عضو <السبب> [المدة مثل 2h أو 3d — الافتراضي 28 يوم]\` — وأرفق الدليل مع الرسالة.`,
     reasonRequired: `${E.warning} لازم تكتب سبب للسجن، أو مدة مثل \`3d\`.`,
     noReason: "بدون سبب",
     durationOutOfRange: `${E.warning} مدة السجن لازم تكون بين دقيقة و 365 يوم.`,
@@ -139,6 +159,7 @@ export const prefixMessages = {
   warn: {
     userWarnUsage: `${E.warning} الطريقة: \`!تحذير @عضو <السبب>\``,
     reasonRequired: `${E.warning} لازم تكتب سبب للتحذير.`,
+    noReason: "بدون سبب",
     proofRequired: `${E.warning} لازم ترفق دليل (صورة/سكرين) مع تحذير الستاف — بدون دليل ما ينسجّل.`,
     userWarned: (userMention: string, reason: string) =>
       `${E.warning} تم تحذير ${userMention}.\n**السبب:** ${reason}`,

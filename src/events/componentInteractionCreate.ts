@@ -11,6 +11,7 @@ import { routeAppealComponent } from "../modules/appeals/handlers/index.ts";
 import { routeGiftClaimComponent } from "../modules/gift-claims/handlers/index.ts";
 import { routeWarningPanelComponent } from "../modules/warning-panel/handlers/component-router.ts";
 import { routeStaffStatsComponent } from "../modules/staff-stats/handlers/component-router.ts";
+import { routeStaffInfoComponent } from "../modules/staff-info/handlers/component-router.ts";
 
 const routers = [
   routeModmailComponent,
@@ -24,6 +25,7 @@ const routers = [
   routeGiftClaimComponent,
   routeWarningPanelComponent,
   routeStaffStatsComponent,
+  routeStaffInfoComponent,
 ];
 
 export default defineEvent({

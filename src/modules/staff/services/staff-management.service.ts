@@ -11,12 +11,12 @@ import { staffHistoryService } from "./staff-history.service.ts";
 import { StaffActivityType, StaffHistoryAction, StaffStatus } from "../types/enums.ts";
 import {
   maxLadderLevel,
-  rawDemoteLevel,
   resolveAcceptLevel,
-  resolvePromoteLevel,
+  resolveMove,
   rolesAbove,
   rolesUpTo,
   type LadderRung,
+  type LevelMove,
 } from "./staff-level-math.ts";
 import {
   staffManagementAuthorizationService,
@@ -26,6 +26,7 @@ import { staffAcceptedRoleService } from "./staff-accepted-role.service.ts";
 import { staffRoleAssignmentService } from "./staff-role-assignment.service.ts";
 import { planStaffRoles, syncStaffRoles } from "./staff-role-sync.service.ts";
 import { heldIgnoredRoles } from "./staff-role-snapshot.ts";
+import { StaffHistoryModel } from "../models/staff-history.model.ts";
 import { staffIdentityRequirementService } from "../../staff-identity/index.ts";
 import { staffTypeService } from "./staff-type.service.ts";
 import type { StaffType } from "../types/enums.ts";
@@ -104,6 +105,16 @@ export interface AcceptResult {
   /** Accepted without a server tag or identifier in their name — roles are held until they add one. */
   awaitingIdentity: { dmSent: boolean } | null;
 }
+export type ReinstateResult =
+  | { outcome: "no-record" | "blacklisted" | "on-break" }
+  | { outcome: "nothing-to-do"; level: number }
+  | {
+      outcome: "reinstated";
+      level: number;
+      wasFired: boolean;
+      awaitingIdentity: AcceptResult["awaitingIdentity"];
+    };
+
 export interface FireResult {
   blacklist: boolean;
 }
@@ -111,6 +122,8 @@ export interface LevelChangeResult {
   from: number;
   to: number;
   changed: boolean;
+  /** An explicit target level pointed the other way (see resolveMove) — nothing changed. */
+  wrongWay?: boolean;
 }
 
 class StaffAdminError extends DomainError {
@@ -183,32 +196,12 @@ export class StaffManagementService {
       ...(staffType ? { staffType } : {}),
     });
 
-    const reason = `Accepted as staff by ${actorId(actor)}`;
-    let awaitingIdentity: AcceptResult["awaitingIdentity"] = null;
-
-    if (staffIdentityRequirementService.isIdentityCompliant(member).compliant) {
-      await syncStaffRoles(member, level, reason, { clearBlacklist: true });
-
-      if (staffType) {
-        await staffTypeService.assignType(
-          member,
-          staffType,
-          `Accepted as ${staffType} staff by ${actorId(actor)}`,
-        );
-      }
-    } else {
-      const plan = await planStaffRoles(guildId, level, { clearBlacklist: true });
-      const typeRoleId = staffType
-        ? await staffTypeService.getConfiguredRole(guildId, staffType)
-        : null;
-      const held = [...plan.add, ...(typeRoleId ? [typeRoleId] : [])];
-
-      await applyRoles(member, [], [...plan.remove, ...held], reason);
-      const { serverTagService } = await import(
-        "../../server-tag/services/server-tag.service.ts"
-      );
-      awaitingIdentity = await serverTagService.holdUntilIdentity(member, held);
-    }
+    const { awaitingIdentity } = await this.grantOrHoldRoles(
+      member,
+      level,
+      staffType,
+      `Accepted as staff by ${actorId(actor)}`,
+    );
 
     await staffHistoryService.record({
       staffId: staff._id,
@@ -231,6 +224,90 @@ export class StaffManagementService {
     });
 
     return { level, previousLevel, staffType, awaitingIdentity };
+  }
+
+  /**
+   * Gives the roles for `level` (+ type role). A member without the server tag or
+   * an identifier in their name gets nothing yet: the roles are held until they
+   * comply (see serverTagService.holdUntilIdentity).
+   */
+  private async grantOrHoldRoles(
+    member: GuildMember,
+    level: number,
+    staffType: StaffType | null,
+    reason: string,
+  ): Promise<{ added: number; awaitingIdentity: AcceptResult["awaitingIdentity"] }> {
+    const guildId = member.guild.id;
+
+    if (staffIdentityRequirementService.isIdentityCompliant(member).compliant) {
+      const synced = await syncStaffRoles(member, level, reason, { clearBlacklist: true });
+      const typed = staffType ? await staffTypeService.assignType(member, staffType, reason) : null;
+      return { added: synced.added.length + (typed?.added ? 1 : 0), awaitingIdentity: null };
+    }
+
+    const plan = await planStaffRoles(guildId, level, { clearBlacklist: true });
+    const typeRoleId = staffType ? await staffTypeService.getConfiguredRole(guildId, staffType) : null;
+    const held = [...plan.add, ...(typeRoleId ? [typeRoleId] : [])];
+
+    await applyRoles(member, [], [...plan.remove, ...held], reason);
+    const { serverTagService } = await import("../../server-tag/services/server-tag.service.ts");
+    return { added: 0, awaitingIdentity: await serverTagService.holdUntilIdentity(member, held) };
+  }
+
+  /**
+   * !back — puts a former or role-less staff member back at their level:
+   * fired → reactivated at the level they held when fired; still ACTIVE but
+   * missing roles (left and rejoined, roles stripped) → roles re-synced.
+   * Blacklisted, transferred and on-break members are refused. acceptedBy is
+   * kept — this is a reinstatement, not a new acceptance.
+   */
+  async reinstate(member: GuildMember, actor: StaffActor): Promise<ReinstateResult> {
+    const guildId = member.guild.id;
+    const staff = await staffService.get(member.id, guildId);
+    if (!staff || staff.status === StaffStatus.TRANSFERRED) return { outcome: "no-record" };
+    if (staff.status === StaffStatus.BLACKLISTED) return { outcome: "blacklisted" };
+    if (staff.status === StaffStatus.BREAK) return { outcome: "on-break" };
+
+    const wasFired = staff.status === StaffStatus.FIRED;
+    const lastFire = wasFired
+      ? await StaffHistoryModel.findOne({ staffId: staff._id, action: StaffHistoryAction.FIRE })
+          .sort({ createdAt: -1 })
+          .exec()
+      : null;
+    const ladder = await ladderFor(guildId);
+    if (ladder.length === 0) throw new StaffAdminError(prefixMessages.staff.rolesNotConfigured);
+    const level = Math.min(
+      lastFire?.previousRoleLevel ?? staff.currentRoleLevel,
+      maxLadderLevel(ladder),
+    );
+
+    if (actor.kind === "MEMBER") {
+      // Same rule as promoting someone from nothing to that level.
+      enforce(await staffManagementAuthorizationService.canPromote(actor.member, member, level, 0));
+    }
+
+    const reason = `Reinstated (!back) by ${actorId(actor)}`;
+    const { added, awaitingIdentity } = await this.grantOrHoldRoles(
+      member,
+      level,
+      staff.staffType ?? null,
+      reason,
+    );
+
+    if (!wasFired && added === 0 && !awaitingIdentity) return { outcome: "nothing-to-do", level };
+
+    // firedBy/firedAt stay as the record of the last firing; !stats only shows them while fired.
+    await staffService.update(staff._id, { status: StaffStatus.ACTIVE, currentRoleLevel: level });
+    await staffHistoryService.record({
+      staffId: staff._id,
+      action: StaffHistoryAction.REINSTATE,
+      performedBy: actorId(actor),
+      previousRoleLevel: wasFired ? 0 : staff.currentRoleLevel,
+      newRoleLevel: level,
+      metadata: { wasFired, awaitingIdentity: awaitingIdentity !== null },
+    });
+
+    return { outcome: "reinstated", level, wasFired, awaitingIdentity };
   }
 
   async fire(member: GuildMember, actor: StaffActor, blacklist: boolean): Promise<FireResult> {
@@ -262,6 +339,9 @@ export class StaffManagementService {
 
     const accessRoleIds = await roleConfigService.getAccessRoleIds(guildId);
     const acceptedConfig = await staffAcceptedRoleService.getConfig(guildId);
+    // Firing someone on break: their staff roles are already off, but the break role
+    // has to go too (the open break itself is cancelled below).
+    const vacationRole = await roleConfigService.getByType(guildId, RoleConfigType.VACATION);
     // Only the ones the bot can manage — one role above the bot would fail the whole removal.
     const ignoredRoleIds = heldIgnoredRoles(member, await roleConfigService.getIgnoredRoleIds(guildId));
 
@@ -270,6 +350,7 @@ export class StaffManagementService {
       ...(general ? [general] : []),
       ...accessRoleIds,
       ...ignoredRoleIds,
+      ...(vacationRole ? [vacationRole.roleId] : []),
       ...(acceptedConfig ? [acceptedConfig.roleId] : []),
 
       ...(await staffRoleAssignmentService.getManagedRoleIds(guildId)),
@@ -307,27 +388,19 @@ export class StaffManagementService {
     return { blacklist };
   }
 
-  async promote(
-    member: GuildMember,
-    actor: StaffActor,
-    amount: number | null,
-  ): Promise<LevelChangeResult> {
-    return this.changeLevel(member, actor, "promote", amount);
+  async promote(member: GuildMember, actor: StaffActor, move: LevelMove): Promise<LevelChangeResult> {
+    return this.changeLevel(member, actor, "promote", move);
   }
 
-  async demote(
-    member: GuildMember,
-    actor: StaffActor,
-    amount: number | null,
-  ): Promise<LevelChangeResult> {
-    return this.changeLevel(member, actor, "demote", amount);
+  async demote(member: GuildMember, actor: StaffActor, move: LevelMove): Promise<LevelChangeResult> {
+    return this.changeLevel(member, actor, "demote", move);
   }
 
   private async changeLevel(
     member: GuildMember,
     actor: StaffActor,
     direction: "promote" | "demote",
-    amount: number | null,
+    move: LevelMove,
   ): Promise<LevelChangeResult> {
     const guildId = member.guild.id;
     const staff = await staffService.get(member.id, guildId);
@@ -338,10 +411,9 @@ export class StaffManagementService {
     if (ladder.length === 0) throw new StaffAdminError(prefixMessages.staff.rolesNotConfigured);
 
     const from = staff.currentRoleLevel;
-    const to =
-      direction === "promote"
-        ? resolvePromoteLevel(from, amount, ladder)
-        : rawDemoteLevel(from, amount);
+    const { to, wrongWay } = resolveMove(direction, from, move, ladder);
+    // e.g. "!promote @owner high" — never turn a promote into a demotion (or vice versa).
+    if (wrongWay) return { from, to: from, changed: false, wrongWay: true };
 
     if (actor.kind === "MEMBER") {
       enforce(

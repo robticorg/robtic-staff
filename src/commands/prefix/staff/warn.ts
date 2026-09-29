@@ -32,26 +32,30 @@ export default definePrefixCommand({
     const target = await requireTargetMember(ctx, prefixMessages.warn.userWarnUsage);
     const rawReason = textAfterTarget(ctx.rest);
     const evidence = evidenceUrls(ctx.message);
+    // Administrators and Ship+ warn on the spot: no reason, no proof.
+    const proofExempt = await isProofExempt(ctx.member);
 
     if (kind === "USER") {
-      if (!rawReason) throw new PrefixAbort(prefixMessages.warn.reasonRequired);
+      if (!rawReason && !proofExempt) throw new PrefixAbort(prefixMessages.warn.reasonRequired);
+      const userReason = rawReason || prefixMessages.warn.noReason;
       await warningActionService.issueUserWarning({
         guildId: ctx.guild.id,
         targetId: target.id,
-        reason: rawReason,
+        reason: userReason,
         issuer: ctx.member,
         evidence,
       });
-      await ctx.reply(prefixMessages.warn.userWarned(`<@${target.id}>`, rawReason));
+      await ctx.reply(prefixMessages.warn.userWarned(`<@${target.id}>`, userReason));
       return;
     }
 
     const decision = await staffManagementAuthorizationService.canWarn(ctx.member, target);
     if (!decision.allowed) throw new PrefixAbort(decision.message);
 
-    const { reason, isVerbal } = splitVerbalMarker(rawReason);
-    if (!reason) throw new PrefixAbort(prefixMessages.warn.reasonRequired);
-    const proofExempt = await isProofExempt(ctx.member);
+    const split = splitVerbalMarker(rawReason);
+    const isVerbal = split.isVerbal;
+    if (!split.reason && !proofExempt) throw new PrefixAbort(prefixMessages.warn.reasonRequired);
+    const reason = split.reason || prefixMessages.warn.noReason;
     if (evidence.length === 0 && !proofExempt) {
       throw new PrefixAbort(prefixMessages.warn.proofRequired);
     }

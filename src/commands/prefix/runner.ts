@@ -91,9 +91,12 @@ export async function runPrefixCommand(message: Message): Promise<boolean> {
     await command.execute(ctx);
   } catch (err) {
     if (err instanceof PrefixAbort) {
+      // An empty abort means "not applicable here" (a ticket command outside a
+      // ticket, !warn outside warn rooms) — no reply and no command-log entry.
+      if (!err.message) return true;
       outcome = CommandLogOutcome.DENIED;
-      detail = err.message || null;
-      if (err.message) await safeMessageReply(message, err.message);
+      detail = err.message;
+      await safeMessageReply(message, err.message);
     } else if (err instanceof AppError) {
       outcome = CommandLogOutcome.DENIED;
       detail = err.userMessage;

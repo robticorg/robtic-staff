@@ -76,6 +76,8 @@ export const StaffHistoryAction = {
   BLACKLIST: "BLACKLIST",
 
   TRANSFER: "TRANSFER",
+  /** !back — a fired or role-less staff member restored to their level. */
+  REINSTATE: "REINSTATE",
   BREAK: "BREAK",
   RETURN_FROM_BREAK: "RETURN_FROM_BREAK",
   STAFF_WARNING: "STAFF_WARNING",
