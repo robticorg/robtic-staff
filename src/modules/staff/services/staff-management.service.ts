@@ -310,7 +310,16 @@ export class StaffManagementService {
     return { outcome: "reinstated", level, wasFired, awaitingIdentity };
   }
 
-  async fire(member: GuildMember, actor: StaffActor, blacklist: boolean): Promise<FireResult> {
+  /**
+   * `provenance.kind = "DEMISSION"` marks an approved resignation (staff support),
+   * so the record can tell a resignation apart from a firing.
+   */
+  async fire(
+    member: GuildMember,
+    actor: StaffActor,
+    blacklist: boolean,
+    provenance: { kind?: "DEMISSION"; requestId?: string; reason?: string } = {},
+  ): Promise<FireResult> {
     const guildId = member.guild.id;
     const staff = await staffService.get(member.id, guildId);
     if (!staff) throw new StaffAdminError(prefixMessages.staff.notStaffMember(`<@${member.id}>`));
@@ -375,6 +384,7 @@ export class StaffManagementService {
       performedBy: actorId(actor),
       previousRoleLevel: staff.currentRoleLevel,
       newRoleLevel: 0,
+      ...(provenance.kind ? { metadata: { ...provenance } } : {}),
     });
     await staffActivityService.create({
       staffId: staff._id,

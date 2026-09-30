@@ -1,6 +1,7 @@
 import type { BaseMessageOptions, Guild } from "discord.js";
 import {
   buildActionStatsView,
+  buildApplicationView,
   buildRecentActivityView,
   buildStatsOverviewCard,
   buildTicketStatsView,
@@ -29,6 +30,8 @@ export async function renderStatsView(
       return buildTicketStatsView(ids, await staffCardService.tickets(guild.id, staff));
     case StatsView.RECENT:
       return buildRecentActivityView(ids, await staffCardService.recent(staff));
+    case StatsView.APPLICATION:
+      return buildApplicationView(ids, await staffCardService.applications(guild.id, ids.targetId));
     case StatsView.HOME:
     default:
       return buildStatsOverviewCard(ids, await staffCardService.overview(guild, staff));

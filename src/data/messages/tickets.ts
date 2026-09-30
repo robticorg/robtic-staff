@@ -2,6 +2,9 @@ import { emojis } from "../emojis/index.ts";
 
 const E = emojis;
 
+const time = (at: Date) => `<t:${Math.floor(at.getTime() / 1000)}:f>`;
+const relative = (at: Date) => `<t:${Math.floor(at.getTime() / 1000)}:R>`;
+
 export const ticketMessages = {
   setup: {
     deployed: (channelId: string, panelCount: number) =>
@@ -149,6 +152,45 @@ export const ticketMessages = {
     nothingSelected: `${E.error} اختر عنصر واحد على الأقل عشان تشيله.`,
     protectedSkipped: `${E.warning} تم تجاوز صاحب التكت / المستلم / رتبة الدعم — ما ينشالون.`,
     done: (count: number) => `${E.success} تم حذف ${count} عنصر من التكت.`,
+  },
+
+  info: {
+    adminOnly: `${E.error} \`!ticket\` للأدمن بس.`,
+    title: (ticketId: string, panel: string) => `## 🎫 ${ticketId} — ${panel}`,
+    statuses: {
+      OPEN: "🟢 مفتوح — ما أحد استلمه",
+      CLAIMED: "🔵 مستلم",
+      CLOSING: "🟡 جاري الإغلاق",
+      CLOSED: "🔒 مقفل",
+      DELETED: "🗑️ محذوف",
+    } as Record<string, string>,
+    status: (label: string) => `**الحالة:** ${label}`,
+    openedBy: (userId: string, at: Date) => `**فتحه:** <@${userId}> — ${time(at)}`,
+    answersHeading: "### إجابات العضو",
+    answer: (question: string, answer: string) => `**${question}**\n${answer || "—"}`,
+    claimHeading: "### الاستلام",
+    claimedBy: (userId: string, at: Date | null) => `**المستلم الحالي:** <@${userId}>${at ? ` — ${time(at)}` : ""}`,
+    firstClaimedBy: (userId: string, at: Date | null) => `**أول من استلمه:** <@${userId}>${at ? ` — ${time(at)}` : ""}`,
+    handover: (from: string, at: Date, reason: string | null) =>
+      `**آخر تحويل:** من <@${from}> — ${time(at)}${reason ? `\n-# السبب: ${reason}` : ""}`,
+    unclaimed: "ما أحد استلمه لحد الآن.",
+    peopleHeading: "### الأعضاء والرتب المضافة",
+    people: (users: string[], roles: string[]) =>
+      [users.map((u) => `<@${u}>`).join(" "), roles.map((r) => `<@&${r}>`).join(" ")]
+        .filter(Boolean)
+        .join("\n") || "—",
+    sleeping: (by: string | null, due: Date) => `**بانتظار رد العضو** (${by ? `<@${by}>` : "—"}) — يقفل ${relative(due)}`,
+    closed: (by: string | null, at: Date) => `**قفله:** ${by ? `<@${by}>` : "—"} — ${time(at)}`,
+    reopened: (by: string | null, at: Date) => `**أعاد فتحه:** ${by ? `<@${by}>` : "—"} — ${time(at)}`,
+    transcript: (id: string) => `**النسخة:** \`${id}\``,
+    historyHeading: "### سجل التكت",
+    commandsHeading: "### الأوامر المستخدمة",
+    historyRow: (at: Date, label: string, actorId: string, extra: string) =>
+      `-# ${relative(at)} — ${label} — <@${actorId}>${extra ? ` ${extra}` : ""}`,
+    commandRow: (at: Date, actorId: string, command: string) =>
+      `-# ${relative(at)} — <@${actorId}>: \`${command.replace(/`/g, "ˋ").slice(0, 120)}\``,
+    none: "-# لا شيء.",
+    olderHidden: (n: number) => `-# … و ${n} أقدم.`,
   },
 
   memberLeft: {

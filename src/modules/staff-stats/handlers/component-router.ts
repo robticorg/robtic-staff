@@ -4,15 +4,24 @@ import { commonMessages } from "../../../data/messages/common.ts";
 import { statsMessages } from "../../../data/messages/stats.ts";
 import { replyEphemeralError } from "../../../libs/discord/index.ts";
 import { canViewStats } from "../services/stats-permissions.ts";
-import { STATS_NS, parseStatsCustomId } from "./component-ids.ts";
+import { STATS_NS, StatsView, isMenuView, parseStatsCustomId } from "./component-ids.ts";
 import { renderStatsView } from "./stats-view.ts";
 
 const log = logger.child("staff-stats:components");
 
 export async function routeStaffStatsComponent(interaction: Interaction): Promise<boolean> {
-  if (!interaction.isButton() || !interaction.customId.startsWith(`${STATS_NS}:`)) return false;
+  const isButton = interaction.isButton();
+  const isMenu = interaction.isStringSelectMenu();
+  if ((!isButton && !isMenu) || !interaction.customId.startsWith(`${STATS_NS}:`)) return false;
   const parsed = parseStatsCustomId(interaction.customId);
   if (!parsed || !interaction.inCachedGuild()) return false;
+
+  // The dropdown carries the chosen view in its value; buttons carry it in the id.
+  if (parsed.view === StatsView.MENU) {
+    const chosen = isMenu ? interaction.values[0] : undefined;
+    parsed.view = isMenuView(chosen) ? chosen : StatsView.HOME;
+    parsed.page = 1;
+  }
 
   try {
     if (interaction.user.id !== parsed.viewerId) {

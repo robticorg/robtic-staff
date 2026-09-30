@@ -107,6 +107,68 @@ export const statsMessages = {
     acceptedAt: (at: Date) => `**تاريخ القبول:** <t:${Math.floor(at.getTime() / 1000)}:D>`,
     firedBy: (userId: string | null, at: Date | null) =>
       `**طرده:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` — <t:${Math.floor(at.getTime() / 1000)}:D>` : ""}`,
+    resignationApprovedBy: (userId: string | null, at: Date | null) =>
+      `**وافق على استقالته:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` — <t:${Math.floor(at.getTime() / 1000)}:D>` : ""}`,
+    resignationReason: (reason: string) => `**سبب الاستقالة:** ${reason}`,
+    lastRoleBeforeLeaving: (roleId: string | null, level: number) =>
+      roleId
+        ? `**آخر رتبة قبل الاستقالة:** <@&${roleId}> (المستوى ${level})`
+        : `**آخر رتبة قبل الاستقالة:** المستوى ${level}`,
+    exitStatuses: {
+      FIRED: "مطرود",
+      DEMISSION: "مستقيل",
+      BLACKLISTED: "مطرود (بلاك ليست)",
+    } as Record<string, string>,
+
+    menu: {
+      placeholder: "اختر اللي تبي تشوفه",
+      options: {
+        home: { label: "الملف الشخصي", description: "الرتبة والحالة ومن قبله وإجمالي النقاط" },
+        weeks: { label: "النقاط الأسبوعية", description: "نقاطه في كل أسبوع من أول ما انضم" },
+        acts: { label: "إحصائيات الأعمال", description: "البلاغات والقبول والطرد والتحذيرات والسجن" },
+        tix: { label: "إحصائيات التكتات", description: "التكتات المستلمة والمكتملة لكل قسم" },
+        recent: { label: "آخر النشاطات", description: "آخر 10 أشياء سواها" },
+        app: { label: "طلب التقديم", description: "بياناته لما قدّم: العمر والمدينة والقسم والنتيجة" },
+      } as Record<string, { label: string; description: string }>,
+    },
+
+    application: {
+      heading: (userId: string) => `## طلب التقديم — <@${userId}>`,
+      none: "ما لقيت له أي طلب تقديم محفوظ.",
+      more: (n: number) => `-# عنده ${n} طلبات — هذا آخرها.`,
+      type: (label: string) => `**النوع:** ${label}`,
+      status: (label: string) => `**الحالة:** ${label}`,
+      submittedAt: (at: Date) => `**تاريخ التقديم:** <t:${Math.floor(at.getTime() / 1000)}:f>`,
+      name: (v: string) => `**الاسم:** ${v}`,
+      age: (v: number) => `**العمر:** ${v}`,
+      city: (v: string) => `**المدينة:** ${v}`,
+      gender: (v: string) => `**الجنس:** ${v}`,
+      department: (v: string) => `**القسم:** ${v}`,
+      joinedServer: (at: Date) => `**دخل السيرفر:** <t:${Math.floor(at.getTime() / 1000)}:D>`,
+      recruiter: (id: string) => `**جابه:** <@${id}>`,
+      girlVerified: (by: string | null) => `**توثيق البنات:** تم${by ? ` بواسطة <@${by}>` : ""}`,
+      girlPending: "**توثيق البنات:** بانتظار التوثيق",
+      acceptedBy: (by: string, at: Date | null, level: number | null) =>
+        `**قبله:** <@${by}>${at ? ` — <t:${Math.floor(at.getTime() / 1000)}:D>` : ""}${level !== null ? ` (المستوى ${level})` : ""}`,
+      rejectedBy: (by: string, at: Date | null) =>
+        `**رفضه:** <@${by}>${at ? ` — <t:${Math.floor(at.getTime() / 1000)}:D>` : ""}`,
+      rejectionReason: (v: string) => `**سبب الرفض:** ${v}`,
+      transferHeading: "### بيانات النقل",
+      transferServer: (name: string | null, members: number, online: number) =>
+        `**السيرفر:** ${name ?? "—"} · ${members} عضو · ${online} متصل`,
+      transferRole: (order: number, name: string | null) => `**رتبته هناك:** ${name ?? "—"} (ترتيب ${order})`,
+      transferEligible: (eligible: boolean) => `**مؤهل للنقل:** ${eligible ? "نعم" : "لا"}`,
+      transferProposed: (level: number | null) => `**المستوى المقترح:** ${level ?? "—"}`,
+      transferEvidence: (n: number) => `**الإثباتات المرفوعة:** ${n}`,
+      statuses: {
+        PENDING: "بانتظار الاستلام",
+        CLAIMED: "مستلم",
+        UNDER_REVIEW: "قيد المراجعة",
+        ACCEPTED: "مقبول",
+        REJECTED: "مرفوض",
+        CLOSED: "مقفل بدون قرار",
+      } as Record<string, string>,
+    },
     status: (label: string) => `**الحالة:** ${label}`,
     totalPoints: (n: number) => `**إجمالي النقاط:** ${n}`,
     breakPoints: (n: number) => `**نقاط البريك:** ${n} (ما تنحسب مع الإجمالي)`,

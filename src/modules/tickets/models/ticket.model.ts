@@ -17,6 +17,17 @@ export interface TicketClaimableRole {
   closed?: boolean;
 }
 
+/** One line of a ticket's history, shown by !ticket. */
+export interface TicketEvent {
+  /** A TicketLogAction, or "COMMAND" for a command typed in the ticket. */
+  action: string;
+  actorId: UserId;
+  targetId?: UserId;
+  /** The command as typed, a new name, a reason… */
+  detail?: string;
+  at: Date;
+}
+
 export interface Ticket extends Timestamps {
   ticketId: string;
   guildId: GuildId;
@@ -46,6 +57,9 @@ export interface Ticket extends Timestamps {
   sleepDurationMs?: number;
 
   claimedAt?: Date;
+  /** Who claimed it first and when — kept through handovers (claimedAt moves on handover). */
+  firstClaimedByDiscordId?: UserId;
+  firstClaimedAt?: Date;
   closedAt?: Date;
   closedBy?: UserId;
   reopenedAt?: Date;
@@ -57,8 +71,12 @@ export interface Ticket extends Timestamps {
   completionCreditedAt?: Date;
 
   transcriptId?: string;
+  /** Newest last, capped (see TICKET_EVENT_CAP). */
+  events: TicketEvent[];
   metadata?: Record<string, unknown>;
 }
+
+export const TICKET_EVENT_CAP = 100;
 
 export type TicketDocument = HydratedDocument<Ticket>;
 
@@ -78,6 +96,17 @@ const claimableRoleSchema = new Schema<TicketClaimableRole>(
     claimedBy: { type: String },
     claimedAt: { type: Date },
     closed: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
+const eventSchema = new Schema<TicketEvent>(
+  {
+    action: { type: String, required: true },
+    actorId: { type: String, required: true },
+    targetId: { type: String },
+    detail: { type: String, maxlength: 300 },
+    at: { type: Date, required: true },
   },
   { _id: false },
 );
@@ -117,6 +146,8 @@ const ticketSchema = new Schema<Ticket>(
     sleepDurationMs: { type: Number },
 
     claimedAt: { type: Date },
+    firstClaimedByDiscordId: { type: String },
+    firstClaimedAt: { type: Date },
     closedAt: { type: Date },
     closedBy: { type: String },
     reopenedAt: { type: Date },
@@ -127,6 +158,7 @@ const ticketSchema = new Schema<Ticket>(
     completionCreditedAt: { type: Date },
 
     transcriptId: { type: String },
+    events: { type: [eventSchema], default: [] },
     metadata: { type: Schema.Types.Mixed },
   },
   { timestamps: true, collection: "tickets" },

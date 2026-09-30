@@ -8,6 +8,11 @@ import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType, StaffTier } from "../../configuration/types/enums.ts";
 import { getHierarchy, getRoleForLevel } from "../../configuration/utils/staff-levels.ts";
 import { PunishmentModel } from "../../punishment/models/punishment.model.ts";
+import {
+  StaffSupportRequestModel,
+  StaffSupportRequestStatus,
+  StaffSupportRequestType,
+} from "../../staff-support/models/staff-support-request.model.ts";
 import { PunishmentType } from "../../punishment/types/enums.ts";
 import { StaffActivityModel } from "../../staff/models/staff-activity.model.ts";
 import { StaffHistoryModel } from "../../staff/models/staff-history.model.ts";
@@ -28,6 +33,16 @@ import { staffStatisticsService, type RecentActivityItem } from "./staff-statist
 import { statsRepository, type TicketStatRow } from "./stats-repository.ts";
 
 export const WEEKS_PER_PAGE = 3;
+
+export const StaffExitKind = {
+  FIRED: "FIRED",
+  DEMISSION: "DEMISSION",
+  BLACKLISTED: "BLACKLISTED",
+} as const;
+export type StaffExitKind = (typeof StaffExitKind)[keyof typeof StaffExitKind];
+
+/** How close (ms) a completed resignation must be to the fire to count as its cause. */
+const DEMISSION_MATCH_WINDOW_MS = 5 * 60_000;
 const AVATAR_SIZE = 256;
 
 export interface StaffCardOverview {
@@ -40,8 +55,18 @@ export interface StaffCardOverview {
   staffType: StaffType | null;
   acceptedBy: UserId | null;
   acceptedAt: Date | null;
-  /** Set once they've been fired or blacklisted — the role they held right before. */
-  fired: { by: UserId | null; at: Date | null; level: number; roleId: RoleId | null } | null;
+  /**
+   * Set once they've left the staff — the role they held right before, and how:
+   * FIRED, a DEMISSION (approved resignation, with its reason) or BLACKLISTED.
+   */
+  fired: {
+    kind: StaffExitKind;
+    by: UserId | null;
+    at: Date | null;
+    level: number;
+    roleId: RoleId | null;
+    reason: string | null;
+  } | null;
   totalPoints: number;
   /** Earned while on break — shown on its own, never part of totalPoints. */
   breakPoints: number;
@@ -161,6 +186,10 @@ export class StaffCardService {
 
     const level = profile?.level ?? staff.currentRoleLevel;
     const firedLevel = lastFire?.previousRoleLevel ?? staff.currentRoleLevel;
+    const firedAt = staff.firedAt ?? lastFire?.createdAt ?? null;
+    const exit = isOut
+      ? await this.exitKind(guild.id, userId, staff.status, lastFire?.metadata ?? null, firedAt)
+      : null;
 
     return {
       userId,
@@ -172,17 +201,61 @@ export class StaffCardService {
       staffType: staff.staffType ?? null,
       acceptedBy: profile?.acceptedBy ?? snowflakeOrNull(staff.acceptedBy),
       acceptedAt: profile?.acceptedAt ?? staff.acceptedAt ?? null,
-      fired: isOut
+      fired: exit
         ? {
+            kind: exit.kind,
             by: snowflakeOrNull(staff.firedBy ?? lastFire?.performedBy),
-            at: staff.firedAt ?? lastFire?.createdAt ?? null,
+            at: firedAt,
             level: firedLevel,
             roleId: getRoleForLevel(hierarchy, firedLevel),
+            reason: exit.reason,
           }
         : null,
       totalPoints,
       breakPoints,
     };
+  }
+
+  /**
+   * Fired, resigned or blacklisted. New resignations are tagged on the history entry;
+   * older ones are matched to an approved resignation request completed at the time
+   * of the fire.
+   */
+  private async exitKind(
+    guildId: GuildId,
+    userId: UserId,
+    status: StaffStatus,
+    fireMetadata: Record<string, unknown> | null,
+    firedAt: Date | null,
+  ): Promise<{ kind: StaffExitKind; reason: string | null }> {
+    if (status === StaffStatus.BLACKLISTED) return { kind: StaffExitKind.BLACKLISTED, reason: null };
+    if (fireMetadata?.kind === "DEMISSION") {
+      return {
+        kind: StaffExitKind.DEMISSION,
+        reason: typeof fireMetadata.reason === "string" ? fireMetadata.reason : null,
+      };
+    }
+    if (firedAt) {
+      const request = await StaffSupportRequestModel.findOne({
+        guildId,
+        staffId: userId,
+        type: StaffSupportRequestType.DEMISSION_APPLY,
+        status: StaffSupportRequestStatus.COMPLETED,
+        handledAt: {
+          $gte: new Date(firedAt.getTime() - DEMISSION_MATCH_WINDOW_MS),
+          $lte: new Date(firedAt.getTime() + DEMISSION_MATCH_WINDOW_MS),
+        },
+      })
+        .lean()
+        .exec();
+      if (request) return { kind: StaffExitKind.DEMISSION, reason: request.reason ?? null };
+    }
+    return { kind: StaffExitKind.FIRED, reason: null };
+  }
+
+  /** Every staff application this member sent here, newest first. */
+  applications(guildId: GuildId, userId: UserId) {
+    return StaffApplicationModel.find({ guildId, userId }).sort({ createdAt: -1 }).lean().exec();
   }
 
   async weeklyPoints(staff: StaffDocument, page: number, now = new Date()): Promise<WeeklyPointsPage> {

@@ -281,7 +281,12 @@ export class StaffSupportService {
     }
 
     try {
-      await staffManagementService.fire(applicant, preauthorizedActor(manager.id), false);
+      // Recorded as a resignation, not a firing — !stats shows the difference.
+      await staffManagementService.fire(applicant, preauthorizedActor(manager.id), false, {
+        kind: "DEMISSION",
+        requestId: request.requestId,
+        reason: request.reason,
+      });
     } catch (err) {
       await StaffSupportRequestModel.updateOne(
         { requestId: request.requestId },

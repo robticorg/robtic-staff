@@ -1,21 +1,30 @@
 import {
+  ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
   ContainerBuilder,
   MessageFlags,
   SeparatorSpacingSize,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
   type BaseMessageOptions,
 } from "discord.js";
+import {
+  APPLICATION_TYPE_LABELS,
+  DEPARTMENT_LABELS,
+  GENDER_LABELS,
+} from "../../../data/staff-application/messages.ts";
 import { colors } from "../../../data/config/colors.ts";
 import { STAFF_TIER_LABELS } from "../../../data/messages/hierarchy.ts";
 import { ACTIVITY_LABELS, statsMessages as S } from "../../../data/messages/stats.ts";
 import { staffTypeLabel } from "../../../data/staff-types/index.ts";
 import { ticketConfigService } from "../../tickets/services/ticket-config.service.ts";
-import { StatsView, statsCustomId } from "../handlers/component-ids.ts";
-import type {
-  StaffActionStats,
-  StaffCardOverview,
-  WeeklyPointsPage,
+import { MENU_VIEWS, StatsView, statsCustomId } from "../handlers/component-ids.ts";
+import {
+  StaffExitKind,
+  type StaffActionStats,
+  type StaffCardOverview,
+  type WeeklyPointsPage,
 } from "../services/staff-card.service.ts";
 import type { RecentActivityItem } from "../services/staff-statistics.service.ts";
 import type { TicketStatRow } from "../services/stats-repository.ts";
@@ -67,37 +76,86 @@ function finish(container: ContainerBuilder): BaseMessageOptions {
   } as BaseMessageOptions;
 }
 
-function subView(ids: StatsCardIds, heading: string, body: string, extra: ButtonBuilder[] = []) {
+/**
+ * The view picker shown on every page: a dropdown with a title and a short
+ * description per view. The page being shown is pre-selected.
+ */
+function viewMenu(ids: StatsCardIds, current: StatsView): StringSelectMenuBuilder {
+  return new StringSelectMenuBuilder()
+    .setCustomId(statsCustomId({ view: StatsView.MENU, ...ids, page: 1 }))
+    .setPlaceholder(C.menu.placeholder)
+    .addOptions(
+      MENU_VIEWS.map((view) => {
+        const copy = C.menu.options[view]!;
+        return new StringSelectMenuOptionBuilder()
+          .setLabel(copy.label)
+          .setDescription(copy.description)
+          .setValue(view)
+          .setDefault(view === current);
+      }),
+    );
+}
+
+function addMenu(container: ContainerBuilder, ids: StatsCardIds, current: StatsView): void {
+  container.addActionRowComponents(
+    new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(viewMenu(ids, current)),
+  );
+}
+
+function subView(
+  ids: StatsCardIds,
+  current: StatsView,
+  heading: string,
+  body: string,
+  extra: ButtonBuilder[] = [],
+) {
   const container = new ContainerBuilder().setAccentColor(colors.primary);
   container.addTextDisplayComponents((t) => t.setContent(heading));
   container.addSeparatorComponents((s) => s.setDivider(true).setSpacing(SeparatorSpacingSize.Small));
   container.addTextDisplayComponents((t) => t.setContent(body));
   container.addSeparatorComponents((s) => s.setDivider(true).setSpacing(SeparatorSpacingSize.Small));
-  container.addActionRowComponents((row) =>
-    row.addComponents(button(ids, StatsView.HOME, B.back, { style: ButtonStyle.Primary }), ...extra),
-  );
+  if (extra.length > 0) {
+    container.addActionRowComponents(new ActionRowBuilder<ButtonBuilder>().addComponents(extra));
+  }
+  addMenu(container, ids, current);
   return finish(container);
 }
 
 export function overviewLines(o: StaffCardOverview): string[] {
   const lines = [C.tier(STAFF_TIER_LABELS[o.tier] ?? o.tier)];
   if (o.staffType) lines.push(C.staffType(staffTypeLabel(o.staffType)));
+  const resigned = o.fired?.kind === StaffExitKind.DEMISSION;
   if (o.fired) {
-    lines.push(C.lastRoleBeforeFire(o.fired.roleId, o.fired.level));
+    lines.push(
+      resigned
+        ? C.lastRoleBeforeLeaving(o.fired.roleId, o.fired.level)
+        : C.lastRoleBeforeFire(o.fired.roleId, o.fired.level),
+    );
   } else {
     lines.push(C.levelRole(o.roleId, o.level));
   }
   lines.push(C.acceptedBy(o.acceptedBy));
   if (o.acceptedAt) lines.push(C.acceptedAt(o.acceptedAt));
-  lines.push(C.status(C.statuses[o.status] ?? o.status));
-  if (o.fired) lines.push(C.firedBy(o.fired.by, o.fired.at));
+  lines.push(
+    C.status(o.fired ? (C.exitStatuses[o.fired.kind] ?? o.status) : (C.statuses[o.status] ?? o.status)),
+  );
+  if (o.fired) {
+    lines.push(resigned ? C.resignationApprovedBy(o.fired.by, o.fired.at) : C.firedBy(o.fired.by, o.fired.at));
+    if (resigned && o.fired.reason) lines.push(C.resignationReason(o.fired.reason));
+  }
   lines.push(C.totalPoints(o.totalPoints));
   if (o.breakPoints !== 0) lines.push(C.breakPoints(o.breakPoints));
   return lines;
 }
 
 export function buildStatsOverviewCard(ids: StatsCardIds, o: StaffCardOverview): BaseMessageOptions {
-  const container = new ContainerBuilder().setAccentColor(o.fired ? colors.error : colors.primary);
+  // Red when fired, yellow when they resigned, blue while still staff.
+  const accent = !o.fired
+    ? colors.primary
+    : o.fired.kind === StaffExitKind.DEMISSION
+      ? colors.warning
+      : colors.error;
+  const container = new ContainerBuilder().setAccentColor(accent);
   const title = C.title(o.userId);
   const body = overviewLines(o).join("\n");
 
@@ -113,14 +171,7 @@ export function buildStatsOverviewCard(ids: StatsCardIds, o: StaffCardOverview):
   }
 
   container.addSeparatorComponents((s) => s.setDivider(true).setSpacing(SeparatorSpacingSize.Small));
-  container.addActionRowComponents((row) =>
-    row.addComponents(
-      button(ids, StatsView.WEEKS, B.weeks, { style: ButtonStyle.Primary }),
-      button(ids, StatsView.ACTIONS, B.actions),
-      button(ids, StatsView.TICKETS, B.tickets),
-      button(ids, StatsView.RECENT, B.recent),
-    ),
-  );
+  addMenu(container, ids, StatsView.HOME);
   return finish(container);
 }
 
@@ -139,7 +190,7 @@ export function buildWeeklyPointsView(ids: StatsCardIds, data: WeeklyPointsPage)
     );
   }
 
-  return subView(ids, C.weeks.heading(ids.targetId), blocks.join("\n"), [
+  return subView(ids, StatsView.WEEKS, C.weeks.heading(ids.targetId), blocks.join("\n"), [
     button(ids, StatsView.WEEKS, B.prev, {
       page: data.page - 1,
       disabled: data.page <= 1,
@@ -187,7 +238,7 @@ export function buildActionStatsView(ids: StatsCardIds, a: StaffActionStats): Ba
     row(A.vacationsDecided, a.vacationsDecided),
   ].join("\n");
 
-  return subView(ids, A.heading(ids.targetId), body);
+  return subView(ids, StatsView.ACTIONS, A.heading(ids.targetId), body);
 }
 
 export function buildTicketStatsView(ids: StatsCardIds, t: TicketStatRow): BaseMessageOptions {
@@ -198,7 +249,7 @@ export function buildTicketStatsView(ids: StatsCardIds, t: TicketStatRow): BaseM
   for (const [panelId, stat] of panels) {
     body.push("", T.panel(ticketConfigService.getPanel(panelId)?.name ?? panelId), T.panelRow(stat));
   }
-  return subView(ids, T.heading(ids.targetId), body.join("\n"));
+  return subView(ids, StatsView.TICKETS, T.heading(ids.targetId), body.join("\n"));
 }
 
 export function buildRecentActivityView(
@@ -208,5 +259,84 @@ export function buildRecentActivityView(
   const body = items.length
     ? items.map((r) => S.recentRow(rel(r.at), ACTIVITY_LABELS[r.type] ?? r.type)).join("\n")
     : S.recentEmpty;
-  return subView(ids, C.recent.heading(ids.targetId), body);
+  return subView(ids, StatsView.RECENT, C.recent.heading(ids.targetId), body);
+}
+
+export interface ApplicationViewData {
+  type: string;
+  applicationStatus: string;
+  createdAt?: Date;
+  name: string;
+  age: number;
+  city: string;
+  gender?: string | null;
+  department?: string | null;
+  robticJoinedAt?: Date | null;
+  recruiterStaffId?: string | null;
+  girlVerification?: string | null;
+  girlVerifiedBy?: string | null;
+  acceptedBy?: string | null;
+  acceptedAt?: Date | null;
+  acceptedLevel?: number | null;
+  rejectedBy?: string | null;
+  rejectedAt?: Date | null;
+  rejectionReason?: string | null;
+  transfer?: {
+    sourceServerName?: string | null;
+    sourceServerMemberCount: number;
+    sourceServerOnlineCount: number;
+    sourceRoleOrder: number;
+    sourceRoleName?: string | null;
+  } | null;
+  evaluation?: { eligible: boolean; proposedStaffLevel?: number | null } | null;
+  evidenceCount?: number;
+}
+
+/** The member's latest staff application, as they filled it in, plus how it ended. */
+export function buildApplicationView(
+  ids: StatsCardIds,
+  applications: readonly ApplicationViewData[],
+): BaseMessageOptions {
+  const A = C.application;
+  const app = applications[0];
+  if (!app) return subView(ids, StatsView.APPLICATION, A.heading(ids.targetId), A.none);
+
+  const lines = [
+    applications.length > 1 ? A.more(applications.length) : null,
+    A.type(APPLICATION_TYPE_LABELS[app.type] ?? app.type),
+    A.status(A.statuses[app.applicationStatus] ?? app.applicationStatus),
+    app.createdAt ? A.submittedAt(app.createdAt) : null,
+    "",
+    A.name(app.name),
+    A.age(app.age),
+    A.city(app.city),
+    app.gender ? A.gender(GENDER_LABELS[app.gender] ?? app.gender) : null,
+    app.department ? A.department(DEPARTMENT_LABELS[app.department] ?? app.department) : null,
+    app.robticJoinedAt ? A.joinedServer(app.robticJoinedAt) : null,
+    app.recruiterStaffId ? A.recruiter(app.recruiterStaffId) : null,
+    app.girlVerification === "VERIFIED" ? A.girlVerified(app.girlVerifiedBy ?? null) : null,
+    app.girlVerification === "PENDING" ? A.girlPending : null,
+    app.acceptedBy ? A.acceptedBy(app.acceptedBy, app.acceptedAt ?? null, app.acceptedLevel ?? null) : null,
+    app.rejectedBy ? A.rejectedBy(app.rejectedBy, app.rejectedAt ?? null) : null,
+    app.rejectionReason ? A.rejectionReason(app.rejectionReason) : null,
+  ];
+
+  if (app.transfer) {
+    lines.push(
+      "",
+      A.transferHeading,
+      A.transferServer(
+        app.transfer.sourceServerName ?? null,
+        app.transfer.sourceServerMemberCount,
+        app.transfer.sourceServerOnlineCount,
+      ),
+      A.transferRole(app.transfer.sourceRoleOrder, app.transfer.sourceRoleName ?? null),
+      app.evaluation ? A.transferEligible(app.evaluation.eligible) : null,
+      app.evaluation ? A.transferProposed(app.evaluation.proposedStaffLevel ?? null) : null,
+      A.transferEvidence(app.evidenceCount ?? 0),
+    );
+  }
+
+  const body = lines.filter((l): l is string => l !== null).join("\n").slice(0, 3900);
+  return subView(ids, StatsView.APPLICATION, A.heading(ids.targetId), body);
 }

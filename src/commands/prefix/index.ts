@@ -9,6 +9,7 @@ import ticketAdd from "./ticket/add.ts";
 import ticketRemove from "./ticket/remove.ts";
 import ticketSleep from "./ticket/sleep.ts";
 import ticketHandover from "./ticket/handover.ts";
+import ticketInfo from "./ticket/info.ts";
 
 import modmailEnd from "./modmail/end.ts";
 
@@ -47,6 +48,7 @@ export const prefixCommands: PrefixCommand[] = [
   ticketRemove,
   ticketSleep,
   ticketHandover,
+  ticketInfo,
 
   modmailEnd,
 

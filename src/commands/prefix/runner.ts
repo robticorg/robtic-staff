@@ -10,6 +10,7 @@ import { prefixlessCommands } from "../../data/commands/prefixless.ts";
 import { prefixCommands } from "./index.ts";
 import { PrefixAbort } from "./_shared/guards.ts";
 import { extractUserIds, parseBareMessage, parsePrefixMessage } from "./_shared/parse.ts";
+import { recordTicketCommand } from "../../modules/tickets/services/ticket-history.ts";
 import {
   CommandLogOutcome,
   commandLogService,
@@ -108,6 +109,9 @@ export async function runPrefixCommand(message: Message): Promise<boolean> {
       await safeMessageReply(message, prefixMessages.common.genericError);
     }
   }
+
+  // A no-op outside tickets; inside one it feeds the "commands used" list of !ticket.
+  void recordTicketCommand(message.channelId, member.id, message.content);
 
   void commandLogService.record(message.guild, {
     slot: prefixLogSlot(command.name, command.category),

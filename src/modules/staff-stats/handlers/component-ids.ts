@@ -6,9 +6,26 @@ export const StatsView = {
   ACTIONS: "acts",
   TICKETS: "tix",
   RECENT: "recent",
+  APPLICATION: "app",
+  /** The dropdown itself — the chosen view comes from its value. */
+  MENU: "menu",
 } as const;
 export type StatsView = (typeof StatsView)[keyof typeof StatsView];
 const VIEWS = new Set<string>(Object.values(StatsView));
+
+/** The views the dropdown offers, in order. */
+export const MENU_VIEWS: readonly StatsView[] = [
+  StatsView.HOME,
+  StatsView.WEEKS,
+  StatsView.ACTIONS,
+  StatsView.TICKETS,
+  StatsView.RECENT,
+  StatsView.APPLICATION,
+];
+
+export function isMenuView(value: string | undefined): value is StatsView {
+  return !!value && (MENU_VIEWS as readonly string[]).includes(value);
+}
 
 export interface StatsCustomId {
   view: StatsView;

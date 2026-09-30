@@ -45,6 +45,7 @@ import {
   assertTicketTransition,
 } from "../types/enums.ts";
 import { buildClosedTicketPanel } from "../render/closed-panel.ts";
+import { buildTicketTopic } from "../render/ticket-topic.ts";
 import { applyTicketClaimCredit } from "./ticket-claim-credit.ts";
 import { canClaimTicket, canTransferTicket, memberIsAdministrator } from "./ticket-permissions.ts";
 import { protectedTicketPrincipals } from "./ticket-permissions.ts";
@@ -259,6 +260,8 @@ export class TicketService extends BaseRepository<Ticket> {
       name: ticketId,
       type: ChannelType.GuildText,
       parent: (category as CategoryChannel).id,
+      // Set at creation — costs no extra request; claim/handover update it later.
+      topic: buildTicketTopic({ userId: member.id, createdAt: new Date() }, panel.name),
       permissionOverwrites: this.baseOverwrites(
         guild,
         panel,
@@ -421,6 +424,8 @@ export class TicketService extends BaseRepository<Ticket> {
     await this.applyClaimOverwrites(member.guild, panel, claimed, member.id).catch((err) =>
       log.warn("claim overwrite update failed", err),
     );
+    const withFirst = await this.markFirstClaim(claimed, member.id);
+    this.refreshTopic(member.guild, withFirst, panel);
 
     await ticketLogService.record(TicketLogAction.TICKET_CLAIMED, {
       guild: member.guild,
@@ -430,6 +435,39 @@ export class TicketService extends BaseRepository<Ticket> {
     });
 
     return { ticket: claimed, pointAwarded };
+  }
+
+  /**
+   * Remembers the first claimer and time — only if not set yet, so handovers and
+   * re-claims never overwrite it. Returns the ticket with those fields filled in.
+   */
+  private async markFirstClaim(ticket: TicketDoc, claimerId: UserId): Promise<TicketDoc> {
+    if (ticket.firstClaimedByDiscordId) return ticket;
+    const at = ticket.claimedAt ?? new Date();
+    await this.model
+      .updateOne(
+        { ticketId: ticket.ticketId, firstClaimedByDiscordId: { $exists: false } },
+        { $set: { firstClaimedByDiscordId: claimerId, firstClaimedAt: at } },
+      )
+      .exec()
+      .catch((err) => log.warn(`first-claim save failed for ${ticket.ticketId}`, err));
+    ticket.firstClaimedByDiscordId = claimerId;
+    ticket.firstClaimedAt = at;
+    return ticket;
+  }
+
+  /**
+   * Rewrites the channel topic from the ticket. Not awaited: Discord allows about
+   * two topic edits per channel per 10 minutes and queues the rest, which must not
+   * hold up the claim/handover reply.
+   */
+  private refreshTopic(guild: Guild, ticket: Ticket, panel: TicketPanelConfig): void {
+    void (async () => {
+      const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
+      if (channel && "setTopic" in channel) {
+        await channel.setTopic(buildTicketTopic(ticket, panel.name));
+      }
+    })().catch((err) => log.warn(`topic update failed for ${ticket.ticketId}`, err));
   }
 
   private async applyClaimOverwrites(
@@ -525,6 +563,10 @@ export class TicketService extends BaseRepository<Ticket> {
     await this.refreshRoleClaimMessages(member.guild, claimed);
 
     const panel = await this.panelFor(claimed).catch(() => null);
+    if (tookTicket) {
+      const withFirst = await this.markFirstClaim(claimed, member.id);
+      if (panel) this.refreshTopic(member.guild, withFirst, panel);
+    }
     if (panel) {
       await ticketLogService.record(TicketLogAction.TICKET_CLAIMED, {
         guild: member.guild,
@@ -648,6 +690,7 @@ export class TicketService extends BaseRepository<Ticket> {
       previousClaimerId,
       target.id,
     ).catch((err) => log.warn("transfer overwrite update failed", err));
+    this.refreshTopic(actor.guild, transferred, panel);
 
     await ticketLogService.record(TicketLogAction.TICKET_TRANSFERRED, {
       guild: actor.guild,

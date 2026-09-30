@@ -9,6 +9,7 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
 
   sleep: ["نوم", "خمول", "تنبيه"],
   handover: ["تسليم", "سلم", "تحويل"],
+  ticket: ["تكت", "معلومات-التكت"],
 
   end: ["انهاء", "إنهاء", "انهاء-التحقيق"],
 
