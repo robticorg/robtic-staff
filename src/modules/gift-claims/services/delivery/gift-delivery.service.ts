@@ -25,11 +25,7 @@ import { giftDeliveriesChannel } from "./gift-deliveries-channel.ts";
 import { giftDeliveryRepository } from "./gift-delivery.repository.ts";
 import { linkDeliveryService, type LinkDeliveryResult } from "./link-delivery.service.ts";
 import { manualGiftDeliveryService } from "./manual-gift-delivery.service.ts";
-import {
-  giftDeliveryProofService,
-  type StoredProofFile,
-  type UploadedProof,
-} from "./gift-delivery-proof.service.ts";
+import { giftDeliveryProofService, type UploadedProof } from "./gift-delivery-proof.service.ts";
 
 const M = giftDeliveryMessages;
 type ClaimDoc = HydratedDocument<GiftClaim>;
@@ -70,15 +66,12 @@ export class GiftDeliveryService {
     manager: GuildMember;
     type: GiftDeliveryType;
     amount?: string | null;
-    proof?: readonly UploadedProof[];
   }): Promise<ApproveOutcome> {
     const amount = input.type === GiftDeliveryType.CREDITS ? this.requireAmount(input.amount) : undefined;
-    let proof: StoredProofFile[] = [];
     if (amount) {
-      giftDeliveryProofService.assertValid(input.proof ?? []);
+      // Credits need no proof: autoclaim does the transfer and posts its own log.
       await assertAutoclaimEnabled(input.manager.guild.id);
       await giftDeliveriesChannel.resolve(input.manager.guild.id);
-      proof = await giftDeliveryProofService.fetch(input.proof ?? []);
     }
     const { claim } = await giftClaimService.approveClaim({
       claimId: input.claimId,
@@ -91,7 +84,7 @@ export class GiftDeliveryService {
     if (input.type === GiftDeliveryType.CREDITS) {
       return {
         kind: "CREDITS",
-        result: await this.runCredits(claim, delivery, input.manager.id, proof),
+        result: await this.runCredits(claim, delivery, input.manager.id),
       };
     }
     await giftClaimService.refreshCase(claim.claimId);
@@ -114,18 +107,11 @@ export class GiftDeliveryService {
     return claim;
   }
 
-  async deliverCredits(
-    claimId: string,
-    actor: GuildMember,
-    uploads: readonly UploadedProof[] = [],
-  ): Promise<CreditDeliveryResult> {
+  /** Transfers the credits through autoclaim (first try or retry). No proof involved. */
+  async deliverCredits(claimId: string, actor: GuildMember): Promise<CreditDeliveryResult> {
     const claim = await this.claimFor(claimId, actor, GiftDeliveryType.CREDITS);
     const delivery = await this.openDelivery(claim, GiftDeliveryType.CREDITS);
-    const proof =
-      uploads.length > 0 || delivery.proof.length === 0
-        ? await giftDeliveryProofService.fetch(uploads)
-        : [];
-    return this.runCredits(claim, delivery, actor.id, proof);
+    return this.runCredits(claim, delivery, actor.id);
   }
 
   async deliverLink(input: {
@@ -210,9 +196,8 @@ export class GiftDeliveryService {
     claim: ClaimDoc,
     delivery: GiftDeliveryDocument,
     staffId: string,
-    proof: readonly StoredProofFile[],
   ): Promise<CreditDeliveryResult> {
-    const result = await creditDeliveryService.deliver(delivery, staffId, proof);
+    const result = await creditDeliveryService.deliver(delivery, staffId);
     if (result.ok) {
       await giftClaimService.completeFromDelivery({
         claimId: claim.claimId,

@@ -26,6 +26,7 @@ export const statsMessages = {
     GIFT_CLAIM: "نقاط الهدايا",
     USER_WARNING: "نقاط تحذيرات الأعضاء",
     STAFF_WARNING: "نقاط تحذيرات الستاف",
+    MESSAGE: "نقاط الرسائل",
     APPEAL_SUCCESS_PENALTY: "خصم استئناف مقبول",
     MANUAL_ADJUSTMENT: "تعديل يدوي",
     OTHER: "نقاط أخرى",

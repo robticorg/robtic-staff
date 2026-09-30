@@ -10,6 +10,8 @@ export interface StaffInfo {
   name: string;
   description: string;
   pages: string[];
+  /** Only members with this role (or administrators) may open it. null = everyone. */
+  accessRoleId: string | null;
   createdBy: UserId;
   createdAt: Date;
 }
@@ -23,6 +25,7 @@ const staffInfoSchema = new Schema<StaffInfo>(
     name: { type: String, required: true, trim: true },
     description: { type: String, required: true, trim: true },
     pages: { type: [String], required: true },
+    accessRoleId: { type: String, default: null },
     createdBy: { type: String, required: true },
     createdAt: { type: Date, default: () => new Date(), immutable: true },
   },

@@ -40,6 +40,18 @@ export function buildInfoAddModal(): ModalBuilder {
     );
 }
 
+/** /info page edit — content only, pre-filled with the page as it is now. */
+export function buildInfoEditModal(infoId: string, page: number, current: string): ModalBuilder {
+  return new ModalBuilder()
+    .setCustomId(StaffInfoCustomId.editModal(infoId, page))
+    .setTitle(M.editTitle(page))
+    .addLabelComponents(
+      new LabelBuilder()
+        .setLabel(M.contentLabel)
+        .setTextInputComponent(contentInput().setValue(current.slice(0, L.contentMaxLength))),
+    );
+}
+
 /** /info page add — content only. */
 export function buildInfoPageModal(infoId: string): ModalBuilder {
   return new ModalBuilder()

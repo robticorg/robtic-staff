@@ -5,6 +5,7 @@ export const StaffInfoCustomId = {
   page: (infoId: string, page: number) => `${STAFF_INFO_NS}:page:${infoId}:${page}`,
   addModal: () => `${STAFF_INFO_NS}:addModal`,
   pageModal: (infoId: string) => `${STAFF_INFO_NS}:pageModal:${infoId}`,
+  editModal: (infoId: string, page: number) => `${STAFF_INFO_NS}:editModal:${infoId}:${page}`,
 } as const;
 
 export const StaffInfoField = {

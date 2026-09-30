@@ -60,6 +60,8 @@ export const StaffPointTransactionType = {
   GIFT_CLAIM: "GIFT_CLAIM",
   USER_WARNING: "USER_WARNING",
   STAFF_WARNING: "STAFF_WARNING",
+  /** Points for chat activity, sent by other bots through the points API (type "msg"). */
+  MESSAGE: "MESSAGE",
   APPEAL_SUCCESS_PENALTY: "APPEAL_SUCCESS_PENALTY",
   MANUAL_ADJUSTMENT: "MANUAL_ADJUSTMENT",
   OTHER: "OTHER",

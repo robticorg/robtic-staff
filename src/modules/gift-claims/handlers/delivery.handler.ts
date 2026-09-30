@@ -19,7 +19,6 @@ import { giftClaimService } from "../services/gift-claim.service.ts";
 import type { CreditDeliveryResult } from "../services/delivery/credit-delivery.service.ts";
 import { parseCreditAmount } from "../services/delivery/gift-delivery-input.ts";
 import { giftDeliveryService } from "../services/delivery/gift-delivery.service.ts";
-import { giftDeliveryRepository } from "../services/delivery/gift-delivery.repository.ts";
 import type { LinkDeliveryResult } from "../services/delivery/link-delivery.service.ts";
 import {
   DECIDABLE_CLAIM_STATUSES,
@@ -125,10 +124,9 @@ export async function handleAmountModal(
   if (!interaction.inCachedGuild()) return;
   await interaction.deferReply(EPHEMERAL);
   try {
-    const proof = modalUploads(interaction, GiftClaimModalField.deliveryProof);
     const current = await giftClaimService.getClaim(claimId);
     if (current?.status === GiftClaimStatus.APPROVED) {
-      const result = await giftDeliveryService.deliverCredits(claimId, interaction.member, proof);
+      const result = await giftDeliveryService.deliverCredits(claimId, interaction.member);
       await interaction.editReply(creditAck(result, current.amount ?? ""));
       return;
     }
@@ -137,7 +135,6 @@ export async function handleAmountModal(
       manager: interaction.member,
       type: GiftDeliveryType.CREDITS,
       amount: modalText(interaction, GiftClaimModalField.amount),
-      proof,
     });
     const claim = await giftClaimService.getClaim(claimId);
     await interaction.editReply(
@@ -215,17 +212,16 @@ export async function handleProofModal(
 
 export async function handleRetry(interaction: ButtonInteraction, claimId: string): Promise<void> {
   if (!interaction.inCachedGuild()) return;
-  const delivery = await giftDeliveryRepository.findByClaim(claimId);
-  if (!delivery || delivery.proof.length === 0) {
-    const claim = await giftClaimService.getClaim(claimId);
-    await interaction.showModal(buildAmountModal(GiftClaimCustomId.amountModal(claimId), claim?.amount));
+  // Only ask for the amount when it isn't known yet; otherwise retry the transfer directly.
+  const claim = await giftClaimService.getClaim(claimId);
+  if (!claim?.amount) {
+    await interaction.showModal(buildAmountModal(GiftClaimCustomId.amountModal(claimId), claim?.prize));
     return;
   }
   if (!interaction.deferred && !interaction.replied) await interaction.deferReply(EPHEMERAL);
   try {
     const result = await giftDeliveryService.deliverCredits(claimId, interaction.member);
-    const claim = await giftClaimService.getClaim(claimId);
-    await interaction.editReply(creditAck(result, claim?.amount ?? ""));
+    await interaction.editReply(creditAck(result, claim.amount));
   } catch (err) {
     await replyDeliveryError(interaction, err, "retry");
   }

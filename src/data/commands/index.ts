@@ -82,13 +82,17 @@ export const InfoSubcommand = {
   ADD: "add",
   REMOVE: "remove",
   SEE: "see",
+  ACCESS: "access",
   PAGE_GROUP: "page",
   PAGE_ADD: "add",
+  PAGE_DELETE: "delete",
+  PAGE_EDIT: "edit",
 } as const;
 
 export const CommandOption = {
   TARGET: "target",
   INFO: "info",
+  PAGE: "page",
   ROLE: "role",
   CHANNEL: "channel",
   TYPE: "type",

@@ -11,7 +11,12 @@ export class StaffInfoPanelService {
   async payload(guildId: GuildId) {
     const infos = await staffInfoService.list(guildId);
     return buildStaffInfoPanel(
-      infos.map((i) => ({ infoId: i.infoId, name: i.name, description: i.description })),
+      infos.map((i) => ({
+        infoId: i.infoId,
+        name: i.name,
+        description: i.description,
+        locked: !!i.accessRoleId,
+      })),
     );
   }
 

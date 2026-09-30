@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { deliveryAction } from "../render/case-card.ts";
+import { deliveryAction, showDeliveryButton } from "../render/case-card.ts";
 import { buildGiftClaimSubmitModal } from "../render/modals.ts";
 import { buildLinkDeliveryMessage } from "../render/delivery-components.ts";
 import {
@@ -132,6 +132,17 @@ describe("claim card delivery button", () => {
     expect(deliveryAction(approved(GiftDeliveryType.CREDITS), { status: GiftDeliveryStatus.FAILED })).toBe("RETRY");
   });
 
+  it("shows no delivery button for credits unless the automatic transfer failed", () => {
+    const credits = approved(GiftDeliveryType.CREDITS);
+    expect(showDeliveryButton(credits, { status: GiftDeliveryStatus.FULFILLED })).toBe(false);
+    expect(showDeliveryButton(credits, { status: GiftDeliveryStatus.PROCESSING })).toBe(false);
+    expect(showDeliveryButton({ status: GiftClaimStatus.PENDING, deliveryType: GiftDeliveryType.CREDITS }, null)).toBe(false);
+    expect(showDeliveryButton(credits, { status: GiftDeliveryStatus.FAILED })).toBe(true);
+    // Links and other gifts still need a person to hand them over.
+    expect(showDeliveryButton(approved(GiftDeliveryType.LINK), null)).toBe(true);
+    expect(showDeliveryButton(approved(GiftDeliveryType.OTHER), null)).toBe(true);
+  });
+
   it("offers nothing while delivering, once delivered, or before approval", () => {
     for (const status of [GiftDeliveryStatus.PROCESSING, GiftDeliveryStatus.READY, GiftDeliveryStatus.CLAIMED, GiftDeliveryStatus.FULFILLED]) {
       expect(deliveryAction(approved(GiftDeliveryType.LINK), { status })).toBeNull();
@@ -166,15 +177,24 @@ describe("delivery inputs", () => {
     expect(checkProof([{ ...file, size: 100 * 1024 * 1024 }])).toBe("TOO_LARGE");
   });
 
-  it("asks for one proof file in every delivery modal", () => {
-    for (const modal of [buildAmountModal("a"), buildLinkModal("b"), buildProofModal("c")]) {
-      const json = modal.toJSON() as unknown as {
-        components: { component: { custom_id: string; min_values?: number; max_values?: number } }[];
-      };
-      const upload = json.components.map((c) => c.component).find((c) => c.custom_id === "deliveryProof");
-      expect(upload?.min_values).toBe(1);
-      expect(upload?.max_values).toBe(1);
+  type ModalJson = {
+    components: { component: { custom_id: string; min_values?: number; max_values?: number } }[];
+  };
+  const proofInput = (modal: { toJSON(): unknown }) =>
+    (modal.toJSON() as ModalJson).components
+      .map((c) => c.component)
+      .find((c) => c.custom_id === "deliveryProof");
+
+  it("asks for one proof file when a person hands over a link or other gift", () => {
+    for (const modal of [buildLinkModal("b"), buildProofModal("c")]) {
+      expect(proofInput(modal)?.min_values).toBe(1);
+      expect(proofInput(modal)?.max_values).toBe(1);
     }
+  });
+
+  it("asks only for the amount for credits — autoclaim transfers them, no proof", () => {
+    expect(proofInput(buildAmountModal("a"))).toBeUndefined();
+    expect((buildAmountModal("a").toJSON() as ModalJson).components).toHaveLength(1);
   });
 
   it("builds the !gift menu as a V2 section with a type select, no embed", () => {

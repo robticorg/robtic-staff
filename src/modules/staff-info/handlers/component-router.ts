@@ -14,6 +14,7 @@ import { replyEphemeralError } from "../../../libs/discord/index.ts";
 import { buildInfoPage } from "../render/viewer.ts";
 import { staffInfoPanelService } from "../services/staff-info-panel.service.ts";
 import { staffInfoService } from "../services/staff-info.service.ts";
+import { canOpenInfo } from "../services/staff-info-access.ts";
 import { StaffInfoField, parseStaffInfoCustomId } from "./component-ids.ts";
 
 const log = logger.child("staff-info:components");
@@ -32,6 +33,12 @@ async function handleSelect(interaction: StringSelectMenuInteraction<"cached">):
   const info = await staffInfoService.get(interaction.guildId, interaction.values[0] ?? "");
   if (!info) {
     await interaction.reply({ content: staffInfoMessages.viewer.gone, flags: EPHEMERAL });
+  } else if (!canOpenInfo(interaction.member, info)) {
+    await interaction.reply({
+      content: staffInfoMessages.viewer.noAccess(info.accessRoleId!),
+      flags: EPHEMERAL,
+      allowedMentions: { parse: [] },
+    });
   } else {
     const page = buildInfoPage(info, 1);
     await interaction.reply({ ...page, flags: page.flags | EPHEMERAL });
@@ -50,6 +57,15 @@ async function handlePage(
   const info = await staffInfoService.get(interaction.guildId, infoId);
   if (!info) {
     await interaction.reply({ content: staffInfoMessages.viewer.gone, flags: EPHEMERAL });
+    return;
+  }
+  // Checked again per page: the role may have been set (or taken away) after they opened it.
+  if (!canOpenInfo(interaction.member, info)) {
+    await interaction.reply({
+      content: staffInfoMessages.viewer.noAccess(info.accessRoleId!),
+      flags: EPHEMERAL,
+      allowedMentions: { parse: [] },
+    });
     return;
   }
   await interaction.update(buildInfoPage(info, page));
@@ -81,6 +97,21 @@ async function handlePageModal(
   await interaction.editReply(C.pageAdded(info.name, info.pages.length));
 }
 
+async function handleEditModal(
+  interaction: ModalSubmitInteraction<"cached">,
+  infoId: string,
+  page: number,
+): Promise<void> {
+  await interaction.deferReply({ flags: EPHEMERAL });
+  const info = await staffInfoService.editPage(
+    interaction.guildId,
+    infoId,
+    page,
+    field(interaction, StaffInfoField.content),
+  );
+  await interaction.editReply(C.pageEdited(info.name, page));
+}
+
 export async function routeStaffInfoComponent(interaction: Interaction): Promise<boolean> {
   if (!interaction.isStringSelectMenu() && !interaction.isButton() && !interaction.isModalSubmit()) {
     return false;
@@ -101,6 +132,8 @@ export async function routeStaffInfoComponent(interaction: Interaction): Promise
         await handleAddModal(interaction);
       } else if (parsed.action === "pageModal") {
         await handlePageModal(interaction, parsed.args[0] ?? "");
+      } else if (parsed.action === "editModal") {
+        await handleEditModal(interaction, parsed.args[0] ?? "", Number(parsed.args[1]));
       } else {
         return false;
       }

@@ -1,12 +1,24 @@
 import { ChannelType } from "discord.js";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
 import { logger } from "../../../shared/utils/logger.ts";
+import { logCardFromText, type LogTone } from "../../../libs/discord/index.ts";
 import { channelConfigService } from "../../configuration/index.ts";
 import { ChannelConfigType } from "../../configuration/types/enums.ts";
 import { buildServerTagLog, type ServerTagLogEvent } from "../render/log.ts";
 import { getServerTagClient } from "../runtime.ts";
 
 const log = logger.child("server-tag:log");
+
+const EVENT_TONE: Record<ServerTagLogEvent["kind"], LogTone> = {
+  TAG_ENABLED: "success",
+  TAG_DISABLED: "info",
+  RESTRICTED: "warning",
+  AWAITING_IDENTITY: "warning",
+  RESTORED: "success",
+  REMOVED: "error",
+  BLOCKED: "warning",
+  PROBLEM: "error",
+};
 
 export class ServerTagLogService {
   async post(guildId: GuildId, event: ServerTagLogEvent): Promise<void> {
@@ -28,10 +40,7 @@ export class ServerTagLogService {
         return;
       }
 
-      await channel.send({
-        content: buildServerTagLog(event),
-        allowedMentions: { parse: [] },
-      });
+      await channel.send(logCardFromText(buildServerTagLog(event), EVENT_TONE[event.kind]));
     } catch (err) {
       log.warn(`server tag log post failed for guild ${guildId}`, err);
     }

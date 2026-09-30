@@ -6,6 +6,7 @@ export const DEFAULT_POINT_VALUES: Record<StaffPointTransactionType, number> = {
   [StaffPointTransactionType.GIFT_CLAIM]: 1,
   [StaffPointTransactionType.USER_WARNING]: 1,
   [StaffPointTransactionType.STAFF_WARNING]: 1,
+  [StaffPointTransactionType.MESSAGE]: 1,
   [StaffPointTransactionType.APPEAL_SUCCESS_PENALTY]: -2,
   [StaffPointTransactionType.MANUAL_ADJUSTMENT]: 0,
   [StaffPointTransactionType.OTHER]: 0,

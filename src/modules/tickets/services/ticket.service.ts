@@ -173,6 +173,13 @@ export class TicketService extends BaseRepository<Ticket> {
       .exec();
   }
 
+  /** Every open ticket of this member, in every panel (independent ones included). */
+  listOpenForUser(guildId: GuildId, userId: UserId): Promise<TicketDoc[]> {
+    return this.model
+      .find({ guildId, userId, status: { $in: ACTIVE_TICKET_STATUSES as TicketStatus[] } })
+      .exec();
+  }
+
   getOpenTicketForUserInPanel(
     guildId: GuildId,
     userId: UserId,

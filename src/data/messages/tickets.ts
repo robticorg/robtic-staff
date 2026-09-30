@@ -151,6 +151,13 @@ export const ticketMessages = {
     done: (count: number) => `${E.success} تم حذف ${count} عنصر من التكت.`,
   },
 
+  memberLeft: {
+    title: (userId: string) => `### ${E.warning} صاحب التكت <@${userId}> طلع من السيرفر`,
+    question: "تبي تقفل التكت؟",
+    claimerPing: (claimerId: string) => `-# <@${claimerId}>`,
+    closeButton: "إغلاق التكت",
+  },
+
   close: {
     confirming: (ticketId: string, seconds: number) =>
       `${E.warning} بيتم إغلاق \`${ticketId}\` خلال ${seconds} ثواني...`,

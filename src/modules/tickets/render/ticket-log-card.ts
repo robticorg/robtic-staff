@@ -1,5 +1,5 @@
-import type { EmbedBuilder } from "discord.js";
-import { createEmbed } from "../../../data/embeds/index.ts";
+import type { MessageCreateOptions } from "discord.js";
+import { buildLogCard, type LogField, type LogTone } from "../../../libs/discord/index.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import { TicketLogAction } from "../types/enums.ts";
 import type { TicketLogContext } from "../services/ticket-log.service.ts";
@@ -41,7 +41,7 @@ function titleFor(action: TicketLogAction): string | null {
   }
 }
 
-function colorFor(action: TicketLogAction): "success" | "error" | "warning" | "info" | "primary" {
+function colorFor(action: TicketLogAction): LogTone {
   switch (action) {
     case TicketLogAction.TICKET_CREATED:
     case TicketLogAction.USER_ADDED:
@@ -62,18 +62,24 @@ function colorFor(action: TicketLogAction): "success" | "error" | "warning" | "i
     case TicketLogAction.TICKET_TRANSFERRED:
       return "info";
     default:
-      return "primary";
+      return "info";
   }
 }
 
-export function buildTicketLogEmbed(
+type Field = { name: string; value: string; inline?: boolean };
+
+/**
+ * What a ticket log entry says (title, colour, fields) — kept apart from the layout.
+ * null when the action isn't logged or lacks what it needs (e.g. no member for USER_ADDED).
+ */
+export function ticketLogContent(
   action: TicketLogAction,
   ctx: TicketLogContext,
-): EmbedBuilder | null {
+): { title: string; tone: LogTone; fields: LogField[] } | null {
   const title = titleFor(action);
   if (!title) return null;
 
-  const fields: { name: string; value: string; inline?: boolean }[] = [
+  const fields: Field[] = [
     { name: L.ticket, value: `\`${ctx.ticketId}\``, inline: true },
     { name: L.actor, value: `<@${ctx.actorId}>`, inline: true },
   ];
@@ -136,10 +142,18 @@ export function buildTicketLogEmbed(
     return null;
   }
 
-  return createEmbed({
-    title,
-    color: colorFor(action),
-    fields,
-    timestamp: true,
-  });
+  return {
+    title: `### ${title}`,
+    tone: colorFor(action),
+    fields: fields.map((f) => ({ label: f.name, value: f.value })),
+  };
+}
+
+/** The ticket log entry as a Components V2 card. */
+export function buildTicketLogCard(
+  action: TicketLogAction,
+  ctx: TicketLogContext,
+): MessageCreateOptions | null {
+  const content = ticketLogContent(action, ctx);
+  return content ? buildLogCard(content) : null;
 }

@@ -117,6 +117,7 @@ export class LinkDeliveryService {
     await linkDeliveryMessageService.showClaimed(claimed);
     await giftDeliveriesChannel.post(claimed.guildId, {
       content: M.log.linkClaimed(claimed.userId, claimed.claimId),
+      tone: "success",
     });
     log.info(`link delivery ${deliveryId} claimed by ${userId}`);
     return { link, info: claimed.additionalInfo ?? null, delivery: claimed };

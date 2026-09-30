@@ -999,8 +999,10 @@ only adds the application record and its flow.
 `INTERNAL_API_HOST:INTERNAL_API_PORT` (default `0.0.0.0:8788`, always on;
 docker-compose publishes `8788:8788`). No token by default — set
 `INTERNAL_API_TOKEN` to require `Authorization: Bearer <token>` (10 wrong tokens
-from one IP block it for 10 minutes). Body: `guildId`, `userId`, `amount`,
-optional `type`, `reason`, `idempotencyKey`.
+from one IP block it for 10 minutes). Body: `guildId`, `userId` (both strings),
+`amount` (number or numeric string), optional `type`, `reason`, `idempotencyKey`.
+`type` is `"ticket"` (Ticket Points → `TICKET_CLAIM`) or `"msg"` (Message Points →
+`MESSAGE`), any case; left out, it's `OTHER`. `GET /internal/health` checks reachability.
 
 - Active staff: a `StaffPointTransaction` (`onBreak: false`, `balance`).
 - Staff on break: a `StaffBreakPoint` instead — never counted in totals,

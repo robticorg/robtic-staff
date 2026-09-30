@@ -2,7 +2,7 @@ import { type Guild } from "discord.js";
 import { logger } from "../../../shared/utils/logger.ts";
 import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
 import { TicketLogAction } from "../types/enums.ts";
-import { buildTicketLogEmbed } from "../render/ticket-log-embed.ts";
+import { buildTicketLogCard } from "../render/ticket-log-card.ts";
 
 const log = logger.child("tickets:log");
 
@@ -23,8 +23,8 @@ export interface TicketLogContext {
 
 export class TicketLogService {
   async record(action: TicketLogAction, ctx: TicketLogContext): Promise<void> {
-    const embed = buildTicketLogEmbed(action, ctx);
-    if (!embed) return;
+    const card = buildTicketLogCard(action, ctx);
+    if (!card) return;
 
     try {
       const logChannelId = ctx.panel.logChannelId;
@@ -35,7 +35,7 @@ export class TicketLogService {
         log.warn(`panel "${ctx.panel.id}" log channel unavailable`);
         return;
       }
-      await channel.send({ embeds: [embed], allowedMentions: { parse: [] } });
+      await channel.send(card);
     } catch (err) {
       log.warn("ticket log send failed", err);
     }

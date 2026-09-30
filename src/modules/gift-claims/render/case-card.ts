@@ -43,6 +43,19 @@ export function deliveryAction(
   return claim.deliveryType === GiftDeliveryType.CREDITS ? "RETRY" : "DELIVER";
 }
 
+/**
+ * Credits are delivered automatically by autoclaim, so they get no delivery button —
+ * except "retry" after the automatic transfer failed (or never ran), the only way to
+ * recover. Links and other gifts keep the button: a person has to hand those over.
+ */
+export function showDeliveryButton(
+  claim: Pick<GiftClaim, "status" | "deliveryType">,
+  delivery: CardDelivery,
+): boolean {
+  if (claim.deliveryType !== GiftDeliveryType.CREDITS) return true;
+  return deliveryAction(claim, delivery) === "RETRY";
+}
+
 export function buildGiftClaimCaseCard(
   claim: Pick<
     GiftClaim,
@@ -106,18 +119,20 @@ export function buildGiftClaimCaseCard(
 
   const decidable = (DECIDABLE_CLAIM_STATUSES as GiftClaimStatus[]).includes(claim.status);
   const action = deliveryAction(claim, delivery);
-  container.addActionRowComponents(
-    new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder()
-        .setCustomId(GiftClaimCustomId.approve(claim.claimId))
-        .setLabel(C.approveButton)
-        .setStyle(ButtonStyle.Success)
-        .setDisabled(!decidable),
-      new ButtonBuilder()
-        .setCustomId(GiftClaimCustomId.reject(claim.claimId))
-        .setLabel(C.rejectButton)
-        .setStyle(ButtonStyle.Danger)
-        .setDisabled(!decidable),
+  const buttons = [
+    new ButtonBuilder()
+      .setCustomId(GiftClaimCustomId.approve(claim.claimId))
+      .setLabel(C.approveButton)
+      .setStyle(ButtonStyle.Success)
+      .setDisabled(!decidable),
+    new ButtonBuilder()
+      .setCustomId(GiftClaimCustomId.reject(claim.claimId))
+      .setLabel(C.rejectButton)
+      .setStyle(ButtonStyle.Danger)
+      .setDisabled(!decidable),
+  ];
+  if (showDeliveryButton(claim, delivery)) {
+    buttons.push(
       new ButtonBuilder()
         .setCustomId(
           action === "RETRY"
@@ -127,8 +142,9 @@ export function buildGiftClaimCaseCard(
         .setLabel(action === "RETRY" ? D.buttons.retry : D.buttons.deliver)
         .setStyle(ButtonStyle.Primary)
         .setDisabled(action === null),
-    ),
-  );
+    );
+  }
+  container.addActionRowComponents(new ActionRowBuilder<ButtonBuilder>().addComponents(buttons));
 
   return { components: [container], flags: MessageFlags.IsComponentsV2 } as BaseMessageOptions;
 }

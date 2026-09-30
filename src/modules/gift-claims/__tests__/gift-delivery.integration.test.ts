@@ -170,19 +170,19 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
   });
 
   describe("CREDITS", () => {
-    it("approves, transfers through the Deliveries Channel and fulfills", async () => {
+    it("approves and transfers with no proof, then fulfills — autoclaim is the record", async () => {
       const claim = await claimFor(winner.id);
       const outcome = await giftDeliveryService.approveWithType({
         claimId: claim.claimId,
         manager: manager as never,
         type: GiftDeliveryType.CREDITS,
-        amount: "500,000", proof: PROOF, });
+        amount: "500,000", });
 
       expect(outcome.kind).toBe("CREDITS");
       expect(transferCalls).toHaveLength(1);
       expect(transferCalls[0]!.options).toEqual({ userId: winner.id, guildId: GUILD, channelId: DELIVERIES, amount: "500000" });
-      expect((await deliveryOf(claim.claimId))!.proof).toHaveLength(1);
-      expect(world.channels.get(DELIVERIES)!.sent.at(-1)!.payload.files).toHaveLength(1);
+      expect((await deliveryOf(claim.claimId))!.proof).toHaveLength(0);
+      expect(world.channels.get(DELIVERIES)!.sent.at(-1)!.payload.files ?? []).toHaveLength(0);
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.FULFILLED);
       const delivery = await deliveryOf(claim.claimId);
       expect(delivery!.status).toBe(GiftDeliveryStatus.FULFILLED);
@@ -196,7 +196,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
         claimId: claim.claimId,
         manager: manager as never,
         type: GiftDeliveryType.CREDITS,
-        amount: "1000", proof: PROOF, });
+        amount: "1000", });
       expect(outcome.kind === "CREDITS" && outcome.result.ok).toBe(false);
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.APPROVED);
       const failed = await deliveryOf(claim.claimId);
@@ -222,7 +222,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
         claimId: claim.claimId,
         manager: manager as never,
         type: GiftDeliveryType.CREDITS,
-        amount: "10", proof: PROOF, });
+        amount: "10", });
       expect((await deliveryOf(claim.claimId))!.error).toBe(TransferFailure.TIMEOUT);
     });
 
@@ -230,15 +230,15 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
       const claim = await claimFor(winner.id);
       transferDelayMs = 30;
       const approvals = await Promise.allSettled([
-        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF }),
-        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF }),
+        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" }),
+        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" }),
       ]);
       expect(approvals.filter((r) => r.status === "fulfilled")).toHaveLength(1);
       expect(transferCalls).toHaveLength(1);
 
       const second = await claimFor(winner.id);
       transferQueue = [false];
-      await giftDeliveryService.approveWithType({ claimId: second.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF });
+      await giftDeliveryService.approveWithType({ claimId: second.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" });
       const retries = await Promise.allSettled([
         giftDeliveryService.deliverCredits(second.claimId, manager as never),
         giftDeliveryService.deliverCredits(second.claimId, manager as never),
@@ -250,12 +250,12 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
     it("refuses an invalid amount or a missing Deliveries Channel before approving", async () => {
       const claim = await claimFor(winner.id);
       await expect(
-        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "Nitro", proof: PROOF }),
+        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "Nitro" }),
       ).rejects.toThrow(E.amountInvalid);
 
       world.channels.delete(DELIVERIES);
       await expect(
-        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF }),
+        giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" }),
       ).rejects.toThrow(E.deliveriesChannelMissing);
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.PENDING);
       expect(transferCalls).toHaveLength(0);
@@ -268,7 +268,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
 
         const claim = await claimFor(winner.id);
         await expect(
-          giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF }),
+          giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" }),
         ).rejects.toThrow(E.autoclaimOff);
         expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.PENDING);
 
@@ -279,7 +279,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
 
         await staffConfigService.setAutoclaimEnabled(GUILD, true);
         transferQueue = [false];
-        await giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5", proof: PROOF });
+        await giftDeliveryService.approveWithType({ claimId: claim.claimId, manager: manager as never, type: GiftDeliveryType.CREDITS, amount: "5" });
         await staffConfigService.setAutoclaimEnabled(GUILD, false);
         await expect(giftDeliveryService.deliverCredits(claim.claimId, manager as never)).rejects.toThrow(E.autoclaimOff);
         expect(transferCalls).toHaveLength(1);
@@ -550,7 +550,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
         amount: taken.info!,
       });
       expect(claim.source).toBe(GiftClaimSource.COMMAND);
-      const result = await giftDeliveryService.deliverCredits(claim.claimId, staffMember as never, PROOF);
+      const result = await giftDeliveryService.deliverCredits(claim.claimId, staffMember as never);
       expect(result.ok).toBe(true);
       expect(transferCalls.at(-1)!.options.channelId).toBe(DELIVERIES);
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.FULFILLED);

@@ -52,8 +52,6 @@ export async function handleCommandAmountModal(
   await interaction.deferReply(EPHEMERAL);
   try {
     const amount = giftDeliveryService.requireAmount(modalText(interaction, GiftClaimModalField.amount));
-    const proof = modalUploads(interaction, GiftClaimModalField.deliveryProof);
-    giftDeliveryProofService.assertValid(proof);
 
     const draft = await giftCommandService.take(draftId, interaction.member);
     const claim = await giftDeliveryService.createCommandClaim({
@@ -64,7 +62,7 @@ export async function handleCommandAmountModal(
       type: GiftDeliveryType.CREDITS,
       amount,
     });
-    const result = await giftDeliveryService.deliverCredits(claim.claimId, interaction.member, proof);
+    const result = await giftDeliveryService.deliverCredits(claim.claimId, interaction.member);
     await interaction.editReply(creditAck(result, claim.amount ?? amount));
   } catch (err) {
     await replyDeliveryError(interaction, err, "command credits");

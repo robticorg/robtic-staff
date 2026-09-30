@@ -131,13 +131,11 @@ export function buildAmountModal(customId: string, prefill?: string | null): Mod
     .setMaxLength(30)
     .setRequired(true);
   if (prefill) input.setValue(prefill);
+  // Credits are transferred by autoclaim, which logs the transfer itself — no proof to upload.
   return new ModalBuilder()
     .setCustomId(customId)
     .setTitle(M.modals.amountTitle)
-    .addLabelComponents(
-      new LabelBuilder().setLabel(M.modals.amountLabel).setTextInputComponent(input),
-      proofField(),
-    );
+    .addLabelComponents(new LabelBuilder().setLabel(M.modals.amountLabel).setTextInputComponent(input));
 }
 
 export function buildLinkModal(customId: string): ModalBuilder {

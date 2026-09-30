@@ -18,6 +18,30 @@ export type PointsRequestResult =
   | { ok: true; value: PointsRequest }
   | { ok: false; error: string };
 
+/**
+ * The short names other bots send in `type`:
+ *   "ticket" → Ticket Points (TICKET_CLAIM)
+ *   "msg"    → Message Points (MESSAGE)
+ * Matching ignores case; the full internal names (e.g. "TICKET_CLAIM") keep working.
+ */
+export const POINT_TYPE_ALIASES: Readonly<Record<string, StaffPointTransactionType>> = {
+  ticket: StaffPointTransactionType.TICKET_CLAIM,
+  msg: StaffPointTransactionType.MESSAGE,
+};
+
+/** undefined → OTHER (no type given); an unknown value → null. */
+export function resolvePointType(raw: unknown): StaffPointTransactionType | null {
+  if (raw === undefined || raw === null || raw === "") return StaffPointTransactionType.OTHER;
+  if (typeof raw !== "string") return null;
+  const key = raw.trim();
+  const alias = POINT_TYPE_ALIASES[key.toLowerCase()];
+  if (alias) return alias;
+  const upper = key.toUpperCase();
+  return (STAFF_POINT_TRANSACTION_TYPE_VALUES as readonly string[]).includes(upper)
+    ? (upper as StaffPointTransactionType)
+    : null;
+}
+
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -28,28 +52,42 @@ export function parsePointsRequest(body: unknown): PointsRequestResult {
   const input = asRecord(body);
   if (!input) return { ok: false, error: "body must be a JSON object" };
 
-  const { guildId, userId, amount, type, reason, idempotencyKey } = input;
-  if (typeof guildId !== "string" || !isSnowflake(guildId)) {
-    return { ok: false, error: "guildId must be a Discord id" };
-  }
-  if (typeof userId !== "string" || !isSnowflake(userId)) {
-    return { ok: false, error: "userId must be a Discord id" };
-  }
+  const { guildId, userId, type, reason, idempotencyKey } = input;
+  // Discord ids must arrive as strings: as JSON numbers they're already corrupted
+  // (they exceed 2^53), so a number is refused with a message saying why.
+  const idProblem = (name: string, value: unknown): string | null => {
+    if (typeof value === "number") return `${name} must be sent as a string, e.g. "${name}": "1234567890"`;
+    if (typeof value !== "string" || !isSnowflake(value.trim())) return `${name} must be a Discord id (string)`;
+    return null;
+  };
+  const guildProblem = idProblem("guildId", guildId);
+  if (guildProblem) return { ok: false, error: guildProblem };
+  const userProblem = idProblem("userId", userId);
+  if (userProblem) return { ok: false, error: userProblem };
+
+  // The amount may be a number or a numeric string ("5", "-2").
+  const amount =
+    typeof input.amount === "string" && /^-?\d+$/.test(input.amount.trim())
+      ? Number(input.amount.trim())
+      : input.amount;
   if (
     typeof amount !== "number" ||
     !Number.isInteger(amount) ||
     amount === 0 ||
     Math.abs(amount) > internalApiLimits.maxAbsoluteAmount
   ) {
-    return { ok: false, error: "amount must be a non-zero integer within the allowed range" };
+    return {
+      ok: false,
+      error: `amount must be a non-zero whole number between -${internalApiLimits.maxAbsoluteAmount} and ${internalApiLimits.maxAbsoluteAmount}`,
+    };
   }
 
-  const resolvedType = type === undefined ? StaffPointTransactionType.OTHER : type;
-  if (
-    typeof resolvedType !== "string" ||
-    !(STAFF_POINT_TRANSACTION_TYPE_VALUES as readonly string[]).includes(resolvedType)
-  ) {
-    return { ok: false, error: "type is not a known point transaction type" };
+  const resolvedType = resolvePointType(type);
+  if (!resolvedType) {
+    return {
+      ok: false,
+      error: `type must be one of: ${Object.keys(POINT_TYPE_ALIASES).join(", ")} (or leave it out)`,
+    };
   }
 
   if (reason !== undefined && typeof reason !== "string") {
@@ -71,10 +109,10 @@ export function parsePointsRequest(body: unknown): PointsRequestResult {
   return {
     ok: true,
     value: {
-      guildId,
-      userId,
+      guildId: (guildId as string).trim(),
+      userId: (userId as string).trim(),
       amount,
-      type: resolvedType as StaffPointTransactionType,
+      type: resolvedType,
       reason: resolvedReason,
       idempotencyKey: typeof idempotencyKey === "string" ? idempotencyKey.trim() : null,
     },

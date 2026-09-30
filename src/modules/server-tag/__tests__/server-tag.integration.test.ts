@@ -152,11 +152,21 @@ function addMember(
 let dmCount = 0;
 let logLines: string[] = [];
 
+type CardJson = { content?: string; components?: CardJson[] };
+const cardText = (node: CardJson): string[] => [
+  ...(node.content ? [node.content] : []),
+  ...(node.components ?? []).flatMap(cardText),
+];
+
 const fakeLogChannel = {
   type: ChannelType.GuildText,
   id: LOG_CHANNEL,
-  send: async (payload: { content: string }) => {
-    logLines.push(payload.content);
+  // Logs are V2 cards now — collect the text of every block, in order.
+  send: async (payload: { content?: string; components?: { toJSON(): unknown }[] }) => {
+    const text = payload.content
+      ? [payload.content]
+      : (payload.components ?? []).flatMap((c) => cardText(c.toJSON() as CardJson));
+    logLines.push(text.join("\n"));
     return { id: "msg" };
   },
 };

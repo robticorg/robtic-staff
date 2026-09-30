@@ -5,7 +5,7 @@ import { logger } from "../../../shared/utils/logger.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { channelConfigService, roleConfigService } from "../../configuration/index.ts";
 import { ChannelConfigType, RoleConfigType } from "../../configuration/types/enums.ts";
-import { buildWarnLogEmbed, type WarnLogInput } from "../render/warn-log.ts";
+import { buildWarnLogCard, type WarnLogInput } from "../render/warn-log.ts";
 import {
   StaffActivityType,
   StaffHistoryAction,
@@ -197,7 +197,7 @@ export class WarningActionService {
       if (!channelId) return;
       const channel = await guild.channels.fetch(channelId).catch(() => null);
       if (!channel || !channel.isTextBased()) return;
-      await channel.send({ embeds: [buildWarnLogEmbed(input)] });
+      await channel.send(buildWarnLogCard(input));
     } catch (err) {
       log.warn("warn log post failed", err);
     }

@@ -1,6 +1,6 @@
 import { AttachmentBuilder, type Guild, type GuildTextBasedChannel } from "discord.js";
 import { limits } from "../../../data/config/limits.ts";
-import { createEmbed } from "../../../data/embeds/index.ts";
+import { buildLogCard } from "../../../libs/discord/index.ts";
 import { isUnsetId } from "../../../data/tickets/index.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import type { Ticket } from "../models/ticket.model.ts";
@@ -115,21 +115,25 @@ export class TranscriptService {
       const payload = JSON.parse(transcript.content) as TranscriptPayload;
       const file = this.toAttachment(transcript);
 
-      const embed = createEmbed({
-        title: `📄 ${transcript.ticketId}`,
-        color: "info",
-        fields: [
-          { name: "العضو", value: `<@${payload.ticket.ownerId}>`, inline: true },
-          ...(payload.ticket.claimedByDiscordId
-            ? [{ name: "استلمه", value: `<@${payload.ticket.claimedByDiscordId}>`, inline: true }]
-            : []),
-          { name: "القسم", value: payload.ticket.panelId, inline: true },
-          { name: "عدد الرسائل", value: String(transcript.messageCount), inline: true },
-        ],
-        timestamp: true,
-      });
-
-      await channel.send({ embeds: [embed], files: [file] });
+      // The .txt is attached and shown inside the card as a file component.
+      await channel.send(
+        buildLogCard({
+          title: `### 📄 ${transcript.ticketId}`,
+          tone: "info",
+          fields: [
+            { label: "العضو", value: `<@${payload.ticket.ownerId}>` },
+            ...(payload.ticket.claimedByDiscordId
+              ? [{ label: "استلمه", value: `<@${payload.ticket.claimedByDiscordId}>` }]
+              : []),
+            {
+              label: "القسم",
+              value: ticketConfigService.getPanel(payload.ticket.panelId)?.name ?? payload.ticket.panelId,
+            },
+            { label: "عدد الرسائل", value: String(transcript.messageCount) },
+          ],
+          files: [file],
+        }),
+      );
     } catch (err) {
       log.warn("transcript send failed", err);
     }

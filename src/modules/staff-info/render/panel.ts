@@ -15,6 +15,8 @@ export interface PanelEntry {
   infoId: string;
   name: string;
   description: string;
+  /** Shown with a 🔒 — the menu is the same for everyone, the role is checked on select. */
+  locked?: boolean;
 }
 
 /** The public panel: banner image → text → the menu of infos. No accent colour. */
@@ -37,12 +39,13 @@ export function buildStaffInfoPanel(entries: readonly PanelEntry[]): BaseMessage
           .setCustomId(StaffInfoCustomId.select())
           .setPlaceholder(P.selectPlaceholder)
           .addOptions(
-            entries.slice(0, 25).map((e) =>
-              new StringSelectMenuOptionBuilder()
+            entries.slice(0, 25).map((e) => {
+              const option = new StringSelectMenuOptionBuilder()
                 .setLabel(e.name.slice(0, 100))
                 .setDescription(e.description.slice(0, 100))
-                .setValue(e.infoId),
-            ),
+                .setValue(e.infoId);
+              return e.locked ? option.setEmoji("🔒") : option;
+            }),
           ),
       ),
     );

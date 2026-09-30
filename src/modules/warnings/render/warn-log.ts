@@ -1,5 +1,5 @@
-import type { EmbedBuilder } from "discord.js";
-import { createEmbed } from "../../../data/embeds/index.ts";
+import type { MessageCreateOptions } from "discord.js";
+import { buildLogCard, type LogCardInput, type LogField } from "../../../libs/discord/index.ts";
 import { warningMessages } from "../../../data/messages/warnings.ts";
 
 const L = warningMessages.log;
@@ -21,34 +21,35 @@ function titleFor(kind: WarnLogInput["kind"]): string {
   return L.titleUser;
 }
 
-export function buildWarnLogEmbed(input: WarnLogInput): EmbedBuilder {
-  const fields: { name: string; value: string; inline?: boolean }[] = [
-    { name: L.target, value: `<@${input.targetId}>`, inline: true },
-    { name: L.issuer, value: `<@${input.issuerId}>`, inline: true },
+/** What the WARNING_LOG entry says — separate from the layout so it can be checked on its own. */
+export function warnLogContent(input: WarnLogInput): LogCardInput & { fields: LogField[] } {
+  const fields: LogField[] = [
+    { label: L.target, value: `<@${input.targetId}>` },
+    { label: L.issuer, value: `<@${input.issuerId}>` },
   ];
   if (input.kind !== "USER") {
-    fields.push({ name: L.warnType, value: L.typeName[input.kind] ?? input.kind, inline: true });
+    fields.push({ label: L.warnType, value: L.typeName[input.kind] ?? input.kind });
   }
   if (input.kind === "REAL" && input.level) {
-    fields.push({ name: L.level, value: L.levelName(input.level), inline: true });
+    fields.push({ label: L.level, value: L.levelName(input.level) });
   }
-  fields.push({ name: L.reason, value: input.reason.slice(0, 1024) || "—" });
+  fields.push({ label: L.reason, value: input.reason.slice(0, 1024) || "—" });
   if (input.kind === "REAL" && input.convertedFrom) {
-    fields.push({ name: L.convertedFrom, value: String(input.convertedFrom), inline: true });
+    fields.push({ label: L.convertedFrom, value: String(input.convertedFrom) });
   }
   if (input.evidence.length) {
-    fields.push({
-      name: L.evidence,
-      value: input.evidence.slice(0, 5).join("\n").slice(0, 1024),
-    });
+    fields.push({ label: L.evidence, value: `\n${input.evidence.slice(0, 5).join("\n")}` });
   }
-  fields.push({ name: L.warnId, value: `\`${input.warningId}\``, inline: true });
+  fields.push({ label: L.warnId, value: `\`${input.warningId}\`` });
 
-  return createEmbed({
-    color: input.kind === "REAL" ? "error" : "warning",
-    title: titleFor(input.kind),
+  return {
+    title: `### ${titleFor(input.kind)}`,
+    tone: input.kind === "REAL" ? "error" : "warning",
     fields,
-    timestamp: true,
     footer: L.footer,
-  });
+  };
+}
+
+export function buildWarnLogCard(input: WarnLogInput): MessageCreateOptions {
+  return buildLogCard(warnLogContent(input));
 }

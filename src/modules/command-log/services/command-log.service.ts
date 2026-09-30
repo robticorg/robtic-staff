@@ -7,6 +7,7 @@ import {
   commandLogConfig,
 } from "../../../data/command-log/config.ts";
 import { commandLogMessages } from "../../../data/command-log/messages.ts";
+import { logCardFromText, type LogTone } from "../../../libs/discord/index.ts";
 import { channelConfigService } from "../../configuration/index.ts";
 import { ChannelConfigType } from "../../configuration/types/enums.ts";
 
@@ -22,6 +23,12 @@ export const CommandLogOutcome = {
   ERROR: "ERROR",
 } as const;
 export type CommandLogOutcome = (typeof CommandLogOutcome)[keyof typeof CommandLogOutcome];
+
+const OUTCOME_TONE: Record<CommandLogOutcome, LogTone> = {
+  SUCCESS: "success",
+  DENIED: "warning",
+  ERROR: "error",
+};
 
 export interface CommandLogEntry {
   /** The slot this command logs to; COMMAND_LOG is the fallback when it's unset. */
@@ -83,7 +90,8 @@ export class CommandLogService {
         log.warn(`${entry.slot} channel ${channelId} unavailable in ${guild.id}`);
         return;
       }
-      await channel.send({ content: buildCommandLog(entry), allowedMentions: { parse: [] } });
+      // The text already carries its own time line, so the card doesn't add another.
+      await channel.send(logCardFromText(buildCommandLog(entry), OUTCOME_TONE[entry.outcome], { at: null }));
     } catch (err) {
       log.warn(`command log post failed in ${guild.id}`, err);
     }

@@ -33,12 +33,45 @@ describe("points request validation", () => {
     expect(parsePointsRequest(null).ok).toBe(false);
     expect(parsePointsRequest({ ...base, guildId: "abc" }).ok).toBe(false);
     expect(parsePointsRequest({ ...base, userId: undefined }).ok).toBe(false);
-    for (const amount of [0, 1.5, "1", 5000]) {
+    for (const amount of [0, 1.5, "1.5", "abc", "0", 5000, "5000"]) {
       expect(parsePointsRequest({ ...base, amount }).ok).toBe(false);
     }
     expect(parsePointsRequest({ ...base, type: "FREE_MONEY" }).ok).toBe(false);
     expect(parsePointsRequest({ ...base, idempotencyKey: "" }).ok).toBe(false);
     expect(parsePointsRequest({ ...base, amount: -3 }).ok).toBe(true);
+  });
+
+  it('maps type "ticket" to Ticket Points and "msg" to Message Points, any case', () => {
+    const typeOf = (type: unknown) => {
+      const parsed = parsePointsRequest({ guildId: GUILD, userId: USER, amount: 1, type });
+      return parsed.ok ? parsed.value.type : null;
+    };
+    expect(typeOf("ticket")).toBe(StaffPointTransactionType.TICKET_CLAIM);
+    expect(typeOf("Ticket")).toBe(StaffPointTransactionType.TICKET_CLAIM);
+    expect(typeOf("msg")).toBe(StaffPointTransactionType.MESSAGE);
+    expect(typeOf(" MSG ")).toBe(StaffPointTransactionType.MESSAGE);
+    // Full names still work; no type still means OTHER.
+    expect(typeOf("TICKET_CLAIM")).toBe(StaffPointTransactionType.TICKET_CLAIM);
+    expect(typeOf(undefined)).toBe(StaffPointTransactionType.OTHER);
+    expect(typeOf("message points")).toBeNull();
+  });
+
+  it("names the allowed types when the type is wrong", () => {
+    const parsed = parsePointsRequest({ guildId: GUILD, userId: USER, amount: 1, type: "bananas" });
+    expect(!parsed.ok && parsed.error).toContain("ticket, msg");
+  });
+
+  it("accepts the amount as a numeric string", () => {
+    const parsed = parsePointsRequest({ guildId: GUILD, userId: USER, amount: "5" });
+    expect(parsed.ok && parsed.value.amount).toBe(5);
+    const negative = parsePointsRequest({ guildId: GUILD, userId: USER, amount: " -2 " });
+    expect(negative.ok && negative.value.amount).toBe(-2);
+  });
+
+  it("explains that ids must be strings when they arrive as numbers", () => {
+    const parsed = parsePointsRequest({ guildId: 123456789012345678, userId: USER, amount: 1 });
+    expect(parsed.ok).toBe(false);
+    expect(!parsed.ok && parsed.error).toContain("string");
   });
 });
 
@@ -93,6 +126,18 @@ describe("points API authentication", () => {
     );
     // 400 = got past auth to validation (guildId missing), not 401.
     expect(res.status).toBe(400);
+  });
+
+  it("answers the health check and tolerates a trailing slash", async () => {
+    const health = await routeInternalRequest(new Request("http://127.0.0.1/internal/health"), undefined);
+    expect(health.status).toBe(200);
+    expect(await health.json()).toMatchObject({ success: true, auth: "open" });
+
+    const slash = await routeInternalRequest(
+      new Request("http://127.0.0.1/internal/staff/points/", { method: "POST", body: "{}" }),
+      undefined,
+    );
+    expect(slash.status).toBe(400); // reached validation, not 404
   });
 
   it("lets a blocked IP back in once the window passes", () => {

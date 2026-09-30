@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import type { ContainerBuilder } from "discord.js";
 import { staffInfoPanelContent } from "../../../data/staff-info/config.ts";
 import { parseStaffInfoCustomId, StaffInfoCustomId } from "../handlers/component-ids.ts";
-import { buildInfoAddModal, buildInfoPageModal } from "../render/modals.ts";
+import { buildInfoAddModal, buildInfoEditModal, buildInfoPageModal } from "../render/modals.ts";
 import { buildStaffInfoPanel } from "../render/panel.ts";
 import { buildInfoPage, clampPage } from "../render/viewer.ts";
 
@@ -64,6 +64,17 @@ describe("staff info viewer", () => {
     expect(clampPage(9, 3)).toBe(3);
     expect(clampPage(0, 3)).toBe(1);
     expect(clampPage(Number.NaN, 3)).toBe(1);
+  });
+
+  it("pre-fills the edit form with the page's current content", () => {
+    const json = buildInfoEditModal("abc", 2, "old text").toJSON() as unknown as {
+      custom_id: string;
+      components: { component: { value?: string } }[];
+    };
+    expect(json.components[0]!.component.value).toBe("old text");
+    expect(parseStaffInfoCustomId(json.custom_id)).toEqual({ action: "editModal", args: ["abc", "2"] });
+    // A page at the 4000-char limit still fits in the form.
+    expect(() => buildInfoEditModal("abc", 1, "x".repeat(5000)).toJSON()).not.toThrow();
   });
 
   it("builds valid forms", () => {

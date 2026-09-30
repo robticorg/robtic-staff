@@ -104,6 +104,7 @@ export class CreditDeliveryService {
       await giftDeliveryRepository.markFailed(locked.deliveryId, outcome.reason);
       await giftDeliveriesChannel.post(locked.guildId, {
         content: M.log.creditsFailed(locked.userId, locked.claimId, FAILURE_LABELS[outcome.reason]),
+        tone: "error",
       });
       log.warn(`credit delivery ${locked.deliveryId} failed: ${outcome.reason}`);
       return { ok: false, reason: outcome.reason, label: FAILURE_LABELS[outcome.reason] };
@@ -116,6 +117,7 @@ export class CreditDeliveryService {
     await giftDeliveriesChannel.post(locked.guildId, {
       content: M.log.creditsDone(locked.userId, locked.amount!, locked.claimId),
       files: giftDeliveryProofService.attachments(proof),
+      tone: "success",
     });
     log.info(`credit delivery ${locked.deliveryId} fulfilled (${locked.amount}) by ${staffId}`);
     return { ok: true, delivery: fulfilled ?? locked };

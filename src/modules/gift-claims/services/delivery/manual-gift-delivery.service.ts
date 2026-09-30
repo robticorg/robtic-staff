@@ -47,6 +47,7 @@ export class ManualGiftDeliveryService {
         ...(info ? [M.log.info(info)] : []),
       ].join("\n"),
       files: giftDeliveryProofService.attachments(files),
+      tone: "success",
     });
 
     const fulfilled = await giftDeliveryRepository.markFulfilled(locked.deliveryId, {

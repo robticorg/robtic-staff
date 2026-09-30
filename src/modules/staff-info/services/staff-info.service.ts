@@ -78,6 +78,71 @@ export class StaffInfoService {
       : new StaffInfoError("STAFF_INFO_NOT_FOUND", M.notFound);
   }
 
+  /**
+   * Deletes one page (1-based). The last remaining page can't go — the info would be
+   * empty. The write only lands if the pages are still exactly what we read, so a page
+   * added or deleted at the same moment is never removed by mistake.
+   */
+  async removePage(
+    guildId: GuildId,
+    infoId: string,
+    page: number,
+  ): Promise<{ info: StaffInfoDocument; removed: number }> {
+    const info = await this.get(guildId, infoId);
+    if (!info) throw new StaffInfoError("STAFF_INFO_NOT_FOUND", M.notFound);
+    if (!Number.isInteger(page) || page < 1 || page > info.pages.length) {
+      throw new StaffInfoError("STAFF_INFO_PAGE_RANGE", M.pageNotFound(info.pages.length));
+    }
+    if (info.pages.length === 1) throw new StaffInfoError("STAFF_INFO_LAST_PAGE", M.lastPage);
+
+    const pages = info.pages.filter((_, i) => i !== page - 1);
+    const updated = await StaffInfoModel.findOneAndUpdate(
+      { guildId, infoId, pages: info.pages },
+      { $set: { pages } },
+      { returnDocument: "after" },
+    ).exec();
+    if (!updated) throw new StaffInfoError("STAFF_INFO_CHANGED", M.pageChanged);
+    return { info: updated, removed: page };
+  }
+
+  /** Replaces one page's content (1-based); only if that page still exists. */
+  async editPage(
+    guildId: GuildId,
+    infoId: string,
+    page: number,
+    content: string,
+  ): Promise<StaffInfoDocument> {
+    const text = clip(content, L.contentMaxLength);
+    if (!text) throw new StaffInfoError("STAFF_INFO_CONTENT", M.contentRequired);
+    if (!Number.isInteger(page) || page < 1) {
+      throw new StaffInfoError("STAFF_INFO_PAGE_RANGE", M.notFound);
+    }
+
+    const index = page - 1;
+    const updated = await StaffInfoModel.findOneAndUpdate(
+      { guildId, infoId, [`pages.${index}`]: { $exists: true } },
+      { $set: { [`pages.${index}`]: text } },
+      { returnDocument: "after" },
+    ).exec();
+    if (updated) return updated;
+
+    const info = await this.get(guildId, infoId);
+    throw info
+      ? new StaffInfoError("STAFF_INFO_PAGE_RANGE", M.pageNotFound(info.pages.length))
+      : new StaffInfoError("STAFF_INFO_NOT_FOUND", M.notFound);
+  }
+
+  /** roleId null opens the info to everyone again. */
+  async setAccess(guildId: GuildId, infoId: string, roleId: string | null): Promise<StaffInfoDocument> {
+    const updated = await StaffInfoModel.findOneAndUpdate(
+      { guildId, infoId },
+      { $set: { accessRoleId: roleId } },
+      { returnDocument: "after" },
+    ).exec();
+    if (!updated) throw new StaffInfoError("STAFF_INFO_NOT_FOUND", M.notFound);
+    return updated;
+  }
+
   async remove(guildId: GuildId, infoId: string): Promise<StaffInfoDocument> {
     const removed = await StaffInfoModel.findOneAndDelete({ guildId, infoId }).exec();
     if (!removed) throw new StaffInfoError("STAFF_INFO_NOT_FOUND", M.notFound);
