@@ -75,7 +75,7 @@ describe("autoclaim client", () => {
   };
   const context = { idempotencyKey: "gift-d1", announcement: "جاري التحويل" };
 
-  it("posts to /api/claim with the deliveries channel, amount and idempotency key", async () => {
+  it("posts guildId, channelId, userId and amount to /transfer", async () => {
     let request: { url: string; init: RequestInit } | null = null;
     const transfer = createAutoclaimTransfer(config, async (url, init) => {
       request = { url, init };
@@ -83,18 +83,16 @@ describe("autoclaim client", () => {
     });
 
     expect(await transfer(options, context)).toEqual({ ok: true, messageId: "msg-1" });
-    expect(request!.url).toBe("https://autoclaim.test/api/claim");
+    expect(request!.url).toBe("https://autoclaim.test/transfer");
     expect(request!.init.method).toBe("POST");
     const headers = request!.init.headers as Record<string, string>;
     expect(headers["idempotency-key"]).toBe("gift-d1");
     expect(headers.authorization).toBe("Bearer tok");
     expect(JSON.parse(String(request!.init.body))).toEqual({
-      userId: "u1",
       guildId: "g1",
       channelId: "deliveries",
+      userId: "u1",
       amount: "500000",
-      messageId: "msg-1",
-      idempotencyKey: "gift-d1",
     });
     expect(sent.at(-1)).toBe("جاري التحويل");
   });
@@ -104,6 +102,8 @@ describe("autoclaim client", () => {
       createAutoclaimTransfer(config, async () => new Response("{}", { status }));
     expect(await respond(400)(options, context)).toMatchObject({ ok: false, reason: TransferFailure.REJECTED });
     expect(await respond(503)(options, context)).toMatchObject({ ok: false, reason: TransferFailure.UNAVAILABLE });
+    const refused = createAutoclaimTransfer(config, async () => Response.json({ success: false }, { status: 200 }));
+    expect(await refused(options, context)).toMatchObject({ ok: false, reason: TransferFailure.REJECTED });
 
     const timeout = createAutoclaimTransfer(config, async () => {
       const err = new Error("timed out");

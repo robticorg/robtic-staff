@@ -34,8 +34,15 @@ export type StartTransfer = (
 
 type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
 
+export const AUTOCLAIM_TRANSFER_PATH = "/transfer";
+
 function isTimeout(err: unknown): boolean {
   return err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
+}
+
+async function reportsFailure(response: Response): Promise<boolean> {
+  const body = (await response.json().catch(() => null)) as { success?: unknown; ok?: unknown } | null;
+  return body?.success === false || body?.ok === false;
 }
 
 export function createAutoclaimTransfer(
@@ -54,16 +61,14 @@ export function createAutoclaimTransfer(
 
     let response: Response;
     try {
-      response = await fetchImpl(new URL("/api/claim", config.autoclaimApiUrl).toString(), {
+      response = await fetchImpl(new URL(AUTOCLAIM_TRANSFER_PATH, config.autoclaimApiUrl).toString(), {
         method: "POST",
         headers,
         body: JSON.stringify({
-          userId: options.userId,
           guildId: options.guildId,
           channelId: options.channelId,
+          userId: options.userId,
           amount: options.amount,
-          messageId: message.id,
-          idempotencyKey: context.idempotencyKey,
         }),
         signal: AbortSignal.timeout(config.autoclaimTimeoutMs),
       });
@@ -75,7 +80,7 @@ export function createAutoclaimTransfer(
       };
     }
 
-    if (response.ok) return { ok: true, messageId: message.id };
+    if (response.ok && !(await reportsFailure(response))) return { ok: true, messageId: message.id };
     return {
       ok: false,
       reason: response.status >= 500 ? TransferFailure.UNAVAILABLE : TransferFailure.REJECTED,

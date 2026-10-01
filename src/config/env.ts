@@ -46,6 +46,8 @@ export interface RawEnv {
   giftLinkSecret?: string;
 }
 
+const DEFAULT_AUTOCLAIM_API_URL = "http://192.168.1.146:8790";
+
 function readPositiveInt(value: string | undefined, fallback: number): number {
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
@@ -77,7 +79,7 @@ export const rawEnv: RawEnv = {
   internalApiHost: process.env.INTERNAL_API_HOST || "0.0.0.0",
   internalApiPort: readPort(process.env.INTERNAL_API_PORT, 8788),
 
-  autoclaimApiUrl: process.env.AUTOCLAIM_API_URL || undefined,
+  autoclaimApiUrl: (process.env.AUTOCLAIM_API_URL ?? DEFAULT_AUTOCLAIM_API_URL) || undefined,
   autoclaimApiToken: process.env.AUTOCLAIM_API_TOKEN || undefined,
   autoclaimTimeoutMs: readPositiveInt(process.env.AUTOCLAIM_TIMEOUT_MS, 15_000),
   giftLinkSecret: process.env.GIFT_LINK_SECRET || undefined,
