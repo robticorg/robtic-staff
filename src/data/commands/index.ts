@@ -16,6 +16,8 @@ export const CommandName = {
   AUTOCLAIM: "autoclaim",
   INTAKE: "intake",
   INFO: "info",
+  ADD_RES: "add-res",
+  LEAD: "lead",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -89,6 +91,14 @@ export const InfoSubcommand = {
   PAGE_EDIT: "edit",
 } as const;
 
+export const LeadSubcommand = {
+  CREATE: "create",
+  ASSIGN: "assign",
+  REMOVE: "remove",
+  LIST: "list",
+  INFO: "info",
+} as const;
+
 export const CommandOption = {
   TARGET: "target",
   INFO: "info",
@@ -112,6 +122,16 @@ export const CommandOption = {
   TIME: "time",
   TIER: "tier",
   POINTS: "points",
+  NAME: "name",
+  DESCRIPTION: "description",
+  LEAD: "lead",
+  TARGET_USER: "target_user",
+  TARGET_ROLE: "target_role",
+  TARGET_RESPONSIBILITY: "target_responsibility",
+  LEAD_USER: "lead_user",
+  LEAD_ROLE: "lead_role",
+  USER: "user",
+  REPLACE: "replace",
 } as const;
 
 export const commandCopy = {

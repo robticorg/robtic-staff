@@ -3,6 +3,7 @@ import type { GuildId, UserId } from "../../../shared/types/index.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { staffPermissionService } from "../../staff/services/staff-permissions.service.ts";
+import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
 
 export interface ReviewerConflictInput {
   reviewerId: UserId;
@@ -22,11 +23,7 @@ export function isReviewerConflicted(input: ReviewerConflictInput): boolean {
 
 export class AppealPermissionService {
   async canReview(member: GuildMember): Promise<boolean> {
-    const appealRole = await roleConfigService.getByType(
-      member.guild.id,
-      RoleConfigType.APPEAL_MANAGER,
-    );
-    if (appealRole && member.roles.cache.has(appealRole.roleId)) return true;
+    if (await responsibilityPermissionService.holds(member, RoleConfigType.APPEAL_MANAGER)) return true;
     return staffPermissionService.isStaffManager(member);
   }
 

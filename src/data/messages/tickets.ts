@@ -1,6 +1,12 @@
 import { emojis } from "../emojis/index.ts";
+import { DEFAULT_POINT_VALUES } from "../../modules/staff/config/points.ts";
+import { StaffPointTransactionType } from "../../modules/staff/types/enums.ts";
 
 const E = emojis;
+
+/** "+2 نقاط" — follows the configured ticket-claim value. */
+const ticketPoints = DEFAULT_POINT_VALUES[StaffPointTransactionType.TICKET_CLAIM];
+const TICKET_POINTS = `+${ticketPoints} ${ticketPoints === 1 ? "نقطة" : "نقاط"}`;
 
 const time = (at: Date) => `<t:${Math.floor(at.getTime() / 1000)}:f>`;
 const relative = (at: Date) => `<t:${Math.floor(at.getTime() / 1000)}:R>`;
@@ -58,7 +64,7 @@ export const ticketMessages = {
     cantClaimOwn: `${E.error} ما تقدر تستلم تكتك انت.`,
     notOpen: `${E.error} هذا التكت ما عاد يمكن استلامه.`,
     alreadyClaimed: (userId: string) => `${E.error} هذا التكت مستلَم أصلاً من <@${userId}>.`,
-    success: (ticketId: string) => `${E.success} استلمت \`${ticketId}\`. **+1 نقطة.**`,
+    success: (ticketId: string) => `${E.success} استلمت \`${ticketId}\`. **${TICKET_POINTS}.**`,
     successNoPoint: (ticketId: string) => `${E.success} أنت الحين مسؤول عن \`${ticketId}\`.`,
     threadNote: (userMention: string) => `${E.staff} تم الاستلام من ${userMention}.`,
   },
@@ -113,7 +119,7 @@ export const ticketMessages = {
     raced: `${E.error} تغيّر مستلِم التكت قبل شوي — افتح الخيارات مرة ثانية.`,
 
     done: (ticketId: string, userId: string) =>
-      `${E.success} تم تحويل \`${ticketId}\` إلى <@${userId}>. **+1 نقطة له.**`,
+      `${E.success} تم تحويل \`${ticketId}\` إلى <@${userId}>. **${TICKET_POINTS} له.**`,
     doneNoPoint: (ticketId: string, userId: string) =>
       `${E.success} تم تحويل \`${ticketId}\` إلى <@${userId}>. (أخذ نقطته عن هذا التكت قبل)`,
     dmFailed: (userId: string) =>

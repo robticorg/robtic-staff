@@ -18,6 +18,7 @@ import { applicationTicketService } from "./application-ticket.service.ts";
 import { staffService } from "../../staff/services/staff.service.ts";
 import { staffActivityService } from "../../staff/services/staff-activity.service.ts";
 import { StaffActivityType } from "../../staff/types/enums.ts";
+import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
 
 const log = logger.child("applications:girls");
 const V = staffApplicationMessages.verify;
@@ -45,14 +46,13 @@ export class GirlVerificationService {
 
   async verify(actor: GuildMember, target: GuildMember): Promise<void> {
     const guildId = actor.guild.id;
-    const [manager, verified, notVerified] = await Promise.all([
-      roleConfigService.getByType(guildId, RoleConfigType.GIRLS_MANAGER),
+    const [isGirlsManager, verified, notVerified] = await Promise.all([
+      responsibilityPermissionService.holds(actor, RoleConfigType.GIRLS_MANAGER),
       roleConfigService.getByType(guildId, RoleConfigType.GIRL_VERIFIED),
       roleConfigService.getByType(guildId, RoleConfigType.GIRL_NOT_VERIFIED),
     ]);
 
-    const authorized =
-      memberIsAdministrator(actor) || (!!manager && actor.roles.cache.has(manager.roleId));
+    const authorized = memberIsAdministrator(actor) || isGirlsManager;
     if (!authorized) throw new ApplicationError("VERIFY_NOT_ALLOWED", V.notAllowed);
     if (!verified || !actor.guild.roles.cache.has(verified.roleId)) {
       throw new ApplicationError("VERIFY_ROLE_UNSET", V.verifiedRoleMissing);

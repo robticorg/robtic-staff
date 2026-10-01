@@ -22,7 +22,7 @@ function makeDeps(duplicate: boolean) {
 describe("applyTicketClaimCredit", () => {
   const staffId = new Types.ObjectId();
 
-  it("first claim → exactly +1 TICKET_CLAIM point, one activity, one counter bump", async () => {
+  it("first claim → exactly +2 TICKET_CLAIM points, one activity, one counter bump", async () => {
     const { deps, add, create, incrementCounters } = makeDeps(false);
     const result = await applyTicketClaimCredit(staffId, "ticket-1", deps);
 
@@ -30,7 +30,7 @@ describe("applyTicketClaimCredit", () => {
     expect(add).toHaveBeenCalledTimes(1);
     expect(add.mock.calls[0]![0]).toMatchObject({
       staffId,
-      amount: 1,
+      amount: 2,
       type: StaffPointTransactionType.TICKET_CLAIM,
       referenceId: "ticket-1",
     });

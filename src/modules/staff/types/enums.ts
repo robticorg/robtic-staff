@@ -62,6 +62,10 @@ export const StaffPointTransactionType = {
   STAFF_WARNING: "STAFF_WARNING",
   /** Points for chat activity, sent by other bots through the points API (type "msg"). */
   MESSAGE: "MESSAGE",
+  /** Jailing someone (!jail or the warning panel). */
+  JAIL: "JAIL",
+  /** Accepting someone into the staff (!accept or in the application ticket). */
+  STAFF_ACCEPT: "STAFF_ACCEPT",
   APPEAL_SUCCESS_PENALTY: "APPEAL_SUCCESS_PENALTY",
   MANUAL_ADJUSTMENT: "MANUAL_ADJUSTMENT",
   OTHER: "OTHER",

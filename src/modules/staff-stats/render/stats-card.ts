@@ -17,6 +17,8 @@ import {
 import { colors } from "../../../data/config/colors.ts";
 import { STAFF_TIER_LABELS } from "../../../data/messages/hierarchy.ts";
 import { ACTIVITY_LABELS, statsMessages as S } from "../../../data/messages/stats.ts";
+import { leadMessages } from "../../../data/leads/messages.ts";
+import { responsibilityMessages } from "../../../data/responsibilities/messages.ts";
 import { staffTypeLabel } from "../../../data/staff-types/index.ts";
 import { ticketConfigService } from "../../tickets/services/ticket-config.service.ts";
 import { MENU_VIEWS, StatsView, statsCustomId } from "../handlers/component-ids.ts";
@@ -26,6 +28,7 @@ import {
   type StaffCardOverview,
   type WeeklyPointsPage,
 } from "../services/staff-card.service.ts";
+import type { CardLeads } from "../services/staff-card-leads.service.ts";
 import type { RecentActivityItem } from "../services/staff-statistics.service.ts";
 import type { TicketStatRow } from "../services/stats-repository.ts";
 
@@ -38,6 +41,8 @@ const POINT_TYPE_ORDER = [
   "GIFT_CLAIM",
   "MESSAGE",
   "USER_WARNING",
+  "JAIL",
+  "STAFF_ACCEPT",
   "STAFF_WARNING",
   "APPEAL_SUCCESS_PENALTY",
   "MANUAL_ADJUSTMENT",
@@ -145,6 +150,20 @@ export function overviewLines(o: StaffCardOverview): string[] {
   }
   lines.push(C.totalPoints(o.totalPoints));
   if (o.breakPoints !== 0) lines.push(C.breakPoints(o.breakPoints));
+  lines.push(...leadLines(o.leads));
+  return lines;
+}
+
+export function leadLines(leads: CardLeads): string[] {
+  const R = responsibilityMessages.stats;
+  const L = leadMessages.stats;
+  const lines = ["", R.heading];
+  if (leads.responsibilities.length === 0) lines.push(R.none);
+  for (const r of leads.responsibilities) {
+    lines.push(R.row(r.title, r.leads.length ? r.leads.join("، ") : null, r.expiresAt));
+  }
+  if (leads.leadsOf.length) lines.push(L.yourLeads, ...leads.leadsOf.map((l) => L.leadRow(l.name, l.holder)));
+  if (leads.leading.length) lines.push(L.leading, ...leads.leading.map((l) => L.leadingRow(l.name, l.target)));
   return lines;
 }
 

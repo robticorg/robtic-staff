@@ -29,6 +29,7 @@ import {
 } from "../../staff/types/enums.ts";
 import { StatsPeriod } from "../types/enums.ts";
 import { resolveStatsRange } from "../utils/date-range.ts";
+import { staffCardLeadsService, type CardLeads } from "./staff-card-leads.service.ts";
 import { staffStatisticsService, type RecentActivityItem } from "./staff-statistics.service.ts";
 import { statsRepository, type TicketStatRow } from "./stats-repository.ts";
 
@@ -70,6 +71,7 @@ export interface StaffCardOverview {
   totalPoints: number;
   /** Earned while on break — shown on its own, never part of totalPoints. */
   breakPoints: number;
+  leads: CardLeads;
 }
 
 export interface WeekPoints {
@@ -179,6 +181,7 @@ export class StaffCardService {
     ]);
 
     const user = member?.user ?? (await guild.client.users.fetch(userId).catch(() => null));
+    const leads = await staffCardLeadsService.load(guild, userId, member);
     const avatarUrl =
       member?.displayAvatarURL({ size: AVATAR_SIZE }) ??
       user?.displayAvatarURL({ size: AVATAR_SIZE }) ??
@@ -213,6 +216,7 @@ export class StaffCardService {
         : null,
       totalPoints,
       breakPoints,
+      leads,
     };
   }
 

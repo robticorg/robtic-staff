@@ -3,6 +3,7 @@ import type { GuildId } from "../../../shared/types/index.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { PunishmentType } from "../types/enums.ts";
+import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
 
 export interface ApprovalDecisionInput {
   type: "KICK" | "BAN";
@@ -40,9 +41,8 @@ export function requiredBotPermission(type: PunishmentType): bigint | null {
   }
 }
 
-export async function memberHasChatManagerRole(member: GuildMember): Promise<boolean> {
-  const role = await roleConfigService.getByType(member.guild.id, RoleConfigType.CHAT_MANAGER);
-  return role ? member.roles.cache.has(role.roleId) : false;
+export function memberHasChatManagerRole(member: GuildMember): Promise<boolean> {
+  return responsibilityPermissionService.holds(member, RoleConfigType.CHAT_MANAGER);
 }
 
 export async function canDecideApproval(

@@ -1,5 +1,6 @@
 export const internalApiLimits = {
   maxBodyBytes: 16 * 1024,
+  maxStaffCheckIds: 100,
   maxAbsoluteAmount: 1000,
   maxReasonLength: 300,
   maxIdempotencyKeyLength: 100,

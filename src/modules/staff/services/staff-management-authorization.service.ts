@@ -1,7 +1,7 @@
 import { PermissionFlagsBits, type GuildMember } from "discord.js";
 import type { GuildId } from "../../../shared/types/index.ts";
 import { staffMessages } from "../../../data/messages/staff.ts";
-import { roleConfigService } from "../../configuration/index.ts";
+import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
 import { RoleConfigType, StaffTier } from "../../configuration/types/enums.ts";
 import {
   getHierarchy,
@@ -114,28 +114,16 @@ export class StaffManagementAuthorizationService {
     return typeof perms !== "string" && perms.has(PermissionFlagsBits.Administrator);
   }
 
-  async isOwnerManager(actor: GuildMember): Promise<boolean> {
-    const row = await roleConfigService.getByType(
-      actor.guild.id,
-      RoleConfigType.OWNER_MANAGER,
-    );
-    return row ? actor.roles.cache.has(row.roleId) : false;
+  isOwnerManager(actor: GuildMember): Promise<boolean> {
+    return responsibilityPermissionService.holds(actor, RoleConfigType.OWNER_MANAGER);
   }
 
-  async isStaffManager(actor: GuildMember): Promise<boolean> {
-    const row = await roleConfigService.getByType(
-      actor.guild.id,
-      RoleConfigType.STAFF_MANAGER,
-    );
-    return row ? actor.roles.cache.has(row.roleId) : false;
+  isStaffManager(actor: GuildMember): Promise<boolean> {
+    return responsibilityPermissionService.holds(actor, RoleConfigType.STAFF_MANAGER);
   }
 
-  async isApplyManager(actor: GuildMember): Promise<boolean> {
-    const row = await roleConfigService.getByType(
-      actor.guild.id,
-      RoleConfigType.APPLY_MANAGER,
-    );
-    return row ? actor.roles.cache.has(row.roleId) : false;
+  isApplyManager(actor: GuildMember): Promise<boolean> {
+    return responsibilityPermissionService.holds(actor, RoleConfigType.APPLY_MANAGER);
   }
 
   async getAuthority(actor: GuildMember, guildId: GuildId = actor.guild.id): Promise<ActorAuthority> {
@@ -400,12 +388,8 @@ export class StaffManagementAuthorizationService {
     });
   }
 
-  async isTransferManager(actor: GuildMember): Promise<boolean> {
-    const row = await roleConfigService.getByType(
-      actor.guild.id,
-      RoleConfigType.TRANSFER_MANAGER,
-    );
-    return row ? actor.roles.cache.has(row.roleId) : false;
+  isTransferManager(actor: GuildMember): Promise<boolean> {
+    return responsibilityPermissionService.holds(actor, RoleConfigType.TRANSFER_MANAGER);
   }
 
   decideWarnAuthorization(input: WarnContextInput): AuthorizationDecision {

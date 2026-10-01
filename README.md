@@ -1012,6 +1012,23 @@ from one IP block it for 10 minutes). Body: `guildId`, `userId` (both strings),
 
 A repeated `idempotencyKey` is answered without a second record.
 
+### Staff check
+
+`GET /internal/staff/check?guildId=<id>&userId=<id>` (or `POST` with the same
+JSON body), same port and token as above. Active staff and staff on break count
+as staff; fired, blacklisted and transferred members don't.
+
+- Staff: `{ "success": true, "userId": "…", "isStaff": true, "type": "staff" | "high" | "owner" | "ship", "onBreak": false }`
+- Not staff: `{ "success": true, "userId": "…", "isStaff": false, "type": null }`
+- Bad ids: `400` with `error`.
+
+Many users at once: `"userIds": ["…", "…"]` in the body, or `?userIds=a,b,c` in a GET
+(up to 100, duplicates collapsed). The answer is
+`{ "success": true, "count": n, "staffCount": k, "results": [ { userId, isStaff, type, onBreak? }, … ] }`
+in the order sent; one invalid id rejects the request with a `400` naming it (`userIds[2]`).
+
+`type` comes from the staff member's level and the tier boundaries set with `/role boundary`.
+
 ## Staff identity requirement
 
 A staff member is compliant with **either** this server's official Server Tag

@@ -12,6 +12,10 @@ import { vacationExpirationService } from "../modules/vacation/services/vacation
 import { serverTagExpirationService } from "../modules/server-tag/services/server-tag-expiration.service.ts";
 import { serverTagAuditService } from "../modules/server-tag/services/server-tag-audit.service.ts";
 import { jailExpirationService } from "../modules/punishment/services/jail-expiration.service.ts";
+import {
+  attachResponsibilityClient,
+  responsibilityExpirationService,
+} from "../modules/responsibilities/index.ts";
 import { ladderSyncService } from "../modules/configuration/services/ladder-sync.service.ts";
 import { ticketSleepService } from "../modules/tickets/services/ticket-sleep.service.ts";
 import { registerApplicationLifecycle } from "../modules/applications/services/application-lifecycle.ts";
@@ -26,6 +30,7 @@ export function attachModuleClients(client: Client): void {
   attachGiftClaimClient(client);
   attachServerTagClient(client);
   attachWarningPanelClient(client);
+  attachResponsibilityClient(client);
   registerApplicationLifecycle();
 }
 
@@ -35,6 +40,8 @@ export function startModuleRuntime(): void {
   serverTagExpirationService.start();
 
   jailExpirationService.start();
+
+  responsibilityExpirationService.start();
 
   ticketSleepService.start();
 
@@ -47,6 +54,7 @@ export function stopModuleRuntime(): void {
   vacationExpirationService.stop();
   serverTagExpirationService.stop();
   jailExpirationService.stop();
+  responsibilityExpirationService.stop();
   serverTagAuditService.stop();
   ticketSleepService.stop();
   ladderSyncService.stop();

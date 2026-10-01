@@ -5,6 +5,7 @@ import { isUnsetId } from "../../../data/tickets/index.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { ticketConfigService } from "../../tickets/services/ticket-config.service.ts";
+import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
 
 export function decideGiftManager(input: {
   isAdministrator: boolean;
@@ -28,11 +29,10 @@ export class GiftClaimPermissionService {
 
   async isGiftManager(member: GuildMember): Promise<boolean> {
     const panelRoleId = this.panelSupportRoleId();
-    const configRoleId = await this.giftManagerRoleId(member.guild.id);
     return decideGiftManager({
       isAdministrator: member.permissions.has(PermissionFlagsBits.Administrator),
       hasPanelSupportRole: panelRoleId ? member.roles.cache.has(panelRoleId) : false,
-      hasGiftManagerRole: configRoleId ? member.roles.cache.has(configRoleId) : false,
+      hasGiftManagerRole: await responsibilityPermissionService.holds(member, RoleConfigType.GIFT_MANAGER),
     });
   }
 }

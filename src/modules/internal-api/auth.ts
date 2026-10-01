@@ -4,11 +4,6 @@ function digest(value: string): Buffer {
   return createHash("sha256").update(value).digest();
 }
 
-/**
- * Counts wrong-token attempts per IP. Once an IP hits the limit it is refused
- * (even with the right token) until its window runs out — so a publicly bound
- * API can't be brute-forced.
- */
 export class FailedAuthLimiter {
   private readonly failures = new Map<string, { count: number; resetAt: number }>();
 
@@ -34,7 +29,6 @@ export class FailedAuthLimiter {
     } else {
       entry.count += 1;
     }
-    // Keep memory bounded if many IPs probe the port.
     if (this.failures.size > 10_000) {
       for (const [key, value] of this.failures) if (value.resetAt <= now) this.failures.delete(key);
     }

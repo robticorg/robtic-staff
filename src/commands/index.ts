@@ -14,6 +14,8 @@ import warnSetupCommand from "./warn-setup/index.ts";
 import autoclaimCommand from "./autoclaim/index.ts";
 import intakeCommand from "./intake/index.ts";
 import infoCommand from "./info/index.ts";
+import addResCommand from "./add-res/index.ts";
+import leadCommand from "./lead/index.ts";
 
 export const commands: SlashCommand[] = [
   roleCommand,
@@ -31,4 +33,6 @@ export const commands: SlashCommand[] = [
   autoclaimCommand,
   intakeCommand,
   infoCommand,
+  addResCommand,
+  leadCommand,
 ];

@@ -1,6 +1,12 @@
 import { emojis } from "../emojis/index.ts";
+import { DEFAULT_POINT_VALUES } from "../../modules/staff/config/points.ts";
+import { StaffPointTransactionType } from "../../modules/staff/types/enums.ts";
 
 const E = emojis;
+
+/** "+2 نقاط" — follows the configured ticket-claim value. */
+const ticketPoints = DEFAULT_POINT_VALUES[StaffPointTransactionType.TICKET_CLAIM];
+const TICKET_POINTS = `+${ticketPoints} ${ticketPoints === 1 ? "نقطة" : "نقاط"}`;
 
 const WARNING_ORDINALS: Record<number, string> = {
   1: "التحذير الأول",
@@ -27,7 +33,7 @@ export const prefixMessages = {
   ticket: {
     notATicket: `${E.error} هذا الأمر يشتغل داخل روم التكت بس.`,
     ticketClosed: `${E.error} هذا التكت مغلق.`,
-    claimed: (ticketId: string) => `${E.success} استلمت \`${ticketId}\`. **+1 نقطة.**`,
+    claimed: (ticketId: string) => `${E.success} استلمت \`${ticketId}\`. **${TICKET_POINTS}.**`,
     claimedNoPoint: (ticketId: string) => `${E.success} أنت الحين مسؤول عن \`${ticketId}\`.`,
     closed: (ticketId: string) => `${E.success} تم إغلاق \`${ticketId}\`.`,
     closedWithTranscript: (ticketId: string, transcriptId: string) =>

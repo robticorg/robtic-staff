@@ -5,6 +5,7 @@ import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import type { ModmailCase } from "../models/modmail-case.model.ts";
 import { ModmailCaseStatus } from "../types/enums.ts";
+import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
 
 export interface Decision {
   ok: boolean;
@@ -94,11 +95,7 @@ export class ReportPermissionService {
 
   async isStaffManager(member: GuildMember): Promise<boolean> {
     if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
-    const managerRole = await roleConfigService.getByType(
-      member.guild.id,
-      RoleConfigType.STAFF_MANAGER,
-    );
-    return managerRole ? member.roles.cache.has(managerRole.roleId) : false;
+    return responsibilityPermissionService.holds(member, RoleConfigType.STAFF_MANAGER);
   }
 
   isAdministrator(member: GuildMember): boolean {

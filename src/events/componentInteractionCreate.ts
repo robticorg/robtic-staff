@@ -12,6 +12,7 @@ import { routeGiftClaimComponent } from "../modules/gift-claims/handlers/index.t
 import { routeWarningPanelComponent } from "../modules/warning-panel/handlers/component-router.ts";
 import { routeStaffStatsComponent } from "../modules/staff-stats/handlers/component-router.ts";
 import { routeStaffInfoComponent } from "../modules/staff-info/handlers/component-router.ts";
+import { routeResponsibilityComponent } from "../modules/responsibilities/index.ts";
 
 const routers = [
   routeModmailComponent,
@@ -26,6 +27,7 @@ const routers = [
   routeWarningPanelComponent,
   routeStaffStatsComponent,
   routeStaffInfoComponent,
+  routeResponsibilityComponent,
 ];
 
 export default defineEvent({

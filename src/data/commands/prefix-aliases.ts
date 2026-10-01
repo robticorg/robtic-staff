@@ -25,6 +25,7 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   prompt: ["ترقية", "رفع"],
   demote: ["تنزيل", "خفض", "تخفيض"],
   back: ["ارجاع", "إرجاع", "رجع"],
+  responsible: ["مسؤولية", "مسئولية"],
   warn: ["تحذير", "وارن", "انذار"],
   unwarn: ["الغاء-تحذير", "إلغاء-تحذير", "حذف-تحذير", "شيل-تحذير"],
   warnings: ["التحذيرات", "تحذيرات-العضو", "تحذيرات"],

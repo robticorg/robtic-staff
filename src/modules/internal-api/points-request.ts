@@ -18,12 +18,6 @@ export type PointsRequestResult =
   | { ok: true; value: PointsRequest }
   | { ok: false; error: string };
 
-/**
- * The short names other bots send in `type`:
- *   "ticket" → Ticket Points (TICKET_CLAIM)
- *   "msg"    → Message Points (MESSAGE)
- * Matching ignores case; the full internal names (e.g. "TICKET_CLAIM") keep working.
- */
 export const POINT_TYPE_ALIASES: Readonly<Record<string, StaffPointTransactionType>> = {
   ticket: StaffPointTransactionType.TICKET_CLAIM,
   msg: StaffPointTransactionType.MESSAGE,

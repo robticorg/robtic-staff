@@ -1,5 +1,6 @@
 import type { Types } from "mongoose";
 import { staffMessages } from "../../../data/messages/staff.ts";
+import { DEFAULT_POINT_VALUES } from "../../staff/config/points.ts";
 import {
   StaffActivityType,
   StaffPointTransactionType,
@@ -27,7 +28,7 @@ export async function applyClaimCredit(
 ): Promise<{ pointAwarded: boolean }> {
   const award = await deps.points.add({
     staffId,
-    amount: 1,
+    amount: DEFAULT_POINT_VALUES[StaffPointTransactionType.REPORT_CLAIM],
     type: StaffPointTransactionType.REPORT_CLAIM,
     referenceId: caseId,
     reason: staffMessages.points.reportClaimReason(caseId),

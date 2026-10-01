@@ -27,6 +27,8 @@ export const statsMessages = {
     USER_WARNING: "نقاط تحذيرات الأعضاء",
     STAFF_WARNING: "نقاط تحذيرات الستاف",
     MESSAGE: "نقاط الرسائل",
+    JAIL: "نقاط السجن",
+    STAFF_ACCEPT: "نقاط قبول الستاف",
     APPEAL_SUCCESS_PENALTY: "خصم استئناف مقبول",
     MANUAL_ADJUSTMENT: "تعديل يدوي",
     OTHER: "نقاط أخرى",

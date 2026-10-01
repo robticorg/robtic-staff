@@ -2,6 +2,8 @@ import type { Guild, GuildMember } from "discord.js";
 import type { HydratedDocument } from "mongoose";
 import type { UserId } from "../../../shared/types/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
+import { awardActionPoints } from "../../staff/services/staff-action-points.ts";
+import { StaffPointTransactionType } from "../../staff/types/enums.ts";
 import type { Punishment } from "../models/punishment.model.ts";
 import { PunishmentType } from "../types/enums.ts";
 import { durationService } from "./duration.service.ts";
@@ -68,7 +70,18 @@ export class ModerationActionService {
     if (!decision.allowed) {
       return { executed: false, punishment: null, denied: decision.reason };
     }
-    return this.run({ ...input, type: PunishmentType.JAIL });
+    const result = await this.run({ ...input, type: PunishmentType.JAIL });
+    // Only a jail that actually happened earns the point (once per punishment).
+    if (result.executed && result.punishment) {
+      await awardActionPoints({
+        guildId: input.guild.id,
+        userId: input.actor.id,
+        type: StaffPointTransactionType.JAIL,
+        referenceId: result.punishment.punishmentId,
+        reason: `Jailed ${input.target.id} (${result.punishment.punishmentId})`,
+      });
+    }
+    return result;
   }
 
   /**

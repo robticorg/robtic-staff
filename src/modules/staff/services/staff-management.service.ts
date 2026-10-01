@@ -8,7 +8,12 @@ import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { staffService } from "./staff.service.ts";
 import { staffActivityService } from "./staff-activity.service.ts";
 import { staffHistoryService } from "./staff-history.service.ts";
-import { StaffActivityType, StaffHistoryAction, StaffStatus } from "../types/enums.ts";
+import {
+  StaffActivityType,
+  StaffHistoryAction,
+  StaffPointTransactionType,
+  StaffStatus,
+} from "../types/enums.ts";
 import {
   maxLadderLevel,
   resolveAcceptLevel,
@@ -27,6 +32,7 @@ import { staffRoleAssignmentService } from "./staff-role-assignment.service.ts";
 import { planStaffRoles, syncStaffRoles } from "./staff-role-sync.service.ts";
 import { heldIgnoredRoles } from "./staff-role-snapshot.ts";
 import { StaffHistoryModel } from "../models/staff-history.model.ts";
+import { awardActionPoints } from "./staff-action-points.ts";
 import { staffIdentityRequirementService } from "../../staff-identity/index.ts";
 import { staffTypeService } from "./staff-type.service.ts";
 import type { StaffType } from "../types/enums.ts";
@@ -222,6 +228,18 @@ export class StaffManagementService {
       referenceId: member.id,
       metadata: { ...provenance, level, staffType: staffType ?? null },
     });
+
+    // The accepting staff member earns the point — once per person they accept,
+    // so accept → fire → accept of the same member can't be farmed.
+    if (actor.kind === "MEMBER") {
+      await awardActionPoints({
+        guildId,
+        userId: actor.member.id,
+        type: StaffPointTransactionType.STAFF_ACCEPT,
+        referenceId: `accept:${member.id}`,
+        reason: `Accepted ${member.id} into staff`,
+      });
+    }
 
     return { level, previousLevel, staffType, awaitingIdentity };
   }

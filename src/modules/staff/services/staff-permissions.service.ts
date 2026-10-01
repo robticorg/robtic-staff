@@ -3,6 +3,7 @@ import type { GuildId, RoleId } from "../../../shared/types/index.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType, type StaffTier } from "../../configuration/types/enums.ts";
 import { getHierarchy, highestLevelFromRoleIds } from "../../configuration/utils/staff-levels.ts";
+import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
 
 export class StaffPermissionService {
   async staffRoleIds(guildId: GuildId): Promise<Set<RoleId>> {
@@ -43,11 +44,7 @@ export class StaffPermissionService {
 
   async isStaffManager(member: GuildMember): Promise<boolean> {
     if (this.isAdministrator(member)) return true;
-    const managerRole = await roleConfigService.getByType(
-      member.guild.id,
-      RoleConfigType.STAFF_MANAGER,
-    );
-    return managerRole ? member.roles.cache.has(managerRole.roleId) : false;
+    return responsibilityPermissionService.holds(member, RoleConfigType.STAFF_MANAGER);
   }
 
   canManageStaff(member: GuildMember): Promise<boolean> {
@@ -56,11 +53,7 @@ export class StaffPermissionService {
 
   async isApplyManager(member: GuildMember): Promise<boolean> {
     if (this.isAdministrator(member)) return true;
-    const applyRole = await roleConfigService.getByType(
-      member.guild.id,
-      RoleConfigType.APPLY_MANAGER,
-    );
-    return applyRole ? member.roles.cache.has(applyRole.roleId) : false;
+    return responsibilityPermissionService.holds(member, RoleConfigType.APPLY_MANAGER);
   }
 }
 
