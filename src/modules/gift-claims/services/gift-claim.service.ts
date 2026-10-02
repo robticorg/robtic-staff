@@ -71,6 +71,7 @@ export interface CreateRequestInput {
   guildId: GuildId;
   staffId: UserId;
   userId: UserId;
+  ticketId: string | null;
   info: string | null;
   originChannelId: string;
   deliveryType?: GiftDeliveryType;
@@ -281,6 +282,7 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       ...(info ? { prize: info } : {}),
       status: GiftClaimStatus.PENDING,
       source: GiftClaimSource.REQUEST,
+      ...(input.ticketId ? { ticketId: input.ticketId } : {}),
       requestedBy: input.staffId,
       originChannelId: input.originChannelId,
       ...(input.deliveryType ? { deliveryType: input.deliveryType } : {}),

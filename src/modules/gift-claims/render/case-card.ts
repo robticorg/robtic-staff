@@ -73,7 +73,7 @@ export function buildGiftClaimCaseCard(
     | "deliveryType"
     | "amount"
   > &
-    Partial<Pick<GiftClaim, "source" | "requestedBy">>,
+    Partial<Pick<GiftClaim, "source" | "requestedBy" | "guildId" | "ticketId" | "originChannelId">>,
   delivery?: CardDelivery,
 ): BaseMessageOptions {
   const container = new ContainerBuilder().setAccentColor(
@@ -89,6 +89,11 @@ export function buildGiftClaimCaseCard(
     M.user(claim.userId),
     M.claimId(claim.claimId),
     ...(claim.requestedBy ? [M.requestedBy(claim.requestedBy)] : []),
+    ...(claim.ticketId
+      ? [M.ticket(claim.ticketId, claim.originChannelId ?? null)]
+      : isRequest && claim.originChannelId
+        ? [M.askedIn(claim.originChannelId)]
+        : []),
     "",
     M.reward(claim.rewardName),
     ...(claim.prize ? [M.prize(claim.prize)] : []),
@@ -150,6 +155,14 @@ export function buildGiftClaimCaseCard(
         .setLabel(action === "RETRY" ? D.buttons.retry : D.buttons.deliver)
         .setStyle(ButtonStyle.Primary)
         .setDisabled(action === null),
+    );
+  }
+  if (isRequest && claim.guildId && claim.originChannelId) {
+    buttons.push(
+      new ButtonBuilder()
+        .setStyle(ButtonStyle.Link)
+        .setURL(`https://discord.com/channels/${claim.guildId}/${claim.originChannelId}`)
+        .setLabel(claim.ticketId ? C.goToTicketButton : C.goToChannelButton),
     );
   }
   container.addActionRowComponents(new ActionRowBuilder<ButtonBuilder>().addComponents(buttons));

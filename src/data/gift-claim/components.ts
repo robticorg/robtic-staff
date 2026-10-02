@@ -1,6 +1,8 @@
 export const giftClaimComponents = {
   approveButton: "موافقة",
   rejectButton: "رفض",
+  goToTicketButton: "الذهاب للتكت",
+  goToChannelButton: "الذهاب للروم",
 
   submitModalTitle: "طلب استلام هدية",
   rewardLabel: "وش الهدية اللي فزت فيها؟",

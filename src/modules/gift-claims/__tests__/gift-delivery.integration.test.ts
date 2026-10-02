@@ -628,6 +628,23 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
       expect(sentText("general")).toContain("50000000");
     });
 
+    it("records the ticket on an order sent from inside a ticket", async () => {
+      const { channelId, ticketId } = await ticketChannel();
+      const { claimId } = await giftCommandService.request({
+        staff: staffMember as never,
+        channelId,
+        userId: winner.id,
+        ticketId,
+        info: "1m",
+      });
+      const order = await claimOf(claimId);
+      expect(order!.ticketId).toBe(ticketId);
+      expect(order!.originChannelId).toBe(channelId);
+      const card = sentText(ORDERS);
+      expect(card).toContain(ticketId);
+      expect(card).toContain(`https://discord.com/channels/${GUILD}/${channelId}`);
+    });
+
     it("tells the requesting channel when a request is rejected", async () => {
       world.textChannel("general");
       const { claimId } = await giftCommandService.request({

@@ -149,4 +149,10 @@ export const giftDeliveryMessages = {
     selfGift: `${E.error} ما تقدر تعطي نفسك جائزة.`,
     rewardName: (info: string | null) => info ?? "جائزة من الستاف",
   },
+
+  send: {
+    usage: `${E.warning} الطريقة: \`!send @user <المبلغ>\` — مثال: \`!send @user 5m\` أو \`!send @user 500k\` أو \`!send @user 5 مليون\``,
+    adminOnly: `${E.error} هذا الأمر للأدمن بس.`,
+    rewardName: (amount: string) => `تحويل ${amount} كريدت`,
+  },
 } as const;

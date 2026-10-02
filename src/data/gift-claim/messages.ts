@@ -24,6 +24,9 @@ export const giftClaimMessages = {
     prize: (prize: string) => `**التفاصيل:** ${prize}`,
     claimId: (id: string) => `**آيدي الطلب:** \`${id}\``,
     requestedBy: (userId: string) => `**طلبه:** <@${userId}>`,
+    ticket: (ticketId: string, channelId: string | null) =>
+      channelId ? `**التكت:** \`${ticketId}\` — <#${channelId}>` : `**التكت:** \`${ticketId}\``,
+    askedIn: (channelId: string) => `**مكان الطلب:** <#${channelId}>`,
     staffRequestHeading: `${E.report} **طلب هدية من الستاف**`,
     statusLine: (status: string) => `**الحالة:** ${status}`,
     reviewedBy: (userId: string) => `**راجعه:** <@${userId}>`,

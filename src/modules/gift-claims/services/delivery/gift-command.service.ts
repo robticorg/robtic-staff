@@ -31,17 +31,22 @@ export interface GiftCommandContext {
 export type GiftCommandRoute =
   | { kind: "TICKET"; userId: UserId; ticketId: string }
   | { kind: "DIRECT"; userId: UserId }
-  | { kind: "REQUEST"; userId: UserId };
+  | { kind: "REQUEST"; userId: UserId; ticketId: string | null };
 
 export function routeGiftCommand(context: GiftCommandContext, mentionedId: UserId | null): GiftCommandRoute {
   if (context.ticket) {
     if (mentionedId && mentionedId !== context.ticket.ownerId) {
       throw new GiftClaimError("GIFT_COMMAND_NOT_OWNER", C.onlyTicketOwner);
     }
-    return { kind: "TICKET", userId: context.ticket.ownerId, ticketId: context.ticket.ticketId };
+    const { ownerId, ticketId } = context.ticket;
+    return context.isAdministrator
+      ? { kind: "TICKET", userId: ownerId, ticketId }
+      : { kind: "REQUEST", userId: ownerId, ticketId };
   }
   if (!mentionedId) throw new GiftClaimError("GIFT_COMMAND_USAGE", C.usage);
-  return context.isAdministrator ? { kind: "DIRECT", userId: mentionedId } : { kind: "REQUEST", userId: mentionedId };
+  return context.isAdministrator
+    ? { kind: "DIRECT", userId: mentionedId }
+    : { kind: "REQUEST", userId: mentionedId, ticketId: null };
 }
 
 const cleanInfo = (info: string | null): string | null => (info?.trim() ? info.trim().slice(0, 200) : null);
@@ -98,6 +103,7 @@ export class GiftCommandService {
     staff: GuildMember;
     channelId: ChannelId;
     userId: UserId;
+    ticketId?: string | null;
     info: string | null;
   }): Promise<{ claimId: string; orderChannelId: string }> {
     await this.requireTarget(input.staff, input.userId);
@@ -106,6 +112,7 @@ export class GiftCommandService {
       guildId: input.staff.guild.id,
       staffId: input.staff.id,
       userId: input.userId,
+      ticketId: input.ticketId ?? null,
       info,
       originChannelId: input.channelId,
       ...(extractCreditAmount(info) ? { deliveryType: GiftDeliveryType.CREDITS } : {}),

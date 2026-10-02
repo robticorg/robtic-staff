@@ -47,9 +47,17 @@ describe("credit amounts", () => {
 describe("!gift routing", () => {
   const ticket = { ticketId: "t-1", ownerId: "owner" };
 
-  it("in a ticket, always gives to the ticket owner without a mention", () => {
-    expect(routeGiftCommand({ ticket, isAdministrator: false }, null)).toEqual({
+  it("in a ticket, administrators gift the owner directly without a mention", () => {
+    expect(routeGiftCommand({ ticket, isAdministrator: true }, null)).toEqual({
       kind: "TICKET",
+      userId: "owner",
+      ticketId: "t-1",
+    });
+  });
+
+  it("in a ticket, other staff send an order for the owner with the ticket number", () => {
+    expect(routeGiftCommand({ ticket, isAdministrator: false }, null)).toEqual({
+      kind: "REQUEST",
       userId: "owner",
       ticketId: "t-1",
     });
@@ -61,9 +69,13 @@ describe("!gift routing", () => {
     expect(() => routeGiftCommand({ ticket, isAdministrator: true }, "someone")).toThrow();
   });
 
-  it("outside a ticket, administrators give directly and staff send a request", () => {
+  it("outside a ticket, administrators give directly and staff send an order", () => {
     expect(routeGiftCommand({ ticket: null, isAdministrator: true }, "u")).toEqual({ kind: "DIRECT", userId: "u" });
-    expect(routeGiftCommand({ ticket: null, isAdministrator: false }, "u")).toEqual({ kind: "REQUEST", userId: "u" });
+    expect(routeGiftCommand({ ticket: null, isAdministrator: false }, "u")).toEqual({
+      kind: "REQUEST",
+      userId: "u",
+      ticketId: null,
+    });
   });
 
   it("outside a ticket, needs a mention", () => {
@@ -85,7 +97,43 @@ describe("!transfer staff tickets", () => {
 });
 
 describe("staff gift request card", () => {
-  type Json = { type: number; content?: string; disabled?: boolean; components?: Json[] };
+  type Json = { type: number; content?: string; disabled?: boolean; style?: number; url?: string; label?: string; components?: Json[] };
+  const LINK_STYLE = 5;
+
+  it("shows the ticket number and links to the ticket", () => {
+    const card = buildGiftClaimCaseCard({
+      claimId: "c2",
+      guildId: "g1",
+      userId: "u",
+      rewardName: "50m",
+      status: GiftClaimStatus.PENDING,
+      proof: [],
+      source: GiftClaimSource.REQUEST,
+      requestedBy: "staff",
+      ticketId: "ticket-12",
+      originChannelId: "ch-12",
+    });
+    const nodes = (card.components as ContainerBuilder[]).flatMap((c) => flat(c.toJSON() as unknown as Json));
+    expect(nodes.map((n) => n.content ?? "").join("\n")).toContain("ticket-12");
+    const link = nodes.find((n) => n.type === 2 && n.style === LINK_STYLE);
+    expect(link?.url).toBe("https://discord.com/channels/g1/ch-12");
+    expect(link?.label).toBe("الذهاب للتكت");
+  });
+
+  it("links to the channel when the order was not made in a ticket", () => {
+    const card = buildGiftClaimCaseCard({
+      claimId: "c3",
+      guildId: "g1",
+      userId: "u",
+      rewardName: "x",
+      status: GiftClaimStatus.PENDING,
+      proof: [],
+      source: GiftClaimSource.REQUEST,
+      originChannelId: "general",
+    });
+    const nodes = (card.components as ContainerBuilder[]).flatMap((c) => flat(c.toJSON() as unknown as Json));
+    expect(nodes.find((n) => n.style === LINK_STYLE)?.label).toBe("الذهاب للروم");
+  });
   const flat = (n: Json): Json[] => [n, ...(n.components ?? []).flatMap(flat)];
 
   it("shows who asked, with approve and reject buttons, and no empty proof block", () => {
@@ -104,6 +152,6 @@ describe("staff gift request card", () => {
     expect(text).toContain("<@staff>");
     expect(text).toContain("طلب هدية من الستاف");
     expect(text).not.toContain("إثبات الفوز");
-    expect(nodes.filter((n) => n.type === 2 && !n.disabled)).toHaveLength(2);
+    expect(nodes.filter((n) => n.type === 2 && !n.disabled && n.style !== LINK_STYLE)).toHaveLength(2);
   });
 });

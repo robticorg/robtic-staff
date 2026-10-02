@@ -25,6 +25,7 @@ export default definePrefixCommand({
         staff: ctx.member,
         channelId: ctx.channel.id,
         userId: route.userId,
+        ticketId: route.ticketId,
         info,
       });
       await ctx.reply(M.command.requestSent(route.userId, orderChannelId));
