@@ -1,9 +1,10 @@
-import { PermissionFlagsBits, type GuildMember } from "discord.js";
+import { type GuildMember } from "discord.js";
 import type { GuildId, RoleId } from "../../../shared/types/index.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType, type StaffTier } from "../../configuration/types/enums.ts";
 import { getHierarchy, highestLevelFromRoleIds } from "../../configuration/utils/staff-levels.ts";
 import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
+import { hasAdminAccess } from "../../access/index.ts";
 
 export class StaffPermissionService {
   async staffRoleIds(guildId: GuildId): Promise<Set<RoleId>> {
@@ -23,7 +24,7 @@ export class StaffPermissionService {
   }
 
   isAdministrator(member: GuildMember): boolean {
-    return member.permissions.has(PermissionFlagsBits.Administrator);
+    return hasAdminAccess(member);
   }
 
   async canActAsStaff(member: GuildMember): Promise<boolean> {

@@ -1,9 +1,10 @@
-import { PermissionFlagsBits, type GuildMember } from "discord.js";
+import { type GuildMember } from "discord.js";
 import type { TicketClaimerConfig, TicketPanelConfig } from "../../../data/tickets/index.ts";
 import { isUnsetId, panelIsAdminOnly, ticketMain } from "../../../data/tickets/index.ts";
 import { staffPermissionService } from "../../staff/index.ts";
 import type { Ticket } from "../models/ticket.model.ts";
 import { TicketStatus } from "../types/enums.ts";
+import { hasAdminAccess } from "../../access/index.ts";
 
 export interface Decision {
   ok: boolean;
@@ -129,7 +130,7 @@ export function protectedTicketPrincipals(
 }
 
 export function memberIsAdministrator(member: GuildMember): boolean {
-  return member.permissions.has(PermissionFlagsBits.Administrator);
+  return hasAdminAccess(member);
 }
 
 export function memberIsTicketManager(member: GuildMember): boolean {

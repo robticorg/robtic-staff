@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, type GuildMember } from "discord.js";
+import { type GuildMember } from "discord.js";
 import type { GuildId, RoleId } from "../../../shared/types/index.ts";
 import { modmailMessages } from "../../../data/messages/modmail.ts";
 import { roleConfigService } from "../../configuration/index.ts";
@@ -6,6 +6,7 @@ import { RoleConfigType } from "../../configuration/types/enums.ts";
 import type { ModmailCase } from "../models/modmail-case.model.ts";
 import { ModmailCaseStatus } from "../types/enums.ts";
 import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
+import { hasAdminAccess } from "../../access/index.ts";
 
 export interface Decision {
   ok: boolean;
@@ -94,12 +95,12 @@ export class ReportPermissionService {
   }
 
   async isStaffManager(member: GuildMember): Promise<boolean> {
-    if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
+    if (hasAdminAccess(member)) return true;
     return responsibilityPermissionService.holds(member, RoleConfigType.STAFF_MANAGER);
   }
 
   isAdministrator(member: GuildMember): boolean {
-    return member.permissions.has(PermissionFlagsBits.Administrator);
+    return hasAdminAccess(member);
   }
 
   canViewReporterInfo(member: GuildMember): boolean {

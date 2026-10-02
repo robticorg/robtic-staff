@@ -16,6 +16,7 @@ import intakeCommand from "./intake/index.ts";
 import infoCommand from "./info/index.ts";
 import addResCommand from "./add-res/index.ts";
 import leadCommand from "./lead/index.ts";
+import whitelistCommand from "./whitelist/index.ts";
 
 export const commands: SlashCommand[] = [
   roleCommand,
@@ -35,4 +36,5 @@ export const commands: SlashCommand[] = [
   infoCommand,
   addResCommand,
   leadCommand,
+  whitelistCommand,
 ];

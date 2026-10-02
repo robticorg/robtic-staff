@@ -1,6 +1,5 @@
 import {
   MessageFlags,
-  PermissionFlagsBits,
   type ButtonInteraction,
   type Interaction,
   type ModalSubmitInteraction,
@@ -16,6 +15,7 @@ import { staffInfoPanelService } from "../services/staff-info-panel.service.ts";
 import { staffInfoService } from "../services/staff-info.service.ts";
 import { canOpenInfo } from "../services/staff-info-access.ts";
 import { StaffInfoField, parseStaffInfoCustomId } from "./component-ids.ts";
+import { hasAdminAccess } from "../../access/index.ts";
 
 const log = logger.child("staff-info:components");
 const C = staffInfoMessages.command;
@@ -126,7 +126,7 @@ export async function routeStaffInfoComponent(interaction: Interaction): Promise
       await handlePage(interaction, parsed.args[0] ?? "", Number(parsed.args[1]) || 1);
     } else if (interaction.isModalSubmit()) {
       // The forms come from admin-only /info commands; check again on submit.
-      if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      if (!hasAdminAccess({ id: interaction.user.id, permissions: interaction.memberPermissions })) {
         await replyEphemeralError(interaction, commonMessages.errors.needAdministrator);
       } else if (parsed.action === "addModal") {
         await handleAddModal(interaction);

@@ -1,6 +1,7 @@
-import { PermissionFlagsBits } from "discord.js";
+import { hasAdminAccess } from "../../access/index.ts";
 
 export interface AccessMemberLike {
+  id: string;
   permissions: { has(flag: bigint): boolean };
   roles: { cache: { has(roleId: string): boolean } };
 }
@@ -11,6 +12,6 @@ export function canOpenInfo(
   info: { accessRoleId?: string | null },
 ): boolean {
   if (!info.accessRoleId) return true;
-  if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
+  if (hasAdminAccess(member)) return true;
   return member.roles.cache.has(info.accessRoleId);
 }

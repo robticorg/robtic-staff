@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, type GuildMember } from "discord.js";
+import { type GuildMember } from "discord.js";
 import type { GuildId } from "../../../shared/types/index.ts";
 import { GIFT_CLAIM_PANEL_ID } from "../../../data/gift-claim/config.ts";
 import { isUnsetId } from "../../../data/tickets/index.ts";
@@ -6,6 +6,7 @@ import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { ticketConfigService } from "../../tickets/services/ticket-config.service.ts";
 import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
+import { hasAdminAccess } from "../../access/index.ts";
 
 export function decideGiftManager(input: {
   isAdministrator: boolean;
@@ -30,7 +31,7 @@ export class GiftClaimPermissionService {
   async isGiftManager(member: GuildMember): Promise<boolean> {
     const panelRoleId = this.panelSupportRoleId();
     return decideGiftManager({
-      isAdministrator: member.permissions.has(PermissionFlagsBits.Administrator),
+      isAdministrator: hasAdminAccess(member),
       hasPanelSupportRole: panelRoleId ? member.roles.cache.has(panelRoleId) : false,
       hasGiftManagerRole: await responsibilityPermissionService.holds(member, RoleConfigType.GIFT_MANAGER),
     });

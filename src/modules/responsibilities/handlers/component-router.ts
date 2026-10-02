@@ -1,6 +1,5 @@
 import {
   MessageFlags,
-  PermissionFlagsBits,
   type Interaction,
   type ModalSubmitInteraction,
   type StringSelectMenuInteraction,
@@ -21,6 +20,7 @@ import { ResponsibilityError } from "../shared/responsibility-error.ts";
 import type { ResponsibilityCategory } from "../types/enums.ts";
 import { parseResponsibilityDuration } from "../shared/duration.ts";
 import { ResponsibilityField, parseResponsibilityCustomId } from "./component-ids.ts";
+import { hasAdminAccess } from "../../access/index.ts";
 
 const log = logger.child("responsibilities:components");
 const EPHEMERAL = MessageFlags.Ephemeral;
@@ -143,7 +143,7 @@ export async function routeResponsibilityComponent(interaction: Interaction): Pr
 
   try {
     if (parsed.action === "add" || parsed.action === "cat") {
-      if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+      if (!hasAdminAccess({ id: interaction.user.id, permissions: interaction.memberPermissions })) {
         await interaction.reply({ content: E.adminOnly, flags: EPHEMERAL });
         return true;
       }

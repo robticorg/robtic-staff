@@ -2,7 +2,8 @@ import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { giftDeliveryMessages } from "../../../data/gift-claim/delivery-messages.ts";
 import { giftDeliveryService } from "../../../modules/gift-claims/services/delivery/gift-delivery.service.ts";
 import { GiftDeliveryType } from "../../../modules/gift-claims/types/enums.ts";
-import { staffPermissionService } from "../../../modules/staff/services/staff-permissions.service.ts";
+import { accessMessages } from "../../../data/access/messages.ts";
+import { whitelistService } from "../../../modules/access/index.ts";
 import { PrefixAbort } from "../_shared/guards.ts";
 import { extractUserIds } from "../_shared/parse.ts";
 import { requireTargetId } from "../_shared/target.ts";
@@ -17,7 +18,9 @@ export default definePrefixCommand({
   name: "send",
   category: "staff",
   async execute(ctx) {
-    if (!staffPermissionService.isAdministrator(ctx.member)) throw new PrefixAbort(M.send.adminOnly);
+    if (!(await whitelistService.canUseRestricted(ctx.guild.id, ctx.member.id))) {
+      throw new PrefixAbort(accessMessages.restrictedOnly);
+    }
 
     const userId = requireTargetId(ctx, M.send.usage);
     const rawAmount = sendAmountText(ctx.args);
@@ -35,6 +38,7 @@ export default definePrefixCommand({
       rewardName: M.send.rewardName(amount),
       type: GiftDeliveryType.CREDITS,
       amount,
+      untracked: true,
     });
     await giftDeliveryService.deliverCredits(claim.claimId, ctx.member);
   },

@@ -20,6 +20,8 @@ Slash commands (`/…`) are registered with `bun run register-commands`.
 | Girls Manager | Holds the Girls Manager role, or a responsibility with that permission |
 | Claimer | The staff member who claimed the ticket |
 | Administrator | Discord `Administrator` permission — always allowed |
+| Bot Owner | The bot owner (`BOT_OWNER_ID`) — full access to everything, like an Administrator, plus the owner-only commands |
+| Whitelist | Users added with `/whitelist` by the Bot Owner — can use the restricted commands (`!send`) |
 
 Commands used in the wrong place (for example a ticket command outside a ticket) are ignored silently.
 
@@ -100,7 +102,7 @@ Commands used in the wrong place (for example a ticket command outside a ticket)
 | Command | Aliases | Description | Usage | Who can use it |
 |---|---|---|---|---|
 | `!gift` | جائزة · هدية | **Administrators:** gift directly (in a ticket it always goes to the ticket owner). **Other staff:** an order is sent to the Order channel with approve / refuse, the ticket number and a button to the ticket — the gift goes out only after approval. Inside a ticket only the ticket owner can be gifted (no mention needed). Amounts accept `50k`, `50m`, `1.5m`, `مليون`, `50 مليون`, `٥٠ ألف`… | In a ticket: `!gift [amount/note]` — Outside: `!gift @user [amount/note]` | Staff, Administrators |
-| `!send` | ارسال · إرسال · حول | Send credits to a member right away through the transfer API (the delivery channel is used as the transfer channel). Amounts accept `5m`, `500k`, `5 مليون`… | `!send @user 5m` | Administrators |
+| `!send` | ارسال · إرسال · حول | Send credits to a member right away through the transfer API (the delivery channel is used as the transfer channel). Amounts accept `5m`, `500k`, `5 مليون`… | `!send @user 5m` | Bot Owner, Whitelist only (Administrators cannot) |
 | `/autoclaim` | — | Turn automatic credit transfers on or off, or show the status | `/autoclaim state:on \| off \| status` | Administrators |
 
 Gift orders (from the gift ticket or from `!gift` by staff) are approved or rejected from the card in the Order channel by a Gift Manager or Administrator. Transfer messages are posted where the gift was asked for; logs go to the gift delivery log channel.
@@ -149,6 +151,7 @@ Gift orders (from the gift ticket or from `!gift` by staff) are approved or reje
 | `/points add` · `remove` · `reset` | Add, remove or reset staff points | `/points add member: amount: [reason:]` · `/points reset [member:]` | Administrators |
 | `/promote-points` | Minimum weekly points needed for promotion | `/promote-points points:` | Administrators |
 | `/ticket-stats reset` | Reset staff ticket counters | `/ticket-stats reset [member:]` | Administrators |
+| `/whitelist add` · `remove` · `list` | Manage who may use the restricted commands | `/whitelist add user:` · `/whitelist remove user:` · `/whitelist list` | Bot Owner only (not even whitelisted users) |
 | `/intake close` · `open` · `list` | Close or open applications and ticket types | `/intake close target: [reason:]` · `/intake open target:` · `/intake list` | Administrators |
 | `/info setup` · `add` · `remove` · `see` · `access` | Staff information panel | `/info setup` · `/info add` · `/info remove info:` · `/info see [info:]` · `/info access info: [role:]` | Administrators |
 | `/info page add` · `edit` · `delete` | Pages of an info entry | `/info page add info:` · `/info page edit info: page:` · `/info page delete info: page:` | Administrators |

@@ -4,6 +4,7 @@ import { ConflictError } from "../../../../shared/utils/errors.ts";
 import { giftClaimMessages } from "../../../../data/gift-claim/messages.ts";
 import { giftDeliveryMessages } from "../../../../data/gift-claim/delivery-messages.ts";
 import { staffPermissionService } from "../../../staff/services/staff-permissions.service.ts";
+import { whitelistService } from "../../../access/index.ts";
 import type { GiftClaim } from "../../models/gift-claim.model.ts";
 import type { GiftDeliveryDocument } from "../../models/gift-delivery.model.ts";
 import {
@@ -42,6 +43,7 @@ export interface CommandClaimInput {
   rewardName: string;
   type: GiftDeliveryType;
   amount?: string;
+  untracked?: boolean;
 }
 
 export class GiftDeliveryService {
@@ -51,7 +53,8 @@ export class GiftDeliveryService {
     }
     const allowed =
       claim.source === GiftClaimSource.COMMAND
-        ? await staffPermissionService.canActAsStaff(actor)
+        ? (await staffPermissionService.canActAsStaff(actor)) ||
+          (await whitelistService.canUseRestricted(actor.guild.id, actor.id))
         : await giftClaimPermissionService.isGiftManager(actor);
     if (!allowed) throw new GiftClaimError("GIFT_FORBIDDEN", giftClaimMessages.review.notAuthorized);
   }
@@ -104,6 +107,7 @@ export class GiftDeliveryService {
       originChannelId: input.originChannelId,
       deliveryType: input.type,
       ...(amount ? { amount } : {}),
+      ...(input.untracked ? { untracked: true } : {}),
     });
     await this.openDelivery(claim, input.type);
     return claim;

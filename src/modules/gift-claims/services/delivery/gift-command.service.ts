@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, type GuildMember } from "discord.js";
+import { type GuildMember } from "discord.js";
 import { TtlCache } from "../../../../libs/cache/index.ts";
 import type { ChannelId, UserId } from "../../../../shared/types/index.ts";
 import { shortId } from "../../../../shared/utils/id.ts";
@@ -10,6 +10,7 @@ import { ACTIVE_TICKET_STATUSES, type TicketStatus } from "../../../tickets/type
 import { GiftDeliveryType } from "../../types/enums.ts";
 import { GiftClaimError, giftClaimService } from "../gift-claim.service.ts";
 import { extractCreditAmount } from "./gift-delivery-input.ts";
+import { hasAdminAccess } from "../../../access/index.ts";
 
 const C = giftDeliveryMessages.command;
 
@@ -67,7 +68,7 @@ export class GiftCommandService {
       (ACTIVE_TICKET_STATUSES as TicketStatus[]).includes(ticket.status);
     return {
       ticket: active ? { ticketId: ticket.ticketId, ownerId: ticket.userId } : null,
-      isAdministrator: member.permissions.has(PermissionFlagsBits.Administrator),
+      isAdministrator: hasAdminAccess(member),
     };
   }
 

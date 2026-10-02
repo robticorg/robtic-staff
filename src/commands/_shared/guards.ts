@@ -1,11 +1,11 @@
 import {
-  PermissionFlagsBits,
   type ChatInputCommandInteraction,
   type GuildMember,
 } from "discord.js";
 import { DomainError } from "../../shared/utils/errors.ts";
 import { commonMessages } from "../../data/messages/common.ts";
 import { replyFailure } from "./responses.ts";
+import { hasAdminAccess } from "../../modules/access/index.ts";
 
 export class CommandError extends DomainError {
   constructor(message: string, context?: Record<string, unknown>) {
@@ -23,7 +23,7 @@ export function requireGuild(interaction: ChatInputCommandInteraction) {
 export function requireAdministrator(interaction: ChatInputCommandInteraction): void {
   const member = interaction.member as GuildMember | null;
   const perms = member?.permissions;
-  if (!perms || typeof perms === "string" || !perms.has(PermissionFlagsBits.Administrator)) {
+  if (!hasAdminAccess({ id: interaction.user.id, permissions: perms })) {
     throw new CommandError(commonMessages.errors.needAdministrator);
   }
 }

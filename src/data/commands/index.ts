@@ -18,6 +18,7 @@ export const CommandName = {
   INFO: "info",
   ADD_RES: "add-res",
   LEAD: "lead",
+  WHITELIST: "whitelist",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -89,6 +90,12 @@ export const InfoSubcommand = {
   PAGE_ADD: "add",
   PAGE_DELETE: "delete",
   PAGE_EDIT: "edit",
+} as const;
+
+export const WhitelistSubcommand = {
+  ADD: "add",
+  REMOVE: "remove",
+  LIST: "list",
 } as const;
 
 export const LeadSubcommand = {

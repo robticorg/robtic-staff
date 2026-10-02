@@ -4,6 +4,7 @@ import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { PunishmentType } from "../types/enums.ts";
 import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
+import { hasAdminAccess } from "../../access/index.ts";
 
 export interface ApprovalDecisionInput {
   type: "KICK" | "BAN";
@@ -51,7 +52,7 @@ export async function canDecideApproval(
 ): Promise<boolean> {
   return decideApprovalAuthorization({
     type,
-    isAdministrator: member.permissions.has(PermissionFlagsBits.Administrator),
+    isAdministrator: hasAdminAccess(member),
     hasChatManagerRole: type === "KICK" ? await memberHasChatManagerRole(member) : false,
   });
 }

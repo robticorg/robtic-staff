@@ -1,4 +1,4 @@
-import { PermissionFlagsBits, type GuildMember } from "discord.js";
+import { type GuildMember } from "discord.js";
 import type { GuildId } from "../../../shared/types/index.ts";
 import { staffMessages } from "../../../data/messages/staff.ts";
 import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
@@ -10,6 +10,7 @@ import {
   validateHierarchy,
   type StaffHierarchy,
 } from "../../configuration/utils/staff-levels.ts";
+import { hasAdminAccess } from "../../access/index.ts";
 
 export const ManagementAuthority = {
   ADMINISTRATOR: "ADMINISTRATOR",
@@ -111,7 +112,7 @@ function acceptCeiling(hierarchy: StaffHierarchy, actorLevel: number): number {
 export class StaffManagementAuthorizationService {
   isAdministrator(actor: GuildMember): boolean {
     const perms = actor.permissions;
-    return typeof perms !== "string" && perms.has(PermissionFlagsBits.Administrator);
+    return hasAdminAccess({ id: actor.id, permissions: perms });
   }
 
   isOwnerManager(actor: GuildMember): Promise<boolean> {

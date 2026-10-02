@@ -1,8 +1,9 @@
-import { PermissionFlagsBits, type GuildMember } from "discord.js";
+import { type GuildMember } from "discord.js";
 import { RESPONSIBILITY_ASSIGNERS } from "../../../data/responsibilities/config.ts";
 import type { RoleConfigType } from "../../configuration/types/enums.ts";
 import type { Responsibility } from "../models/responsibility.model.ts";
 import { responsibilityPermissionService } from "./responsibility-permission.service.ts";
+import { hasAdminAccess } from "../../access/index.ts";
 
 export interface AssignDecisionInput {
   isAdministrator: boolean;
@@ -24,7 +25,7 @@ export function decideCanAssign(input: AssignDecisionInput): boolean {
 
 export class ResponsibilityAuthorizationService {
   isAdministrator(member: GuildMember): boolean {
-    return member.permissions.has(PermissionFlagsBits.Administrator);
+    return hasAdminAccess(member);
   }
 
   async assignerPermissions(executor: GuildMember): Promise<ReadonlySet<string>> {

@@ -65,6 +65,7 @@ export interface CreateFromCommandInput {
   originChannelId: string;
   deliveryType: GiftDeliveryType;
   amount?: string;
+  untracked?: boolean;
 }
 
 export interface CreateRequestInput {
@@ -248,6 +249,7 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       proof: [],
       reviewedBy: input.staffId,
       reviewedAt: new Date(),
+      ...(input.untracked ? { metadata: { untracked: true } } : {}),
     });
 
     await giftClaimAuditService.record({
@@ -372,6 +374,16 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       actorId,
       userId: claim.userId,
     });
+    if (!claim.metadata?.untracked) await this.trackStaff(claim, actorId, opts);
+    await this.refreshCase(claim.claimId);
+    if (opts.dm) await this.dm(claim.userId, opts.dm, opts.dmFiles);
+  }
+
+  private async trackStaff(
+    claim: ClaimDoc,
+    actorId: UserId,
+    opts: { activity: StaffActivityType; handledCounter?: boolean },
+  ): Promise<void> {
     try {
       const staff = await staffService.ensure(actorId, claim.guildId);
       await staffActivityService.create({
@@ -386,8 +398,6 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
     } catch (err) {
       log.warn(`gift claim ${claim.claimId} staff bookkeeping failed`, err);
     }
-    await this.refreshCase(claim.claimId);
-    if (opts.dm) await this.dm(claim.userId, opts.dm, opts.dmFiles);
   }
 
   async refreshCase(claimId: string): Promise<void> {

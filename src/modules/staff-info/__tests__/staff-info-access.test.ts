@@ -4,6 +4,7 @@ import { buildStaffInfoPanel } from "../render/panel.ts";
 import { canOpenInfo } from "../services/staff-info-access.ts";
 
 const member = (roles: string[], admin = false) => ({
+  id: "member",
   permissions: { has: (flag: bigint) => admin && flag === PermissionFlagsBits.Administrator },
   roles: { cache: new Set(roles) },
 });
