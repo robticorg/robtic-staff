@@ -103,7 +103,7 @@ export async function handleTypeChoice(
   if (type === GiftDeliveryType.CREDITS) {
     const claim = await giftClaimService.getClaim(claimId);
     await interaction.showModal(
-      buildAmountModal(GiftClaimCustomId.amountModal(claimId), extractCreditAmount(claim?.prize)),
+      buildAmountModal(GiftClaimCustomId.amountModal(claimId), claim?.amount ?? extractCreditAmount(claim?.prize)),
     );
     return;
   }

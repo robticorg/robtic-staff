@@ -13,6 +13,9 @@ export const giftClaimConfig = {
     maxLinkLength: 500,
     processingStaleMs: 5 * 60_000,
     commandDraftTtlMs: 15 * 60_000,
+    commandCooldownMs: 30 * 60_000,
+    maxItemLength: 200,
+    maxAccountLength: 100,
     deliveryChannelPrefix: "gift",
   },
 

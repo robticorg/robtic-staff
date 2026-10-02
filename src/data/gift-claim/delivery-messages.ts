@@ -35,6 +35,22 @@ export const giftDeliveryMessages = {
       info ? `الجائزة لـ <@${userId}>\n**المعلومات:** ${info}` : `الجائزة لـ <@${userId}>`,
   },
 
+  requestModals: {
+    creditsTitle: "طلب كريدتس",
+    linkTitle: "طلب نيترو | إفكت",
+    otherTitle: "طلب جائزة أخرى",
+    amountLabel: "المبلغ",
+    amountPlaceholder: "مثال: 500k أو 5m أو 5 مليون",
+    linkItemLabel: "وش الجائزة بالضبط؟",
+    linkItemPlaceholder: "مثال: Nitro Boost شهر، أو إفكت اسمه …",
+    otherItemLabel: "وش الجائزة بالضبط؟",
+    otherItemPlaceholder: "مثال: 400 Robux",
+    accountLabel: "حساب العضو (لو تحتاجه)",
+    accountPlaceholder: "مثال: يوزر روبلوكس حق العضو",
+    proofLabel: "الإثبات",
+    proofDescription: "صورة تثبت إن العضو يستحق الجائزة.",
+  },
+
   modals: {
     amountTitle: "مبلغ الكريدتس",
     amountLabel: "المبلغ",
@@ -147,11 +163,16 @@ export const giftDeliveryMessages = {
     notAuthor: `${E.error} هذي القائمة لصاحب الأمر بس.`,
     expired: `${E.warning} انتهت مدة هذي القائمة. شغّل الأمر من جديد.`,
     selfGift: `${E.error} ما تقدر تعطي نفسك جائزة.`,
+    itemRequired: `${E.error} لازم تكتب وش الجائزة بالضبط.`,
+    cooldown: (endsAt: Date) =>
+      `${E.warning} تقدر تستخدم \`!gift\` في هذا التكت مرة كل 30 دقيقة — تقدر ترجع <t:${Math.floor(endsAt.getTime() / 1000)}:R>.`,
+    requestDone: (userId: string, channelId: string) =>
+      `${E.success} تم إرسال طلب الهدية لـ <@${userId}> للإدارة في <#${channelId}> — بانتظار الموافقة.`,
     rewardName: (info: string | null) => info ?? "جائزة من الستاف",
   },
 
   send: {
-    usage: `${E.warning} الطريقة: \`!send @user <المبلغ>\` — مثال: \`!send @user 5m\` أو \`!send @user 500k\` أو \`!send @user 5 مليون\``,
+    usage: `${E.warning} الطريقة: \`!send @user <المبلغ> [gift]\` — مثال: \`!send @user 5m\` (التحويل في هذا الروم) أو \`!send @user 5m gift\` (التحويل في روم تسليم الهدايا)`,
     rewardName: (amount: string) => `تحويل ${amount} كريدت`,
   },
 } as const;

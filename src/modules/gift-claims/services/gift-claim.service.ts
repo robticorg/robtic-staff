@@ -66,6 +66,7 @@ export interface CreateFromCommandInput {
   deliveryType: GiftDeliveryType;
   amount?: string;
   untracked?: boolean;
+  transferChannelId?: string;
 }
 
 export interface CreateRequestInput {
@@ -76,6 +77,9 @@ export interface CreateRequestInput {
   info: string | null;
   originChannelId: string;
   deliveryType?: GiftDeliveryType;
+  amount?: string | null;
+  account?: string | null;
+  proofUrls?: readonly string[];
 }
 
 export interface CompleteDeliveryInput {
@@ -249,7 +253,14 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       proof: [],
       reviewedBy: input.staffId,
       reviewedAt: new Date(),
-      ...(input.untracked ? { metadata: { untracked: true } } : {}),
+      ...(input.untracked || input.transferChannelId
+        ? {
+            metadata: {
+              ...(input.untracked ? { untracked: true } : {}),
+              ...(input.transferChannelId ? { transferChannelId: input.transferChannelId } : {}),
+            },
+          }
+        : {}),
     });
 
     await giftClaimAuditService.record({
@@ -277,18 +288,22 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
     }
 
     const info = input.info?.trim().slice(0, 300) || null;
+    const rewardName = info ?? (input.amount ? M.request.creditsReward(input.amount) : M.request.rewardFallback);
+    const now = new Date();
     const claim = await GiftClaimModel.create({
       guildId: input.guildId,
       userId: input.userId,
-      rewardName: (info ?? M.request.rewardFallback).slice(0, 200),
+      rewardName: rewardName.slice(0, 200),
       ...(info ? { prize: info } : {}),
+      ...(input.amount ? { amount: input.amount } : {}),
+      ...(input.account ? { account: input.account } : {}),
       status: GiftClaimStatus.PENDING,
       source: GiftClaimSource.REQUEST,
       ...(input.ticketId ? { ticketId: input.ticketId } : {}),
       requestedBy: input.staffId,
       originChannelId: input.originChannelId,
       ...(input.deliveryType ? { deliveryType: input.deliveryType } : {}),
-      proof: [],
+      proof: (input.proofUrls ?? []).map((url) => ({ url, uploadedAt: now })),
       channelId,
     });
 

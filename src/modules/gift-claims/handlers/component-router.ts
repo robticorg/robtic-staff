@@ -22,6 +22,7 @@ import {
   handleCommandAmountModal,
   handleCommandLinkModal,
   handleCommandProofModal,
+  handleCommandRequestModal,
   handleCommandType,
 } from "./gift-command.handler.ts";
 
@@ -49,6 +50,7 @@ export async function routeGiftClaimComponent(interaction: Interaction): Promise
       else if (action === "camount") await handleCommandAmountModal(interaction, id);
       else if (action === "clink") await handleCommandLinkModal(interaction, id);
       else if (action === "cproof") await handleCommandProofModal(interaction, id);
+      else if (action === "creq") await handleCommandRequestModal(interaction, id, args[1]);
       else return false;
     } else if (interaction.isButton()) {
       if (action === "approve") await handleApprove(interaction, id);

@@ -27,6 +27,7 @@ export const giftClaimMessages = {
     ticket: (ticketId: string, channelId: string | null) =>
       channelId ? `**التكت:** \`${ticketId}\` — <#${channelId}>` : `**التكت:** \`${ticketId}\``,
     askedIn: (channelId: string) => `**مكان الطلب:** <#${channelId}>`,
+    account: (account: string) => `**حساب العضو:** ${account}`,
     staffRequestHeading: `${E.report} **طلب هدية من الستاف**`,
     statusLine: (status: string) => `**الحالة:** ${status}`,
     reviewedBy: (userId: string) => `**راجعه:** <@${userId}>`,
@@ -53,6 +54,7 @@ export const giftClaimMessages = {
 
   request: {
     rewardFallback: "جائزة من الستاف",
+    creditsReward: (amount: string) => `${amount} كريدت`,
     rejected: (userId: string, requestedBy: string | null, managerId: string, reason: string) =>
       `${E.error} تم رفض طلب الهدية لـ <@${userId}>${requestedBy ? ` (طلبه <@${requestedBy}>)` : ""} من <@${managerId}>.\n**السبب:** ${reason}`,
   },

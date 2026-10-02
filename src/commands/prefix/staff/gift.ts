@@ -20,18 +20,6 @@ export default definePrefixCommand({
     const route = routeGiftCommand(context, mentionedId);
     const info = ctx.args.filter((arg) => extractUserIds([arg]).length === 0).join(" ") || null;
 
-    if (route.kind === "REQUEST") {
-      const { orderChannelId } = await giftCommandService.request({
-        staff: ctx.member,
-        channelId: ctx.channel.id,
-        userId: route.userId,
-        ticketId: route.ticketId,
-        info,
-      });
-      await ctx.reply(M.command.requestSent(route.userId, orderChannelId));
-      return;
-    }
-
     const draft = await giftCommandService.start({
       staff: ctx.member,
       channelId: ctx.channel.id,

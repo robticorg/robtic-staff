@@ -59,12 +59,13 @@ export class CreditDeliveryService {
     staffId: string,
     proof: readonly StoredProofFile[] = [],
     replyChannelId: string | null = null,
+    transferChannelId: string | null = null,
   ): Promise<CreditDeliveryResult> {
     if (!delivery.amount) {
       throw new GiftClaimError("GIFT_AMOUNT_MISSING", M.errors.amountInvalid);
     }
     await assertAutoclaimEnabled(delivery.guildId);
-    const channel = await giftDeliveriesChannel.resolve(delivery.guildId);
+    const channelId = transferChannelId ?? (await giftDeliveriesChannel.resolve(delivery.guildId)).id;
 
     const locked = await giftDeliveryRepository.lockForProcessing(delivery.deliveryId);
     if (!locked) {
@@ -86,7 +87,7 @@ export class CreditDeliveryService {
         {
           userId: locked.userId,
           guildId: locked.guildId,
-          channelId: channel.id,
+          channelId,
           amount: locked.amount!,
           sendMessage: async (content) => ({
             id: (await giftDeliveriesChannel.reply(replyChannelId, content)) ?? "",

@@ -73,7 +73,7 @@ export function buildGiftClaimCaseCard(
     | "deliveryType"
     | "amount"
   > &
-    Partial<Pick<GiftClaim, "source" | "requestedBy" | "guildId" | "ticketId" | "originChannelId">>,
+    Partial<Pick<GiftClaim, "source" | "requestedBy" | "guildId" | "ticketId" | "originChannelId" | "account">>,
   delivery?: CardDelivery,
 ): BaseMessageOptions {
   const container = new ContainerBuilder().setAccentColor(
@@ -97,6 +97,7 @@ export function buildGiftClaimCaseCard(
     "",
     M.reward(claim.rewardName),
     ...(claim.prize ? [M.prize(claim.prize)] : []),
+    ...(claim.account ? [M.account(claim.account)] : []),
     "",
     M.statusLine(claim.status),
     ...(claim.reviewedBy ? [M.reviewedBy(claim.reviewedBy)] : []),

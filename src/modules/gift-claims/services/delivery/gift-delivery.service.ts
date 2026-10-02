@@ -29,6 +29,11 @@ import { manualGiftDeliveryService } from "./manual-gift-delivery.service.ts";
 import { giftDeliveryProofService, type UploadedProof } from "./gift-delivery-proof.service.ts";
 
 const M = giftDeliveryMessages;
+
+export function transferChannelOf(claim: Pick<GiftClaim, "metadata">): string | null {
+  const value = claim.metadata?.transferChannelId;
+  return typeof value === "string" && value ? value : null;
+}
 type ClaimDoc = HydratedDocument<GiftClaim>;
 
 export type ApproveOutcome =
@@ -44,6 +49,7 @@ export interface CommandClaimInput {
   type: GiftDeliveryType;
   amount?: string;
   untracked?: boolean;
+  transferChannelId?: string | null;
 }
 
 export class GiftDeliveryService {
@@ -108,6 +114,7 @@ export class GiftDeliveryService {
       deliveryType: input.type,
       ...(amount ? { amount } : {}),
       ...(input.untracked ? { untracked: true } : {}),
+      ...(input.transferChannelId ? { transferChannelId: input.transferChannelId } : {}),
     });
     await this.openDelivery(claim, input.type);
     return claim;
@@ -208,6 +215,7 @@ export class GiftDeliveryService {
       staffId,
       [],
       claim.originChannelId ?? claim.channelId ?? null,
+      transferChannelOf(claim),
     );
     if (result.ok) {
       await giftClaimService.completeFromDelivery({

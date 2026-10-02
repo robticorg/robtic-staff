@@ -1,11 +1,14 @@
 import {
+  ContainerBuilder,
   MessageFlags,
   type ModalSubmitInteraction,
   type StringSelectMenuInteraction,
 } from "discord.js";
+import { colors } from "../../../data/config/colors.ts";
 import { giftDeliveryMessages } from "../../../data/gift-claim/delivery-messages.ts";
 import { buildAmountModal, buildLinkModal, buildProofModal } from "../render/delivery-components.ts";
-import { giftCommandService } from "../services/delivery/gift-command.service.ts";
+import { buildGiftRequestModal } from "../render/request-modal.ts";
+import { GiftCommandMode, giftCommandService } from "../services/delivery/gift-command.service.ts";
 import { giftDeliveryProofService } from "../services/delivery/gift-delivery-proof.service.ts";
 import { extractCreditAmount, parseGiftLink } from "../services/delivery/gift-delivery-input.ts";
 import { giftDeliveryService } from "../services/delivery/gift-delivery.service.ts";
@@ -30,6 +33,16 @@ export async function handleCommandType(
     }
     const draft = await giftCommandService.resume(draftId, interaction.member);
 
+    if (draft.mode === GiftCommandMode.REQUEST) {
+      await interaction.showModal(
+        buildGiftRequestModal(GiftClaimCustomId.cmdRequestModal(draftId, type), type, {
+          amount: extractCreditAmount(draft.info),
+          item: type === GiftDeliveryType.CREDITS ? null : draft.info,
+        }),
+      );
+      return;
+    }
+
     if (type === GiftDeliveryType.LINK) {
       await interaction.showModal(buildLinkModal(GiftClaimCustomId.cmdLinkModal(draftId)));
     } else if (type === GiftDeliveryType.OTHER) {
@@ -41,6 +54,40 @@ export async function handleCommandType(
     }
   } catch (err) {
     await replyDeliveryError(interaction, err, "command type");
+  }
+}
+
+export async function handleCommandRequestModal(
+  interaction: ModalSubmitInteraction,
+  draftId: string,
+  rawType: string | undefined,
+): Promise<void> {
+  if (!interaction.inCachedGuild()) return;
+  await interaction.deferReply(EPHEMERAL);
+  try {
+    const type = deliveryTypeFrom(rawType);
+    if (!type) {
+      await interaction.editReply(M.errors.typeRequired);
+      return;
+    }
+    const { orderChannelId, draft } = await giftCommandService.submitRequest(draftId, interaction.member, {
+      type,
+      amount: modalText(interaction, GiftClaimModalField.amount) || null,
+      item: modalText(interaction, GiftClaimModalField.item) || null,
+      account: modalText(interaction, GiftClaimModalField.account) || null,
+      proof: modalUploads(interaction, GiftClaimModalField.deliveryProof),
+    });
+    const done = M.command.requestDone(draft.userId, orderChannelId);
+    await interaction.editReply(done);
+    if (interaction.isFromMessage()) {
+      const container = new ContainerBuilder().setAccentColor(colors.success);
+      container.addTextDisplayComponents((t) => t.setContent(done));
+      await interaction.message
+        .edit({ components: [container], flags: MessageFlags.IsComponentsV2, allowedMentions: { parse: [] } })
+        .catch(() => undefined);
+    }
+  } catch (err) {
+    await replyDeliveryError(interaction, err, "command request");
   }
 }
 

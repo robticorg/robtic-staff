@@ -18,6 +18,7 @@ export const GiftClaimCustomId = {
   cmdAmountModal: (draftId: string) => `${GC_NS}:camount:${draftId}`,
   cmdLinkModal: (draftId: string) => `${GC_NS}:clink:${draftId}`,
   cmdProofModal: (draftId: string) => `${GC_NS}:cproof:${draftId}`,
+  cmdRequestModal: (draftId: string, type: string) => `${GC_NS}:creq:${draftId}:${type}`,
 } as const;
 
 export const GiftClaimModalField = {
@@ -30,6 +31,8 @@ export const GiftClaimModalField = {
   link: "link",
   info: "info",
   deliveryProof: "deliveryProof",
+  item: "item",
+  account: "account",
 } as const;
 
 export interface ParsedGcId {

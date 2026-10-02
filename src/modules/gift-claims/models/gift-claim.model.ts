@@ -30,6 +30,7 @@ export interface GiftClaim extends Timestamps {
   ticketId?: string;
   requestedBy?: UserId;
   originChannelId?: string;
+  account?: string;
   deliveryType?: GiftDeliveryType;
   amount?: string;
 
@@ -84,6 +85,7 @@ const giftClaimSchema = new Schema<GiftClaim>(
     ticketId: { type: String },
     requestedBy: { type: String },
     originChannelId: { type: String },
+    account: { type: String, trim: true, maxlength: 100 },
     deliveryType: { type: String, enum: GIFT_DELIVERY_TYPE_VALUES },
     amount: { type: String, maxlength: 30 },
 
@@ -106,6 +108,7 @@ const giftClaimSchema = new Schema<GiftClaim>(
 
 giftClaimSchema.index({ guildId: 1, userId: 1, createdAt: -1 });
 giftClaimSchema.index({ guildId: 1, status: 1 });
+giftClaimSchema.index({ guildId: 1, ticketId: 1, createdAt: -1 });
 giftClaimSchema.index({ userId: 1, status: 1 });
 
 export const GiftClaimModel: Model<GiftClaim> =
