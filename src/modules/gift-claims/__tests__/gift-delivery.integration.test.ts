@@ -74,6 +74,7 @@ let transferCalls: TransferCall[] = [];
 let transferQueue: TransferOutcome["ok"][] = [];
 let transferFailure: TransferFailure = TransferFailure.REJECTED;
 let transferDelayMs = 0;
+let transferConfirmed = true;
 
 creditDeliveryService.useTransfer(async (options, context) => {
   const { sendMessage, ...rest } = options;
@@ -83,6 +84,10 @@ creditDeliveryService.useTransfer(async (options, context) => {
   const ok = transferQueue.length ? transferQueue.shift()! : true;
   return ok ? { ok: true, messageId: message.id } : { ok: false, reason: transferFailure, messageId: message.id };
 });
+creditDeliveryService.useConfirmation(() => ({
+  wait: async () => transferConfirmed,
+  cancel: () => undefined,
+}));
 giftDeliveryProofService.useDownloader(async () => Buffer.from([1, 2, 3]));
 const PROOF = [{ name: "proof.png", url: "https://cdn.example/proof.png", contentType: "image/png", size: 3 }];
 
@@ -174,11 +179,31 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
     winner = nextWinner();
     transferCalls = [];
     transferQueue = [];
+    transferConfirmed = true;
     transferFailure = TransferFailure.REJECTED;
     transferDelayMs = 0;
   });
 
   describe("CREDITS", () => {
+    it("fails when the transfer bot never confirms, and can be retried", async () => {
+      const claim = await claimFor(winner.id);
+      transferConfirmed = false;
+      const outcome = await giftDeliveryService.approveWithType({
+        claimId: claim.claimId,
+        manager: manager as never,
+        type: GiftDeliveryType.CREDITS,
+        amount: "100",
+      });
+      expect(outcome.kind === "CREDITS" && outcome.result.ok).toBe(false);
+      expect(outcome.kind === "CREDITS" && !outcome.result.ok && outcome.result.reason).toBe(TransferFailure.UNCONFIRMED);
+      expect((await deliveryOf(claim.claimId))!.status).toBe(GiftDeliveryStatus.FAILED);
+      expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.APPROVED);
+
+      transferConfirmed = true;
+      expect((await giftDeliveryService.deliverCredits(claim.claimId, manager as never)).ok).toBe(true);
+      expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.FULFILLED);
+    });
+
     it("approves and transfers with no proof, then fulfills — autoclaim is the record", async () => {
       const claim = await claimFor(winner.id);
       const outcome = await giftDeliveryService.approveWithType({

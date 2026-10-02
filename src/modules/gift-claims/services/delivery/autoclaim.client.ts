@@ -20,6 +20,7 @@ export const TransferFailure = {
   UNAVAILABLE: "UNAVAILABLE",
   REJECTED: "REJECTED",
   TIMEOUT: "TIMEOUT",
+  UNCONFIRMED: "UNCONFIRMED",
 } as const;
 export type TransferFailure = (typeof TransferFailure)[keyof typeof TransferFailure];
 
@@ -46,7 +47,7 @@ async function reportsFailure(response: Response): Promise<boolean> {
 }
 
 export function createAutoclaimTransfer(
-  config: GiftDeliveryRuntimeConfig = giftDeliveryRuntimeConfig,
+  config: Pick<GiftDeliveryRuntimeConfig, "autoclaimApiUrl" | "autoclaimApiToken" | "autoclaimTimeoutMs"> = giftDeliveryRuntimeConfig,
   fetchImpl: FetchLike = (input, init) => fetch(input, init),
 ): StartTransfer {
   return async (options, context) => {

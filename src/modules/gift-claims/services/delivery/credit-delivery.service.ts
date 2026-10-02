@@ -9,7 +9,9 @@ import {
   TransferFailure,
   startAutoclaimTransfer,
   type StartTransfer,
+  type TransferOutcome,
 } from "./autoclaim.client.ts";
+import { expectTransferConfirmation, type ExpectConfirmation } from "./transfer-confirmation.ts";
 import { giftDeliveriesChannel } from "./gift-deliveries-channel.ts";
 import { giftDeliveryProofService, type StoredProofFile } from "./gift-delivery-proof.service.ts";
 import { giftDeliveryRepository } from "./gift-delivery.repository.ts";
@@ -22,6 +24,7 @@ const FAILURE_LABELS: Record<TransferFailure, string> = {
   [TransferFailure.UNAVAILABLE]: M.errors.apiUnavailable,
   [TransferFailure.REJECTED]: M.errors.apiRejected,
   [TransferFailure.TIMEOUT]: M.errors.apiTimeout,
+  [TransferFailure.UNCONFIRMED]: M.errors.apiUnconfirmed,
 };
 
 export type CreditDeliveryResult =
@@ -48,10 +51,17 @@ export async function assertAutoclaimEnabled(guildId: string): Promise<void> {
 }
 
 export class CreditDeliveryService {
-  constructor(private transfer: StartTransfer = startAutoclaimTransfer) {}
+  constructor(
+    private transfer: StartTransfer = startAutoclaimTransfer,
+    private expectConfirmation: ExpectConfirmation = expectTransferConfirmation,
+  ) {}
 
   useTransfer(transfer: StartTransfer): void {
     this.transfer = transfer;
+  }
+
+  useConfirmation(expectConfirmation: ExpectConfirmation): void {
+    this.expectConfirmation = expectConfirmation;
   }
 
   async deliver(
@@ -81,7 +91,13 @@ export class CreditDeliveryService {
       throw err;
     }
 
-    let outcome;
+    const confirmation = this.expectConfirmation({
+      channelId,
+      userId: locked.userId,
+      amount: locked.amount!,
+    });
+
+    let outcome: TransferOutcome;
     try {
       outcome = await this.transfer(
         {
@@ -101,6 +117,15 @@ export class CreditDeliveryService {
     } catch (err) {
       log.error(`credit transfer for ${locked.deliveryId} crashed`, err);
       outcome = { ok: false as const, reason: TransferFailure.UNAVAILABLE };
+    }
+
+    if (outcome.ok) {
+      if (!(await confirmation.wait())) {
+        log.warn(`credit delivery ${locked.deliveryId}: no transfer confirmation in ${channelId}`);
+        outcome = { ok: false, reason: TransferFailure.UNCONFIRMED, messageId: outcome.messageId };
+      }
+    } else {
+      confirmation.cancel();
     }
 
     if (!outcome.ok) {

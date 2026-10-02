@@ -93,6 +93,7 @@ export const giftDeliveryMessages = {
     apiUnavailable: "خدمة التحويل ما ترد حالياً",
     apiRejected: "خدمة التحويل رفضت الطلب",
     apiTimeout: "خدمة التحويل ما ردّت في الوقت",
+    apiUnconfirmed: "ما وصلت رسالة تأكيد التحويل خلال 20 ثانية",
     notOwner: "هذه الجائزة ليست لك.",
     alreadyClaimed: "تم استخدام هذه الجائزة بالفعل.",
     notAvailable: "هذي الجائزة ما عادت متاحة.",

@@ -43,6 +43,8 @@ export interface RawEnv {
   autoclaimApiUrl?: string;
   autoclaimApiToken?: string;
   autoclaimTimeoutMs: number;
+  autoclaimConfirmBotId: string;
+  autoclaimConfirmTimeoutMs: number;
   giftLinkSecret?: string;
 
   botOwnerId: string;
@@ -50,6 +52,7 @@ export interface RawEnv {
 
 const DEFAULT_AUTOCLAIM_API_URL = "http://192.168.1.146:8790";
 const DEFAULT_BOT_OWNER_ID = "695223884735053905";
+const DEFAULT_AUTOCLAIM_CONFIRM_BOT_ID = "1505622388975468684";
 
 function readPositiveInt(value: string | undefined, fallback: number): number {
   const parsed = Number.parseInt(value ?? "", 10);
@@ -85,6 +88,8 @@ export const rawEnv: RawEnv = {
   autoclaimApiUrl: (process.env.AUTOCLAIM_API_URL ?? DEFAULT_AUTOCLAIM_API_URL) || undefined,
   autoclaimApiToken: process.env.AUTOCLAIM_API_TOKEN || undefined,
   autoclaimTimeoutMs: readPositiveInt(process.env.AUTOCLAIM_TIMEOUT_MS, 15_000),
+  autoclaimConfirmBotId: process.env.AUTOCLAIM_CONFIRM_BOT_ID?.trim() || DEFAULT_AUTOCLAIM_CONFIRM_BOT_ID,
+  autoclaimConfirmTimeoutMs: readPositiveInt(process.env.AUTOCLAIM_CONFIRM_TIMEOUT_MS, 20_000),
   giftLinkSecret: process.env.GIFT_LINK_SECRET || undefined,
   botOwnerId: process.env.BOT_OWNER_ID?.trim() || DEFAULT_BOT_OWNER_ID,
 };
