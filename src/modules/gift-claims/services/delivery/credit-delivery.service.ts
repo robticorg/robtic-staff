@@ -58,6 +58,7 @@ export class CreditDeliveryService {
     delivery: GiftDeliveryDocument,
     staffId: string,
     proof: readonly StoredProofFile[] = [],
+    replyChannelId: string | null = null,
   ): Promise<CreditDeliveryResult> {
     if (!delivery.amount) {
       throw new GiftClaimError("GIFT_AMOUNT_MISSING", M.errors.amountInvalid);
@@ -87,8 +88,9 @@ export class CreditDeliveryService {
           guildId: locked.guildId,
           channelId: channel.id,
           amount: locked.amount!,
-          sendMessage: async (content) =>
-            channel.send({ content, allowedMentions: { parse: [] } }),
+          sendMessage: async (content) => ({
+            id: (await giftDeliveriesChannel.reply(replyChannelId, content)) ?? "",
+          }),
         },
         {
           idempotencyKey: `gift-${locked.deliveryId}`,
@@ -102,6 +104,10 @@ export class CreditDeliveryService {
 
     if (!outcome.ok) {
       await giftDeliveryRepository.markFailed(locked.deliveryId, outcome.reason);
+      await giftDeliveriesChannel.reply(
+        replyChannelId,
+        M.log.creditsFailed(locked.userId, locked.claimId, FAILURE_LABELS[outcome.reason]),
+      );
       await giftDeliveriesChannel.post(locked.guildId, {
         content: M.log.creditsFailed(locked.userId, locked.claimId, FAILURE_LABELS[outcome.reason]),
         tone: "error",
@@ -112,8 +118,9 @@ export class CreditDeliveryService {
 
     const fulfilled = await giftDeliveryRepository.markFulfilled(locked.deliveryId, {
       deliveredBy: staffId,
-      auditMessageId: outcome.messageId,
+      ...(outcome.messageId ? { auditMessageId: outcome.messageId } : {}),
     });
+    await giftDeliveriesChannel.reply(replyChannelId, M.log.creditsDone(locked.userId, locked.amount!, locked.claimId));
     await giftDeliveriesChannel.post(locked.guildId, {
       content: M.log.creditsDone(locked.userId, locked.amount!, locked.claimId),
       files: giftDeliveryProofService.attachments(proof),

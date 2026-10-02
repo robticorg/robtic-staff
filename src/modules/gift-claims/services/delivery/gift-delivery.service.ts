@@ -37,7 +37,8 @@ export type ApproveOutcome =
 export interface CommandClaimInput {
   staff: GuildMember;
   userId: string;
-  ticketId: string;
+  ticketId: string | null;
+  originChannelId: string;
   rewardName: string;
   type: GiftDeliveryType;
   amount?: string;
@@ -100,6 +101,7 @@ export class GiftDeliveryService {
       userId: input.userId,
       rewardName: input.rewardName,
       ticketId: input.ticketId,
+      originChannelId: input.originChannelId,
       deliveryType: input.type,
       ...(amount ? { amount } : {}),
     });
@@ -197,7 +199,12 @@ export class GiftDeliveryService {
     delivery: GiftDeliveryDocument,
     staffId: string,
   ): Promise<CreditDeliveryResult> {
-    const result = await creditDeliveryService.deliver(delivery, staffId);
+    const result = await creditDeliveryService.deliver(
+      delivery,
+      staffId,
+      [],
+      claim.originChannelId ?? claim.channelId ?? null,
+    );
     if (result.ok) {
       await giftClaimService.completeFromDelivery({
         claimId: claim.claimId,

@@ -1,4 +1,5 @@
 export * from "./staff.service.ts";
+export * from "./staff-duty-events.ts";
 export * from "./staff-activity.service.ts";
 export * from "./staff-point.service.ts";
 export * from "./staff-promotion-points.service.ts";

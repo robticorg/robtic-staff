@@ -20,6 +20,7 @@ import type { GiftClaim } from "../models/gift-claim.model.ts";
 import type { GiftDelivery } from "../models/gift-delivery.model.ts";
 import {
   DECIDABLE_CLAIM_STATUSES,
+  GiftClaimSource,
   GiftClaimStatus,
   GiftDeliveryStatus,
   GiftDeliveryType,
@@ -71,18 +72,23 @@ export function buildGiftClaimCaseCard(
     | "rejectionReason"
     | "deliveryType"
     | "amount"
-  >,
+  > &
+    Partial<Pick<GiftClaim, "source" | "requestedBy">>,
   delivery?: CardDelivery,
 ): BaseMessageOptions {
   const container = new ContainerBuilder().setAccentColor(
     giftClaimConfig.caseAccentColor[claim.status] ?? giftClaimConfig.caseAccentColor.PENDING,
   );
 
-  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(M.heading));
+  const isRequest = claim.source === GiftClaimSource.REQUEST;
+  container.addTextDisplayComponents(
+    new TextDisplayBuilder().setContent(isRequest ? M.staffRequestHeading : M.heading),
+  );
 
   const info = [
     M.user(claim.userId),
     M.claimId(claim.claimId),
+    ...(claim.requestedBy ? [M.requestedBy(claim.requestedBy)] : []),
     "",
     M.reward(claim.rewardName),
     ...(claim.prize ? [M.prize(claim.prize)] : []),
@@ -115,7 +121,9 @@ export function buildGiftClaimCaseCard(
   if (claim.fulfillmentProof) {
     proofLines.push("", M.fulfillmentProofHeading, claim.fulfillmentProof);
   }
-  container.addTextDisplayComponents(new TextDisplayBuilder().setContent(proofLines.join("\n")));
+  if (!isRequest || claim.proof.length > 0 || claim.fulfillmentProof) {
+    container.addTextDisplayComponents(new TextDisplayBuilder().setContent(proofLines.join("\n")));
+  }
 
   const decidable = (DECIDABLE_CLAIM_STATUSES as GiftClaimStatus[]).includes(claim.status);
   const action = deliveryAction(claim, delivery);

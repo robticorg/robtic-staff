@@ -7,7 +7,7 @@ import { giftDeliveryMessages } from "../../../data/gift-claim/delivery-messages
 import { buildAmountModal, buildLinkModal, buildProofModal } from "../render/delivery-components.ts";
 import { giftCommandService } from "../services/delivery/gift-command.service.ts";
 import { giftDeliveryProofService } from "../services/delivery/gift-delivery-proof.service.ts";
-import { parseCreditAmount, parseGiftLink } from "../services/delivery/gift-delivery-input.ts";
+import { extractCreditAmount, parseGiftLink } from "../services/delivery/gift-delivery-input.ts";
 import { giftDeliveryService } from "../services/delivery/gift-delivery.service.ts";
 import { GiftDeliveryType } from "../types/enums.ts";
 import { GiftClaimCustomId, GiftClaimModalField } from "./component-ids.ts";
@@ -36,7 +36,7 @@ export async function handleCommandType(
       await interaction.showModal(buildProofModal(GiftClaimCustomId.cmdProofModal(draftId)));
     } else {
       await interaction.showModal(
-        buildAmountModal(GiftClaimCustomId.cmdAmountModal(draftId), parseCreditAmount(draft.info)),
+        buildAmountModal(GiftClaimCustomId.cmdAmountModal(draftId), extractCreditAmount(draft.info)),
       );
     }
   } catch (err) {
@@ -58,6 +58,7 @@ export async function handleCommandAmountModal(
       staff: interaction.member,
       userId: draft.userId,
       ticketId: draft.ticketId,
+      originChannelId: draft.channelId,
       rewardName: M.command.rewardName(draft.info),
       type: GiftDeliveryType.CREDITS,
       amount,
@@ -89,6 +90,7 @@ export async function handleCommandLinkModal(
       staff: interaction.member,
       userId: draft.userId,
       ticketId: draft.ticketId,
+      originChannelId: draft.channelId,
       rewardName: M.command.rewardName(draft.info),
       type: GiftDeliveryType.LINK,
     });
@@ -120,6 +122,7 @@ export async function handleCommandProofModal(
       staff: interaction.member,
       userId: draft.userId,
       ticketId: draft.ticketId,
+      originChannelId: draft.channelId,
       rewardName: M.command.rewardName(draft.info),
       type: GiftDeliveryType.OTHER,
     });

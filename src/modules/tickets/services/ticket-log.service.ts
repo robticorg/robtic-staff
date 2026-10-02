@@ -28,6 +28,7 @@ function historyDetail(action: TicketLogAction, ctx: TicketLogContext): string |
     case TicketLogAction.TICKET_RENAMED:
       return ctx.name ?? null;
     case TicketLogAction.TICKET_TRANSFERRED:
+    case TicketLogAction.TICKET_UNCLAIMED:
       return ctx.reason ?? null;
     case TicketLogAction.TICKET_SLEEP:
       return ctx.name ?? null; // the duration text

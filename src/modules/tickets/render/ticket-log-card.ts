@@ -14,6 +14,8 @@ function titleFor(action: TicketLogAction): string | null {
       return L.titleClaimed;
     case TicketLogAction.TICKET_TRANSFERRED:
       return L.titleTransferred;
+    case TicketLogAction.TICKET_UNCLAIMED:
+      return L.titleUnclaimed;
     case TicketLogAction.TICKET_SLEEP:
       return L.titleSleep;
     case TicketLogAction.TICKET_SLEEP_CANCELLED:
@@ -54,6 +56,7 @@ function colorFor(action: TicketLogAction): LogTone {
       return "error";
     case TicketLogAction.TICKET_CLOSED:
     case TicketLogAction.TICKET_SLEEP:
+    case TicketLogAction.TICKET_UNCLAIMED:
       return "warning";
     case TicketLogAction.TICKET_SLEEP_CANCELLED:
     case TicketLogAction.TICKET_REOPENED:
@@ -126,6 +129,10 @@ export function ticketLogContent(
     case TicketLogAction.ROLE_ADDED:
     case TicketLogAction.ROLE_REMOVED:
       if (ctx.roleId) fields.push({ name: L.role, value: `<@&${ctx.roleId}>`, inline: true });
+      break;
+    case TicketLogAction.TICKET_UNCLAIMED:
+      if (ctx.fromId) fields.push({ name: L.from, value: `<@${ctx.fromId}>`, inline: true });
+      fields.push({ name: L.reason, value: ctx.reason ?? "—" });
       break;
   }
 

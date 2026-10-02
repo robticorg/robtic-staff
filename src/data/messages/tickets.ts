@@ -201,6 +201,19 @@ export const ticketMessages = {
     olderHidden: (n: number) => `-# … و ${n} أقدم.`,
   },
 
+  claimerOffDuty: {
+    title: (staffId: string, onBreak: boolean) =>
+      onBreak
+        ? `### ${E.warning} المستلم <@${staffId}> في بريك حالياً`
+        : `### ${E.warning} المستلم <@${staffId}> ما عاد في الستاف`,
+    body: "انسحب الاستلام منه والتكت رجع مفتوح، أحد يستلمه.",
+    movedTo: (claimerId: string) => `انسحب الاستلام منه، والتكت صار عند <@${claimerId}>.`,
+    rolesPing: (roleIds: readonly string[]) => roleIds.map((id) => `<@&${id}>`).join(" "),
+    claimButton: "استلام التكت",
+    reasonFired: "مطرود من الستاف",
+    reasonBreak: "في بريك",
+  },
+
   memberLeft: {
     title: (userId: string) => `### ${E.warning} صاحب التكت <@${userId}> طلع من السيرفر`,
     question: "تبي تقفل التكت؟",
@@ -286,6 +299,7 @@ export const ticketMessages = {
     titleCreated: `${E.report} تم فتح تكت`,
     titleClaimed: `${E.staff} تم استلام تكت`,
     titleTransferred: `${E.transfer} تم تحويل تكت`,
+    titleUnclaimed: `${E.warning} انسحب استلام تكت`,
     titleSleep: `${E.loading} تكت بانتظار رد العضو`,
     titleSleepCancelled: `${E.success} رجع العضو للتكت`,
     titleRenamed: "✏️ تم تغيير اسم تكت",

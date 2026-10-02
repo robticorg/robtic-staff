@@ -23,6 +23,8 @@ export const giftClaimMessages = {
     reward: (name: string) => `**المكافأة:** ${name}`,
     prize: (prize: string) => `**التفاصيل:** ${prize}`,
     claimId: (id: string) => `**آيدي الطلب:** \`${id}\``,
+    requestedBy: (userId: string) => `**طلبه:** <@${userId}>`,
+    staffRequestHeading: `${E.report} **طلب هدية من الستاف**`,
     statusLine: (status: string) => `**الحالة:** ${status}`,
     reviewedBy: (userId: string) => `**راجعه:** <@${userId}>`,
     fulfilledBy: (userId: string) => `**سلّمه:** <@${userId}>`,
@@ -44,6 +46,12 @@ export const giftClaimMessages = {
 
     rejectReasonRequired: `${E.error} لازم تكتب سبب للرفض.`,
     fulfillProofRequired: `${E.error} لازم ترفع صورة تثبت تسليم الهدية.`,
+  },
+
+  request: {
+    rewardFallback: "جائزة من الستاف",
+    rejected: (userId: string, requestedBy: string | null, managerId: string, reason: string) =>
+      `${E.error} تم رفض طلب الهدية لـ <@${userId}>${requestedBy ? ` (طلبه <@${requestedBy}>)` : ""} من <@${managerId}>.\n**السبب:** ${reason}`,
   },
 
   dm: {

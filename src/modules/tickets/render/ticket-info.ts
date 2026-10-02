@@ -21,6 +21,7 @@ const ACTION_LABEL: Record<string, string> = {
   [TicketLogAction.TICKET_CREATED]: L.titleCreated,
   [TicketLogAction.TICKET_CLAIMED]: L.titleClaimed,
   [TicketLogAction.TICKET_TRANSFERRED]: L.titleTransferred,
+  [TicketLogAction.TICKET_UNCLAIMED]: L.titleUnclaimed,
   [TicketLogAction.TICKET_SLEEP]: L.titleSleep,
   [TicketLogAction.TICKET_SLEEP_CANCELLED]: L.titleSleepCancelled,
   [TicketLogAction.TICKET_RENAMED]: L.titleRenamed,

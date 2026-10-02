@@ -22,9 +22,10 @@ describe("credit amount", () => {
   });
 
   it("never reads free text as an amount", () => {
-    for (const raw of ["Nitro", "500k", "-5", "0", "1.5", "", null, "1".repeat(16)]) {
+    for (const raw of ["Nitro", "-5", "0", "1.5", "", null, "1".repeat(16)]) {
       expect(parseCreditAmount(raw as string | null)).toBeNull();
     }
+    expect(parseCreditAmount("500k")).toBe("500000");
   });
 });
 

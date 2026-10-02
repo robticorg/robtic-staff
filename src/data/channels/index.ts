@@ -39,6 +39,7 @@ export const CHANNEL_SLOT_META: Record<ChannelConfigType, ChannelSlotMeta> = {
   [ChannelConfigType.APPLICATION_CATEGORY]: { label: "كاتيقوري التقديم", group: "التقديم" },
   [ChannelConfigType.TRANSFER_CATEGORY]: { label: "كاتيقوري النقل", group: "التقديم" },
   [ChannelConfigType.GIFT_DELIVERIES]: { label: "روم تسليم الهدايا", group: "المكافآت" },
+  [ChannelConfigType.GIFT_DELIVERY_LOG]: { label: "لوق تسليم الهدايا", group: "المكافآت" },
   [ChannelConfigType.GIFT_DELIVERY_CATEGORY]: { label: "كاتيقوري تسليم الهدايا", group: "المكافآت" },
   [ChannelConfigType.COMMAND_LOG]: { label: "لوق الأوامر (العام)", group: "اللوقات" },
   [ChannelConfigType.JAIL_LOG]: { label: "لوق السجن", group: "اللوقات" },

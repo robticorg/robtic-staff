@@ -61,9 +61,19 @@ export interface CreateFromCommandInput {
   staffId: UserId;
   userId: UserId;
   rewardName: string;
-  ticketId: string;
+  ticketId: string | null;
+  originChannelId: string;
   deliveryType: GiftDeliveryType;
   amount?: string;
+}
+
+export interface CreateRequestInput {
+  guildId: GuildId;
+  staffId: UserId;
+  userId: UserId;
+  info: string | null;
+  originChannelId: string;
+  deliveryType?: GiftDeliveryType;
 }
 
 export interface CompleteDeliveryInput {
@@ -184,7 +194,7 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
     await this.after(updated, input.manager.id, {
       audit: GiftClaimAuditAction.APPROVED,
       activity: StaffActivityType.GIFT_CLAIM_APPROVE,
-      dm: M.dm.approved,
+      dm: updated.source === GiftClaimSource.REQUEST ? null : M.dm.approved,
     });
     return { claim: updated };
   }
@@ -208,11 +218,18 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
     ).exec();
     if (!updated) throw new ConflictError(M.review.alreadyDecided);
 
+    const isRequest = updated.source === GiftClaimSource.REQUEST;
     await this.after(updated, input.manager.id, {
       audit: GiftClaimAuditAction.REJECTED,
       activity: StaffActivityType.GIFT_CLAIM_REJECT,
-      dm: M.dm.rejected(reason),
+      dm: isRequest ? null : M.dm.rejected(reason),
     });
+    if (isRequest) {
+      await this.notifyOrigin(
+        updated.originChannelId,
+        M.request.rejected(updated.userId, updated.requestedBy ?? null, input.manager.id, reason),
+      );
+    }
     return { claim: updated };
   }
 
@@ -223,7 +240,8 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       rewardName: input.rewardName.slice(0, 200) || M.case.rewardFallback,
       status: GiftClaimStatus.APPROVED,
       source: GiftClaimSource.COMMAND,
-      ticketId: input.ticketId,
+      ...(input.ticketId ? { ticketId: input.ticketId } : {}),
+      originChannelId: input.originChannelId,
       deliveryType: input.deliveryType,
       ...(input.amount ? { amount: input.amount } : {}),
       proof: [],
@@ -237,7 +255,7 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       action: GiftClaimAuditAction.CREATED,
       actorId: input.staffId,
       userId: input.userId,
-      metadata: { source: GiftClaimSource.COMMAND, ticketId: input.ticketId },
+      metadata: { source: GiftClaimSource.COMMAND, ticketId: input.ticketId, channelId: input.originChannelId },
     });
     await this.after(claim, input.staffId, {
       audit: GiftClaimAuditAction.APPROVED,
@@ -245,6 +263,58 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       dm: null,
     });
     return { claim };
+  }
+
+  async createRequest(input: CreateRequestInput): Promise<{ claim: ClaimDoc; channelId: string }> {
+    const channelId = await channelConfigService.getChannelId(input.guildId, ChannelConfigType.GIFT_CLAIMS);
+    if (!channelId) throw new GiftClaimError("GIFT_CHANNEL_MISSING", M.create.channelNotConfigured);
+    const channel = await requireGiftClaimClient().channels.fetch(channelId).catch(() => null);
+    if (!channel || !("send" in channel)) {
+      throw new GiftClaimError("GIFT_CHANNEL_MISSING", M.create.channelNotConfigured);
+    }
+
+    const info = input.info?.trim().slice(0, 300) || null;
+    const claim = await GiftClaimModel.create({
+      guildId: input.guildId,
+      userId: input.userId,
+      rewardName: (info ?? M.request.rewardFallback).slice(0, 200),
+      ...(info ? { prize: info } : {}),
+      status: GiftClaimStatus.PENDING,
+      source: GiftClaimSource.REQUEST,
+      requestedBy: input.staffId,
+      originChannelId: input.originChannelId,
+      ...(input.deliveryType ? { deliveryType: input.deliveryType } : {}),
+      proof: [],
+      channelId,
+    });
+
+    try {
+      const card = await channel.send(buildGiftClaimCaseCard(claim));
+      claim.messageId = card.id;
+      await claim.save();
+    } catch (err) {
+      log.warn(`gift request ${claim.claimId} card send failed`, err);
+    }
+
+    await giftClaimAuditService.record({
+      claimId: claim.claimId,
+      guildId: input.guildId,
+      action: GiftClaimAuditAction.CREATED,
+      actorId: input.staffId,
+      userId: input.userId,
+      metadata: { source: GiftClaimSource.REQUEST, channelId: input.originChannelId },
+    });
+    return { claim, channelId };
+  }
+
+  private async notifyOrigin(channelId: string | undefined, content: string): Promise<void> {
+    if (!channelId) return;
+    try {
+      const channel = await requireGiftClaimClient().channels.fetch(channelId).catch(() => null);
+      if (channel && "send" in channel) await channel.send({ content, allowedMentions: { parse: [] } });
+    } catch (err) {
+      log.warn(`gift request notice in ${channelId} failed`, err);
+    }
   }
 
   async completeFromDelivery(input: CompleteDeliveryInput): Promise<ClaimDoc | null> {

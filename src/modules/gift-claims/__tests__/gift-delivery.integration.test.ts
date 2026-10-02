@@ -27,6 +27,7 @@ import { creditDeliveryService } from "../services/delivery/credit-delivery.serv
 import { giftCommandService } from "../services/delivery/gift-command.service.ts";
 import { giftDeliveryRecoveryService } from "../services/delivery/gift-delivery-recovery.service.ts";
 import { giftDeliveryService } from "../services/delivery/gift-delivery.service.ts";
+import { giftClaimService } from "../services/gift-claim.service.ts";
 import { giftDeliveryProofService } from "../services/delivery/gift-delivery-proof.service.ts";
 import {
   GiftClaimSource,
@@ -52,6 +53,8 @@ const GUILD = "gift-delivery-itest";
 const GM_ROLE = "gm-role";
 const LADDER = ["gd-l0", "gd-l1"];
 const DELIVERIES = "deliveries";
+const DELIVERY_LOG = "delivery-log";
+const ORDERS = "gift-orders";
 const CATEGORY = "gift-cat";
 const LINK = "https://discord.gift/SuperSecretCode123";
 const E = giftDeliveryMessages.errors;
@@ -116,7 +119,9 @@ const revealMessages = (userId: string) =>
 const dmTexts = (userId: string) =>
   (world.dms.get(userId)?.sent ?? []).map((m) => JSON.stringify(m.payload)).join(" ");
 const deliveriesText = () =>
-  JSON.stringify(world.channels.get(DELIVERIES)!.sent.map((m) => m.payload));
+  JSON.stringify(
+    [DELIVERIES, DELIVERY_LOG].flatMap((id) => world.channels.get(id)!.sent.map((m) => m.payload)),
+  );
 
 async function cleanup(): Promise<void> {
   await Promise.all([
@@ -140,6 +145,8 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
     await roleConfigService.setRole({ guildId: GUILD, roleId: GM_ROLE, type: RoleConfigType.GIFT_MANAGER });
     await ChannelConfigModel.create([
       { guildId: GUILD, type: ChannelConfigType.GIFT_DELIVERIES, channelId: DELIVERIES },
+      { guildId: GUILD, type: ChannelConfigType.GIFT_DELIVERY_LOG, channelId: DELIVERY_LOG },
+      { guildId: GUILD, type: ChannelConfigType.GIFT_CLAIMS, channelId: ORDERS },
       { guildId: GUILD, type: ChannelConfigType.GIFT_DELIVERY_CATEGORY, channelId: CATEGORY },
     ]);
     invalidateStaffHierarchy(GUILD);
@@ -158,6 +165,8 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
   beforeEach(() => {
     world = new FakeWorld(GUILD, [CATEGORY], [GM_ROLE, ...LADDER]);
     world.textChannel(DELIVERIES);
+    world.textChannel(DELIVERY_LOG);
+    world.textChannel(ORDERS);
     attachGiftClaimClient(world.client);
     manager = world.member("manager", [GM_ROLE]);
     staffMember = world.member("staff", ["gd-l0"]);
@@ -182,7 +191,8 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
       expect(transferCalls).toHaveLength(1);
       expect(transferCalls[0]!.options).toEqual({ userId: winner.id, guildId: GUILD, channelId: DELIVERIES, amount: "500000" });
       expect((await deliveryOf(claim.claimId))!.proof).toHaveLength(0);
-      expect(world.channels.get(DELIVERIES)!.sent.at(-1)!.payload.files ?? []).toHaveLength(0);
+      expect(world.channels.get(DELIVERIES)!.sent).toHaveLength(0);
+      expect(world.channels.get(DELIVERY_LOG)!.sent.at(-1)!.payload.files ?? []).toHaveLength(0);
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.FULFILLED);
       const delivery = await deliveryOf(claim.claimId);
       expect(delivery!.status).toBe(GiftDeliveryStatus.FULFILLED);
@@ -273,7 +283,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
         expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.PENDING);
 
         await expect(
-          giftDeliveryService.createCommandClaim({ staff: staffMember as never, userId: winner.id, ticketId: "t", rewardName: "x", type: GiftDeliveryType.CREDITS, amount: "5" }),
+          giftDeliveryService.createCommandClaim({ staff: staffMember as never, userId: winner.id, ticketId: "t", originChannelId: "t-ch", rewardName: "x", type: GiftDeliveryType.CREDITS, amount: "5" }),
         ).rejects.toThrow(E.autoclaimOff);
         expect(await GiftClaimModel.countDocuments({ userId: winner.id })).toBe(1);
 
@@ -365,7 +375,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
       ).rejects.toThrow(E.proofRequired);
       await giftDeliveryService.deliverLink({ claimId: claim.claimId, actor: manager as never, link: LINK, info: null, proof: PROOF });
       expect((await deliveryOf(claim.claimId))!.proof).toHaveLength(1);
-      expect(world.channels.get(DELIVERIES)!.sent.every((m) => !m.payload.files?.length)).toBe(true);
+      expect(world.channels.get(DELIVERY_LOG)!.sent.every((m) => !m.payload.files?.length)).toBe(true);
     });
 
     it("refuses an invalid link without changing anything", async () => {
@@ -479,7 +489,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
       expect(delivery!.deliveredBy).toBe(manager.id);
       expect(delivery!.proof).toHaveLength(1);
       expect(await GiftDeliveryProofModel.countDocuments({ deliveryId: delivery!.deliveryId })).toBe(1);
-      const log = world.channels.get(DELIVERIES)!.sent.at(-1)!.payload;
+      const log = world.channels.get(DELIVERY_LOG)!.sent.at(-1)!.payload;
       expect(log.files).toHaveLength(1);
       expect(log.content).toContain("تم الشحن");
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.FULFILLED);
@@ -508,34 +518,42 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
   });
 
   describe("!gift", () => {
-    async function ticketChannel(): Promise<string> {
+    async function ticketChannel(): Promise<{ channelId: string; ticketId: string }> {
       seq += 1;
       const channelId = `ticket-ch-${seq}`;
+      const ticketId = `ticket-gd-${seq}`;
+      world.textChannel(channelId);
       await TicketModel.create({
-        ticketId: `ticket-gd-${seq}`,
+        ticketId,
         guildId: GUILD,
         channelId,
         userId: winner.id,
         panelId: "support",
         status: TicketStatus.OPEN,
       });
-      return channelId;
+      return { channelId, ticketId };
     }
 
-    it("works only for staff inside an open ticket", async () => {
-      const channelId = await ticketChannel();
-      await expect(giftCommandService.authorize(staffMember as never, "not-a-ticket")).rejects.toThrow(
-        giftDeliveryMessages.command.notInTicket,
-      );
-      await expect(giftCommandService.authorize(world.member("member") as never, channelId)).rejects.toThrow(
+    const sentText = (channelId: string) =>
+      JSON.stringify(world.channels.get(channelId)!.sent.map((m) => m.payload));
+
+    it("is staff only, and knows the ticket owner", async () => {
+      const { channelId } = await ticketChannel();
+      await expect(giftCommandService.context(world.member("member") as never, channelId)).rejects.toThrow(
         giftDeliveryMessages.command.notStaff,
       );
-      expect((await giftCommandService.authorize(staffMember as never, channelId)).ticketId).toBeDefined();
+      expect((await giftCommandService.context(staffMember as never, "not-a-ticket")).ticket).toBeNull();
+      expect((await giftCommandService.context(staffMember as never, channelId)).ticket?.ownerId).toBe(winner.id);
     });
 
-    it("lets only the author finish, once, and delivers credits through the same service", async () => {
-      const channelId = await ticketChannel();
-      const draft = await giftCommandService.start({ staff: staffMember as never, channelId, userId: winner.id, info: "500000" });
+    it("lets only the author finish, once, and replies the transfer in the ticket", async () => {
+      const { channelId, ticketId } = await ticketChannel();
+      const draft = await giftCommandService.start({
+        staff: staffMember as never,
+        channelId,
+        route: { kind: "TICKET", userId: winner.id, ticketId },
+        info: "500k",
+      });
 
       await expect(giftCommandService.take(draft.draftId, manager as never)).rejects.toThrow(giftDeliveryMessages.command.notAuthor);
       const taken = await giftCommandService.take(draft.draftId, staffMember as never);
@@ -545,6 +563,7 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
         staff: staffMember as never,
         userId: taken.userId,
         ticketId: taken.ticketId,
+        originChannelId: taken.channelId,
         rewardName: "Credits",
         type: GiftDeliveryType.CREDITS,
         amount: taken.info!,
@@ -553,21 +572,88 @@ describe.skipIf(!hasDb)("gift delivery (MongoDB + Discord fakes)", () => {
       const result = await giftDeliveryService.deliverCredits(claim.claimId, staffMember as never);
       expect(result.ok).toBe(true);
       expect(transferCalls.at(-1)!.options.channelId).toBe(DELIVERIES);
+      expect(transferCalls.at(-1)!.options.amount).toBe("500000");
       expect((await claimOf(claim.claimId))!.status).toBe(GiftClaimStatus.FULFILLED);
+      expect(sentText(channelId)).toContain("500000");
+      expect(world.channels.get(DELIVERIES)!.sent).toHaveLength(0);
 
       await expect(
-        giftDeliveryService.createCommandClaim({ staff: staffMember as never, userId: winner.id, ticketId: taken.ticketId, rewardName: "x", type: GiftDeliveryType.CREDITS, amount: "lots" }),
+        giftDeliveryService.createCommandClaim({ staff: staffMember as never, userId: winner.id, ticketId: taken.ticketId, originChannelId: channelId, rewardName: "x", type: GiftDeliveryType.CREDITS, amount: "lots" }),
       ).rejects.toThrow(E.amountInvalid);
     });
 
+    it("refuses a draft outside a ticket unless the author is an administrator", async () => {
+      const draft = await giftCommandService.start({
+        staff: staffMember as never,
+        channelId: "general",
+        route: { kind: "DIRECT", userId: winner.id },
+        info: null,
+      });
+      await expect(giftCommandService.take(draft.draftId, staffMember as never)).rejects.toThrow(
+        giftDeliveryMessages.command.notInTicket,
+      );
+      const adminDraft = await giftCommandService.start({
+        staff: admin as never,
+        channelId: "general",
+        route: { kind: "DIRECT", userId: winner.id },
+        info: null,
+      });
+      expect((await giftCommandService.take(adminDraft.draftId, admin as never)).ticketId).toBeNull();
+    });
+
+    it("sends a staff request to the order channel, and the approval transfers it", async () => {
+      world.textChannel("general");
+      const { claimId, orderChannelId } = await giftCommandService.request({
+        staff: staffMember as never,
+        channelId: "general",
+        userId: winner.id,
+        info: "50m فعالية",
+      });
+      expect(orderChannelId).toBe(ORDERS);
+      expect(world.channels.get(ORDERS)!.sent).toHaveLength(1);
+      const request = await claimOf(claimId);
+      expect(request!.status).toBe(GiftClaimStatus.PENDING);
+      expect(request!.source).toBe(GiftClaimSource.REQUEST);
+      expect(request!.requestedBy).toBe(staffMember.id);
+      expect(request!.deliveryType).toBe(GiftDeliveryType.CREDITS);
+
+      await giftDeliveryService.approveWithType({
+        claimId,
+        manager: manager as never,
+        type: GiftDeliveryType.CREDITS,
+        amount: "50m",
+      });
+      expect(transferCalls.at(-1)!.options.amount).toBe("50000000");
+      expect((await claimOf(claimId))!.status).toBe(GiftClaimStatus.FULFILLED);
+      expect(sentText("general")).toContain("50000000");
+    });
+
+    it("tells the requesting channel when a request is rejected", async () => {
+      world.textChannel("general");
+      const { claimId } = await giftCommandService.request({
+        staff: staffMember as never,
+        channelId: "general",
+        userId: winner.id,
+        info: null,
+      });
+      await giftClaimService.rejectClaim({ claimId, manager: manager as never, reason: "مو مستحق" });
+      expect(sentText("general")).toContain("مو مستحق");
+    });
+
     it("delivers a link from the command with the same owner-only reveal", async () => {
-      const channelId = await ticketChannel();
-      const draft = await giftCommandService.start({ staff: staffMember as never, channelId, userId: winner.id, info: "Nitro" });
+      const { channelId, ticketId } = await ticketChannel();
+      const draft = await giftCommandService.start({
+        staff: staffMember as never,
+        channelId,
+        route: { kind: "TICKET", userId: winner.id, ticketId },
+        info: "Nitro",
+      });
       const taken = await giftCommandService.take(draft.draftId, staffMember as never);
       const claim = await giftDeliveryService.createCommandClaim({
         staff: staffMember as never,
         userId: taken.userId,
         ticketId: taken.ticketId,
+        originChannelId: taken.channelId,
         rewardName: taken.info!,
         type: GiftDeliveryType.LINK,
       });

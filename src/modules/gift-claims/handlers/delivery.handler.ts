@@ -17,7 +17,7 @@ import {
 import { giftClaimPermissionService } from "../services/gift-claim-permissions.ts";
 import { giftClaimService } from "../services/gift-claim.service.ts";
 import type { CreditDeliveryResult } from "../services/delivery/credit-delivery.service.ts";
-import { parseCreditAmount } from "../services/delivery/gift-delivery-input.ts";
+import { extractCreditAmount } from "../services/delivery/gift-delivery-input.ts";
 import { giftDeliveryService } from "../services/delivery/gift-delivery.service.ts";
 import type { LinkDeliveryResult } from "../services/delivery/link-delivery.service.ts";
 import {
@@ -103,7 +103,7 @@ export async function handleTypeChoice(
   if (type === GiftDeliveryType.CREDITS) {
     const claim = await giftClaimService.getClaim(claimId);
     await interaction.showModal(
-      buildAmountModal(GiftClaimCustomId.amountModal(claimId), parseCreditAmount(claim?.prize)),
+      buildAmountModal(GiftClaimCustomId.amountModal(claimId), extractCreditAmount(claim?.prize)),
     );
     return;
   }
@@ -215,7 +215,7 @@ export async function handleRetry(interaction: ButtonInteraction, claimId: strin
   // Only ask for the amount when it isn't known yet; otherwise retry the transfer directly.
   const claim = await giftClaimService.getClaim(claimId);
   if (!claim?.amount) {
-    await interaction.showModal(buildAmountModal(GiftClaimCustomId.amountModal(claimId), claim?.prize));
+    await interaction.showModal(buildAmountModal(GiftClaimCustomId.amountModal(claimId), extractCreditAmount(claim?.prize)));
     return;
   }
   if (!interaction.deferred && !interaction.replied) await interaction.deferReply(EPHEMERAL);

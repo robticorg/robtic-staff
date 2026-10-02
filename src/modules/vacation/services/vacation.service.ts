@@ -13,6 +13,7 @@ import { staffService } from "../../staff/services/staff.service.ts";
 import { staffPermissionService } from "../../staff/services/staff-permissions.service.ts";
 import { staffActivityService } from "../../staff/services/staff-activity.service.ts";
 import { staffHistoryService } from "../../staff/services/staff-history.service.ts";
+import { StaffOffDutyReason, staffDutyEvents } from "../../staff/services/staff-duty-events.ts";
 import { StaffActivityType, StaffHistoryAction, StaffStatus } from "../../staff/types/enums.ts";
 import { VacationModel, type Vacation, type VacationDocument } from "../models/vacation.model.ts";
 import { buildRequestCard } from "../render/request-card.ts";
@@ -673,6 +674,7 @@ export class VacationService extends BaseRepository<Vacation> {
       referenceId: vacation.vacationId,
       metadata: this.activityMeta(vacation),
     });
+    staffDutyEvents.emitOffDuty({ guildId, userId: staffId, actorId, reason: StaffOffDutyReason.BREAK });
   }
 
   private async bookkeepingReturn(

@@ -28,6 +28,8 @@ export interface GiftClaim extends Timestamps {
 
   source: GiftClaimSource;
   ticketId?: string;
+  requestedBy?: UserId;
+  originChannelId?: string;
   deliveryType?: GiftDeliveryType;
   amount?: string;
 
@@ -80,6 +82,8 @@ const giftClaimSchema = new Schema<GiftClaim>(
       required: true,
     },
     ticketId: { type: String },
+    requestedBy: { type: String },
+    originChannelId: { type: String },
     deliveryType: { type: String, enum: GIFT_DELIVERY_TYPE_VALUES },
     amount: { type: String, maxlength: 30 },
 

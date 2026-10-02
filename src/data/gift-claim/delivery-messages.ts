@@ -38,7 +38,7 @@ export const giftDeliveryMessages = {
   modals: {
     amountTitle: "مبلغ الكريدتس",
     amountLabel: "المبلغ",
-    amountPlaceholder: "مثال: 500000",
+    amountPlaceholder: "مثال: 500000 أو 500k أو 50m أو 5 مليون",
     linkTitle: "تسليم الجائزة",
     linkLabel: "رابط الهدية",
     linkPlaceholder: "https://discord.gift/…",
@@ -137,7 +137,11 @@ export const giftDeliveryMessages = {
   },
 
   command: {
-    usage: `${E.warning} الطريقة: \`!gift @user <الجائزة>\``,
+    usage: `${E.warning} الطريقة: \`!gift @user <الجائزة>\` — وداخل التكت: \`!gift <الجائزة>\``,
+    onlyTicketOwner: `${E.error} داخل التكت تقدر تعطي الجائزة لصاحب التكت بس.`,
+    ticketOwnerGone: `${E.error} صاحب التكت ما عاد موجود في السيرفر.`,
+    requestSent: (userId: string, channelId: string) =>
+      `${E.success} تم إرسال طلب هدية لـ <@${userId}> للإدارة في <#${channelId}>. لو انقبل بيوصلك التحويل هنا.`,
     notInTicket: `${E.error} هذا الأمر يشتغل داخل تكت بس.`,
     notStaff: `${E.error} هذا الأمر للستاف بس.`,
     notAuthor: `${E.error} هذي القائمة لصاحب الأمر بس.`,

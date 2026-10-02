@@ -23,7 +23,6 @@ export class ManualGiftDeliveryService {
     rawInfo: string | null,
   ): Promise<{ delivery: GiftDeliveryDocument; files: StoredProofFile[] }> {
     giftDeliveryProofService.assertValid(uploads);
-    await giftDeliveriesChannel.resolve(delivery.guildId);
     const files = await giftDeliveryProofService.fetch(uploads);
 
     const locked = await giftDeliveryRepository.lockForProcessing(delivery.deliveryId);

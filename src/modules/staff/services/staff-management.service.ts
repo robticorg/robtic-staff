@@ -35,6 +35,7 @@ import { StaffHistoryModel } from "../models/staff-history.model.ts";
 import { awardActionPoints } from "./staff-action-points.ts";
 import { staffIdentityRequirementService } from "../../staff-identity/index.ts";
 import { staffTypeService } from "./staff-type.service.ts";
+import { StaffOffDutyReason, staffDutyEvents } from "./staff-duty-events.ts";
 import type { StaffType } from "../types/enums.ts";
 
 const log = logger.child("staff-mgmt");
@@ -412,6 +413,12 @@ export class StaffManagementService {
     });
 
     await cancelOpenVacationSnapshot(guildId, member.id, actorId(actor));
+    staffDutyEvents.emitOffDuty({
+      guildId,
+      userId: member.id,
+      actorId: actorId(actor),
+      reason: StaffOffDutyReason.FIRED,
+    });
 
     return { blacklist };
   }

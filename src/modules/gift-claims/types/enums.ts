@@ -60,6 +60,7 @@ export const GIFT_CLAIM_AUDIT_ACTION_VALUES = Object.values(GiftClaimAuditAction
 export const GiftClaimSource = {
   PANEL: "PANEL",
   COMMAND: "COMMAND",
+  REQUEST: "REQUEST",
 } as const;
 export type GiftClaimSource = (typeof GiftClaimSource)[keyof typeof GiftClaimSource];
 export const GIFT_CLAIM_SOURCE_VALUES = Object.values(GiftClaimSource);

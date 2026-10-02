@@ -461,7 +461,7 @@ export class TicketService extends BaseRepository<Ticket> {
    * two topic edits per channel per 10 minutes and queues the rest, which must not
    * hold up the claim/handover reply.
    */
-  private refreshTopic(guild: Guild, ticket: Ticket, panel: TicketPanelConfig): void {
+  refreshTopic(guild: Guild, ticket: Ticket, panel: TicketPanelConfig): void {
     void (async () => {
       const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
       if (channel && "setTopic" in channel) {
@@ -624,7 +624,7 @@ export class TicketService extends BaseRepository<Ticket> {
     }
   }
 
-  private async refreshRoleClaimMessages(guild: Guild, ticket: Ticket): Promise<void> {
+  async refreshRoleClaimMessages(guild: Guild, ticket: Ticket): Promise<void> {
     const channel = await guild.channels.fetch(ticket.channelId).catch(() => null);
     if (!channel?.isTextBased()) return;
     for (const slot of ticket.claimableRoles) {

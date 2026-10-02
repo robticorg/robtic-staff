@@ -33,24 +33,40 @@ export class GiftDeliveriesChannel {
     return channel as unknown as SendableChannel;
   }
 
-  /**
-   * A delivery log entry, sent as a V2 card (first line = title). Proof files are
-   * shown inside the card. The autoclaim transfer's own message is NOT sent through
-   * here — it goes straight to the channel as plain text because its id is part of
-   * the transfer request.
-   */
   async post(
     guildId: GuildId,
     entry: { content: string; files?: AttachmentBuilder[]; tone?: LogTone },
   ): Promise<string | null> {
+    const channelId = await channelConfigService.getChannelId(guildId, ChannelConfigType.GIFT_DELIVERY_LOG);
+    if (!channelId) {
+      log.debug(`no gift delivery log channel in ${guildId}`);
+      return null;
+    }
     try {
-      const channel = await this.resolve(guildId);
-      const message = await channel.send(
+      const channel = await requireGiftClaimClient().channels.fetch(channelId).catch(() => null);
+      if (!channel || !("send" in channel)) return null;
+      const message = await (channel as unknown as SendableChannel).send(
         logCardFromText(entry.content, entry.tone ?? "info", { files: entry.files ?? [] }),
       );
       return message.id;
     } catch (err) {
-      log.warn(`deliveries channel post failed in ${guildId}`, err);
+      log.warn(`gift delivery log post failed in ${guildId}`, err);
+      return null;
+    }
+  }
+
+  async reply(channelId: string | null | undefined, content: string): Promise<string | null> {
+    if (!channelId) return null;
+    try {
+      const channel = await requireGiftClaimClient().channels.fetch(channelId).catch(() => null);
+      if (!channel || !("send" in channel)) return null;
+      const message = await (channel as unknown as SendableChannel).send({
+        content,
+        allowedMentions: { parse: [] },
+      });
+      return message.id;
+    } catch (err) {
+      log.warn(`gift delivery reply in ${channelId} failed`, err);
       return null;
     }
   }
