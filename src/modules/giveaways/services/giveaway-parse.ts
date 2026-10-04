@@ -1,30 +1,29 @@
-const ENDS_TIMESTAMP = /ends?\s*:?\**\s*<t:(\d{9,12})(?::[tTdDfFR])?>/i;
+const ENDS_TIMESTAMP = /(?:ends?|ending|ينتهي|تنتهي|الانتهاء|ينتهى)[^<\n]{0,40}<t:(\d{9,12})(?::[tTdDfFR])?>/iu;
+const ANY_TIMESTAMP = /<t:(\d{9,12})(?::[tTdDfFR])?>/g;
 const USER_MENTION = /<@!?(\d{17,20})>/g;
 
-export interface EmbedLike {
-  description?: string | null;
-  title?: string | null;
-  timestamp?: string | null;
-  fields?: readonly { name: string; value: string }[];
-}
-
-export function parseEndsAt(embeds: readonly EmbedLike[]): Date | null {
-  for (const embed of embeds) {
-    const texts = [
-      embed.description ?? "",
-      ...(embed.fields ?? []).map((field) => `${field.name}: ${field.value}`),
-    ];
-    for (const text of texts) {
-      const match = ENDS_TIMESTAMP.exec(text);
-      if (match) return new Date(Number(match[1]) * 1000);
-    }
+export function findEndTime(input: {
+  texts: readonly string[];
+  embedTimestamps: readonly (string | null | undefined)[];
+  now: Date;
+}): Date | null {
+  for (const text of input.texts) {
+    const match = ENDS_TIMESTAMP.exec(text);
+    if (match) return new Date(Number(match[1]) * 1000);
   }
-  for (const embed of embeds) {
-    if (!embed.timestamp) continue;
-    const at = new Date(embed.timestamp);
+  for (const raw of input.embedTimestamps) {
+    if (!raw) continue;
+    const at = new Date(raw);
     if (!Number.isNaN(at.getTime())) return at;
   }
-  return null;
+  let latest: number | null = null;
+  for (const text of input.texts) {
+    for (const match of text.matchAll(ANY_TIMESTAMP)) {
+      const ms = Number(match[1]) * 1000;
+      if (ms > input.now.getTime() && (latest === null || ms > latest)) latest = ms;
+    }
+  }
+  return latest === null ? null : new Date(latest);
 }
 
 export function mentionedUserIds(texts: readonly string[], exclude: ReadonlySet<string> = new Set()): string[] {

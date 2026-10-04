@@ -1,4 +1,4 @@
-import { ChannelType, type Guild, type Message } from "discord.js";
+import type { Guild, Message } from "discord.js";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
 import { DomainError, isDuplicateKeyError } from "../../../shared/utils/errors.ts";
 import { logger } from "../../../shared/utils/logger.ts";
@@ -7,62 +7,45 @@ import { giveawayMessages } from "../../../data/giveaways/messages.ts";
 import { GiveawayModel, GiveawayStatus, type GiveawayDocument } from "../models/giveaway.model.ts";
 import { GiveawayProofModel } from "../models/giveaway-proof.model.ts";
 import { buildGiveawayResult } from "../render/result.ts";
-import { isWinnerMessageFor, mentionedUserIds, parseEndsAt } from "./giveaway-parse.ts";
+import { findGiveawayMessage, messageTexts, type GiveawayMessageRef } from "./giveaway-message.ts";
+import { findEndTime, isWinnerMessageFor, mentionedUserIds } from "./giveaway-parse.ts";
 
 const log = logger.child("giveaways");
 const G = giveawayMessages.giveaway;
 
 export class GiveawayError extends DomainError {}
 
-const textsOf = (message: Message): string[] =>
-  [
-    message.content,
-    ...message.embeds.flatMap((embed) => [
-      embed.title ?? "",
-      embed.description ?? "",
-      ...embed.fields.map((field) => field.value),
-    ]),
-  ].filter(Boolean);
+const textsOf = (message: Message): string[] => messageTexts(message);
 
 export class GiveawayService {
-  private async findMessage(guild: Guild, messageId: string, preferredChannelId: string): Promise<Message | null> {
-    const preferred = await guild.channels.fetch(preferredChannelId).catch(() => null);
-    if (preferred?.isTextBased()) {
-      const found = await preferred.messages.fetch(messageId).catch(() => null);
-      if (found) return found;
-    }
-    const channels = await guild.channels.fetch().catch(() => null);
-    for (const channel of channels?.values() ?? []) {
-      if (!channel || channel.id === preferredChannelId) continue;
-      if (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement) continue;
-      const found = await channel.messages.fetch(messageId).catch(() => null);
-      if (found) return found;
-    }
-    return null;
-  }
-
   async register(input: {
     guild: Guild;
-    messageId: string;
+    ref: GiveawayMessageRef;
     channelId: string;
     actorId: UserId;
     now?: Date;
   }): Promise<GiveawayDocument> {
     const now = input.now ?? new Date();
-    const message = await this.findMessage(input.guild, input.messageId, input.channelId);
-    if (!message) throw new GiveawayError("GIVEAWAY_NOT_FOUND", G.notFound);
+    const message = await findGiveawayMessage(input.guild, input.ref, input.channelId);
+    if (!message) {
+      log.info(`giveaway message ${input.ref.messageId} not found (channel hint ${input.ref.channelId ?? "none"})`);
+      throw new GiveawayError("GIVEAWAY_NOT_FOUND", G.notFound);
+    }
     if (!message.author.bot) throw new GiveawayError("GIVEAWAY_NOT_BOT", G.notBot);
-    if (message.embeds.length === 0) throw new GiveawayError("GIVEAWAY_NO_EMBED", G.noEmbed);
 
-    const endsAt = parseEndsAt(
-      message.embeds.map((embed) => ({
-        description: embed.description,
-        title: embed.title,
-        timestamp: embed.timestamp,
-        fields: embed.fields,
-      })),
-    );
-    if (!endsAt) throw new GiveawayError("GIVEAWAY_NO_END", G.noEndTime);
+    const texts = textsOf(message);
+    const endsAt = findEndTime({
+      texts,
+      embedTimestamps: message.embeds.map((embed) => embed.timestamp),
+      now,
+    });
+    if (!endsAt) {
+      log.warn(
+        `giveaway ${message.id}: no end time — embeds=${message.embeds.length} components=${message.components.length} ` +
+          `text=${JSON.stringify(texts.join(" | ").slice(0, 400))}`,
+      );
+      throw new GiveawayError("GIVEAWAY_NO_END", G.noEndTime);
+    }
     if (endsAt <= now) throw new GiveawayError("GIVEAWAY_ENDED", G.alreadyEnded);
 
     try {

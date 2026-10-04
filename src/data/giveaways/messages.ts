@@ -5,12 +5,11 @@ const relative = (at: Date) => `<t:${Math.floor(at.getTime() / 1000)}:R>`;
 
 export const giveawayMessages = {
   giveaway: {
-    usage: `${E.warning} الطريقة: \`!giveaway <آيدي-رسالة-القيف-أواي>\``,
+    usage: `${E.warning} الطريقة: \`!giveaway <رابط-رسالة-القيف-أواي>\` (الأفضل) أو \`!giveaway <آيدي-الرسالة>\``,
     adminOnly: `${E.error} هذا الأمر للأدمن بس.`,
-    notFound: `${E.error} ما لقيت رسالة بهذا الآيدي في رومات السيرفر.`,
+    notFound: `${E.error} ما قدرت أوصل للرسالة. أرسل **رابط الرسالة** (Copy Message Link)، وتأكد إن البوت يقدر يشوف الروم وعنده صلاحية **Read Message History** فيه.`,
     notBot: `${E.error} هذي الرسالة مو من بوت قيف أواي.`,
-    noEmbed: `${E.error} هذي الرسالة ما فيها إمبد قيف أواي.`,
-    noEndTime: `${E.error} ما لقيت وقت النهاية (\`Ends:\`) في الإمبد.`,
+    noEndTime: `${E.error} ما لقيت وقت نهاية القيف أواي في الرسالة (\`Ends:\` أو وقت الإمبد).`,
     alreadyEnded: `${E.error} هذا القيف أواي منتهي أصلاً.`,
     alreadyRegistered: `${E.warning} هذا القيف أواي مسجّل من قبل.`,
     registered: (channelId: string, endsAt: Date, botId: string) =>
