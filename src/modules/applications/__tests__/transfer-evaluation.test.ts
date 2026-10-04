@@ -1,9 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import {
-  SourceTier,
-  staffTransferRules,
-  type StaffTransferRules,
-} from "../../../data/staff-application/config.ts";
+import { staffTransferRules, type StaffTransferRules } from "../../../data/staff-application/config.ts";
 import { StaffTier } from "../../configuration/types/enums.ts";
 import {
   StaffTransferEvaluationService,
@@ -14,15 +10,7 @@ import {
 const rules: StaffTransferRules = {
   ...staffTransferRules,
   minimumSourceMemberCount: 4000,
-  sourceTierBands: [
-    { tier: SourceTier.SHIP, maxRoleOrder: 3 },
-    { tier: SourceTier.OWNER, maxRoleOrder: 8 },
-  ],
-  eligibleSourceTiers: [SourceTier.SHIP, SourceTier.OWNER],
-  targetTierBySourceTier: {
-    [SourceTier.SHIP]: StaffTier.HIGHSTAFF,
-    [SourceTier.OWNER]: StaffTier.STAFF,
-  },
+  targetTier: StaffTier.STAFF,
   memberCountBonus: [{ min: 10_000, levels: 1 }],
   onlineCountBonus: [{ min: 1_000, levels: 1 }],
   membershipBonus: [{ min: 30, levels: 1 }],
@@ -43,48 +31,42 @@ const hierarchy: EvaluationHierarchy = {
 const input = (overrides: Partial<Parameters<typeof evaluator.evaluate>[0]> = {}) => ({
   sourceMemberCount: 4000,
   sourceOnlineCount: 0,
-  sourceRoleOrder: 5,
   membershipDays: 0,
   ...overrides,
 });
 
 describe("transfer evaluation", () => {
-  it("maps the numeric role order onto a source tier", () => {
-    expect(evaluator.classifySourceRole(1)).toBe(SourceTier.SHIP);
-    expect(evaluator.classifySourceRole(4)).toBe(SourceTier.OWNER);
-    expect(evaluator.classifySourceRole(9)).toBe(SourceTier.BELOW_OWNER);
-  });
-
   it("marks a server under 4000 members ineligible and proposes nothing", () => {
     const result = evaluator.evaluate(input({ sourceMemberCount: 3999 }), hierarchy);
     expect(result.eligible).toBe(false);
-    expect(result.ineligibleReasons).toContain(TransferIneligibility.MEMBER_COUNT);
+    expect(result.ineligibleReasons).toEqual([TransferIneligibility.MEMBER_COUNT]);
     expect(result.proposedStaffLevel).toBeNull();
   });
 
-  it("marks a role below the Owner band ineligible", () => {
-    const result = evaluator.evaluate(input({ sourceRoleOrder: 12 }), hierarchy);
-    expect(result.ineligibleReasons).toEqual([TransferIneligibility.SOURCE_TIER]);
+  it("has no role condition: any server with enough members is eligible", () => {
+    const result = evaluator.evaluate(input(), hierarchy);
+    expect(result.eligible).toBe(true);
+    expect(result.ineligibleReasons).toEqual([]);
   });
 
-  it("proposes the tier start plus member, online and membership bonuses", () => {
+  it("proposes the Staff tier start plus member, online and membership bonuses", () => {
     expect(evaluator.evaluate(input(), hierarchy).proposedStaffLevel).toBe(0);
     const result = evaluator.evaluate(
-      input({ sourceMemberCount: 20_000, sourceOnlineCount: 2000, sourceRoleOrder: 2, membershipDays: 60 }),
+      input({ sourceMemberCount: 20_000, sourceOnlineCount: 2000, membershipDays: 60 }),
       hierarchy,
     );
-    expect(result.proposedTier).toBe(StaffTier.HIGHSTAFF);
-    expect(result.proposedStaffLevel).toBe(13);
-    expect(result.proposedStaffRoleId).toBe("r13");
+    expect(result.proposedTier).toBe(StaffTier.STAFF);
+    expect(result.proposedStaffLevel).toBe(3);
+    expect(result.proposedStaffRoleId).toBe("r3");
   });
 
   it("stays inside the proposed tier", () => {
-    const tight = { ...hierarchy, boundaryLevels: { ...hierarchy.boundaryLevels, [StaffTier.OWNER]: 11 } };
+    const tight = { ...hierarchy, boundaryLevels: { ...hierarchy.boundaryLevels, [StaffTier.HIGHSTAFF]: 2 } };
     const result = evaluator.evaluate(
-      input({ sourceMemberCount: 20_000, sourceOnlineCount: 2000, sourceRoleOrder: 1, membershipDays: 60 }),
+      input({ sourceMemberCount: 20_000, sourceOnlineCount: 2000, membershipDays: 60 }),
       tight,
     );
-    expect(result.proposedStaffLevel).toBe(10);
+    expect(result.proposedStaffLevel).toBe(1);
   });
 
   it("counts membership in whole days from the guild join date", () => {

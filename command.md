@@ -94,6 +94,7 @@ Commands used in the wrong place (for example a ticket command outside a ticket)
 | `!refuse` | رفض | Refuse the application in this ticket | `!refuse <reason>` | Claimer of the application holding its manager role, Administrators (never the applicant) — inside an application ticket |
 | `!from` | من · من-طرف · جابه | Set who recruited the applicant (add `replace` to change it) | `!from @owner` · `!from @owner replace` | Same as `!refuse` — inside an application ticket. Replacing: Administrators |
 | `!verify` | توثيق | Give the verified role to a girl member | `!verify @user` | Girls Manager, Administrators |
+| `!server` | سيرفر · رابط-السيرفر | Resolve an invite into `https://discord.gg/<code>` with the server name, member count and online count. Accepts `ExRgT`, `.gg/ExRgT`, `discord.gg/ExRgT` or a full link. Ignored silently outside application tickets | `!server ExRgT` | Anyone inside a staff application / transfer ticket |
 
 ---
 
@@ -106,6 +107,15 @@ Commands used in the wrong place (for example a ticket command outside a ticket)
 | `/autoclaim` | — | Turn automatic credit transfers on or off, or show the status | `/autoclaim state:on \| off \| status` | Administrators |
 
 Gift orders (from the gift ticket or from `!gift` by staff) are approved or rejected from the card in the Order channel by a Gift Manager or Administrator. Transfer messages are posted where the gift was asked for; logs go to the gift delivery log channel.
+
+---
+
+## Giveaways
+
+| Command | Aliases | Description | Usage | Who can use it |
+|---|---|---|---|---|
+| `!giveaway` | قيف-اواي · قيفاواي · سحب | Register a giveaway message (from a giveaway bot, with `Ends:` in the embed). When that bot announces the winners in the same channel, the bot replies with who proved the condition and who did not | `!giveaway <message-id or link>` | Administrators |
+| `!done` | نفذ · نفّذ · تم-الشرط | Record that a member did the giveaway condition (latest active giveaway, or a specific one). Ignored silently when no giveaway is active | `!done @user` · `!done @user <message-id>` | Staff, Administrators |
 
 ---
 

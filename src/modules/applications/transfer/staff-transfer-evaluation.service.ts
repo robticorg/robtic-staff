@@ -1,6 +1,5 @@
 import type { RoleId } from "../../../shared/types/index.ts";
 import {
-  SourceTier,
   staffTransferRules,
   type CountBonus,
   type StaffTransferRules,
@@ -12,7 +11,6 @@ const DAY_MS = 86_400_000;
 
 export const TransferIneligibility = {
   MEMBER_COUNT: "MEMBER_COUNT",
-  SOURCE_TIER: "SOURCE_TIER",
 } as const;
 export type TransferIneligibility =
   (typeof TransferIneligibility)[keyof typeof TransferIneligibility];
@@ -20,14 +18,12 @@ export type TransferIneligibility =
 export interface TransferEvaluationInput {
   sourceMemberCount: number;
   sourceOnlineCount: number;
-  sourceRoleOrder: number;
   membershipDays: number;
 }
 
 export interface TransferEvaluation {
   eligible: boolean;
   ineligibleReasons: TransferIneligibility[];
-  sourceTier: SourceTier;
   proposedTier: StaffTier | null;
   proposedStaffLevel: number | null;
   proposedStaffRoleId: RoleId | null;
@@ -55,27 +51,14 @@ export class StaffTransferEvaluationService {
     return Math.max(0, Math.floor((now.getTime() - joinedAt.getTime()) / DAY_MS));
   }
 
-  classifySourceRole(roleOrder: number): SourceTier {
-    for (const band of this.rules.sourceTierBands) {
-      if (roleOrder >= 1 && roleOrder <= band.maxRoleOrder) return band.tier;
-    }
-    return SourceTier.BELOW_OWNER;
-  }
-
   evaluate(input: TransferEvaluationInput, hierarchy: EvaluationHierarchy): TransferEvaluation {
     const reasons: TransferIneligibility[] = [];
     if (input.sourceMemberCount < this.rules.minimumSourceMemberCount) {
       reasons.push(TransferIneligibility.MEMBER_COUNT);
     }
-    const sourceTier = this.classifySourceRole(input.sourceRoleOrder);
-    if (!this.rules.eligibleSourceTiers.includes(sourceTier)) {
-      reasons.push(TransferIneligibility.SOURCE_TIER);
-    }
-
     const base: TransferEvaluation = {
       eligible: reasons.length === 0,
       ineligibleReasons: reasons,
-      sourceTier,
       proposedTier: null,
       proposedStaffLevel: null,
       proposedStaffRoleId: null,
@@ -83,8 +66,8 @@ export class StaffTransferEvaluationService {
     };
     if (reasons.length > 0) return base;
 
-    const proposedTier = this.rules.targetTierBySourceTier[sourceTier] ?? null;
-    if (!proposedTier || hierarchy.levels.length === 0) return base;
+    const proposedTier = this.rules.targetTier;
+    if (hierarchy.levels.length === 0) return base;
 
     const tierStart = hierarchy.boundaryLevels[proposedTier];
     if (tierStart === null || tierStart === undefined) {

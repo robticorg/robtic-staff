@@ -52,8 +52,6 @@ function ineligibleLines(evaluation: StaffApplication["evaluation"]): string[] {
     for (const reason of evaluation.ineligibleReasons) {
       if (reason === "MEMBER_COUNT") {
         lines.push(T.ineligible.MEMBER_COUNT(staffTransferRules.minimumSourceMemberCount));
-      } else if (reason === "SOURCE_TIER") {
-        lines.push(T.ineligible.SOURCE_TIER);
       }
     }
     return lines;

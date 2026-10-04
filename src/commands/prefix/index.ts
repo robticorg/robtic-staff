@@ -19,6 +19,9 @@ import staffRefuse from "./staff/refuse.ts";
 import staffVerify from "./staff/verify.ts";
 import staffGift from "./staff/gift.ts";
 import staffSend from "./staff/send.ts";
+import staffGiveaway from "./staff/giveaway.ts";
+import staffDone from "./staff/done.ts";
+import staffServer from "./staff/server.ts";
 import staffCome from "./staff/come.ts";
 import staffTransfer from "./staff/transfer.ts";
 import staffFire from "./staff/fire.ts";
@@ -60,6 +63,9 @@ export const prefixCommands: PrefixCommand[] = [
   staffRefuse,
   staffVerify,
   staffSend,
+  staffGiveaway,
+  staffDone,
+  staffServer,
   staffGift,
   staffTransfer,
   staffFire,

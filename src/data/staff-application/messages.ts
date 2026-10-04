@@ -36,12 +36,6 @@ export const APPLICATION_STATUS_LABELS: Record<string, string> = {
   CLOSED: "مغلق",
 };
 
-export const SOURCE_TIER_LABELS: Record<string, string> = {
-  SHIP: "مستوى شيب",
-  OWNER: "مستوى أونر",
-  BELOW_OWNER: "أقل من مستوى الأونر",
-};
-
 export const staffApplicationMessages = {
   firstModal: {
     title: "التقديم أو النقل إلى الستاف",
@@ -106,24 +100,24 @@ export const staffApplicationMessages = {
   transfer: {
     intro: [
       "## النقل إلى الإدارة | Staff Transfer",
-      "أهلًا بك في قسم نقل الإدارة في Robtic Community. قبل بدء الطلب، يجب أن يحتوي السيرفر على 4000 عضو على الأقل، وأن تكون رتبتك Owner أو أعلى، مع توضيح رتبتك وتقديم إثبات للسيرفر والرتبة.",
-      "Welcome to the Robtic Community Staff Transfer. Before applying, the server must have at least 4,000 members, and you must hold the Owner role or higher, with proof of your role and server.",
+      "أهلًا بك في قسم نقل الإدارة في Robtic Community. قبل بدء الطلب، يجب أن يحتوي السيرفر على 4000 عضو على الأقل. راح نطلب منك رابط دعوة السيرفر، والبوت يتحقق من عدد الأعضاء والمتصلين تلقائياً، وبعدها ترفع إثباتاتك.",
+      "Welcome to the Robtic Community Staff Transfer. Before applying, the server must have at least 4,000 members. You will be asked for the server invite link — the bot checks the member and online counts itself — then you upload your proof.",
       "نتمنى لك التوفيق في طلبك. | We wish you the best of luck with your application.",
     ],
     startButton: "ابدأ طلب النقل",
     modalTitle: "معلومات النقل",
-    memberCountLabel: "عدد أعضاء السيرفر",
-    memberCountPlaceholder: "مثال: 12000",
-    onlineCountLabel: "عدد الأعضاء المتصلين",
-    onlineCountPlaceholder: "مثال: 1500",
-    roleOrderLabel: "ترتيب رتبتك في السيرفر (رقم)",
-    roleOrderPlaceholder: "مثال: 4 — يعني رابع رتبة من فوق",
-    inviteLabel: "رابط دعوة السيرفر (اختياري)",
+    inviteLabel: "رابط دعوة السيرفر",
     invitePlaceholder: "https://discord.gg/…",
-    countInvalid: `${E.error} عدد الأعضاء وعدد المتصلين لازم يكونوا أرقام صحيحة.`,
-    onlineAboveMembers: `${E.error} عدد المتصلين ما يقدر يكون أكبر من عدد الأعضاء.`,
-    roleOrderNotNumber: `${E.error} ترتيب الرتبة لازم يكون رقم، وليس اسم الرتبة.`,
-    inviteInvalid: `${E.error} رابط الدعوة غير صالح أو منتهي. أرسل رابط دائم أو خلّ الخانة فاضية.`,
+    inviteRequired: `${E.error} لازم ترسل رابط دعوة السيرفر.`,
+    serverUsage: `${E.warning} الطريقة: \`!server <كود-الدعوة>\` — مثال: \`!server ExRgT\` أو \`!server discord.gg/ExRgT\``,
+    serverCard: (link: string, name: string, members: number, online: number) =>
+      [
+        `## ${name}`,
+        `**الرابط:** ${link}`,
+        `**عدد الأعضاء:** ${members.toLocaleString("en-US")}`,
+        `**المتصلين:** ${online.toLocaleString("en-US")}`,
+      ].join("\n"),
+    inviteInvalid: `${E.error} رابط الدعوة غير صالح أو منتهي. أرسل رابط دائم.`,
     inviteIsHome: `${E.error} هذا رابط ${branding.communityName} نفسه. أرسل رابط السيرفر اللي كنت ستاف فيه.`,
     evidencePrompt: (min: number, max: number) =>
       [
@@ -166,7 +160,6 @@ export const staffApplicationMessages = {
     ineligibleHeading: `${E.warning} **الطلب غير مؤهل حسب شروط النقل الحالية:**`,
     ineligible: {
       MEMBER_COUNT: (min: number) => `- عدد أعضاء السيرفر أقل من ${min.toLocaleString("en-US")}.`,
-      SOURCE_TIER: "- ترتيب رتبته في السيرفر أقل من مستوى الأونر.",
     },
     tierNotConfigured: "- رتبة بداية التصنيف المتوقع مو مضبوطة في `/role boundary`.",
     evidenceHeading: (count: number) => `**الإثباتات (${count}):**`,

@@ -95,13 +95,7 @@ export function buildTransferInfoModal(): ModalBuilder {
     .setCustomId(ApplicationCustomId.transferModal())
     .setTitle(T.modalTitle)
     .addLabelComponents(
-      textField(T.memberCountLabel, ApplicationField.memberCount, T.memberCountPlaceholder, { max: 12 }),
-      textField(T.onlineCountLabel, ApplicationField.onlineCount, T.onlineCountPlaceholder, { max: 12 }),
-      textField(T.roleOrderLabel, ApplicationField.roleOrder, T.roleOrderPlaceholder, { max: 12 }),
-      textField(T.inviteLabel, ApplicationField.invite, T.invitePlaceholder, {
-        max: 120,
-        required: false,
-      }),
+      textField(T.inviteLabel, ApplicationField.invite, T.invitePlaceholder, { max: 120 }),
     );
 }
 

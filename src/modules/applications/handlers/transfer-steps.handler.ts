@@ -52,17 +52,12 @@ export async function handleTransferInfo(interaction: ModalSubmitInteraction): P
   }
 
   try {
-    const info = staffTransferApplicationService.readInfo({
-      memberCount: text(interaction, ApplicationField.memberCount),
-      onlineCount: text(interaction, ApplicationField.onlineCount),
-      roleOrder: text(interaction, ApplicationField.roleOrder),
-      invite: text(interaction, ApplicationField.invite),
-    });
-    const verified = await staffTransferApplicationService.verifyInvite(interaction.guild, info.invite);
-    applicationDraftStore.update(interaction.guildId, interaction.user.id, { transfer: info });
-    await interaction.update(
-      flowUpdate(evidenceStep(belowMinimumNotice(verified?.memberCount ?? info.memberCount))),
+    const info = await staffTransferApplicationService.verifyInvite(
+      interaction.guild,
+      text(interaction, ApplicationField.invite),
     );
+    applicationDraftStore.update(interaction.guildId, interaction.user.id, { transfer: info });
+    await interaction.update(flowUpdate(evidenceStep(belowMinimumNotice(info.memberCount))));
   } catch (err) {
     await replyWithError(interaction, err);
   }

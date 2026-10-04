@@ -304,7 +304,7 @@ export interface ApplicationViewData {
     sourceServerName?: string | null;
     sourceServerMemberCount: number;
     sourceServerOnlineCount: number;
-    sourceRoleOrder: number;
+    sourceRoleOrder?: number | null;
     sourceRoleName?: string | null;
   } | null;
   evaluation?: { eligible: boolean; proposedStaffLevel?: number | null } | null;
@@ -349,7 +349,9 @@ export function buildApplicationView(
         app.transfer.sourceServerMemberCount,
         app.transfer.sourceServerOnlineCount,
       ),
-      A.transferRole(app.transfer.sourceRoleOrder, app.transfer.sourceRoleName ?? null),
+      app.transfer.sourceRoleOrder
+        ? A.transferRole(app.transfer.sourceRoleOrder, app.transfer.sourceRoleName ?? null)
+        : null,
       app.evaluation ? A.transferEligible(app.evaluation.eligible) : null,
       app.evaluation ? A.transferProposed(app.evaluation.proposedStaffLevel ?? null) : null,
       A.transferEvidence(app.evidenceCount ?? 0),

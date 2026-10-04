@@ -42,8 +42,8 @@ export function applicationInfoLines(app: ApplicationInfoInput, now: Date = new 
     lines.push(
       I.memberCount(source.sourceServerMemberCount, source.countsVerified),
       I.onlineCount(source.sourceServerOnlineCount, source.countsVerified),
-      I.roleOrder(source.sourceRoleOrder),
     );
+    if (source.sourceRoleOrder) lines.push(I.roleOrder(source.sourceRoleOrder));
     const days = app.robticJoinedAt
       ? Math.floor((now.getTime() - app.robticJoinedAt.getTime()) / DAY_MS)
       : 0;

@@ -12,7 +12,7 @@ import {
 import { TicketModel, type Ticket } from "../models/ticket.model.ts";
 import { buildClaimerOffDutyNotice } from "../render/claimer-off-duty.ts";
 import { TicketLogAction, TicketStatus } from "../types/enums.ts";
-import { getTicketClient } from "../runtime.ts";
+import { ticketClaimCheckService } from "./ticket-claim-check.service.ts";
 import { ticketConfigService } from "./ticket-config.service.ts";
 import { ticketLogService } from "./ticket-log.service.ts";
 import { ticketService } from "./ticket.service.ts";
@@ -57,15 +57,8 @@ export class TicketClaimerReleaseService {
   register(): void {
     if (this.registered) return;
     this.registered = true;
-    staffDutyEvents.onOffDuty((event) => this.handleOffDuty(event));
-  }
-
-  async handleOffDuty(event: StaffOffDutyEvent): Promise<number> {
-    const client = getTicketClient();
-    if (!client) return 0;
-    const guild = await client.guilds.fetch(event.guildId).catch(() => null);
-    if (!guild) return 0;
-    return this.release(guild, event);
+    ticketClaimCheckService.useRelease({ release: (guild, event) => this.release(guild, event) });
+    staffDutyEvents.onOffDuty((event) => ticketClaimCheckService.schedule(event));
   }
 
   async release(guild: Guild, event: StaffOffDutyEvent): Promise<number> {

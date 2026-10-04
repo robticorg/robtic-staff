@@ -8,6 +8,7 @@ export const StaffOffDutyReason = {
   BREAK: "BREAK",
 } as const;
 export type StaffOffDutyReason = (typeof StaffOffDutyReason)[keyof typeof StaffOffDutyReason];
+export const STAFF_OFF_DUTY_REASON_VALUES = Object.values(StaffOffDutyReason);
 
 export interface StaffOffDutyEvent {
   guildId: GuildId;

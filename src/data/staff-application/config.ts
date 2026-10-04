@@ -20,13 +20,6 @@ export const staffApplicationConfig = {
   },
 } as const;
 
-export const SourceTier = {
-  SHIP: "SHIP",
-  OWNER: "OWNER",
-  BELOW_OWNER: "BELOW_OWNER",
-} as const;
-export type SourceTier = (typeof SourceTier)[keyof typeof SourceTier];
-
 export interface CountBonus {
   min: number;
   levels: number;
@@ -34,9 +27,7 @@ export interface CountBonus {
 
 export interface StaffTransferRules {
   minimumSourceMemberCount: number;
-  sourceTierBands: readonly { tier: SourceTier; maxRoleOrder: number }[];
-  eligibleSourceTiers: readonly SourceTier[];
-  targetTierBySourceTier: Partial<Record<SourceTier, StaffTier>>;
+  targetTier: StaffTier;
   memberCountBonus: readonly CountBonus[];
   onlineCountBonus: readonly CountBonus[];
   membershipBonus: readonly CountBonus[];
@@ -45,17 +36,7 @@ export interface StaffTransferRules {
 export const staffTransferRules: StaffTransferRules = {
   minimumSourceMemberCount: 4000,
 
-  sourceTierBands: [
-    { tier: SourceTier.SHIP, maxRoleOrder: 3 },
-    { tier: SourceTier.OWNER, maxRoleOrder: 8 },
-  ],
-
-  eligibleSourceTiers: [SourceTier.SHIP, SourceTier.OWNER],
-
-  targetTierBySourceTier: {
-    [SourceTier.SHIP]: StaffTier.HIGHSTAFF,
-    [SourceTier.OWNER]: StaffTier.STAFF,
-  },
+  targetTier: StaffTier.STAFF,
 
   memberCountBonus: [
     { min: 4000, levels: 1 },

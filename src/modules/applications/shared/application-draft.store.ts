@@ -4,10 +4,11 @@ import { staffApplicationConfig } from "../../../data/staff-application/config.t
 import type { ApplicantGender, ApplicationType } from "./enums.ts";
 
 export interface TransferDraftInput {
+  invite: string;
+  serverId: string;
+  serverName: string;
   memberCount: number;
   onlineCount: number;
-  roleOrder: number;
-  invite: string | null;
 }
 
 export interface ApplicationDraft {

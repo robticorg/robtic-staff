@@ -10,7 +10,7 @@ import {
 } from "../services/application-ticket.service.ts";
 import { staffRecruitmentService } from "../services/staff-recruitment.service.ts";
 import { ApplicationError } from "../shared/application-error.ts";
-import { parseWholeNumber } from "../shared/applicant-input.ts";
+import { inviteLink, parseInviteCode } from "../shared/invite-code.ts";
 import type { ApplicationDraft, TransferDraftInput } from "../shared/application-draft.store.ts";
 import { ApplicationStatus, ApplicationType } from "../shared/enums.ts";
 import {
@@ -26,64 +26,47 @@ import {
 const log = logger.child("applications:transfer");
 const T = staffApplicationMessages.transfer;
 
-export interface TransferInfoInput {
-  memberCount: string;
-  onlineCount: string;
-  roleOrder: string;
-  invite: string;
-}
-
-export type TransferInfoProblem = "COUNT" | "ONLINE_ABOVE_MEMBERS" | "ROLE_ORDER";
-
-export function parseTransferInfo(
-  input: TransferInfoInput,
-): { ok: true; value: TransferDraftInput } | { ok: false; problem: TransferInfoProblem } {
-  const roleOrder = parseWholeNumber(input.roleOrder);
-  if (roleOrder === null || roleOrder < 1) return { ok: false, problem: "ROLE_ORDER" };
-
-  const memberCount = parseWholeNumber(input.memberCount);
-  const onlineCount = parseWholeNumber(input.onlineCount);
-  if (memberCount === null || onlineCount === null) return { ok: false, problem: "COUNT" };
-  if (onlineCount > memberCount) return { ok: false, problem: "ONLINE_ABOVE_MEMBERS" };
-
-  const invite = input.invite.trim();
-  return { ok: true, value: { memberCount, onlineCount, roleOrder, invite: invite || null } };
-}
-
-interface VerifiedServer {
+export interface ResolvedServer {
   serverId: string;
   serverName: string;
   memberCount: number;
-  onlineCount: number | null;
+  onlineCount: number;
+  code: string;
+}
+
+export async function resolveInvite(guild: Guild, raw: string | null | undefined): Promise<ResolvedServer> {
+  const code = parseInviteCode(raw);
+  if (!code) {
+    throw new ApplicationError(
+      raw?.trim() ? "TRANSFER_INVITE_INVALID" : "TRANSFER_INVITE_REQUIRED",
+      raw?.trim() ? T.inviteInvalid : T.inviteRequired,
+    );
+  }
+  const resolved = await guild.client.fetchInvite(code).catch(() => null);
+  if (!resolved?.guild || resolved.memberCount === null) {
+    throw new ApplicationError("TRANSFER_INVITE_INVALID", T.inviteInvalid);
+  }
+  return {
+    serverId: resolved.guild.id,
+    serverName: resolved.guild.name,
+    memberCount: resolved.memberCount,
+    onlineCount: resolved.presenceCount ?? 0,
+    code: resolved.code,
+  };
 }
 
 export class StaffTransferApplicationService {
-  readInfo(input: TransferInfoInput): TransferDraftInput {
-    const parsed = parseTransferInfo(input);
-    if (parsed.ok) return parsed.value;
-    if (parsed.problem === "ROLE_ORDER") {
-      throw new ApplicationError("TRANSFER_ROLE_ORDER", T.roleOrderNotNumber);
-    }
-    if (parsed.problem === "ONLINE_ABOVE_MEMBERS") {
-      throw new ApplicationError("TRANSFER_ONLINE_ABOVE", T.onlineAboveMembers);
-    }
-    throw new ApplicationError("TRANSFER_COUNT", T.countInvalid);
-  }
-
-  async verifyInvite(guild: Guild, invite: string | null): Promise<VerifiedServer | null> {
-    if (!invite) return null;
-    const resolved = await guild.client.fetchInvite(invite).catch(() => null);
-    if (!resolved?.guild || resolved.memberCount === null) {
-      throw new ApplicationError("TRANSFER_INVITE_INVALID", T.inviteInvalid);
-    }
-    if (resolved.guild.id === guild.id) {
+  async verifyInvite(guild: Guild, raw: string | null | undefined): Promise<TransferDraftInput> {
+    const server = await resolveInvite(guild, raw);
+    if (server.serverId === guild.id) {
       throw new ApplicationError("TRANSFER_INVITE_HOME", T.inviteIsHome);
     }
     return {
-      serverId: resolved.guild.id,
-      serverName: resolved.guild.name,
-      memberCount: resolved.memberCount,
-      onlineCount: resolved.presenceCount,
+      invite: inviteLink(server.code),
+      serverId: server.serverId,
+      serverName: server.serverName,
+      memberCount: server.memberCount,
+      onlineCount: server.onlineCount,
     };
   }
 
@@ -116,16 +99,16 @@ export class StaffTransferApplicationService {
       gender: null,
     });
 
-    const verified = await this.verifyInvite(guild, info.invite);
+    const verified = await this.verifyInvite(guild, info.invite).catch(() => info);
     const source: TransferSource = {
-      sourceServerId: verified?.serverId ?? null,
-      sourceServerName: verified?.serverName ?? null,
-      sourceServerMemberCount: verified?.memberCount ?? info.memberCount,
-      sourceServerOnlineCount: verified?.onlineCount ?? info.onlineCount,
-      sourceRoleOrder: info.roleOrder,
+      sourceServerId: verified.serverId,
+      sourceServerName: verified.serverName,
+      sourceServerMemberCount: verified.memberCount,
+      sourceServerOnlineCount: verified.onlineCount,
+      sourceInvite: verified.invite,
       sourceRoleName: null,
       sourceRoleId: null,
-      countsVerified: !!verified,
+      countsVerified: true,
     };
 
     const fresh = await guild.members.fetch({ user: member.id, force: true }).catch(() => member);
@@ -133,7 +116,6 @@ export class StaffTransferApplicationService {
       {
         sourceMemberCount: source.sourceServerMemberCount,
         sourceOnlineCount: source.sourceServerOnlineCount,
-        sourceRoleOrder: source.sourceRoleOrder,
         membershipDays: staffTransferEvaluationService.membershipDays(fresh.joinedAt, now),
       },
       await getHierarchy(guild.id),
@@ -154,7 +136,6 @@ export class StaffTransferApplicationService {
       evaluation: {
         eligible: evaluation.eligible,
         ineligibleReasons: [...evaluation.ineligibleReasons],
-        sourceTier: evaluation.sourceTier,
         proposedTier: evaluation.proposedTier,
         proposedStaffLevel: evaluation.proposedStaffLevel,
         proposedStaffRoleId: evaluation.proposedStaffRoleId,

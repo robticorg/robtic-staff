@@ -247,7 +247,7 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
           draft(third.id, {
             type: ApplicationType.TRANSFER_APPLICATION,
             gender: undefined,
-            transfer: { memberCount: 12000, onlineCount: 1500, roleOrder: 5, invite: null },
+            transfer: { invite: "https://discord.gg/oldserver", serverId: "old-server", serverName: "Old Server", memberCount: 12000, onlineCount: 1500 },
           }),
           evidence(4),
         );
@@ -324,7 +324,7 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
   });
 
   describe("transfer", () => {
-    const info = { memberCount: 12000, onlineCount: 1500, roleOrder: 5, invite: null };
+    const info = { invite: "https://discord.gg/oldserver", serverId: "old-server", serverName: "Old Server", memberCount: 12000, onlineCount: 1500 };
 
     it("opens a transfer ticket with the recruiter, stored evidence and a proposal", async () => {
       const member = applicant();
@@ -346,7 +346,9 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       expect(application!.recruiterStaffId).toBe(owner.id);
       expect(application!.transfer!.sourceServerMemberCount).toBe(12000);
       expect(application!.transfer!.sourceServerOnlineCount).toBe(1500);
-      expect(application!.transfer!.sourceRoleOrder).toBe(5);
+      expect(application!.transfer!.sourceRoleOrder ?? null).toBeNull();
+      expect(application!.transfer!.sourceInvite).toBe("https://discord.gg/oldserver");
+      expect(application!.transfer!.sourceServerName).toBe("Old Server");
       expect(application!.evidenceCount).toBe(4);
       expect(application!.robticJoinedAt).not.toBeNull();
       expect(application!.evaluation!.eligible).toBe(true);

@@ -20,7 +20,8 @@ export interface TransferSource {
   sourceServerName: string | null;
   sourceServerMemberCount: number;
   sourceServerOnlineCount: number;
-  sourceRoleOrder: number;
+  sourceRoleOrder?: number | null;
+  sourceInvite?: string | null;
   sourceRoleName: string | null;
   sourceRoleId: string | null;
   countsVerified: boolean;
@@ -29,7 +30,7 @@ export interface TransferSource {
 export interface TransferEvaluationSnapshot {
   eligible: boolean;
   ineligibleReasons: string[];
-  sourceTier: string;
+  sourceTier?: string | null;
   proposedTier: string | null;
   proposedStaffLevel: number | null;
   proposedStaffRoleId: RoleId | null;
@@ -89,7 +90,8 @@ const transferSchema = new Schema<TransferSource>(
     sourceServerName: { type: String, default: null },
     sourceServerMemberCount: { type: Number, required: true, min: 0 },
     sourceServerOnlineCount: { type: Number, required: true, min: 0 },
-    sourceRoleOrder: { type: Number, required: true, min: 1 },
+    sourceRoleOrder: { type: Number, default: null },
+    sourceInvite: { type: String, default: null },
     sourceRoleName: { type: String, default: null },
     sourceRoleId: { type: String, default: null },
     countsVerified: { type: Boolean, required: true, default: false },
@@ -101,7 +103,7 @@ const evaluationSchema = new Schema<TransferEvaluationSnapshot>(
   {
     eligible: { type: Boolean, required: true },
     ineligibleReasons: { type: [String], default: [] },
-    sourceTier: { type: String, required: true },
+    sourceTier: { type: String, default: null },
     proposedTier: { type: String, default: null },
     proposedStaffLevel: { type: Number, default: null },
     proposedStaffRoleId: { type: String, default: null },

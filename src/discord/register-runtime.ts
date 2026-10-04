@@ -19,6 +19,7 @@ import {
 import { ladderSyncService } from "../modules/configuration/services/ladder-sync.service.ts";
 import { ticketSleepService } from "../modules/tickets/services/ticket-sleep.service.ts";
 import { ticketClaimerReleaseService } from "../modules/tickets/services/ticket-claimer-release.service.ts";
+import { ticketClaimCheckService } from "../modules/tickets/services/ticket-claim-check.service.ts";
 import { registerApplicationLifecycle } from "../modules/applications/services/application-lifecycle.ts";
 import { internalApiServer } from "../modules/internal-api/server.ts";
 
@@ -47,6 +48,8 @@ export function startModuleRuntime(): void {
 
   ticketSleepService.start();
 
+  ticketClaimCheckService.start();
+
   warningPanelRefreshService.start();
 
   internalApiServer.start();
@@ -59,6 +62,7 @@ export function stopModuleRuntime(): void {
   responsibilityExpirationService.stop();
   serverTagAuditService.stop();
   ticketSleepService.stop();
+  ticketClaimCheckService.stop();
   ladderSyncService.stop();
   warningPanelRefreshService.stop();
   internalApiServer.stop();

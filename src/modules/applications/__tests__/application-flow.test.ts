@@ -20,7 +20,7 @@ import {
   ApplicationType,
   GirlVerificationStatus,
 } from "../shared/enums.ts";
-import { parseTransferInfo } from "../transfer/staff-transfer-application.service.ts";
+import { inviteLink, parseInviteCode } from "../shared/invite-code.ts";
 import { checkEvidence } from "../transfer/transfer-evidence.service.ts";
 
 describe("main ticket panel entry", () => {
@@ -100,27 +100,28 @@ describe("applicant identity input", () => {
 });
 
 describe("transfer information", () => {
-  const base = { memberCount: "12000", onlineCount: "1500", roleOrder: "4", invite: "" };
-
-  it("accepts numeric counts and role order", () => {
-    expect(parseTransferInfo(base)).toEqual({
-      ok: true,
-      value: { memberCount: 12000, onlineCount: 1500, roleOrder: 4, invite: null },
-    });
-  });
-
-  it("refuses a role name in place of the role order", () => {
-    for (const roleOrder of ["Owner", "Admin", "Manager", "0", "4th"]) {
-      expect(parseTransferInfo({ ...base, roleOrder })).toEqual({ ok: false, problem: "ROLE_ORDER" });
+  it("reads the invite code from any form of the link", () => {
+    for (const raw of [
+      "ExRgT",
+      ".gg/ExRgT",
+      "gg/ExRgT",
+      "discord.gg/ExRgT",
+      "https://discord.gg/ExRgT",
+      "http://discord.gg/ExRgT/",
+      "https://discord.com/invite/ExRgT",
+      "discordapp.com/invite/ExRgT",
+      "<https://discord.gg/ExRgT>",
+      "  https://discord.gg/ExRgT?event=1  ",
+    ]) {
+      expect(parseInviteCode(raw)).toBe("ExRgT");
     }
+    expect(inviteLink("ExRgT")).toBe("https://discord.gg/ExRgT");
   });
 
-  it("refuses non-numeric counts and more online than members", () => {
-    expect(parseTransferInfo({ ...base, memberCount: "lots" })).toEqual({ ok: false, problem: "COUNT" });
-    expect(parseTransferInfo({ ...base, onlineCount: "20000" })).toEqual({
-      ok: false,
-      problem: "ONLINE_ABOVE_MEMBERS",
-    });
+  it("refuses anything that is not an invite", () => {
+    for (const raw of ["", "   ", "https://example.com/ExRgT", "hello world", "discord.gg/", null]) {
+      expect(parseInviteCode(raw)).toBeNull();
+    }
   });
 
   it("validates the evidence set before anything is downloaded", () => {

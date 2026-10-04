@@ -6,6 +6,7 @@ import { transcriptCache } from "../modules/tickets/services/transcript-cache.ts
 import { ticketSleepService } from "../modules/tickets/services/ticket-sleep.service.ts";
 import { runPrefixCommand } from "../commands/prefix/runner.ts";
 import { runFastAccess } from "../modules/fast-access/index.ts";
+import { giveawayService } from "../modules/giveaways/index.ts";
 
 const log = logger.child("messageCreate");
 
@@ -14,6 +15,12 @@ export default defineEvent({
   async execute(message: Message) {
     if (!message.system) transcriptCache.record(message);
 
+    if (message.author.bot && !message.system && message.inGuild()) {
+      await giveawayService
+        .handleBotMessage(message)
+        .catch((err) => log.warn("giveaway winner check failed", err));
+      return;
+    }
     if (message.author.bot || message.system) return;
 
     try {
