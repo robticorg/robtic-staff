@@ -8,8 +8,14 @@ describe("!ticket <number>", () => {
     }
   });
 
-  it("reads a ticket channel mention", () => {
-    expect(parseTicketRef("<#123456789012345678>")).toEqual({ channelId: "123456789012345678" });
+  it("reads a ticket channel mention, a raw channel id or a channel link", () => {
+    for (const written of [
+      "<#123456789012345678>",
+      "123456789012345678",
+      "https://discord.com/channels/987654321098765432/123456789012345678",
+    ]) {
+      expect(parseTicketRef(written)).toEqual({ channelId: "123456789012345678" });
+    }
   });
 
   it("gives nothing for no argument or something that isn't a ticket number", () => {

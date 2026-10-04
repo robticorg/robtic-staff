@@ -13,6 +13,7 @@ import { routeWarningPanelComponent } from "../modules/warning-panel/handlers/co
 import { routeStaffStatsComponent } from "../modules/staff-stats/handlers/component-router.ts";
 import { routeStaffInfoComponent } from "../modules/staff-info/handlers/component-router.ts";
 import { routeResponsibilityComponent } from "../modules/responsibilities/index.ts";
+import { routeGiveawayComponent } from "../modules/giveaways/handlers/component-router.ts";
 
 const routers = [
   routeModmailComponent,
@@ -28,6 +29,7 @@ const routers = [
   routeStaffStatsComponent,
   routeStaffInfoComponent,
   routeResponsibilityComponent,
+  routeGiveawayComponent,
 ];
 
 export default defineEvent({

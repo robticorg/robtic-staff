@@ -41,7 +41,7 @@ Commands used in the wrong place (for example a ticket command outside a ticket)
 | `!handover` | تسليم · سلم · تحويل | Hand the ticket over to another staff member | `!handover @staff <reason>` | Claimer, Administrators |
 | `!sleep` | نوم · خمول · تنبيه | Warn the owner the ticket closes automatically if they don't reply | `!sleep [time]` — e.g. `!sleep 6h` (default 6h) | Claimer, panel support role, Administrators |
 | `/sleep` | — | Same as `!sleep` | `/sleep time:6h` | Claimer, panel support role, Administrators |
-| `!ticket` | تكت · معلومات-التكت | Ticket info card: owner, claimers, history, commands used | Inside a ticket: `!ticket` — anywhere: `!ticket 12` or `!ticket ticket-12` | Administrators |
+| `!ticket` | تكت · معلومات-التكت | Ticket info card: owner, claimers, history, commands used | Inside a ticket: `!ticket` — anywhere: `!ticket 12`, `!ticket ticket-12`, a ticket channel ID, `#channel` or channel link | Administrators |
 
 ---
 
@@ -114,8 +114,8 @@ Gift orders (from the gift ticket or from `!gift` by staff) are approved or reje
 
 | Command | Aliases | Description | Usage | Who can use it |
 |---|---|---|---|---|
-| `!giveaway` | قيف-اواي · قيفاواي · سحب | Register a giveaway message (from a giveaway bot, with `Ends:` in the embed). When that bot announces the winners in the same channel, the bot replies with who proved the condition and who did not | `!giveaway <message-id or link>` | Administrators |
-| `!done` | نفذ · نفّذ · تم-الشرط | Record that a member did the giveaway condition (latest active giveaway, or a specific one). Ignored silently when no giveaway is active | `!done @user` · `!done @user <message-id>` | Staff, Administrators |
+| `!giveaway` | قيف-اواي · قيفاواي · سحب | Register a giveaway message from a giveaway bot (embed or new component layout; end time from `Ends:` or the embed time). When that bot announces the winners in the same channel, the bot replies with who proved the condition and who did not | `!giveaway <message link>` · `!giveaway <message-id>` | Administrators |
+| `!done` | نفذ · نفّذ · تم-الشرط | Record that a member did the giveaway condition. Inside a ticket, plain `!done` records the ticket owner. With several active giveaways a menu asks which one (only for whoever ran the command). Ignored silently when no giveaway is active | `!done` (in a ticket) · `!done @user` · `!done @user <message-id>` | Staff, Administrators |
 
 ---
 

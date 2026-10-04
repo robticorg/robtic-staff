@@ -162,7 +162,7 @@ export const ticketMessages = {
 
   info: {
     adminOnly: `${E.error} \`!ticket\` للأدمن بس.`,
-    usage: `${E.warning} الطريقة: \`!ticket <رقم التكت>\` مثل \`!ticket 12\` أو \`!ticket ticket-12\` — أو داخل التكت: \`!ticket\``,
+    usage: `${E.warning} الطريقة: \`!ticket <رقم التكت>\` مثل \`!ticket 12\` أو \`!ticket ticket-12\` أو آيدي روم التكت أو منشنه — أو داخل التكت: \`!ticket\``,
     notFound: (ref: string) => `${E.error} ما لقيت تكت بهذا الرقم: \`${ref.replace(/`/g, "")}\`.`,
     title: (ticketId: string, panel: string) => `## 🎫 ${ticketId} — ${panel}`,
     statuses: {

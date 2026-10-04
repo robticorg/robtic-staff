@@ -7,7 +7,12 @@ import { giveawayMessages } from "../../../data/giveaways/messages.ts";
 import { GiveawayModel, GiveawayStatus, type GiveawayDocument } from "../models/giveaway.model.ts";
 import { GiveawayProofModel } from "../models/giveaway-proof.model.ts";
 import { buildGiveawayResult } from "../render/result.ts";
-import { findGiveawayMessage, messageTexts, type GiveawayMessageRef } from "./giveaway-message.ts";
+import {
+  findGiveawayMessage,
+  giveawayTitle,
+  messageTexts,
+  type GiveawayMessageRef,
+} from "./giveaway-message.ts";
 import { findEndTime, isWinnerMessageFor, mentionedUserIds } from "./giveaway-parse.ts";
 
 const log = logger.child("giveaways");
@@ -54,6 +59,7 @@ export class GiveawayService {
         channelId: message.channelId,
         messageId: message.id,
         botId: message.author.id,
+        title: giveawayTitle(message),
         endsAt,
         createdBy: input.actorId,
       });
@@ -63,14 +69,25 @@ export class GiveawayService {
     }
   }
 
-  async target(guildId: GuildId, messageId: string | null, now: Date = new Date()): Promise<GiveawayDocument | null> {
-    const open = {
+  private openFilter(guildId: GuildId, now: Date) {
+    return {
       guildId,
       status: GiveawayStatus.ACTIVE,
       endsAt: { $gt: new Date(now.getTime() - giveawayConfig.resultWindowMs) },
     };
-    if (messageId) return GiveawayModel.findOne({ ...open, messageId }).exec();
-    return GiveawayModel.findOne(open).sort({ createdAt: -1 }).exec();
+  }
+
+  listActive(guildId: GuildId, now: Date = new Date()): Promise<GiveawayDocument[]> {
+    return GiveawayModel.find(this.openFilter(guildId, now)).sort({ endsAt: 1 }).limit(25).exec();
+  }
+
+  async target(guildId: GuildId, messageId: string | null, now: Date = new Date()): Promise<GiveawayDocument | null> {
+    if (messageId) return GiveawayModel.findOne({ ...this.openFilter(guildId, now), messageId }).exec();
+    return GiveawayModel.findOne(this.openFilter(guildId, now)).sort({ createdAt: -1 }).exec();
+  }
+
+  byId(guildId: GuildId, giveawayId: string, now: Date = new Date()): Promise<GiveawayDocument | null> {
+    return GiveawayModel.findOne({ ...this.openFilter(guildId, now), giveawayId }).exec();
   }
 
   async markDone(giveaway: GiveawayDocument, userId: UserId, provedBy: UserId): Promise<boolean> {

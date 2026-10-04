@@ -23,12 +23,19 @@ export const giveawayMessages = {
   },
 
   done: {
-    usage: `${E.warning} الطريقة: \`!done @عضو\` — أو لقيف أواي معيّن: \`!done @عضو <آيدي-الرسالة>\``,
+    usage: `${E.warning} الطريقة: \`!done @عضو\` — وداخل التكت: \`!done\` (لصاحب التكت) — ولقيف أواي معيّن أضف آيدي رسالته.`,
     notStaff: `${E.error} هذا الأمر للستاف بس.`,
     bot: `${E.error} البوتات ما تشارك في القيف أواي.`,
     saved: (userId: string, channelId: string, endsAt: Date) =>
       `${E.success} تم تسجيل إن <@${userId}> نفّذ شرط القيف أواي في <#${channelId}> (ينتهي ${relative(endsAt)}).`,
     alreadySaved: (userId: string) => `${E.warning} <@${userId}> مسجّل من قبل إنه نفّذ الشرط.`,
+    pickTitle: (userId: string) => `### 🎉 أي قيف أواي نفّذ <@${userId}> شرطه؟`,
+    pickPlaceholder: "اختر القيف أواي",
+    optionLabel: (title: string | null, index: number) => title ?? `قيف أواي ${index}`,
+    optionDescription: (channelName: string | null, endsAt: string) =>
+      `${channelName ? `#${channelName} · ` : ""}ينتهي ${endsAt}`,
+    notAuthor: `${E.error} هذي القائمة لصاحب الأمر بس.`,
+    giveawayGone: `${E.error} هذا القيف أواي ما عاد نشط.`,
   },
 
   result: {

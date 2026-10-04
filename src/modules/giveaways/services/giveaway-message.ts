@@ -66,6 +66,22 @@ export function messageTexts(message: MessageLike): string[] {
   return texts.filter((text) => text.trim().length > 0);
 }
 
+export function giveawayTitle(message: MessageLike): string | null {
+  const candidates = [
+    ...message.embeds.flatMap((embed) => [embed.title ?? "", embed.author?.name ?? ""]),
+    ...messageTexts({ content: message.content, embeds: [], components: message.components }),
+    ...message.embeds.map((embed) => embed.description ?? ""),
+  ];
+  for (const raw of candidates) {
+    const line = raw
+      .split("\n")
+      .map((part) => part.replace(/[*_~`#>|]/g, "").replace(/<[^>]+>/g, "").trim())
+      .find((part) => part.length > 0);
+    if (line) return line.slice(0, 100);
+  }
+  return null;
+}
+
 export async function findGiveawayMessage(
   guild: Guild,
   ref: GiveawayMessageRef,

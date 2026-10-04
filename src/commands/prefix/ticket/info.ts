@@ -10,13 +10,16 @@ const M = ticketMessages.info;
 
 /**
  * Reads what the admin typed after !ticket:
- *   "12", "#12", "ticket-12" → the ticket id "ticket-12"
- *   "<#channelId>"           → that ticket channel
+ *   "12", "#12", "ticket-12"                 → the ticket id "ticket-12"
+ *   "<#channelId>", "channelId", channel link → that ticket channel
  */
 export function parseTicketRef(raw: string | undefined): { ticketId: string } | { channelId: string } | null {
   const token = raw?.trim();
   if (!token) return null;
-  const channel = /^<#(\d{17,20})>$/.exec(token);
+  const channel =
+    /^<#(\d{17,20})>$/.exec(token) ??
+    /^(\d{17,20})$/.exec(token) ??
+    /channels\/\d{17,20}\/(\d{17,20})\/?$/.exec(token);
   if (channel) return { channelId: channel[1]! };
   const number = /^(?:ticket-|#)?(\d{1,9})$/i.exec(token);
   if (number) return { ticketId: `ticket-${Number(number[1])}` };

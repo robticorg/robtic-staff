@@ -14,6 +14,7 @@ export interface Giveaway extends Timestamps {
   channelId: ChannelId;
   messageId: string;
   botId: UserId;
+  title?: string | null;
   endsAt: Date;
   createdBy: UserId;
   status: GiveawayStatus;
@@ -30,6 +31,7 @@ const giveawaySchema = new Schema<Giveaway>(
     channelId: { type: String, required: true },
     messageId: { type: String, required: true },
     botId: { type: String, required: true },
+    title: { type: String, default: null, maxlength: 100 },
     endsAt: { type: Date, required: true },
     createdBy: { type: String, required: true },
     status: {

@@ -1,7 +1,11 @@
 import { afterAll, beforeEach, describe, expect, it } from "bun:test";
 import type { Message } from "discord.js";
 import mongoose from "mongoose";
-import { doneMessageIdArg } from "../../../commands/prefix/staff/done.ts";
+import type { ContainerBuilder } from "discord.js";
+import { parseDoneArgs } from "../../../commands/prefix/staff/done.ts";
+import { parseGiveawayCustomId } from "../handlers/component-ids.ts";
+import { buildGiveawayPickMenu, formatGiveawayEnd } from "../render/pick-menu.ts";
+import { giveawayTitle } from "../services/giveaway-message.ts";
 import { config } from "../../../config/index.ts";
 import { GiveawayModel, GiveawayStatus } from "../models/giveaway.model.ts";
 import { GiveawayProofModel } from "../models/giveaway-proof.model.ts";
@@ -133,9 +137,40 @@ describe("giveaway result text", () => {
 });
 
 describe("command arguments", () => {
-  it("reads an optional giveaway id after the member in !done", () => {
-    expect(doneMessageIdArg([`<@${USER_A}>`], USER_A)).toBeNull();
-    expect(doneMessageIdArg([`<@${USER_A}>`, GIVEAWAY_MSG], USER_A)).toBe(GIVEAWAY_MSG);
+  it("reads the member and an optional giveaway id in !done", () => {
+    expect(parseDoneArgs([])).toEqual({ mentionedId: null, messageId: null });
+    expect(parseDoneArgs([`<@${USER_A}>`])).toEqual({ mentionedId: USER_A, messageId: null });
+    expect(parseDoneArgs([`<@${USER_A}>`, GIVEAWAY_MSG])).toEqual({ mentionedId: USER_A, messageId: GIVEAWAY_MSG });
+    expect(parseDoneArgs([GIVEAWAY_MSG])).toEqual({ mentionedId: null, messageId: GIVEAWAY_MSG });
+  });
+});
+
+describe("giveaway pick menu", () => {
+  type Json = { type: number; custom_id?: string; options?: { label: string; value: string; description?: string }[]; components?: Json[] };
+  const flat = (n: Json): Json[] => [n, ...(n.components ?? []).flatMap(flat)];
+
+  it("lists every active giveaway with a title and its channel, for the command author", () => {
+    const menu = buildGiveawayPickMenu("staff1", USER_A, [
+      { giveawayId: "g1", title: "Nitro Boost", channelName: "giveaways", endsAt: new Date(ENDS * 1000) },
+      { giveawayId: "g2", title: null, channelName: null, endsAt: new Date(ENDS * 1000) },
+    ]);
+    const nodes = (menu.components as ContainerBuilder[]).flatMap((c) => flat(c.toJSON() as unknown as Json));
+    const select = nodes.find((n) => n.type === 3)!;
+    expect(parseGiveawayCustomId(select.custom_id!)).toEqual({ action: "done", args: ["staff1", USER_A] });
+    expect(select.options!.map((o) => o.value)).toEqual(["g1", "g2"]);
+    expect(select.options![0]!.label).toBe("Nitro Boost");
+    expect(select.options![0]!.description).toContain("#giveaways");
+    expect(select.options![1]!.label).toBe("قيف أواي 2");
+  });
+
+  it("formats the end time in the bot timezone", () => {
+    expect(formatGiveawayEnd(new Date("2026-10-05T10:00:00Z"), "UTC")).toBe("2026-10-05 10:00");
+  });
+
+  it("takes a clean title from the giveaway message", () => {
+    expect(giveawayTitle({ content: "", embeds: [{ title: "**Nitro** 🎁", description: "Ends: <t:1:R>" }] })).toBe("Nitro 🎁");
+    expect(giveawayTitle({ content: "🎉 **GIVEAWAY** 🎉", embeds: [] })).toBe("🎉 GIVEAWAY 🎉");
+    expect(giveawayTitle({ content: "", embeds: [] })).toBeNull();
   });
 });
 
