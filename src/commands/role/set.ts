@@ -8,6 +8,7 @@ import {
   roleConfigService,
 } from "../../modules/configuration/index.ts";
 import { CommandError, requireGuild } from "../_shared/guards.ts";
+import { handleHiddenSlot, isHiddenSlot } from "./hidden.ts";
 import { buildStaffLadder } from "./ladder.ts";
 import { handleOwnerWarnSlot } from "./owner-warns.ts";
 import { replayLadder, replySuccess } from "./responses.ts";
@@ -22,6 +23,7 @@ const SETTABLE = new Set<string>(ROLE_SET_SLOTS);
  */
 export async function handleSet(interaction: ChatInputCommandInteraction): Promise<void> {
   const raw = interaction.options.getString(CommandOption.TYPE, true);
+  if (isHiddenSlot(raw)) return handleHiddenSlot(interaction, raw);
   if (!SETTABLE.has(raw)) throw new CommandError(configMessages.role.unknownSlot(raw));
   const type = raw as RoleConfigType;
 
@@ -85,7 +87,7 @@ async function rebuildFromConfig(
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   }
 
-  const excluded = await ladderSyncService.excludedRoleIds(guild.id);
+  const excluded = await ladderSyncService.excludedRoleIdsFor(guild);
   const ordered = buildStaffLadder({ guild, startRoleId, endRoleId, excludedRoleIds: excluded });
 
   const ladder = await roleConfigService.rebuildLadder(guild.id, ordered);

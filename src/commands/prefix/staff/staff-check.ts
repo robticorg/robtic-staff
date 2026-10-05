@@ -1,4 +1,6 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
+import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
+import { hiddenStaffVisibilityService } from "../../../modules/staff/hidden/index.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { staffMessages } from "../../../data/messages/staff.ts";
 import { buildStaffProfileCard } from "../../../modules/staff/render/staff-profile-card.ts";
@@ -22,6 +24,13 @@ export default definePrefixCommand({
     }
 
     const userId = requireTargetId(ctx, P.usage);
+    if (
+      userId !== ctx.member.id &&
+      (await hiddenStaffVisibilityService.isHiddenStaff(ctx.member, userId)) &&
+      !(await hiddenStaffVisibilityService.canViewHiddenStats(ctx.member, userId))
+    ) {
+      throw new PrefixAbort(hiddenStaffMessages.stats.hiddenUser);
+    }
     const profile = await staffProfileService.get(ctx.guild, userId);
     if (!profile) throw new PrefixAbort(P.notStaff(userId));
 

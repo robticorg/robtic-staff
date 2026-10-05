@@ -18,6 +18,7 @@ import { colors } from "../../../data/config/colors.ts";
 import { STAFF_TIER_LABELS } from "../../../data/messages/hierarchy.ts";
 import { ACTIVITY_LABELS, statsMessages as S } from "../../../data/messages/stats.ts";
 import { leadMessages } from "../../../data/leads/messages.ts";
+import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
 import { responsibilityMessages } from "../../../data/responsibilities/messages.ts";
 import { staffTypeLabel } from "../../../data/staff-types/index.ts";
 import { ticketConfigService } from "../../tickets/services/ticket-config.service.ts";
@@ -144,6 +145,7 @@ export function overviewLines(o: StaffCardOverview): string[] {
   lines.push(
     C.status(o.fired ? (C.exitStatuses[o.fired.kind] ?? o.status) : (C.statuses[o.status] ?? o.status)),
   );
+  if (o.hidden) lines.push(hiddenStaffMessages.stats.status, hiddenStaffMessages.stats.level(o.hidden.name));
   if (o.fired) {
     lines.push(resigned ? C.resignationApprovedBy(o.fired.by, o.fired.at) : C.firedBy(o.fired.by, o.fired.at));
     if (resigned && o.fired.reason) lines.push(C.resignationReason(o.fired.reason));

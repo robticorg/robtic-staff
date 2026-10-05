@@ -1,4 +1,5 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
+import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
 import { statsMessages } from "../../../data/messages/stats.ts";
 import { canViewStats } from "../../../modules/staff-stats/index.ts";
 import { StatsView } from "../../../modules/staff-stats/handlers/component-ids.ts";
@@ -16,6 +17,7 @@ export default definePrefixCommand({
 
     const access = await canViewStats(ctx.member, targetId);
     if (!access.ok) {
+      if (access.hidden) throw new PrefixAbort(hiddenStaffMessages.stats.hiddenUser);
       throw new PrefixAbort(viewingSelf ? statsMessages.notStaff : statsMessages.managerOnlyOthers);
     }
 

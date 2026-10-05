@@ -3,6 +3,7 @@ import { DomainError } from "../../../shared/utils/errors.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { staffMessages } from "../../../data/messages/staff.ts";
+import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { staffService } from "./staff.service.ts";
@@ -451,6 +452,10 @@ export class StaffManagementService {
     if (wrongWay) return { from, to: from, changed: false, wrongWay: true };
 
     if (actor.kind === "MEMBER") {
+      const { hiddenStaffAuthorizationService } = await import("../hidden/services/hidden-staff-authorization.service.ts");
+      if (!(await hiddenStaffAuthorizationService.canMoveNormalLevel(actor.member, member))) {
+        throw new StaffAdminError(hiddenStaffMessages.authorization.hiddenTargetAdminOnly);
+      }
       enforce(
         direction === "promote"
           ? await staffManagementAuthorizationService.canPromote(actor.member, member, to, from)

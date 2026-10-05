@@ -5,6 +5,7 @@ import {
   SlashCommandBuilder,
 } from "discord.js";
 import { defineCommand } from "../../discord/command.ts";
+import { hiddenStaffLevelSyncService } from "../../modules/staff/hidden/index.ts";
 import { CommandName, commandCopy } from "../../data/commands/index.ts";
 import { hierarchyMessages } from "../../data/messages/hierarchy.ts";
 import { commonMessages } from "../../data/messages/common.ts";
@@ -65,6 +66,7 @@ export default defineCommand({
 
     try {
       const report = await staffScanService.scan({ guild, actorId: interaction.user.id });
+      await hiddenStaffLevelSyncService.syncGuild(guild).catch(() => undefined);
 
       if (report.found === 0) {
         await replyInfo(interaction, M.nothingFound);

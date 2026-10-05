@@ -1,4 +1,5 @@
-import type { Guild } from "discord.js";
+import type { Guild, GuildMember } from "discord.js";
+import { hiddenStaffHierarchyService } from "../../staff/hidden/index.ts";
 import { DateTime } from "luxon";
 import type { Types } from "mongoose";
 import type { GuildId, RoleId, UserId } from "../../../shared/types/index.ts";
@@ -34,6 +35,13 @@ import { staffStatisticsService, type RecentActivityItem } from "./staff-statist
 import { statsRepository, type TicketStatRow } from "./stats-repository.ts";
 
 export const WEEKS_PER_PAGE = 3;
+
+async function hiddenInfoFor(member: GuildMember): Promise<{ level: number; name: string } | null> {
+  const level = await hiddenStaffHierarchyService.getHighestHiddenStaffLevel(member).catch(() => 0);
+  if (level === 0) return null;
+  const rung = await hiddenStaffHierarchyService.getHiddenRoleForLevel(member.guild, level);
+  return rung ? { level, name: rung.name } : null;
+}
 
 export const StaffExitKind = {
   FIRED: "FIRED",
@@ -72,6 +80,7 @@ export interface StaffCardOverview {
   /** Earned while on break — shown on its own, never part of totalPoints. */
   breakPoints: number;
   leads: CardLeads;
+  hidden?: { level: number; name: string } | null;
 }
 
 export interface WeekPoints {
@@ -182,6 +191,7 @@ export class StaffCardService {
 
     const user = member?.user ?? (await guild.client.users.fetch(userId).catch(() => null));
     const leads = await staffCardLeadsService.load(guild, userId, member);
+    const hidden = member ? await hiddenInfoFor(member) : null;
     const avatarUrl =
       member?.displayAvatarURL({ size: AVATAR_SIZE }) ??
       user?.displayAvatarURL({ size: AVATAR_SIZE }) ??
@@ -217,6 +227,7 @@ export class StaffCardService {
       totalPoints,
       breakPoints,
       leads,
+      hidden,
     };
   }
 

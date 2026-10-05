@@ -89,6 +89,10 @@ export const StaffHistoryAction = {
   STAFF_WARNING: "STAFF_WARNING",
   STAFF_WARNING_REMOVED: "STAFF_WARNING_REMOVED",
   APPEAL_PENALTY: "APPEAL_PENALTY",
+  HIDDEN_ACCEPT: "HIDDEN_ACCEPT",
+  HIDDEN_PROMOTE: "HIDDEN_PROMOTE",
+  HIDDEN_DEMOTE: "HIDDEN_DEMOTE",
+  HIDDEN_REMOVE: "HIDDEN_REMOVE",
   OTHER: "OTHER",
 } as const;
 export type StaffHistoryAction = (typeof StaffHistoryAction)[keyof typeof StaffHistoryAction];

@@ -9,17 +9,36 @@ import {
   memberActor,
   staffManagementService,
 } from "../../../modules/staff/services/staff-management.service.ts";
+import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
+import { hiddenStaffService } from "../../../modules/staff/hidden/index.ts";
 import { PrefixAbort, requireRankManager } from "./guards.ts";
+import { splitHiddenMode } from "./hidden-mode.ts";
 import { parseMoveArgs } from "./move-args.ts";
 import { requireTargetMember } from "./target.ts";
 
 const M = prefixMessages.staff;
+
+async function runHiddenMove(ctx: PrefixContext, direction: "promote" | "demote"): Promise<void> {
+  const target = await requireTargetMember(ctx, direction === "promote" ? M.promoteUsage : M.demoteUsage);
+  const result = await hiddenStaffService.move(ctx.member, target, direction);
+  if (result.kind === "AT_LIMIT") {
+    await ctx.reply(hiddenStaffService.limitMessage(target, direction));
+    return;
+  }
+  const MV = hiddenStaffMessages.moves;
+  await ctx.reply(
+    direction === "promote"
+      ? MV.promoted(target.id, result.from.roleId, result.to.roleId)
+      : MV.demoted(target.id, result.from.roleId, result.to.roleId),
+  );
+}
 
 /** Shared body of !promote and !demote: a number of levels, or a tier name. */
 export async function runLevelMove(
   ctx: PrefixContext,
   direction: "promote" | "demote",
 ): Promise<void> {
+  if (splitHiddenMode(ctx.args).hidden) return runHiddenMove(ctx, direction);
   await requireRankManager(ctx);
   const target = await requireTargetMember(
     ctx,

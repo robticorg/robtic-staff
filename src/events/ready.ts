@@ -3,6 +3,7 @@ import { defineEvent } from "../discord/event.ts";
 import { logger } from "../shared/utils/logger.ts";
 import { ticketService, transcriptCache } from "../modules/tickets/index.ts";
 import { ladderSyncService } from "../modules/configuration/index.ts";
+import { hiddenStaffLevelSyncService } from "../modules/staff/hidden/index.ts";
 import { giftDeliveryRecoveryService } from "../modules/gift-claims/services/delivery/gift-delivery-recovery.service.ts";
 import {
   serverTagAuditService,
@@ -31,6 +32,9 @@ export default defineEvent({
       await ladderSyncService
         .sync(guild)
         .catch((err) => log.warn(`ladder sync failed for ${guild.id}`, err));
+      void hiddenStaffLevelSyncService
+        .syncGuild(guild)
+        .catch((err) => log.warn(`hidden staff sync failed for ${guild.id}`, err));
     }
 
     await giftDeliveryRecoveryService

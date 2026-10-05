@@ -22,7 +22,10 @@ import {
 } from "../../../modules/staff/services/staff-management.service.ts";
 import { staffService } from "../../../modules/staff/services/staff.service.ts";
 import { StaffStatus } from "../../../modules/staff/types/enums.ts";
+import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
+import { hiddenStaffService } from "../../../modules/staff/hidden/index.ts";
 import { PrefixAbort, requireApplyManager } from "../_shared/guards.ts";
+import { splitHiddenMode } from "../_shared/hidden-mode.ts";
 import { extractUserIds } from "../_shared/parse.ts";
 import { requireTargetMember } from "../_shared/target.ts";
 
@@ -53,31 +56,47 @@ function acceptedLine(targetId: string, result: AcceptResult, tier: StaffTier | 
   return M.accepted(mention, result.level);
 }
 
-async function acceptInApplication(ctx: PrefixContext, application: ApplicationContext) {
+async function acceptInApplication(
+  ctx: PrefixContext,
+  application: ApplicationContext,
+  args: readonly string[],
+  hidden: boolean,
+) {
   const applicantId = application.application.userId;
-  const named = [...ctx.mentionedUsers.map((u) => u.id), ...extractUserIds(ctx.args)];
+  const named = [...ctx.mentionedUsers.map((u) => u.id), ...extractUserIds(args)];
   if (named.some((id) => id !== applicantId)) {
     throw new PrefixAbort(staffApplicationMessages.decision.wrongTarget(applicantId));
   }
 
-  const request = acceptRequestFromArgs(ctx.args, applicantId);
+  const applicant = hidden ? await ctx.guild.members.fetch(applicantId).catch(() => null) : null;
+  if (hidden) {
+    if (!applicant) throw new PrefixAbort(M.memberNotFound);
+    await hiddenStaffService.assertCanAccept(ctx.member, applicant);
+  }
+
+  const request = acceptRequestFromArgs(args, applicantId);
   const outcome = await applicationDecisionService.accept(
     ctx.member,
     application,
     isEmptyAcceptRequest(request) ? null : request,
   );
-  await ctx.reply(acceptedReply(outcome.applicantId, outcome.result, request.tier));
+  const line = acceptedReply(outcome.applicantId, outcome.result, request.tier);
+  if (!applicant) return void (await ctx.reply(line));
+  const first = await hiddenStaffService.grantFirstLevel(applicant, ctx.member.id);
+  await ctx.reply(`${line}\n${hiddenStaffMessages.accept.acceptedHidden(applicant.id, first.roleId)}`);
 }
 
 export default definePrefixCommand({
   name: "accept",
   category: "staff",
   async execute(ctx) {
+    const { hidden, args } = splitHiddenMode(ctx.args);
     const application = await applicationContextService.forChannel(ctx.guild.id, ctx.channel.id);
-    if (application) return acceptInApplication(ctx, application);
+    if (application) return acceptInApplication(ctx, application, args, hidden);
 
     await requireApplyManager(ctx);
-    const target = await requireTargetMember(ctx, "!accept @user [level|tier|max] [type]");
+    const target = await requireTargetMember(ctx, "!accept @user [level|tier|max] [type] [hidden]");
+    if (hidden) await hiddenStaffService.assertCanAccept(ctx.member, target);
 
     // Accept is for bringing someone in. Current staff (active or on break) are
     // moved with !promote / !demote; fired members come back with !back or a new accept.
@@ -88,7 +107,7 @@ export default definePrefixCommand({
 
     const request = await resolveAcceptRequest(
       ctx.guild.id,
-      acceptRequestFromArgs(ctx.args, target.id),
+      acceptRequestFromArgs(args, target.id),
     );
     const result = await staffManagementService.accept(
       target,
@@ -96,6 +115,9 @@ export default definePrefixCommand({
       request.level,
       request.staffType,
     );
-    await ctx.reply(acceptedReply(target.id, result, request.tier));
+    const line = acceptedReply(target.id, result, request.tier);
+    if (!hidden) return void (await ctx.reply(line));
+    const first = await hiddenStaffService.grantFirstLevel(target, ctx.member.id);
+    await ctx.reply(`${line}\n${hiddenStaffMessages.accept.acceptedHidden(target.id, first.roleId)}`);
   },
 });

@@ -27,6 +27,7 @@ import { commonMessages } from "../../data/messages/common.ts";
 import { configMessages } from "../../data/messages/config.ts";
 import { CommandError, requireAdministrator, requireGuild } from "../_shared/guards.ts";
 import { replySuccess } from "./responses.ts";
+import { HIDDEN_SET_CHOICES } from "./hidden.ts";
 
 const copy = commandCopy.role;
 
@@ -165,7 +166,7 @@ async function handleCheck(interaction: ChatInputCommandInteraction): Promise<vo
 
 function matchSetSlots(query: string): { name: string; value: string }[] {
   const needle = query.trim().toLowerCase();
-  return ROLE_SET_CHOICES.filter(
+  return [...ROLE_SET_CHOICES.slice(0, 4), ...HIDDEN_SET_CHOICES, ...ROLE_SET_CHOICES.slice(4)].filter(
     (choice) =>
       !needle ||
       choice.name.toLowerCase().includes(needle) ||

@@ -22,6 +22,7 @@ Slash commands (`/…`) are registered with `bun run register-commands`.
 | Administrator | Discord `Administrator` permission — always allowed |
 | Bot Owner | The bot owner (`BOT_OWNER_ID`) — full access to everything, like an Administrator, plus the owner-only commands |
 | Whitelist | Users added with `/whitelist` by the Bot Owner — can use the restricted commands (`!send`) |
+| Hidden Staff | Staff who also hold a hidden-ladder role. Their stats are visible only to themselves, a higher hidden level and Administrators; everyone else sees `هذا المستخدم موظف مخفي.` |
 
 Commands used in the wrong place (for example a ticket command outside a ticket) are ignored silently.
 
@@ -49,11 +50,12 @@ Commands used in the wrong place (for example a ticket command outside a ticket)
 
 | Command | Aliases | Description | Usage | Who can use it |
 |---|---|---|---|---|
-| `!accept` | قبول · قبل | Accept a member into the staff. Inside an application ticket it accepts that applicant | `!accept @user [level \| high \| owner \| ship \| max] [type]` | Outside a ticket: Apply Manager, Administrators. Inside an application ticket: its claimer holding the manager role, Administrators |
-| `!prompt` | ترقية · رفع | Promote a staff member (never moves them down) | `!prompt @user [levels \| high \| owner \| ship \| max]` | Rank Manager, Administrators |
-| `!demote` | تنزيل · خفض · تخفيض | Demote a staff member (never moves them up) | `!demote @user [levels \| high \| owner \| ship]` | Rank Manager, Administrators |
+| `!accept` | قبول · قبل | Accept a member into the staff. Inside an application ticket it accepts that applicant | `!accept @user [level \| high \| owner \| ship \| max] [type]` · `!accept @user hidden` (also `starter`, `مخفية`, `ستريتر`) — normal staff + first hidden level | Outside a ticket: Apply Manager, Administrators. Inside an application ticket: its claimer holding the manager role, Administrators |
+| `!prompt` | ترقية · رفع | Promote a staff member (never moves them down) | `!prompt @user [levels \| high \| owner \| ship \| max]` · `!prompt @user hidden` (one hidden level up) | Rank Manager, Administrators. Hidden staff targets and hidden mode: Administrators only |
+| `!demote` | تنزيل · خفض · تخفيض | Demote a staff member (never moves them up) | `!demote @user [levels \| high \| owner \| ship]` · `!demote @user hidden` (one hidden level down, never below the first) | Rank Manager, Administrators. Hidden staff targets and hidden mode: Administrators only |
 | `!fire` | فصل · طرد · اقالة | Fire a staff member — add `=` to also blacklist. Their claimed tickets are reopened for others | `!fire @user` · `!fire @user =` | Staff Manager, Administrators |
 | `!back` | ارجاع · إرجاع · رجع | Bring back a fired staff member to their last rank | `!back @user` | Rank Manager, Administrators |
+| `!hidden` | مخفية · مخفي | Make a staff member Hidden Staff: a menu lists every hidden level and the chosen one gives that hidden role and every hidden role below it. Removal takes away only the hidden roles — normal staff, owner, manager, responsibility and other roles stay | `!hidden @user` · `!hidden remove @user` · `!مخفية ازالة @user` · `!مخفية @user ازالة` | Administrators |
 | `!transfer` | نقل | Move a staff member's rank and roles from one account to another | `!transfer @from @to` | Transfer Manager, Administrators — **only inside staff application / transfer tickets** |
 | `!break` | بريك · اجازة · إجازة | Put a staff member on break. Their claimed tickets are reopened for others | `!break @user <duration>` — e.g. `5m` `3d` `1w` `1M` | Staff Manager, Administrators |
 | `!unbreak` | انهاء-بريك · فك-بريك · ارجع | End a staff member's break early | `!unbreak @user` | Staff Manager, Administrators |
@@ -145,6 +147,7 @@ Gift orders (from the gift ticket or from `!gift` by staff) are approved or reje
 | Command | Description | Usage | Who can use it |
 |---|---|---|---|
 | `/role set` | Set the role for one staff-system slot | `/role set type: role:` | Administrators |
+| `/role set` (hidden slots) | Hidden staff ladder: start, end, ignore a role, un-ignore a role. Independent from the normal ladder and its ignores | `/role set type:بداية الستاف المخفي role:` · `type:نهاية الستاف المخفي` · `type:رتبة مستثناة من الستاف المخفي` · `type:إلغاء استثناء رتبة من الستاف المخفي` | Administrators |
 | `/role range` | Give a role automatically to a range of staff levels | `/role range type: [role:] [from:] [to:]` | Administrators |
 | `/role boundary` | Set the first role of a tier (High Staff / Owner / Ship) | `/role boundary tier: role:` | Administrators |
 | `/role stafftype` | Set the role of a staff type | `/role stafftype type: role:` | Administrators |

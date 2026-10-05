@@ -4,11 +4,13 @@ import { logger } from "../../shared/utils/logger.ts";
 import { FailedAuthLimiter, isAuthorized } from "./auth.ts";
 import { handlePointsRequest, type ApiResponse } from "./points.handler.ts";
 import { handleStaffCheck, type StaffCheckInput } from "./staff-check.handler.ts";
+import { handleRoleCheck, type RoleCheckInput } from "./role-check.handler.ts";
 
 const log = logger.child("internal-api");
 const POINTS_PATH = "/internal/staff/points";
 const HEALTH_PATH = "/internal/health";
 const STAFF_CHECK_PATH = "/internal/staff/check";
+const ROLE_CHECK_PATH = "/internal/staff/role";
 const failedAuth = new FailedAuthLimiter(
   internalApiLimits.maxFailedAuth,
   internalApiLimits.failedAuthWindowMs,
@@ -32,9 +34,9 @@ export async function routeInternalRequest(
     return json({ status: 200, body: { success: true, service: "staff-points", auth: token ? "token" : "open" } });
   }
 
-  const isCheck = pathname === STAFF_CHECK_PATH;
-  if (!isCheck && pathname !== POINTS_PATH) return json({ status: 404, body: { success: false, error: "not found" } });
-  if (request.method !== "POST" && !(isCheck && request.method === "GET")) {
+  const lookup = pathname === STAFF_CHECK_PATH ? "staff" : pathname === ROLE_CHECK_PATH ? "role" : null;
+  if (!lookup && pathname !== POINTS_PATH) return json({ status: 404, body: { success: false, error: "not found" } });
+  if (request.method !== "POST" && !(lookup && request.method === "GET")) {
     return json({ status: 405, body: { success: false, error: "method not allowed" } });
   }
   // No token configured → open API. With a token, it's required and brute-force limited.
@@ -50,14 +52,26 @@ export async function routeInternalRequest(
   }
 
   // Staff check: GET ?guildId=…&userId=… or &userIds=a,b,c (a POST with a JSON body also works).
-  if (isCheck && request.method === "GET") {
+  if (lookup && request.method === "GET") {
     const params = new URL(request.url).searchParams;
-    const many = params.getAll("userIds").flatMap((v) => v.split(",")).map((v) => v.trim()).filter(Boolean);
+    const listOf = (name: string) =>
+      params.has(name)
+        ? params.getAll(name).flatMap((v) => v.split(",")).map((v) => v.trim()).filter(Boolean)
+        : undefined;
+    if (lookup === "role") {
+      return json(
+        await logRoleCheck(clientIp, {
+          guildId: params.get("guildId"),
+          roleId: params.get("roleId"),
+          roleIds: listOf("roleIds"),
+        }),
+      );
+    }
     return json(
       await logStaffCheck(clientIp, {
         guildId: params.get("guildId"),
         userId: params.get("userId"),
-        userIds: params.has("userIds") ? many : undefined,
+        userIds: listOf("userIds"),
       }),
     );
   }
@@ -79,7 +93,8 @@ export async function routeInternalRequest(
     return json({ status: 400, body: { success: false, error: "invalid JSON" } });
   }
 
-  if (isCheck) return json(await logStaffCheck(clientIp, (body ?? {}) as StaffCheckInput));
+  if (lookup === "staff") return json(await logStaffCheck(clientIp, (body ?? {}) as StaffCheckInput));
+  if (lookup === "role") return json(await logRoleCheck(clientIp, (body ?? {}) as RoleCheckInput));
 
   const result = await handlePointsRequest(body);
   // One line per request so `docker logs` shows exactly what callers are getting.
@@ -104,6 +119,21 @@ async function logStaffCheck(clientIp: string | null, input: StaffCheckInput): P
         : "not staff";
   const who = Array.isArray(input.userIds) ? `users=${input.userIds.length}` : `user=${String(input.userId)}`;
   log.info(`staff check from ${clientIp ?? "?"} ${who} → ${result.status} ${outcome}`);
+  return result;
+}
+
+async function logRoleCheck(clientIp: string | null, input: RoleCheckInput): Promise<ApiResponse> {
+  const result = await handleRoleCheck(input);
+  const b = result.body as { error?: string; isStaffRole?: boolean; order?: number | null; count?: number; staffRoleCount?: number };
+  const outcome = b.error
+    ? `error="${b.error}"`
+    : b.count !== undefined
+      ? `${b.staffRoleCount}/${b.count} staff roles`
+      : b.isStaffRole
+        ? `staff role (order ${b.order})`
+        : "not a staff role";
+  const which = Array.isArray(input.roleIds) ? `roles=${input.roleIds.length}` : `role=${String(input.roleId)}`;
+  log.info(`role check from ${clientIp ?? "?"} ${which} → ${result.status} ${outcome}`);
   return result;
 }
 

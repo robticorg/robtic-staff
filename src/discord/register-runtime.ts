@@ -21,6 +21,7 @@ import { ticketSleepService } from "../modules/tickets/services/ticket-sleep.ser
 import { ticketClaimerReleaseService } from "../modules/tickets/services/ticket-claimer-release.service.ts";
 import { ticketClaimCheckService } from "../modules/tickets/services/ticket-claim-check.service.ts";
 import { registerApplicationLifecycle } from "../modules/applications/services/application-lifecycle.ts";
+import { registerHiddenStaff } from "../modules/staff/hidden/index.ts";
 import { internalApiServer } from "../modules/internal-api/server.ts";
 
 export function attachModuleClients(client: Client): void {
@@ -35,6 +36,7 @@ export function attachModuleClients(client: Client): void {
   attachResponsibilityClient(client);
   registerApplicationLifecycle();
   ticketClaimerReleaseService.register();
+  registerHiddenStaff();
 }
 
 export function startModuleRuntime(): void {

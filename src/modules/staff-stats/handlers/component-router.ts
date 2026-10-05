@@ -1,4 +1,5 @@
 import type { GuildMember, Interaction } from "discord.js";
+import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { commonMessages } from "../../../data/messages/common.ts";
 import { statsMessages } from "../../../data/messages/stats.ts";
@@ -32,7 +33,10 @@ export async function routeStaffStatsComponent(interaction: Interaction): Promis
     // Re-check: the viewer may have lost the manager role since the card was sent.
     const access = await canViewStats(interaction.member as GuildMember, parsed.targetId);
     if (!access.ok) {
-      await replyEphemeralError(interaction, statsMessages.managerOnlyOthers);
+      await replyEphemeralError(
+        interaction,
+        access.hidden ? hiddenStaffMessages.stats.hiddenUser : statsMessages.managerOnlyOthers,
+      );
       return true;
     }
 

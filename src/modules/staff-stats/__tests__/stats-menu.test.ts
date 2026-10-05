@@ -146,3 +146,12 @@ describe("!stats responsibilities and leads", () => {
     expect(text).not.toContain("### مسؤولك");
   });
 });
+
+describe("!stats hidden staff", () => {
+  it("shows the hidden status and level only when the card carries them", () => {
+    const withHidden = overviewLines({ ...overview(null), hidden: { level: 3, name: "III" } }).join("\n");
+    expect(withHidden).toContain("موظف مخفي");
+    expect(withHidden).toContain("**المستوى المخفي:** III");
+    expect(overviewLines(overview(null)).join("\n")).not.toContain("موظف مخفي");
+  });
+});

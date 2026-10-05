@@ -1029,6 +1029,19 @@ in the order sent; one invalid id rejects the request with a `400` naming it (`u
 
 `type` comes from the staff member's level and the tier boundaries set with `/role boundary`.
 
+### Staff role check
+
+`GET /internal/staff/role?guildId=<id>&roleId=<id>` (or `POST` with the same JSON body), same
+port and token. A role is a staff role when it is on the numbered staff ladder; ignored roles and
+anything off the ladder are not.
+
+- Staff role: `{ "success": true, "roleId": "…", "isStaffRole": true, "order": 5, "level": 4, "type": "high", "totalStaffRoles": 30 }`
+- Not a staff role: `{ "success": true, "roleId": "…", "isStaffRole": false, "order": null, "level": null, "type": null, "totalStaffRoles": 30 }`
+
+`order` is the role's position on the staff ladder counted from the bottom (1 = the first staff role, higher = higher rank); `level` is the bot's internal ladder level (starts at 0). Many at once:
+`"roleIds": [ … ]` or `?roleIds=a,b,c` (up to 100) →
+`{ "success": true, "count": n, "staffRoleCount": k, "totalStaffRoles": 30, "results": [ { roleId, isStaffRole, order, level, type }, … ] }`.
+
 ## Staff identity requirement
 
 A staff member is compliant with **either** this server's official Server Tag

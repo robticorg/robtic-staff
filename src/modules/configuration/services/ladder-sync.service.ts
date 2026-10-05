@@ -46,8 +46,23 @@ export type LadderSyncResult =
   | { changed: true; ladder: StaffRoleLevel[]; previous: RoleId[] }
   | { changed: false; reason: "UNCHANGED" | "NOT_CONFIGURED" | LadderProblem };
 
+export type LadderExclusionSource = (guild: Guild) => Promise<Iterable<RoleId>>;
+
 export class LadderSyncService {
   private pending = new Map<GuildId, ReturnType<typeof setTimeout>>();
+  private readonly exclusionSources: LadderExclusionSource[] = [];
+
+  addExclusionSource(source: LadderExclusionSource): void {
+    if (!this.exclusionSources.includes(source)) this.exclusionSources.push(source);
+  }
+
+  async excludedRoleIdsFor(guild: Guild): Promise<Set<RoleId>> {
+    const excluded = await this.excludedRoleIds(guild.id);
+    for (const source of this.exclusionSources) {
+      for (const roleId of await source(guild).catch(() => [])) excluded.add(roleId);
+    }
+    return excluded;
+  }
 
   async excludedRoleIds(guildId: GuildId): Promise<Set<RoleId>> {
     const [generalStaff, ...lists] = await Promise.all([
@@ -71,7 +86,7 @@ export class LadderSyncService {
       startRoleId,
       endRoleId,
       everyoneRoleId: guild.id,
-      excludedRoleIds: await this.excludedRoleIds(guild.id),
+      excludedRoleIds: await this.excludedRoleIdsFor(guild),
     });
     return result.ok ? result.ordered : result.problem;
   }
