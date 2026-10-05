@@ -18,13 +18,13 @@ export const giveawayMessages = {
         `**الروم:** <#${channelId}>`,
         `**ينتهي:** ${relative(endsAt)}`,
         `**البوت:** <@${botId}>`,
-        "-# الستاف يقدرون الحين يستخدمون `!done @عضو` لكل عضو ينفّذ الشرط.",
+        "-# الطاقم الاداري يقدرون الحين يستخدمون `!done @عضو` لكل عضو ينفّذ الشرط.",
       ].join("\n"),
   },
 
   done: {
     usage: `${E.warning} الطريقة: \`!done @عضو\` — وداخل التكت: \`!done\` (لصاحب التكت) — ولقيف أواي معيّن أضف آيدي رسالته.`,
-    notStaff: `${E.error} هذا الأمر للستاف بس.`,
+    notStaff: `${E.error} هذا الأمر للطاقم الاداري بس.`,
     bot: `${E.error} البوتات ما تشارك في القيف أواي.`,
     saved: (userId: string, channelId: string, endsAt: Date) =>
       `${E.success} تم تسجيل إن <@${userId}> نفّذ شرط القيف أواي في <#${channelId}> (ينتهي ${relative(endsAt)}).`,
@@ -42,6 +42,6 @@ export const giveawayMessages = {
     title: "## 🎉 نتيجة شرط القيف أواي",
     proved: (userId: string, staffId: string) => `${E.success} <@${userId}> أثبت إنه نفّذ الشرط — سجّله <@${staffId}>.`,
     notProved: (userId: string) => `${E.error} <@${userId}> ما أثبت إنه نفّذ الشرط.`,
-    footer: (count: number) => `-# عدد اللي سجّلهم الستاف: ${count}`,
+    footer: (count: number) => `-# عدد اللي سجّلهم الطاقم الاداري: ${count}`,
   },
 } as const;

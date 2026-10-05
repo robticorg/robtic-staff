@@ -33,15 +33,15 @@ describe("staff profile card", () => {
     expect(lines).toContain("**الحالة:** نشط");
     expect(lines).toContain("**ترتيب الرتبة:** المستوى 12 من 40");
     expect(lines).toContain("**الرتبة:** <@&444>");
-    expect(lines).toContain("**التصنيف:** هاي ستاف");
-    expect(lines).toContain(`**قبله في الستاف:** <@${ACCEPTER}>`);
-    expect(lines).toContain("**مدة وجوده في الستاف:** 8 أشهر");
+    expect(lines).toContain("**التصنيف:** ادارة عليا");
+    expect(lines).toContain(`**قبله في الطاقم الاداري:** <@${ACCEPTER}>`);
+    expect(lines).toContain("**مدة وجوده في الطاقم الاداري:** 8 أشهر");
     expect(lines.some((l) => l.startsWith("**آخر ترقية:**") && l.includes(`<@${PROMOTER}>`))).toBe(true);
   });
 
   it("says when there was never a promotion or the acceptor was the system", () => {
     const lines = staffProfileLines({ ...base, acceptedBy: null, lastPromotion: null }, now);
-    expect(lines).toContain("**قبله في الستاف:** النظام");
+    expect(lines).toContain("**قبله في الطاقم الاداري:** النظام");
     expect(lines).toContain("**آخر ترقية:** ما تمت ترقيته من يوم انقبل");
   });
 });

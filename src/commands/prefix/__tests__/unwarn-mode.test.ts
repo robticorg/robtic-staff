@@ -7,7 +7,7 @@ const tokens = (input: string) => input.split(/\s+/).filter(Boolean);
 
 describe("!unwarn — the argument picks the target, not the channel", () => {
   it("`staff` lifts the staff warning from any channel", () => {
-    for (const keyword of ["staff", "STAFF", "ستاف", "الستاف"]) {
+    for (const keyword of ["staff", "STAFF", "ستاف", "الستاف", "اداري", "الاداري"]) {
       expect(resolveUnwarnMode(tokens(keyword), null)).toMatchObject({ kind: "STAFF" });
     }
   });

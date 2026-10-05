@@ -20,14 +20,14 @@ export const STAFF_TYPE_DEFINITIONS: readonly StaffTypeDefinition[] = [
     // No keywords on purpose: "max" / "ماكس" in !accept means the END role of the
     // ladder (see MAX_LEVEL_KEYWORDS), not this separate type role.
     keywords: [],
-    description: "تحديد رتبة نوع الستاف: ماكس",
+    description: "تحديد رتبة نوع الطاقم الاداري: ماكس",
   },
   {
     id: StaffType.DEV,
     slug: "dev",
     label: "مبرمج",
     keywords: ["dev", "developer", "مبرمج", "ديف"],
-    description: "تحديد رتبة نوع الستاف: مبرمج",
+    description: "تحديد رتبة نوع الطاقم الاداري: مبرمج",
   },
 ];
 

@@ -3,7 +3,7 @@ import { emojis } from "../emojis/index.ts";
 const E = emojis;
 
 export const fastAccessMessages = {
-  managerOnly: `${E.error} إدارة ماكروهات Fast Access لمانجرات الستاف بس.`,
+  managerOnly: `${E.error} إدارة ماكروهات Fast Access لمانجرات الطاقم الاداري بس.`,
   invalidCommand: `${E.error} الأمر لازم يكون من 1 إلى 32 حرف من a-z و 0-9 و \`-\` أو \`_\`.`,
   emptyMessage: `${E.error} الرسالة ما تقدر تكون فاضية.`,
   invalidContext: `${E.error} المكان لازم يكون MODMAIL أو SUPPORT أو STAFF_APPLICATION أو STAFF_TRANSFER.`,

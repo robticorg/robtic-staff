@@ -4,7 +4,7 @@ import { buildComeDm } from "../render/come-dm.ts";
 
 const dm = buildComeDm({
   callerId: "caller",
-  reason: "اجتماع الستاف",
+  reason: "اجتماع الطاقم الاداري",
   guildId: "g1",
   channelId: "c1",
   messageId: "m1",
@@ -12,7 +12,7 @@ const dm = buildComeDm({
 
 describe("come DM", () => {
   it("uses the exact wording with the caller mention and the reason", () => {
-    expect(dm.content).toBe("لقد تم ندائك بواسطة <@caller> للحضور بسبب : اجتماع الستاف");
+    expect(dm.content).toBe("لقد تم ندائك بواسطة <@caller> للحضور بسبب : اجتماع الطاقم الاداري");
   });
 
   it("is plain text, not an embed", () => {

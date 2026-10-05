@@ -4,6 +4,7 @@ import { CommandName, TicketSubcommand } from "../../data/commands/index.ts";
 import { commonMessages } from "../../data/messages/common.ts";
 import { ticketSetupCommandMessages } from "../../data/tickets/setup-command.ts";
 import { buildSendModal, buildSetupModal } from "../../modules/tickets/panel-config/render.ts";
+import { isSetupConfigurable } from "../../modules/tickets/panel-config/setup-rules.ts";
 import { ticketConfigService } from "../../modules/tickets/services/ticket-config.service.ts";
 import { CommandError, requireAdministrator, requireGuild } from "../_shared/guards.ts";
 
@@ -25,7 +26,7 @@ export default defineCommand({
     requireAdministrator(interaction);
     const sub = interaction.options.getSubcommand();
     if (sub === TicketSubcommand.SETUP) {
-      await interaction.showModal(buildSetupModal(ticketConfigService.listPanels()));
+      await interaction.showModal(buildSetupModal(ticketConfigService.listPanels().filter(isSetupConfigurable)));
       return;
     }
     if (sub === TicketSubcommand.SEND) {

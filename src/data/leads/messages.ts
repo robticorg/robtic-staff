@@ -5,13 +5,13 @@ const date = (at: Date) => `<t:${Math.floor(at.getTime() / 1000)}:f>`;
 
 export const leadMessages = {
   command: {
-    description: "إدارة المسؤولين عن الستاف والرتب والمسؤوليات",
+    description: "إدارة المسؤولين عن الطاقم الاداري والرتب والمسؤوليات",
     create: "إنشاء مسؤول جديد",
     assign: "تعيين من يمسك المسؤول",
     remove: "إزالة الماسك الحالي للمسؤول",
     list: "عرض كل المسؤولين",
     info: "تفاصيل مسؤول وسجله",
-    name: "اسم المسؤول (مثال: مسؤول الستاف)",
+    name: "اسم المسؤول (مثال: مسؤول الطاقم الاداري)",
     descriptionOption: "الوصف",
     lead: "المسؤول",
     targetUser: "الهدف: عضو",

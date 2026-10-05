@@ -56,8 +56,8 @@ const data = new SlashCommandBuilder()
           .addChoices(
             { name: "المودميل / البلاغات", value: FastAccessContext.MODMAIL },
             { name: "الدعم (التكتات)", value: FastAccessContext.SUPPORT },
-            { name: "التقديم على الستاف", value: FastAccessContext.STAFF_APPLICATION },
-            { name: "نقل الستاف", value: FastAccessContext.STAFF_TRANSFER },
+            { name: "التقديم على الطاقم الاداري", value: FastAccessContext.STAFF_APPLICATION },
+            { name: "نقل الطاقم الاداري", value: FastAccessContext.STAFF_TRANSFER },
           ),
       ),
   )

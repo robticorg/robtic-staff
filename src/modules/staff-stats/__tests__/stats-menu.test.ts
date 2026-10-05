@@ -130,7 +130,7 @@ describe("!stats responsibilities and leads", () => {
   it("shows responsibilities with their lead, your leads and the leads held", () => {
     const text = leadLines({
       responsibilities: [{ title: "الدعم", expiresAt: null, leads: ["<@5>"] }],
-      leadsOf: [{ name: "مسؤول الستاف", holder: "<@6>" }],
+      leadsOf: [{ name: "مسؤول الطاقم الاداري", holder: "<@6>" }],
       leading: [{ name: "مسؤول التكتات", target: "رتبة <@&7>" }],
     }).join("\n");
     expect(text).toContain("### المسؤوليات");

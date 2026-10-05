@@ -3,21 +3,21 @@ import { emojis } from "../emojis/index.ts";
 const E = emojis;
 
 /** `!check` only ever reports on staff below the OWNER boundary — say so on the card. */
-const PROMOTION_SCOPE = "النطاق: الستاف تحت رتبة الأونر";
+const PROMOTION_SCOPE = "النطاق: الطاقم الاداري من العادي إلى الشيب (بدون الأدمن والمخفيين)";
 
 export const staffMessages = {
   profile: {
     usage: `${E.warning} الطريقة: \`!staff-check @user\` أو \`!staff-check <id>\``,
-    notStaff: (userId: string) => `${E.error} <@${userId}> ما له سجل في الستاف.`,
-    title: (userId: string) => `## معلومات الستاف\n<@${userId}>`,
+    notStaff: (userId: string) => `${E.error} <@${userId}> ما له سجل في الطاقم الاداري.`,
+    title: (userId: string) => `## معلومات الطاقم الاداري\n<@${userId}>`,
     status: (label: string) => `**الحالة:** ${label}`,
     level: (level: number, top: number) => `**ترتيب الرتبة:** المستوى ${level} من ${top}`,
     role: (roleId: string) => `**الرتبة:** <@&${roleId}>`,
     tier: (label: string) => `**التصنيف:** ${label}`,
-    acceptedBy: (userId: string) => `**قبله في الستاف:** <@${userId}>`,
-    acceptedBySystem: "**قبله في الستاف:** النظام",
+    acceptedBy: (userId: string) => `**قبله في الطاقم الاداري:** <@${userId}>`,
+    acceptedBySystem: "**قبله في الطاقم الاداري:** النظام",
     acceptedAt: (date: Date) => `**تاريخ القبول:** <t:${Math.floor(date.getTime() / 1000)}:D>`,
-    staffFor: (duration: string) => `**مدة وجوده في الستاف:** ${duration}`,
+    staffFor: (duration: string) => `**مدة وجوده في الطاقم الاداري:** ${duration}`,
     lastPromotion: (date: Date, userId: string | null) =>
       `**آخر ترقية:** <t:${Math.floor(date.getTime() / 1000)}:R>${userId ? ` بواسطة <@${userId}>` : " بواسطة النظام"}`,
     noPromotion: "**آخر ترقية:** ما تمت ترقيته من يوم انقبل",
@@ -45,10 +45,11 @@ export const staffMessages = {
     configured: (points: number) =>
       `تم ضبط الحد الأدنى للترقية على **${points}** نقطة في الأسبوع.`,
     configuredNote:
-      "هذا الحد للفحص بس — ما راح يرقّي أحد تلقائياً ولا يغيّر نقاط أو رتب أي عضو ستاف.",
+      "هذا الحد للفحص بس — ما راح يرقّي أحد تلقائياً ولا يغيّر نقاط أو رتب أي عضو في الطاقم الاداري.",
 
     notConfigured: `${E.warning} ما تم ضبط نقاط الترقية بعد — استخدم \`/promote-points points:<رقم>\` أول.`,
-    noStaff: `${E.warning} ما فيه أعضاء ستاف نشطين تحت رتبة الأونر في هذا السيرفر.`,
+    noStaff: `${E.warning} ما فيه أعضاء الطاقم الاداري نشطين يطلعون في الفحص.`,
+    unknownTier: `${E.error} نوع غير معروف. استخدم: \`staff\` · \`high\` · \`owner\` · \`ship\``,
 
     scope: PROMOTION_SCOPE,
     header: (points: number) =>
@@ -57,7 +58,7 @@ export const staffMessages = {
       `## فحص نقاط الترقية (${page}/${pages})\nالمطلوب: **${points}** نقطة هذا الأسبوع\n${PROMOTION_SCOPE}`,
     entry: (displayName: string, userId: string, weeklyPoints: number, decision: string) =>
       [
-        `**اسم الستاف:** ${displayName}`,
+        `**اسم الاداري:** ${displayName}`,
         `**المنشن:** <@${userId}>`,
         `**نقاط هذا الأسبوع:** ${weeklyPoints}`,
         `**القرار:** ${decision}`,
@@ -65,42 +66,42 @@ export const staffMessages = {
   },
 
   authorization: {
-    NOT_A_MANAGER: `${E.error} ما عندك صلاحية تستخدم أوامر إدارة الستاف.`,
+    NOT_A_MANAGER: `${E.error} ما عندك صلاحية تستخدم أوامر إدارة الطاقم الاداري.`,
     NOT_A_MANAGER_DEMOTE: `${E.error} ما عندك صلاحية تستخدم أمر الديموت.`,
 
     SELF_PROMOTE: `${E.error} ما تقدر ترقي نفسك.`,
     SELF_DEMOTE: `${E.error} ما تقدر تنزل رتبتك بنفسك.`,
-    SELF_ACCEPT: `${E.error} ما تقدر تقبل نفسك في الستاف.`,
+    SELF_ACCEPT: `${E.error} ما تقدر تقبل نفسك في الطاقم الاداري.`,
     SELF_FIRE: `${E.error} ما تقدر تفصل نفسك.`,
 
-    TARGET_ABOVE_ACTOR: `${E.error} ما تقدر تتحكم بستاف رتبته أعلى من رتبتك.`,
-    TARGET_ABOVE_ACTOR_DEMOTE: `${E.error} ما تقدر تنزل ستاف رتبته أعلى من رتبتك.`,
+    TARGET_ABOVE_ACTOR: `${E.error} ما تقدر تتحكم باداري رتبته أعلى من رتبتك.`,
+    TARGET_ABOVE_ACTOR_DEMOTE: `${E.error} ما تقدر تنزل اداري رتبته أعلى من رتبتك.`,
     LEVEL_ABOVE_ACTOR: `${E.error} ما عندك صلاحية ترقي هذا العضو لهذا المستوى.`,
     LEVEL_ABOVE_AUTHORITY: `${E.error} ما عندك صلاحية ترقي أحد لهذا المستوى.`,
 
-    TARGET_IN_OWNER: `${E.error} ما عندك صلاحية تنزل ستاف من رتبة الأونر أو أعلى.`,
-    TARGET_IN_SHIP: `${E.error} ما عندك صلاحية تنزل ستاف من رتبة الشيب.`,
-    TARGET_IN_SHIP_MANAGE: `${E.error} ما عندك صلاحية تتحكم بستاف من رتبة الشيب.`,
+    TARGET_IN_OWNER: `${E.error} ما عندك صلاحية تنزل اداري من رتبة الأونر أو أعلى.`,
+    TARGET_IN_SHIP: `${E.error} ما عندك صلاحية تنزل اداري من رتبة الشيب.`,
+    TARGET_IN_SHIP_MANAGE: `${E.error} ما عندك صلاحية تتحكم باداري من رتبة الشيب.`,
     LEVEL_IN_SHIP: `${E.error} ما تقدر ترقي أحد إلى مستويات الشيب.`,
 
-    ACTOR_NOT_STAFF: `${E.error} لازم تكون عضو ستاف عنده رتبة مرقّمة عشان تدير الستاف.`,
-    HIERARCHY_INVALID: `${E.error} إعدادات سلّم الستاف ناقصة أو غير صحيحة — صحّحها قبل إدارة الستاف.`,
-    BELOW_MIN_LEVEL: `${E.error} ما تقدر تنزل هذا الستاف أكثر. إذا تبي تفصله استخدم \`!fire\`.`,
+    ACTOR_NOT_STAFF: `${E.error} لازم تكون عضو في الطاقم الاداري عنده رتبة مرقّمة عشان تدير الطاقم الاداري.`,
+    HIERARCHY_INVALID: `${E.error} إعدادات سلّم الطاقم الاداري ناقصة أو غير صحيحة — صحّحها قبل إدارة الطاقم الاداري.`,
+    BELOW_MIN_LEVEL: `${E.error} ما تقدر تنزل هذا الطاقم الاداري أكثر. إذا تبي تفصله استخدم \`!fire\`.`,
 
     SELF_WARN: `${E.error} ما تقدر تحذّر نفسك.`,
     NOT_A_DEMISSION_MANAGER: `${E.error} ما عندك صلاحية تتعامل مع طلبات الاستقالة.`,
-    DEMISSION_TARGET_IN_OWNER: `${E.error} استقالة ستاف من رتبة الأونر يتعامل معها مانجر الأونر بس.`,
-    DEMISSION_TARGET_IN_SHIP: `${E.error} استقالة ستاف الشيب تتعامل معها الإدارة بس.`,
+    DEMISSION_TARGET_IN_OWNER: `${E.error} استقالة اداري من رتبة الأونر يتعامل معها مانجر الأونر بس.`,
+    DEMISSION_TARGET_IN_SHIP: `${E.error} استقالة اداري الشيب تتعامل معها الإدارة بس.`,
     DEMISSION_TARGET_BELOW_OWNER: `${E.error} هذا العضو تحت رتبة الأونر.`,
-    DEMISSION_TARGET_NOT_STAFF: `${E.error} هذا العضو ما عنده رتبة ستاف مرقّمة.`,
-    NOT_A_WARN_MANAGER: `${E.error} ما عندك صلاحية تحذّر الستاف.`,
-    WARN_TARGET_IN_OWNER: `${E.error} تحذير ستاف من رتبة الأونر لمانجر الأونر بس.`,
-    WARN_TARGET_IN_SHIP: `${E.error} ستاف الشيب ما يحذّرهم إلا الأدمن.`,
-    WARN_TARGET_BELOW_OWNER: `${E.error} مانجر الأونر يحذّر ستاف الأونر بس — هذا العضو تحت رتبة الأونر.`,
-    WARN_TARGET_NOT_STAFF: `${E.error} هذا العضو ما عنده رتبة ستاف مرقّمة.`,
+    DEMISSION_TARGET_NOT_STAFF: `${E.error} هذا العضو ما عنده رتبة ادارية مرقّمة.`,
+    NOT_A_WARN_MANAGER: `${E.error} ما عندك صلاحية تحذّر الطاقم الاداري.`,
+    WARN_TARGET_IN_OWNER: `${E.error} تحذير اداري من رتبة الأونر لمانجر الأونر بس.`,
+    WARN_TARGET_IN_SHIP: `${E.error} اداري الشيب ما يحذّرهم إلا الأدمن.`,
+    WARN_TARGET_BELOW_OWNER: `${E.error} مانجر الأونر يحذّر اداري الأونر بس — هذا العضو تحت رتبة الأونر.`,
+    WARN_TARGET_NOT_STAFF: `${E.error} هذا العضو ما عنده رتبة ادارية مرقّمة.`,
 
     NOT_A_TRANSFER_MANAGER: `${E.error} أمر التحويل للأدمن ومانجر التحويل بس.`,
-    TRANSFER_SAME_MEMBER: `${E.error} ما تقدر تحوّل عضوية الستاف لنفس العضو.`,
+    TRANSFER_SAME_MEMBER: `${E.error} ما تقدر تحوّل عضوية الطاقم الاداري لنفس العضو.`,
   },
 
   come: {
@@ -139,11 +140,11 @@ export const staffMessages = {
 
     problem: {
       NOT_AUTHORIZED: () => `${E.error} أمر التحويل للأدمن ومانجر التحويل بس.`,
-      SAME_MEMBER: () => `${E.error} ما تقدر تحوّل عضوية الستاف لنفس العضو.`,
-      TARGET_IS_BOT: () => `${E.error} ما تقدر تحوّل عضوية الستاف لبوت.`,
+      SAME_MEMBER: () => `${E.error} ما تقدر تحوّل عضوية الطاقم الاداري لنفس العضو.`,
+      TARGET_IS_BOT: () => `${E.error} ما تقدر تحوّل عضوية الطاقم الاداري لبوت.`,
 
-      SOURCE_NOT_STAFF: (source: string) => `${E.error} ${source} مو عضو ستاف.`,
-      SOURCE_FIRED: (source: string) => `${E.error} ${source} مفصول من الستاف.`,
+      SOURCE_NOT_STAFF: (source: string) => `${E.error} ${source} مو عضو في الطاقم الاداري.`,
+      SOURCE_FIRED: (source: string) => `${E.error} ${source} مفصول من الطاقم الاداري.`,
       SOURCE_BLACKLISTED: (source: string) =>
         `${E.error} ${source} في البلاك ليست — ما ينحوّل، وما ينشال منه البلاك ليست بهذا الأمر.`,
       SOURCE_ON_BREAK: (source: string) =>
@@ -154,22 +155,22 @@ export const staffMessages = {
         `${E.error} ${source} عنده شغل مفتوح لازم ينتهي قبل التحويل.`,
 
       TARGET_ALREADY_STAFF: (_source: string, target: string) =>
-        `${E.error} ${target} عضو ستاف أصلاً — افصله أول أو اختر عضو ثاني. ما ندمج سجلّين ستاف.`,
+        `${E.error} ${target} عضو في الطاقم الاداري أصلاً — افصله أول أو اختر عضو ثاني. ما ندمج سجلّين اداري.`,
       TARGET_BLACKLISTED: (_source: string, target: string) =>
         `${E.error} ${target} في البلاك ليست.`,
 
       HIERARCHY_INVALID: () =>
-        `${E.error} إعدادات سلّم الستاف ناقصة أو غير صحيحة — صحّحها قبل التحويل.`,
+        `${E.error} إعدادات سلّم الطاقم الاداري ناقصة أو غير صحيحة — صحّحها قبل التحويل.`,
       LADDER_NOT_CONFIGURED: () =>
-        `${E.error} رتب الستاف المرقّمة مو مضبوطة. شغّل \`/role set type:رتبة بداية الستاف\` و \`/role set type:رتبة نهاية الستاف\` أول.`,
+        `${E.error} رتب الطاقم الاداري المرقّمة مو مضبوطة. شغّل \`/role set type:رتبة بداية الطاقم الاداري\` و \`/role set type:رتبة نهاية الطاقم الاداري\` أول.`,
       LEVEL_UNKNOWN: (source: string) =>
-        `${E.error} ما قدرت أحدد مستوى ${source} في سلّم الستاف.`,
+        `${E.error} ما قدرت أحدد مستوى ${source} في سلّم الطاقم الاداري.`,
     },
 
     success: (source: string, target: string, level: number) =>
-      `${E.success} تم تحويل عضوية الستاف من ${source} إلى ${target} — المستوى **${level}**.`,
+      `${E.success} تم تحويل عضوية الطاقم الاداري من ${source} إلى ${target} — المستوى **${level}**.`,
     successWithType: (source: string, target: string, level: number, type: string) =>
-      `${E.success} تم تحويل عضوية الستاف من ${source} إلى ${target} — المستوى **${level}** ونوع **${type}**.`,
+      `${E.success} تم تحويل عضوية الطاقم الاداري من ${source} إلى ${target} — المستوى **${level}** ونوع **${type}**.`,
     rolesLine: (granted: number, removed: number) =>
       `تم إعطاء ${granted} رتبة وسحب ${removed} رتبة.`,
     skippedLine: (count: number) =>

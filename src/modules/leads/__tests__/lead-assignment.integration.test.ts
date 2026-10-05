@@ -24,7 +24,7 @@ const GUILD = "lead-itest-guild";
 const guild = { id: GUILD, client: { user: { id: "bot" } } } as unknown as Guild;
 const user = (id: string) => ({ type: LeadHolderType.USER, id });
 
-async function createLead(name = "مسؤول الستاف") {
+async function createLead(name = "مسؤول الطاقم الاداري") {
   return leadService.createLead({
     guild,
     name,

@@ -59,6 +59,8 @@ export interface TicketV2Content {
 export interface TicketPanelConfig {
   id: string;
 
+  ticketPrefix?: string;
+
   name: string;
 
   description: string;
@@ -70,6 +72,8 @@ export interface TicketPanelConfig {
   supportRoleId: RoleId;
 
   managerRoleId?: RoleId;
+
+  supportRoleOptional?: boolean;
 
   fastAccessContext?: FastAccessContext;
 

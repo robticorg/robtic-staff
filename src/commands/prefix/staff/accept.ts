@@ -26,6 +26,10 @@ import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
 import { hiddenStaffService } from "../../../modules/staff/hidden/index.ts";
 import { PrefixAbort, requireApplyManager } from "../_shared/guards.ts";
 import { splitHiddenMode } from "../_shared/hidden-mode.ts";
+import {
+  ResponsibilityDecision,
+  responsibilityDecisionService,
+} from "../../../modules/tickets/responsibility-apply/decision.service.ts";
 import { extractUserIds } from "../_shared/parse.ts";
 import { requireTargetMember } from "../_shared/target.ts";
 
@@ -90,6 +94,19 @@ export default definePrefixCommand({
   name: "accept",
   category: "staff",
   async execute(ctx) {
+    const responsibilityTicket = await responsibilityDecisionService.ticketFor(ctx.guild.id, ctx.channel.id);
+    if (responsibilityTicket) {
+      const result = await responsibilityDecisionService.decide({
+        guild: ctx.guild,
+        actor: ctx.member,
+        ticket: responsibilityTicket,
+        decision: ResponsibilityDecision.ACCEPTED,
+        reason: null,
+      });
+      await ctx.reply(responsibilityDecisionService.replyFor(result));
+      return;
+    }
+
     const { hidden, args } = splitHiddenMode(ctx.args);
     const application = await applicationContextService.forChannel(ctx.guild.id, ctx.channel.id);
     if (application) return acceptInApplication(ctx, application, args, hidden);

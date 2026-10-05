@@ -61,8 +61,8 @@ Commands used in the wrong place (for example a ticket command outside a ticket)
 | `!unbreak` | انهاء-بريك · فك-بريك · ارجع | End a staff member's break early | `!unbreak @user` | Staff Manager, Administrators |
 | `!come` | تعال · حضور · نداء | DM a member asking them to come to this channel | `!come @user <reason>` | High Staff+, Administrators |
 | `!responsible` | مسؤولية · مسئولية | Manage a member's responsibilities: shows two buttons — **Give** opens a form listing only the responsibilities they don't have, **Remove** opens a form listing only the ones they hold (several can be picked at once). `حذف` / `ازالة` / `remove` / `delete` jump straight to the remove menu | `!responsible @user` · `!responsible حذف @user` | Owner Manager, Staff Manager, Administrators (each only the responsibilities they may assign) |
-| `!staff-check` | فحص-ستاف · معلومات-ستاف | Staff profile card (rank, tier, type, accepted by…) | `!staff-check @user` or `!staff-check <id>` | Rank Manager, Administrators |
-| `!check` | فحص | Weekly promotion check: who reached the required points | `!check` | Rank Manager, Administrators |
+| `!staff-check` | فحص-ستاف · معلومات-ستاف · فحص-اداري · معلومات-اداري | Staff profile card (rank, tier, type, accepted by…) | `!staff-check @user` or `!staff-check <id>` | Rank Manager, Administrators |
+| `!check` | فحص | Weekly promotion check: who reached the required points. Lists every staff member from normal staff up to ship in role order; administrators and hidden staff are never shown. Add a tier to list only that tier | `!check` · `!check staff` · `!check high` · `!check owner` · `!check ship` | Rank Manager, Administrators |
 
 ---
 
@@ -116,7 +116,7 @@ Gift orders (from the gift ticket or from `!gift` by staff) are approved or reje
 
 | Command | Aliases | Description | Usage | Who can use it |
 |---|---|---|---|---|
-| `!giveaway` | قيف-اواي · قيفاواي · سحب | Register a giveaway message from a giveaway bot (embed or new component layout; end time from `Ends:` or the embed time). When that bot announces the winners in the same channel, the bot replies with who proved the condition and who did not | `!giveaway <message link>` · `!giveaway <message-id>` | Administrators |
+| `!giveaway` | قيف-اواي · قيفاواي · سحب | Register a giveaway message from a giveaway bot (embed or new component layout; end time from `Ends:` or the embed time). When that bot announces the winners in the same channel, the bot replies with a plain text message listing who proved the condition and who did not | `!giveaway <message link>` · `!giveaway <message-id>` | Administrators |
 | `!done` | نفذ · نفّذ · تم-الشرط | Record that a member did the giveaway condition. Inside a ticket, plain `!done` records the ticket owner. With several active giveaways a menu asks which one (only for whoever ran the command). Ignored silently when no giveaway is active | `!done` (in a ticket) · `!done @user` · `!done @user <message-id>` | Staff, Administrators |
 
 ---
@@ -155,10 +155,8 @@ Gift orders (from the gift ticket or from `!gift` by staff) are approved or reje
 | `/role list` | Show all configured roles | `/role list` | Administrators |
 | `/channels set` | Set the channel for a slot (logs, order channel, gift delivery, gift delivery log…) | `/channels set type: channel:` | Administrators |
 | `/channels list` | Show the configured channels | `/channels list` | Administrators |
-| `/ticket-setup` | Post or update the ticket panel | `/ticket-setup` | Administrators |
 | `/ticket setup` | Set a ticket type's support role, optional manager role (can see and manage, but cannot claim) and category — all from menus in a form | `/ticket setup` | Administrators |
 | `/ticket send` | Post a panel in a chosen channel: main ticket panel, staff support panel, or the responsibility application panel (custom title / description / image) | `/ticket send` | Administrators |
-| `/staff-setup` | Post or update the staff support panel in this channel | `/staff-setup` | Administrators |
 | `/warn-setup` | Post or update the warnings panel | `/warn-setup` | Administrators |
 | `/faq add` · `remove` · `list` · `assign` | Manage ticket FAQ entries | `/faq add [panel:]` · `/faq remove faq:` · `/faq list` · `/faq assign faq: [panel:]` | Administrators |
 | `/fast-access add` · `remove` · `list` | Manage `$` quick-message macros for staff | `/fast-access add cmd: message: context:` · `/fast-access remove cmd:` | Staff Manager, Administrators |

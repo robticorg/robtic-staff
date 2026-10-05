@@ -5,6 +5,7 @@ export const RESPONSIBILITY_APPLY_PANEL_ID = "responsibility-apply";
 
 export const responsibilityApplyPanel: TicketPanelConfig = {
   id: RESPONSIBILITY_APPLY_PANEL_ID,
+  ticketPrefix: "res",
   name: "التقديم على مسؤولية",
   description: "قدّم على مسؤولية في السيرفر.",
   hidden: true,

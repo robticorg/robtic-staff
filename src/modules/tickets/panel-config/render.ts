@@ -41,7 +41,7 @@ export function buildSetupModal(panels: readonly Pick<TicketPanelConfig, "id" | 
         .setLabel(S.supportLabel)
         .setDescription(S.supportDescription)
         .setRoleSelectMenuComponent(
-          new RoleSelectMenuBuilder().setCustomId(PanelConfigField.support).setMinValues(1).setMaxValues(1),
+          new RoleSelectMenuBuilder().setCustomId(PanelConfigField.support).setMinValues(0).setMaxValues(1).setRequired(false),
         ),
       new LabelBuilder()
         .setLabel(S.managerLabel)

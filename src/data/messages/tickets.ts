@@ -40,8 +40,8 @@ export const ticketMessages = {
     alreadyOpen: (channelId: string) =>
       `${E.warning} عندك تكت مفتوح أصلاً: <#${channelId}>.`,
     created: (channelId: string) => `${E.success} تم فتح التكت حقك: <#${channelId}>.`,
-    failed: `${E.error} ما قدرت أفتح التكت. جرب مرة ثانية أو كلّم أحد الستاف.`,
-    categoryMissing: `${E.error} قسم التكت هذا فيه خطأ بالإعداد (كاتيقوري ديسكورد ناقص). تم إبلاغ الستاف.`,
+    failed: `${E.error} ما قدرت أفتح التكت. جرب مرة ثانية أو كلّم أحد الطاقم الاداري.`,
+    categoryMissing: `${E.error} قسم التكت هذا فيه خطأ بالإعداد (كاتيقوري ديسكورد ناقص). تم إبلاغ الطاقم الاداري.`,
     channelHeader: (ticketId: string, panelName: string) =>
       `# ${panelName} · \`${ticketId}\``,
     answersHeading: "### الإجابات المرسلة",
@@ -114,7 +114,7 @@ export const ticketMessages = {
     targetIsBot: `${E.error} ما تقدر تحوّل التكت لبوت.`,
     targetIsClaimer: `${E.error} هذا العضو مستلِم التكت أصلاً.`,
     targetIsOwner: `${E.error} ما تقدر تحوّل التكت لصاحب التكت.`,
-    targetNotStaff: `${E.error} لازم يكون العضو من الستاف أو أدمن.`,
+    targetNotStaff: `${E.error} لازم يكون العضو من الطاقم الاداري أو أدمن.`,
     raced: `${E.error} تغيّر مستلِم التكت قبل شوي — افتح الخيارات مرة ثانية.`,
 
     done: (ticketId: string, userId: string) =>
@@ -204,12 +204,12 @@ export const ticketMessages = {
     title: (staffId: string, onBreak: boolean) =>
       onBreak
         ? `### ${E.warning} المستلم <@${staffId}> في بريك حالياً`
-        : `### ${E.warning} المستلم <@${staffId}> ما عاد في الستاف`,
+        : `### ${E.warning} المستلم <@${staffId}> ما عاد في الطاقم الاداري`,
     body: "انسحب الاستلام منه والتكت رجع مفتوح، أحد يستلمه.",
     movedTo: (claimerId: string) => `انسحب الاستلام منه، والتكت صار عند <@${claimerId}>.`,
     rolesPing: (roleIds: readonly string[]) => roleIds.map((id) => `<@&${id}>`).join(" "),
     claimButton: "استلام التكت",
-    reasonFired: "مطرود من الستاف",
+    reasonFired: "مطرود من الطاقم الاداري",
     reasonBreak: "في بريك",
   },
 
@@ -263,7 +263,7 @@ export const ticketMessages = {
 
   sleep: {
     usage: `${E.warning} الطريقة: \`!sleep [المدة]\` — مثال: \`!sleep 6h\` أو \`!sleep 30m\`.`,
-    notAllowed: `${E.error} ما عندك صلاحية تستخدم هذا — لازم تكون من ستاف هذا القسم أو مستلم التكت.`,
+    notAllowed: `${E.error} ما عندك صلاحية تستخدم هذا — لازم تكون من اداري هذا القسم أو مستلم التكت.`,
     notOpen: `${E.error} هذا التكت مو مفتوح.`,
     invalidDuration: (min: string, max: string) =>
       `${E.error} مدة غير صحيحة. استخدم شيء مثل \`6h\` أو \`30m\` — بين ${min} و ${max}.`,

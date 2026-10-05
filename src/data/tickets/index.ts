@@ -59,6 +59,20 @@ export function getPanel(panelId: string): TicketPanelConfig | undefined {
   return panel ? applyPanelOverride(panel) : undefined;
 }
 
+export const LEGACY_TICKET_PREFIX = "ticket";
+
+export function ticketPrefixOf(panel: Pick<TicketPanelConfig, "id" | "ticketPrefix">): string {
+  return (panel.ticketPrefix ?? panel.id).toLowerCase();
+}
+
+export function ticketCounterKey(guildId: string, prefix: string): string {
+  return prefix === LEGACY_TICKET_PREFIX ? `ticket:${guildId}` : `ticket:${guildId}:${prefix}`;
+}
+
+export function ticketPrefixes(): string[] {
+  return [...new Set(tickets.panels.map(ticketPrefixOf))];
+}
+
 export function independentPanelIds(): string[] {
   return tickets.panels.filter((p) => p.independent).map((p) => p.id);
 }

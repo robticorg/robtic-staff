@@ -23,9 +23,9 @@ export const prefixMessages = {
     guildOnly: `${E.error} أوامر البريفكس تشتغل داخل السيرفر بس.`,
     genericError: `${E.error} صار خطأ وأنا أنفذ الأمر.`,
     notStaff: `${E.error} ما عندك صلاحية تستخدم هذا.`,
-    notStaffManager: `${E.error} هذا لمانجرات الستاف بس.`,
+    notStaffManager: `${E.error} هذا لمانجرات الطاقم الاداري بس.`,
     notApplyManager: `${E.error} هذا لمانجرات التقديم بس.`,
-    notHighStaff: `${E.error} هذا الأمر للهاي ستاف فما فوق.`,
+    notHighStaff: `${E.error} هذا الأمر للادارة العليا فما فوق.`,
     usage: (usage: string) => `${E.warning} الطريقة: \`${usage}\``,
     needUserTarget: `${E.warning} منشن العضو أو حط الآيدي حقه.`,
   },
@@ -68,18 +68,18 @@ export const prefixMessages = {
   },
 
   staff: {
-    rolesNotConfigured: `${E.error} رتب الستاف المرقّمة مو مضبوطة. شغّل \`/role set type:رتبة بداية الستاف\` و \`/role set type:رتبة نهاية الستاف\` أول.`,
+    rolesNotConfigured: `${E.error} رتب الطاقم الاداري المرقّمة مو مضبوطة. شغّل \`/role set type:رتبة بداية الطاقم الاداري\` و \`/role set type:رتبة نهاية الطاقم الاداري\` أول.`,
     memberNotFound: `${E.error} هذا العضو مو موجود في السيرفر.`,
-    notStaffMember: (userMention: string) => `${E.error} ${userMention} مو عضو ستاف.`,
+    notStaffMember: (userMention: string) => `${E.error} ${userMention} مو عضو في الطاقم الاداري.`,
     levelOutOfRange: (max: number) => `${E.error} المستوى لازم يكون بين 0 و ${max}.`,
     accepted: (userMention: string, level: number) =>
-      `${E.success} تم قبول ${userMention} كـ ستاف على المستوى **${level}**.`,
+      `${E.success} تم قبول ${userMention} كـ اداري على المستوى **${level}**.`,
     acceptedWithType: (userMention: string, level: number, typeLabel: string) =>
-      `${E.success} تم قبول ${userMention} كـ ستاف **${typeLabel}** على المستوى **${level}**.`,
+      `${E.success} تم قبول ${userMention} كـ اداري **${typeLabel}** على المستوى **${level}**.`,
     unknownStaffType: (token: string, available: string) =>
-      `${E.error} نوع الستاف غير معروف: \`${token}\`. الأنواع المتاحة: ${available}.`,
+      `${E.error} نوع الطاقم الاداري غير معروف: \`${token}\`. الأنواع المتاحة: ${available}.`,
     duplicateStaffLevel: `${E.error} حدد مستوى واحد بس.`,
-    duplicateStaffType: `${E.error} حدد نوع ستاف واحد بس.`,
+    duplicateStaffType: `${E.error} حدد نوع اداري واحد بس.`,
     duplicateStaffTier: `${E.error} حدد تصنيف واحد بس.`,
     levelAndTier: `${E.error} ما ينفع تحدد مستوى وتصنيف مع بعض — التصنيف نفسه يحدد المستوى.`,
     tierNotConfigured: (tierLabel: string, slug: string) =>
@@ -94,8 +94,8 @@ export const prefixMessages = {
     ) =>
       `${E.success} تم قبول ${userMention} كـ **${tierLabel}** ونوعه **${typeLabel}** على المستوى **${level}**.`,
     staffTypeRoleMissing: (typeLabel: string, slug: string) =>
-      `${E.error} رتبة نوع الستاف **${typeLabel}** مو مضبوطة. شغّل \`/role stafftype type:${slug}\` أول.`,
-    fired: (userMention: string) => `${E.success} تم فصل ${userMention} من الستاف.`,
+      `${E.error} رتبة نوع الطاقم الاداري **${typeLabel}** مو مضبوطة. شغّل \`/role stafftype type:${slug}\` أول.`,
+    fired: (userMention: string) => `${E.success} تم فصل ${userMention} من الطاقم الاداري.`,
     blacklisted: (userMention: string) => `${E.success} تم فصل ${userMention} ووضعه في القائمة السوداء.`,
     blacklistRoleMissing: `${E.error} رتبة البلاك ليست مو مضبوطة (\`/role set type:رتبة البلاك ليست\`).`,
     promoted: (userMention: string, from: number, to: number) =>
@@ -104,7 +104,7 @@ export const prefixMessages = {
       `${E.success} تم تنزيل ${userMention} **${from} → ${to}**.`,
     alreadyMaxLevel: (userMention: string) => `${E.warning} ${userMention} وصل أعلى مستوى أصلاً.`,
     alreadyStaff: (userMention: string) =>
-      `${E.warning} ${userMention} ستاف أصلاً — استخدم \`!promote\` أو \`!demote\` لتغيير رتبته.`,
+      `${E.warning} ${userMention} اداري أصلاً — استخدم \`!promote\` أو \`!demote\` لتغيير رتبته.`,
     promoteTierNotHigher: (userMention: string, tierLabel: string, level: number) =>
       `${E.warning} ${userMention} رتبته **${tierLabel}** أو أعلى أصلاً (المستوى ${level}) — ما راح ينزل بالترقية.`,
     demoteTierNotLower: (userMention: string, tierLabel: string, level: number) =>
@@ -114,15 +114,15 @@ export const prefixMessages = {
 
     backUsage: `${E.warning} الطريقة: \`!back @عضو\``,
     backNoRecord: (userMention: string) =>
-      `${E.error} ${userMention} ما له سجل ستاف سابق — استخدم \`!accept\`.`,
+      `${E.error} ${userMention} ما له سجل اداري سابق — استخدم \`!accept\`.`,
     backNothingToDo: (userMention: string) =>
-      `${E.warning} ${userMention} ستاف ورتبه كاملة أصلاً.`,
+      `${E.warning} ${userMention} اداري ورتبه كاملة أصلاً.`,
     backBlacklisted: (userMention: string) =>
       `${E.error} ${userMention} في البلاك ليست — ما ينفع يرجع بـ \`!back\`.`,
     backOnBreak: (userMention: string) =>
       `${E.warning} ${userMention} في بريك — استخدم \`!unbreak\` لإرجاع رتبه.`,
     backDone: (userMention: string, level: number) =>
-      `${E.success} تم إرجاع ${userMention} للستاف على المستوى **${level}** مع رتبه.`,
+      `${E.success} تم إرجاع ${userMention} للطاقم الاداري على المستوى **${level}** مع رتبه.`,
     alreadyMinLevel: (userMention: string) => `${E.warning} ${userMention} على المستوى 0 أصلاً. استخدم \`!فصل\` عشان تشيله.`,
     acceptUsage: `${E.warning} الطريقة: \`!قبول @عضو [المستوى]\``,
     fireUsage: `${E.warning} الطريقة: \`!فصل @عضو\` للفصل العادي · \`!فصل @عضو =\` للفصل + القائمة السوداء`,
@@ -146,7 +146,7 @@ export const prefixMessages = {
       `${E.error} ما تم تنفيذ السجن — ${reason}\nما انحفظت العقوبة كمنفّذة.`,
 
     denied: {
-      TARGET_IS_STAFF: `${E.error} ما تقدر تسجن عضو ستاف — عقوبات الستاف تمشي بالتحذيرات.`,
+      TARGET_IS_STAFF: `${E.error} ما تقدر تسجن عضو في الطاقم الاداري — عقوبات الطاقم الاداري تمشي بالتحذيرات.`,
       TARGET_OUTRANKS_ACTOR: `${E.error} ما تقدر تسجن عضو رتبته أعلى منك أو مثلك.`,
     } as Record<string, string>,
   },
@@ -166,7 +166,7 @@ export const prefixMessages = {
     userWarnUsage: `${E.warning} الطريقة: \`!تحذير @عضو <السبب>\``,
     reasonRequired: `${E.warning} لازم تكتب سبب للتحذير.`,
     noReason: "بدون سبب",
-    proofRequired: `${E.warning} لازم ترفق دليل (صورة/سكرين) مع تحذير الستاف — بدون دليل ما ينسجّل.`,
+    proofRequired: `${E.warning} لازم ترفق دليل (صورة/سكرين) مع تحذير الطاقم الاداري — بدون دليل ما ينسجّل.`,
     userWarned: (userMention: string, reason: string) =>
       `${E.warning} تم تحذير ${userMention}.\n**السبب:** ${reason}`,
 
@@ -179,24 +179,24 @@ export const prefixMessages = {
     demotedMaxWarnings: (userMention: string, from: number, to: number) =>
       `${E.warning} ${userMention} وصل **3 تحذيرات** — تم تنزيله **${from} → ${to}** وتصفير تحذيراته.`,
     firedNoLevelLeft: (userMention: string) =>
-      `${E.error} ${userMention} وصل **3 تحذيرات** وهو على المستوى 0 — ما فيه مستوى أقل، فتم فصله من الستاف.`,
+      `${E.error} ${userMention} وصل **3 تحذيرات** وهو على المستوى 0 — ما فيه مستوى أقل، فتم فصله من الطاقم الاداري.`,
     firedMaxWarnings: (userMention: string) =>
       `${E.error} تم فصل ${userMention} ووضعه في القائمة السوداء بسبب وصوله للحد الأقصى من التحذيرات.`,
 
-    staffWarnManagerOnly: `${E.error} إصدار تحذيرات الستاف لمانجرات الستاف بس.`,
+    staffWarnManagerOnly: `${E.error} إصدار تحذيرات الطاقم الاداري لمانجرات الطاقم الاداري بس.`,
     staffWarnTargetNotStaff: (userMention: string) =>
-      `${E.error} ${userMention} مو عضو ستاف — استخدم روم ${E.report} تحذيرات الأعضاء بدال كذا.`,
+      `${E.error} ${userMention} مو عضو في الطاقم الاداري — استخدم روم ${E.report} تحذيرات الأعضاء بدال كذا.`,
     staffWarnTargetInactive: (userMention: string) =>
-      `${E.error} ${userMention} مو عضو ستاف نشط، ما ينفع يتحذّر.`,
+      `${E.error} ${userMention} مو عضو في الطاقم الاداري نشط، ما ينفع يتحذّر.`,
     staffWarnRoleMissing: (level: number) =>
-      `${E.error} رتبة تحذير الستاف ${level} مو مضبوطة (\`/role set type:رتبة تحذير الستاف\`).`,
+      `${E.error} رتبة تحذير الطاقم الاداري ${level} مو مضبوطة (\`/role set type:رتبة تحذير الطاقم الاداري\`).`,
 
     unwarnUsage: [
       `${E.warning} الطريقة:`,
-      "`!الغاء-تحذير @عضو staff` — يشيل تحذير الستاف الحالي",
-      "`!الغاء-تحذير @عضو <آيدي-التحذير>` — يشيل هذا التحذير بالذات (ستاف أو عضو)",
+      "`!الغاء-تحذير @عضو staff` — يشيل تحذير الطاقم الاداري الحالي",
+      "`!الغاء-تحذير @عضو <آيدي-التحذير>` — يشيل هذا التحذير بالذات (اداري أو عضو)",
     ].join("\n"),
-    unwarnWarningIdRequired: `${E.warning} حط آيدي التحذير، أو اكتب \`staff\` عشان تشيل تحذير الستاف: \`!الغاء-تحذير @عضو <staff | آيدي-التحذير>\``,
+    unwarnWarningIdRequired: `${E.warning} حط آيدي التحذير، أو اكتب \`staff\` عشان تشيل تحذير الطاقم الاداري: \`!الغاء-تحذير @عضو <staff | آيدي-التحذير>\``,
     noActiveRealWarning: (userMention: string) =>
       `${E.warning} ${userMention} ما عليه تحذير رسمي نشط نقدر نشيله.`,
     warningNotFound: `${E.error} ما فيه تحذير بهذا الآيدي.`,

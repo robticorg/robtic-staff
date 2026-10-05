@@ -10,11 +10,13 @@ export type StaffSupportWorkflow =
 
 export const staffSupportPanel: TicketPanelConfig = {
   id: StaffSupportWorkflow.STAFF_SUPPORT,
-  name: "دعم الستاف",
+  ticketPrefix: "staff",
+  name: "دعم الادارة",
   description: "تواصل مع الإدارة",
   hidden: true,
 
   supportRoleId: UNSET_ID,
+  supportRoleOptional: true,
 
   questions: { enabled: false, items: [] },
 
@@ -31,6 +33,6 @@ export const staffSupportPanel: TicketPanelConfig = {
 
   ticketMessage: {
     accentColor: colors.primary,
-    text: ["طلب دعم ستاف. الإدارة راح ترد عليك هنا."],
+    text: ["طلب دعم اداري. الإدارة راح ترد عليك هنا."],
   },
 };

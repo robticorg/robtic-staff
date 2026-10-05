@@ -20,7 +20,7 @@ export const ticketSetupCommandMessages = {
     typeLabel: "نوع التكت",
     typePlaceholder: "اختر نوع التكت",
     supportLabel: "رتبة الدعم",
-    supportDescription: "تشوف التكت وتقدر تستلمه",
+    supportDescription: "إجبارية لتكتات الدعم — اختيارية للتقديم والنقل ودعم الادارة",
     managerLabel: "رتبة مسؤول التكت (اختياري)",
     managerDescription: "تشوف التكت وتديره، بس ما تقدر تستلمه",
     categoryLabel: "كاتيقوري التكت",
@@ -43,20 +43,20 @@ export const ticketSetupCommandMessages = {
 
   kinds: {
     [TicketPanelKind.MAIN]: "لوحة التكتات الرئيسية",
-    [TicketPanelKind.STAFF]: "لوحة دعم الستاف",
+    [TicketPanelKind.STAFF]: "لوحة دعم الادارة",
     [TicketPanelKind.RESPONSIBILITY]: "لوحة التقديم على مسؤولية",
   } as Record<string, string>,
 
   setupDone: (
     panelName: string,
-    supportRoleId: string,
+    supportRoleId: string | null,
     managerRoleId: string | null,
     categoryId: string | null,
     logChannelId: string | null,
   ) =>
     [
       `${E.success} تم ضبط تكت **${panelName}**.`,
-      `**رتبة الدعم:** <@&${supportRoleId}>`,
+      `**رتبة الدعم:** ${supportRoleId ? `<@&${supportRoleId}>` : "ما فيه — يكفي المضبوط بالأوامر"}`,
       `**مسؤول التكت:** ${managerRoleId ? `<@&${managerRoleId}>` : "ما فيه"}`,
       `**الكاتيقوري:** ${categoryId ? `<#${categoryId}>` : "—"}`,
       `**روم اللوق:** ${logChannelId ? `<#${logChannelId}>` : "روم لوق التكتات العام"}`,
@@ -67,8 +67,10 @@ export const ticketSetupCommandMessages = {
   errors: {
     adminOnly: `${E.error} هذا للأدمن بس.`,
     typeRequired: `${E.error} لازم تختار نوع التكت.`,
-    supportRequired: `${E.error} لازم تختار رتبة الدعم.`,
-    categoryRequired: `${E.error} هذا التكت يفتح روم، لازم تختار كاتيقوري.`,
+    notConfigurable: (panelName: string) =>
+      `${E.error} **${panelName}** ما يفتح تكت، يتضبط من \`/channels\` (روم طلبات الهدايا) ومانجر الهدايا من \`/role set\`.`,
+    supportRequired: (panelName: string) => `${E.error} تكت **${panelName}** يحتاج رتبة دعم — اخترها وأعد المحاولة.`,
+    categoryRequired: `${E.error} هذا التكت يفتح روم وما له كاتيقوري من \`/channels\`، لازم تختار كاتيقوري.`,
     everyone: `${E.error} رتبة @everyone ما تنفع هنا.`,
     panelRequired: `${E.error} لازم تختار اللوحة.`,
     channelRequired: `${E.error} لازم تختار روم نصي.`,

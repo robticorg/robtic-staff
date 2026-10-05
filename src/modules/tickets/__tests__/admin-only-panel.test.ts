@@ -124,7 +124,7 @@ describe("gift-claim panel needs no category", () => {
     expect(panel.logChannelId).toBeUndefined();
   });
 
-  it("takes its support role from /ticket setup, which grants gift-manager rights", () => {
+  it("is admin-only by default; gift managers come from the gift manager role", () => {
     expect(panelIsAdminOnly(getPanel(GIFT_CLAIM_PANEL_ID)!)).toBe(true);
     setPanelOverride(GIFT_CLAIM_PANEL_ID, { supportRoleId: "gift-support" });
     try {

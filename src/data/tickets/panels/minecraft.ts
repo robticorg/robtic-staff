@@ -3,6 +3,7 @@ import { colors } from "../../config/colors.ts";
 
 export const minecraftPanel: TicketPanelConfig = {
   id: "minecraft-support",
+  ticketPrefix: "minecraft",
   name: "دعـم مـايـنكـرافـت",
   description: "مشكلة متعلقة في خادم ماينكرافت فك ذا تكت و بيجيك دعم",
   emoji: "<a:minecraft:1549743494833377350>",

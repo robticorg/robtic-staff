@@ -73,7 +73,7 @@ export async function handleInfoButton(
   }
   const lines = [
     R.infoTitle,
-    R.infoLine("عضو الستاف", `<@${vacation.staffId}> (\`${vacation.staffId}\`)`),
+    R.infoLine("عضو الطاقم الاداري", `<@${vacation.staffId}> (\`${vacation.staffId}\`)`),
     R.infoLine(
       "المدة",
       formatDuration({ value: vacation.duration, unit: vacation.durationUnit }),

@@ -33,6 +33,20 @@ export const responsibilityApplyMessages = {
     committed: "✅ نعم، أتعهد أكون قد المسؤولية",
   },
 
+  decision: {
+    accepted: (userId: string, title: string) =>
+      `${E.success} تم قبول <@${userId}> وإعطاؤه مسؤولية **${title}**.`,
+    refused: (userId: string, title: string, reason: string) =>
+      `${E.error} تم رفض طلب <@${userId}> على مسؤولية **${title}**.\n**السبب:** ${reason}`,
+    dmAccepted: (title: string) => `🎉 تم قبولك في مسؤولية **${title}**. بالتوفيق!`,
+    dmRefused: (title: string, reason: string) => `تم رفض طلبك على مسؤولية **${title}**.\n**السبب:** ${reason}`,
+    notManager: `${E.error} القبول والرفض لمسؤول هذا التكت أو الأدمن بس.`,
+    selfDecision: `${E.error} ما تقدر تقبل أو ترفض طلبك انت.`,
+    alreadyDecided: `${E.warning} تم البت في هذا الطلب من قبل.`,
+    reasonRequired: `${E.warning} الطريقة: \`!refuse <السبب>\``,
+    noResponsibility: `${E.error} ما لقيت المسؤولية اللي انطلبت في هذا التكت.`,
+  },
+
   errors: {
     none: `${E.error} ما فيه مسؤوليات مضافة حالياً.`,
     notConfigured: `${E.error} تكت التقديم على المسؤولية مو مضبوط. الإدارة لازم تضبطه من \`/ticket setup\`.`,

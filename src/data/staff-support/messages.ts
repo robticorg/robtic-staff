@@ -4,38 +4,38 @@ const E = emojis;
 
 export const staffSupportMessages = {
   panel: {
-    title: "## دعم الستاف",
+    title: "## دعم الادارة",
     body: [
       "هنا تقدر تتواصل مع الإدارة أو تقدّم على إجازة أو استقالة.",
       "اختر اللي تبيه من الأزرار تحت، وراح ينفتح لك نموذج تعبّيه.",
     ],
-    footer: "Robtic • دعم الستاف",
+    footer: "Robtic • دعم الادارة",
 
-    supportButton: "دعم الستاف",
+    supportButton: "دعم الادارة",
     breakButton: "طلب إجازة",
     demissionButton: "طلب استقالة",
 
-    setupDeployed: (channelId: string) => `${E.success} تم نشر لوحة دعم الستاف في <#${channelId}>.`,
-    setupUpdated: (channelId: string) => `${E.success} تم تحديث لوحة دعم الستاف في <#${channelId}>.`,
+    setupDeployed: (channelId: string) => `${E.success} تم نشر لوحة دعم الادارة في <#${channelId}>.`,
+    setupUpdated: (channelId: string) => `${E.success} تم تحديث لوحة دعم الادارة في <#${channelId}>.`,
     setupChannelInvalid: `${E.error} لازم تشغّل الأمر في روم نصي.`,
   },
 
   support: {
-    modalTitle: "دعم الستاف",
+    modalTitle: "دعم الادارة",
     reasonLabel: "السبب",
     reasonPlaceholder: "اشرح موضوعك بالتفصيل…",
 
-    notStaff: `${E.error} هذا الأمر لأعضاء الستاف بس.`,
+    notStaff: `${E.error} هذا الأمر لأعضاء الطاقم الاداري بس.`,
     reasonRequired: `${E.error} لازم تكتب السبب.`,
-    categoryMissing: `${E.error} فيه خطأ بإعدادات دعم الستاف (الكاتيقوري ناقص). تم إبلاغ الإدارة.`,
+    categoryMissing: `${E.error} فيه خطأ بإعدادات دعم الادارة (الكاتيقوري ناقص). تم إبلاغ الإدارة.`,
     alreadyOpen: (channelId: string) => `${E.warning} عندك طلب دعم مفتوح أصلاً: <#${channelId}>.`,
     created: (channelId: string) => `${E.success} تم فتح طلب الدعم حقك: <#${channelId}>.`,
     failed: `${E.error} ما قدرت أفتح طلب الدعم. جرب مرة ثانية.`,
 
-    channelHeader: (ticketId: string) => `# دعم الستاف · \`${ticketId}\``,
+    channelHeader: (ticketId: string) => `# دعم الادارة · \`${ticketId}\``,
     openedBy: (userId: string) => `مقدّم الطلب: <@${userId}>`,
     reasonLine: (reason: string) => `**السبب**\n${reason}`,
-    visibilityStaff: "-# يشوف هذا الطلب: مانجر الستاف ومانجر الأونر.",
+    visibilityStaff: "-# يشوف هذا الطلب: مانجر الطاقم الاداري ومانجر الأونر.",
     visibilityOwner: "-# يشوف هذا الطلب: مانجر الأونر بس.",
     visibilityShip: "-# يشوف هذا الطلب: الإدارة بس.",
   },
@@ -45,7 +45,7 @@ export const staffSupportMessages = {
     reasonLabel: "السبب",
     reasonPlaceholder: "وش سبب الاستقالة؟",
 
-    notStaff: `${E.error} هذا الأمر لأعضاء الستاف بس.`,
+    notStaff: `${E.error} هذا الأمر لأعضاء الطاقم الاداري بس.`,
     reasonRequired: `${E.error} لازم تكتب سبب الاستقالة.`,
     alreadyOpen: `${E.warning} عندك طلب استقالة مقدّم أصلاً وبانتظار الإدارة.`,
     channelNotConfigured: `${E.error} روم طلبات الإجازات مو مضبوط. كلّم الإدارة.`,
@@ -67,14 +67,14 @@ export const staffSupportMessages = {
     alreadyHandled: "تم التعامل مع طلب الاستقالة مسبقًا.",
     requestGone: `${E.error} طلب الاستقالة هذا ما عاد موجود.`,
     targetGone: `${E.error} العضو ما عاد موجود في السيرفر.`,
-    targetNotStaff: `${E.error} هذا العضو ما عاد عضو ستاف.`,
+    targetNotStaff: `${E.error} هذا العضو ما عاد عضو في الطاقم الاداري.`,
     fired: (userId: string) => `${E.success} تم فصل <@${userId}> بناءً على طلب الاستقالة.`,
     fireFailed: `${E.error} ما قدرت أنفّذ الفصل. جرب مرة ثانية.`,
   },
 
   tier: {
-    STAFF: "ستاف",
-    HIGHSTAFF: "هاي ستاف",
+    STAFF: "اداري",
+    HIGHSTAFF: "ادارة عليا",
     OWNER: "أونر",
     SHIP: "شيب",
   } as Record<string, string>,

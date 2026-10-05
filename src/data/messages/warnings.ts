@@ -23,9 +23,9 @@ export const warningMessages = {
   },
   staff: {
     issued: (staffMention: string, level: number, reason: string) =>
-      `${emojis.warning} ${staffMention} حصل على **تحذير ستاف ${level}**.\nالسبب: ${reason}`,
+      `${emojis.warning} ${staffMention} حصل على **تحذير اداري ${level}**.\nالسبب: ${reason}`,
     removed: (staffMention: string) =>
-      `${emojis.success} تم حذف تحذير الستاف عن ${staffMention}.`,
+      `${emojis.success} تم حذف تحذير الطاقم الاداري عن ${staffMention}.`,
   },
   appeal: {
     submitted: "تم إرسال استئنافك للمراجعة.",
@@ -34,8 +34,8 @@ export const warningMessages = {
   },
   log: {
     titleUser: "⚠️ تحذير عضو",
-    titleVerbal: "🗣️ تحذير شفوي على ستاف",
-    titleReal: "⛔ تحذير رسمي على ستاف",
+    titleVerbal: "🗣️ تحذير شفوي على اداري",
+    titleReal: "⛔ تحذير رسمي على اداري",
     target: "العضو",
     issuer: "بواسطة",
     warnType: "نوع التحذير",

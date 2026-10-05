@@ -150,7 +150,7 @@ describe("staff gift request card", () => {
     const nodes = (card.components as ContainerBuilder[]).flatMap((c) => flat(c.toJSON() as unknown as Json));
     const text = nodes.map((n) => n.content ?? "").join("\n");
     expect(text).toContain("<@staff>");
-    expect(text).toContain("طلب هدية من الستاف");
+    expect(text).toContain("طلب هدية من الطاقم الاداري");
     expect(text).not.toContain("إثبات الفوز");
     expect(nodes.filter((n) => n.type === 2 && !n.disabled && n.style !== LINK_STYLE)).toHaveLength(2);
   });

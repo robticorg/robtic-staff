@@ -25,3 +25,16 @@ describe("!ticket <number>", () => {
     expect(parseTicketRef("ticket-")).toBeNull();
   });
 });
+
+describe("!ticket per-type numbers", () => {
+  it("reads each ticket type's own prefix", () => {
+    expect(parseTicketRef("apply-3")).toEqual({ ticketId: "apply-3" });
+    expect(parseTicketRef("RES-07")).toEqual({ ticketId: "res-7" });
+    expect(parseTicketRef("minecraft-12")).toEqual({ ticketId: "minecraft-12" });
+  });
+
+  it("keeps plain numbers on the support count and ignores unknown prefixes", () => {
+    expect(parseTicketRef("12")).toEqual({ ticketId: "ticket-12" });
+    expect(parseTicketRef("nope-3")).toBeNull();
+  });
+});

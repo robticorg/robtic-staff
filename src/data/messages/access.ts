@@ -10,7 +10,7 @@ export const accessMessages = {
   skipped: (count: number) => `${E.warning} تم تجاوز **${count}** رتبة:`,
   total: (count: number) => `مجموع رتب الوصول الحالية: **${count}**`,
   andMore: (count: number) => `و **${count}** غيرها`,
-  note: "رتب الوصول ما لها مستوى ستاف، وما تدخل في حساب السلّم أبداً.",
+  note: "رتب الوصول ما لها مستوى اداري، وما تدخل في حساب السلّم أبداً.",
 
   rejected: {
     everyone: `— \`@everyone\` ما ينفع تكون رتبة وصول.`,

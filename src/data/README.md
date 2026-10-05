@@ -40,7 +40,7 @@ src/data/
 
 Ticket-panel configuration is **deliberately static code** (unlike staff
 roles/channels, which are per-guild dynamic). The Discord role/channel/category
-IDs in `panels/*.ts` are literal strings you edit by hand; `/ticket-setup`
+IDs in `panels/*.ts` are literal strings you edit by hand; `/ticket setup`
 validates them against the guild. Ticket **state** (open/claimed/closed, answers,
 added users) is dynamic → MongoDB (`tickets` collection). FAQ entries are dynamic
 too → MongoDB (`faqs`).

@@ -23,10 +23,12 @@ const claimer = {
 
 export const staffApplicationPanel: TicketPanelConfig = {
   id: StaffApplicationWorkflow.STAFF_APPLICATION,
+  ticketPrefix: "apply",
   name: "التقديم او النقل الى طاقم الاداري",
   description: "قدّم على فريق الاداري أو انقل خبرتك من سيرفر ثاني.",
 
   supportRoleId: UNSET_ID,
+  supportRoleOptional: true,
   independent: true,
   blacklistSlot: RoleConfigType.BLACKLIST,
   fastAccessContext: FastAccessContext.STAFF_APPLICATION,
@@ -45,11 +47,13 @@ export const staffApplicationPanel: TicketPanelConfig = {
 
 export const staffTransferApplicationPanel: TicketPanelConfig = {
   id: StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION,
+  ticketPrefix: "transfer",
   name: "نقل إلى الادارة",
   description: "طلب نقل من سيرفر ثاني.",
   hidden: true,
 
   supportRoleId: UNSET_ID,
+  supportRoleOptional: true,
   independent: true,
   blacklistSlot: RoleConfigType.BLACKLIST,
   fastAccessContext: FastAccessContext.STAFF_TRANSFER,

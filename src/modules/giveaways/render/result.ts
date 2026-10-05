@@ -1,5 +1,4 @@
-import { ContainerBuilder, MessageFlags, type MessageReplyOptions } from "discord.js";
-import { colors } from "../../../data/config/colors.ts";
+import type { MessageReplyOptions } from "discord.js";
 import { giveawayMessages } from "../../../data/giveaways/messages.ts";
 
 const R = giveawayMessages.result;
@@ -18,12 +17,8 @@ export function giveawayResultLines(winners: readonly WinnerCheck[], proofCount:
 }
 
 export function buildGiveawayResult(winners: readonly WinnerCheck[], proofCount: number): MessageReplyOptions {
-  const allProved = winners.every((w) => w.provedBy);
-  const container = new ContainerBuilder().setAccentColor(allProved ? colors.success : colors.error);
-  container.addTextDisplayComponents((t) => t.setContent(giveawayResultLines(winners, proofCount).join("\n")));
   return {
-    components: [container],
-    flags: MessageFlags.IsComponentsV2,
+    content: giveawayResultLines(winners, proofCount).join("\n"),
     allowedMentions: { parse: [], repliedUser: false },
   };
 }

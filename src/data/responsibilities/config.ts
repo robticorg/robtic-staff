@@ -16,7 +16,7 @@ export const RESPONSIBILITY_PERMISSIONS: readonly RoleConfigType[] = [
 ];
 
 export const RESPONSIBILITY_PERMISSION_LABELS: Readonly<Record<string, string>> = {
-  [RoleConfigType.STAFF_MANAGER]: "إدارة الستاف",
+  [RoleConfigType.STAFF_MANAGER]: "إدارة الطاقم الاداري",
   [RoleConfigType.OWNER_MANAGER]: "إدارة الأونر",
   [RoleConfigType.APPLY_MANAGER]: "إدارة التقديم",
   [RoleConfigType.TRANSFER_MANAGER]: "إدارة النقل",
@@ -58,7 +58,7 @@ export const RESPONSIBILITY_CATEGORY_ORDER: readonly ResponsibilityCategory[] = 
 ];
 
 export const RESPONSIBILITY_CATEGORY_LABELS: Readonly<Record<ResponsibilityCategory, string>> = {
-  [ResponsibilityCategory.STAFF]: "الستاف",
+  [ResponsibilityCategory.STAFF]: "الطاقم الاداري",
   [ResponsibilityCategory.TICKETS]: "التكتات",
   [ResponsibilityCategory.APPLICATIONS]: "التقديم",
   [ResponsibilityCategory.MODERATION]: "الإشراف",

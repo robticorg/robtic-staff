@@ -3,10 +3,8 @@ import { branding } from "../config/branding.ts";
 export const CommandName = {
   ROLE: "role",
   CHANNELS: "channels",
-  TICKET_SETUP: "ticket-setup",
   FAQ: "faq",
   FAST_ACCESS: "fast-access",
-  STAFF_SETUP: "staff-setup",
   SCAN: "scan",
   POINTS: "points",
   SLEEP: "sleep",
@@ -149,44 +147,44 @@ export const CommandOption = {
 
 export const commandCopy = {
   role: {
-    description: `ضبط رتب ديسكورد اللي يستخدمها نظام ستاف ${branding.botName}`,
+    description: `ضبط رتب ديسكورد اللي يستخدمها نظام الطاقم الاداري ${branding.botName}`,
     sub: {
       set: {
-        description: "ضبط رتبة لخانة وحدة في نظام الستاف",
+        description: "ضبط رتبة لخانة وحدة في نظام الطاقم الاداري",
         options: {
           type: "الخانة اللي تبي تضبطها",
           role: "الرتبة المطلوبة",
         },
       },
       range: {
-        description: "ضبط رتبة تنعطى تلقائياً لمستويات ستاف معيّنة (أو نطاق رتب وصول)",
+        description: "ضبط رتبة تنعطى تلقائياً لمستويات ادارية معيّنة (أو نطاق رتب وصول)",
         options: {
           type: "نوع الربط",
           role: "الرتبة المطلوبة",
-          from: "أول رتبة ستاف مرقّمة في النطاق (اختياري)",
-          to: "آخر رتبة ستاف مرقّمة في النطاق (اختياري)",
+          from: "أول رتبة ادارية مرقّمة في النطاق (اختياري)",
+          to: "آخر رتبة ادارية مرقّمة في النطاق (اختياري)",
         },
       },
       boundary: {
-        description: "تحديد أول رتبة في تصنيف (هاي ستاف / أونر / شيب)",
+        description: "تحديد أول رتبة في تصنيف (ادارة عليا / أونر / شيب)",
         options: {
           tier: "التصنيف",
           role: "أول رتبة في هذا التصنيف",
         },
       },
       stafftype: {
-        description: "ضبط رتبة نوع الستاف (ماكس / مبرمج …)",
+        description: "ضبط رتبة نوع الطاقم الاداري (ماكس / مبرمج …)",
         options: {
-          type: "نوع الستاف",
+          type: "نوع الطاقم الاداري",
           role: "الرتبة اللي تنعطى لهذا النوع",
         },
       },
       check: {
-        description: "عرض مستوى الرتبة وتصنيفها في سلّم الستاف",
+        description: "عرض مستوى الرتبة وتصنيفها في سلّم الطاقم الاداري",
         option: "الرتبة اللي تبي تفحصها",
       },
       list: {
-        description: "عرض كل الرتب المضبوطة في نظام الستاف",
+        description: "عرض كل الرتب المضبوطة في نظام الطاقم الاداري",
       },
     },
   },
@@ -202,21 +200,21 @@ export const commandCopy = {
     },
   },
   promotePoints: {
-    description: "ضبط الحد الأدنى من النقاط الأسبوعية اللي تأهّل الستاف للترقية",
+    description: "ضبط الحد الأدنى من النقاط الأسبوعية اللي تأهّل الطاقم الاداري للترقية",
     options: {
       points: "الحد الأدنى من النقاط في الأسبوع (رقم صحيح موجب)",
     },
   },
   scan: {
-    description: "فحص السيرفر واستيراد أعضاء الستاف الموجودين ومزامنة مستوياتهم",
+    description: "فحص السيرفر واستيراد أعضاء الطاقم الاداري الموجودين ومزامنة مستوياتهم",
   },
   ticketStats: {
-    description: "إدارة عدّادات تكتات الستاف",
+    description: "إدارة عدّادات تكتات الطاقم الاداري",
     sub: {
       reset: {
         description: "تصفير عدّادات التكتات — للإداريين بس",
         options: {
-          member: "عضو الستاف (اتركه فاضي عشان تصفّر الكل)",
+          member: "عضو الطاقم الاداري (اتركه فاضي عشان تصفّر الكل)",
         },
       },
     },
@@ -228,39 +226,39 @@ export const commandCopy = {
     },
   },
   points: {
-    description: "إدارة نقاط الستاف يدويًا (إضافة / خصم / تصفير) — للإداريين بس",
+    description: "إدارة نقاط الطاقم الاداري يدويًا (إضافة / خصم / تصفير) — للإداريين بس",
     sub: {
       add: {
-        description: "إضافة نقاط لعضو ستاف",
+        description: "إضافة نقاط لعضو في الطاقم الاداري",
         options: {
-          member: "عضو الستاف",
+          member: "عضو الطاقم الاداري",
           amount: "عدد النقاط المراد إضافتها",
           reason: "سبب الإضافة (اختياري)",
         },
       },
       remove: {
-        description: "خصم نقاط من عضو ستاف",
+        description: "خصم نقاط من عضو في الطاقم الاداري",
         options: {
-          member: "عضو الستاف",
+          member: "عضو الطاقم الاداري",
           amount: "عدد النقاط المراد خصمها",
           reason: "سبب الخصم (اختياري)",
         },
       },
       reset: {
-        description: "تصفير نقاط عضو ستاف واحد، أو كل الستاف إذا ما حددت أحد",
+        description: "تصفير نقاط عضو في الطاقم الاداري واحد، أو كل الطاقم الاداري إذا ما حددت أحد",
         options: {
-          member: "عضو الستاف (اتركه فاضي عشان تصفّر نقاط كل الستاف)",
+          member: "عضو الطاقم الاداري (اتركه فاضي عشان تصفّر نقاط كل الطاقم الاداري)",
         },
       },
     },
   },
   channels: {
-    description: `ضبط الرومات اللي يستخدمها نظام ستاف ${branding.botName}`,
+    description: `ضبط الرومات اللي يستخدمها نظام الطاقم الاداري ${branding.botName}`,
     sub: {
       set: {
-        description: "تعيين روم لخانة في نظام الستاف",
+        description: "تعيين روم لخانة في نظام الطاقم الاداري",
         options: {
-          type: "أي خانة روم في نظام الستاف تبي تضبط",
+          type: "أي خانة روم في نظام الطاقم الاداري تبي تضبط",
           channel: "الروم المطلوب",
         },
       },
@@ -268,12 +266,6 @@ export const commandCopy = {
         description: "عرض إعدادات الرومات الحالية",
       },
     },
-  },
-  ticketSetup: {
-    description: "نشر أو تحديث لوحة التكتات من إعدادات الكود",
-  },
-  staffSetup: {
-    description: "نشر أو تحديث لوحة دعم الستاف في هذا الروم",
   },
   warnSetup: {
     description: "نشر أو تحديث لوحة إدارة العقوبات والتحذيرات في الروم المضبوط",
@@ -300,7 +292,7 @@ export const commandCopy = {
     },
   },
   fastAccess: {
-    description: "إدارة ماكروهات رسائل الستاف السريعة Fast Access ($commands)",
+    description: "إدارة ماكروهات رسائل الطاقم الاداري السريعة Fast Access ($commands)",
     sub: {
       add: {
         description: "إنشاء ماكرو Fast Access",

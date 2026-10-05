@@ -2,7 +2,6 @@ import { ChannelType, MessageFlags, type GuildTextBasedChannel, type Interaction
 import { DomainError } from "../../../shared/utils/errors.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { commonMessages } from "../../../data/messages/common.ts";
-import { panelCreatesChannel } from "../../../data/tickets/index.ts";
 import { TicketPanelKind, ticketSetupCommandMessages } from "../../../data/tickets/setup-command.ts";
 import { hasAdminAccess } from "../../access/index.ts";
 import { staffSupportPanelService } from "../../staff-support/services/staff-support-panel.service.ts";
@@ -11,6 +10,7 @@ import { ticketConfigService } from "../services/ticket-config.service.ts";
 import { ticketPanelSettingsService } from "../services/ticket-panel-settings.service.ts";
 import { ticketSetupService } from "../services/ticket-setup.service.ts";
 import { PanelConfigField, parsePanelConfigCustomId } from "./component-ids.ts";
+import { ticketSetupProblem } from "./setup-rules.ts";
 
 const log = logger.child("tickets:panel-config");
 const M = ticketSetupCommandMessages;
@@ -53,13 +53,15 @@ async function handleSetup(interaction: ModalSubmitInteraction<"cached">): Promi
   const panel = panelId ? ticketConfigService.getPanel(panelId) : undefined;
   if (!panel) throw new DomainError("TCFG_TYPE", M.errors.typeRequired);
   const supportRoleId = selectedRole(interaction, PanelConfigField.support);
-  if (!supportRoleId) throw new DomainError("TCFG_SUPPORT", M.errors.supportRequired);
   const managerRoleId = selectedRole(interaction, PanelConfigField.manager);
   if (supportRoleId === interaction.guildId || managerRoleId === interaction.guildId) {
     throw new DomainError("TCFG_EVERYONE", M.errors.everyone);
   }
   const categoryId = selectedChannel(interaction, PanelConfigField.category);
-  if (panelCreatesChannel(panel) && !categoryId) throw new DomainError("TCFG_CATEGORY", M.errors.categoryRequired);
+  const problem = ticketSetupProblem(panel, { supportRoleId, categoryId });
+  if (problem === "NOT_CONFIGURABLE") throw new DomainError("TCFG_TYPE", M.errors.notConfigurable(panel.name));
+  if (problem === "SUPPORT_REQUIRED") throw new DomainError("TCFG_SUPPORT", M.errors.supportRequired(panel.name));
+  if (problem === "CATEGORY_REQUIRED") throw new DomainError("TCFG_CATEGORY", M.errors.categoryRequired);
   if (categoryId) {
     const category = await interaction.guild.channels.fetch(categoryId).catch(() => null);
     if (!category || category.type !== ChannelType.GuildCategory) {

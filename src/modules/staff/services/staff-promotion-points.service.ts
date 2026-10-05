@@ -6,8 +6,10 @@ import type { GuildId, IdLike } from "../../../shared/types/index.ts";
 import { toObjectId } from "../../../shared/utils/id.ts";
 import { periodStart } from "../../../shared/utils/time.ts";
 import { staffConfigService } from "../../configuration/services/staff-config.service.ts";
-import { StaffTier } from "../../configuration/types/enums.ts";
-import { getHierarchy } from "../../configuration/utils/staff-levels.ts";
+import type { StaffTier } from "../../configuration/types/enums.ts";
+import { getHierarchy, getTierForLevel } from "../../configuration/utils/staff-levels.ts";
+import { hasAdminAccess } from "../../access/services/admin-access.ts";
+import { hiddenLevelOf } from "../hidden/services/hidden-staff-state.ts";
 import { StaffPointTransactionModel } from "../models/staff-point-transaction.model.ts";
 import { StaffModel } from "../models/staff.model.ts";
 import { StaffStatus } from "../types/enums.ts";
@@ -142,25 +144,36 @@ export class StaffPromotionPointsService {
   }
 
   /**
-   * The full `!check` report — one entry per active staff member **below the OWNER
-   * boundary**, ordered by staff hierarchy level then display name. Carries the
+   * The full `!check` report — one entry per visible active staff member (no administrators or hidden staff),
+   * ordered by staff hierarchy level then display name. Carries the
    * Discord id so the card can mention them; the staff `_id` never leaves here.
    */
-  async generateCheckResult(guild: Guild, now: Date = new Date()): Promise<CheckResult> {
+  async generateCheckResult(
+    guild: Guild,
+    now: Date = new Date(),
+    tier: StaffTier | null = null,
+  ): Promise<CheckResult> {
     const hierarchy = await getHierarchy(guild.id);
-    const ownerStartLevel = hierarchy.boundaryLevels[StaffTier.OWNER];
 
     const [requiredPoints, weekly] = await Promise.all([
       this.getRequiredPoints(guild.id),
-      this.getAllStaffWeeklyPoints(guild.id, now, ownerStartLevel),
+      this.getAllStaffWeeklyPoints(guild.id, now),
     ]);
 
+    const inTier = tier ? weekly.filter((w) => getTierForLevel(hierarchy, w.currentRoleLevel) === tier) : weekly;
     const members = await fetchMembers(
       guild,
-      weekly.map((w) => w.userId),
+      inTier.map((w) => w.userId),
     );
+    const hiddenLevels = await Promise.all(
+      inTier.map((w) => {
+        const member = members.get(w.userId);
+        return member ? hiddenLevelOf(member).catch(() => 0) : Promise.resolve(0);
+      }),
+    );
+    const visible = inTier.filter((w, i) => isListedInCheck(members.get(w.userId), hiddenLevels[i] ?? 0));
 
-    const entries = weekly
+    const entries = visible
       .map((row) => {
         const eligible =
           requiredPoints !== null && this.evaluateEligibility(row.weeklyPoints, requiredPoints);
@@ -185,6 +198,11 @@ export class StaffPromotionPointsService {
 
     return { requiredPoints, range: this.getCurrentWeekRange(now), entries };
   }
+}
+
+export function isListedInCheck(member: GuildMember | undefined, hiddenLevel: number): boolean {
+  if (hiddenLevel > 0) return false;
+  return !hasAdminAccess(member);
 }
 
 const MEMBER_FETCH_CHUNK = 100;

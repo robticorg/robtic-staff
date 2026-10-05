@@ -30,6 +30,7 @@ export class ResponsibilityAssignmentService {
     targetId: UserId;
     responsibilityId: string;
     now?: Date;
+    preauthorized?: boolean;
   }): Promise<ActiveResponsibility> {
     const { guild, executor } = input;
     const target = await guild.members.fetch(input.targetId).catch(() => null);
@@ -39,7 +40,7 @@ export class ResponsibilityAssignmentService {
     const responsibility = await responsibilityRepository.byId(guild.id, input.responsibilityId);
     if (!responsibility) throw new ResponsibilityError("RESP_NOT_FOUND", E.notFound);
 
-    if (!(await responsibilityAuthorizationService.canAssign(executor, target.id, responsibility))) {
+    if (!input.preauthorized && !(await responsibilityAuthorizationService.canAssign(executor, target.id, responsibility))) {
       throw new ResponsibilityError(
         executor.id === target.id ? "RESP_SELF" : "RESP_FORBIDDEN",
         executor.id === target.id ? E.self : E.notAllowed,

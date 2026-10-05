@@ -14,7 +14,7 @@ export const DEPARTMENT_LABELS: Record<string, string> = {
   DEVELOPER: "مبرمج",
   DESIGNER: "مصمم",
   EDITOR: "ممنتج",
-  STAFF: "ستاف",
+  STAFF: "اداري",
 };
 
 export const GENDER_LABELS: Record<string, string> = {
@@ -38,7 +38,7 @@ export const APPLICATION_STATUS_LABELS: Record<string, string> = {
 
 export const staffApplicationMessages = {
   firstModal: {
-    title: "التقديم أو النقل إلى الستاف",
+    title: "التقديم أو النقل إلى الطاقم الاداري",
     identityLabel: "الاسم والعمر والمدينة",
     identityPlaceholder: "أحمد\n19\nالرياض",
     typeLabel: "نوع الطلب",
@@ -118,7 +118,7 @@ export const staffApplicationMessages = {
         `**المتصلين:** ${online.toLocaleString("en-US")}`,
       ].join("\n"),
     inviteInvalid: `${E.error} رابط الدعوة غير صالح أو منتهي. أرسل رابط دائم.`,
-    inviteIsHome: `${E.error} هذا رابط ${branding.communityName} نفسه. أرسل رابط السيرفر اللي كنت ستاف فيه.`,
+    inviteIsHome: `${E.error} هذا رابط ${branding.communityName} نفسه. أرسل رابط السيرفر اللي كنت اداري فيه.`,
     evidencePrompt: (min: number, max: number) =>
       [
         "## الإثباتات",
@@ -202,7 +202,7 @@ export const staffApplicationMessages = {
     wrongTarget: (applicantId: string) =>
       `${E.error} هذا التكت يخص <@${applicantId}> بس — ما تقدر تقبل عضو ثاني من هنا.`,
     applicantGone: `${E.error} المتقدم ما عاد موجود في السيرفر.`,
-    alreadyStaff: (userId: string) => `${E.warning} <@${userId}> صار عضو ستاف أصلاً.`,
+    alreadyStaff: (userId: string) => `${E.warning} <@${userId}> صار عضو في الطاقم الاداري أصلاً.`,
     alreadyDecided: `${E.warning} تم اتخاذ قرار في هذا الطلب من قبل.`,
     ineligible: `${E.error} هذا الطلب غير مؤهل حسب شروط النقل الحالية، ما يمكن قبوله.`,
     noProposal: `${E.error} ما فيه رتبة متوقعة لهذا الطلب. حدد المستوى بنفسك: \`!accept 40\`.`,
@@ -211,7 +211,7 @@ export const staffApplicationMessages = {
     refused: (userId: string) => `${E.success} تم رفض طلب <@${userId}>.`,
     refusedNotice: (reason: string) => `${E.error} **تم رفض الطلب.**\n**السبب:** ${reason}`,
     acceptedNotice: (userId: string, level: number) =>
-      `${E.success} **تم قبول <@${userId}> في الستاف على المستوى ${level}.**`,
+      `${E.success} **تم قبول <@${userId}> في الطاقم الاداري على المستوى ${level}.**`,
   },
 
   verify: {

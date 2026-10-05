@@ -29,7 +29,7 @@ export const appealMessages = {
     reasonRequired: `${E.error} لازم تكتب سبب للاستئناف.`,
 
     submitted:
-      "تم إرسال استئنافك وراح يراجعه فريق الستاف. راح توصلك رسالة هنا لمّا يصير قرار.",
+      "تم إرسال استئنافك وراح يراجعه فريق الطاقم الاداري. راح توصلك رسالة هنا لمّا يصير قرار.",
 
     accepted: (punishment: string, reason: string) =>
       [

@@ -160,7 +160,7 @@ export const giftDeliveryMessages = {
     requestSent: (userId: string, channelId: string) =>
       `${E.success} تم إرسال طلب هدية لـ <@${userId}> للإدارة في <#${channelId}>. لو انقبل بيوصلك التحويل هنا.`,
     notInTicket: `${E.error} هذا الأمر يشتغل داخل تكت بس.`,
-    notStaff: `${E.error} هذا الأمر للستاف بس.`,
+    notStaff: `${E.error} هذا الأمر للطاقم الاداري بس.`,
     notAuthor: `${E.error} هذي القائمة لصاحب الأمر بس.`,
     expired: `${E.warning} انتهت مدة هذي القائمة. شغّل الأمر من جديد.`,
     selfGift: `${E.error} ما تقدر تعطي نفسك جائزة.`,
@@ -169,7 +169,7 @@ export const giftDeliveryMessages = {
       `${E.warning} تقدر تستخدم \`!gift\` في هذا التكت مرة كل 30 دقيقة — تقدر ترجع <t:${Math.floor(endsAt.getTime() / 1000)}:R>.`,
     requestDone: (userId: string, channelId: string) =>
       `${E.success} تم إرسال طلب الهدية لـ <@${userId}> للإدارة في <#${channelId}> — بانتظار الموافقة.`,
-    rewardName: (info: string | null) => info ?? "جائزة من الستاف",
+    rewardName: (info: string | null) => info ?? "جائزة من الطاقم الاداري",
   },
 
   send: {

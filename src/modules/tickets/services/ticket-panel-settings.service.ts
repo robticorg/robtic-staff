@@ -9,7 +9,7 @@ import {
 export interface PanelSetupInput {
   guildId: GuildId;
   panelId: string;
-  supportRoleId: RoleId;
+  supportRoleId: RoleId | null;
   managerRoleId: RoleId | null;
   categoryId: ChannelId | null;
   logChannelId: ChannelId | null;

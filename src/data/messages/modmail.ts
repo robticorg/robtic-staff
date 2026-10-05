@@ -21,8 +21,8 @@ export const modmailMessages = {
     targetConfirmUser: (targetMention: string) =>
       `أنت تبلّغ عن ${targetMention}.\n\nكمّل عشان تضيف السبب والتفاصيل.`,
     targetConfirmStaff: (targetMention: string) =>
-      `${emojis.warning} أنت تبلّغ عن **عضو ستاف**: ${targetMention}.\n\n` +
-      "راح يتعامل معه كـ **بلاغ على ستاف**. كمّل عشان تضيف السبب والتفاصيل.",
+      `${emojis.warning} أنت تبلّغ عن **عضو في الطاقم الاداري**: ${targetMention}.\n\n` +
+      "راح يتعامل معه كـ **بلاغ على اداري**. كمّل عشان تضيف السبب والتفاصيل.",
 
     continueButton: "أضف السبب والتفاصيل",
     cancelButton: "إلغاء",
@@ -68,10 +68,10 @@ export const modmailMessages = {
 
   card: {
     headingNew: `${emojis.report} بلاغ جديد`,
-    headingStaff: `${emojis.report} بلاغ على ستاف`,
+    headingStaff: `${emojis.report} بلاغ على اداري`,
     rule: (width: number) => "━".repeat(width),
     reportedLabel: "المُبلَّغ عنه:",
-    reportedStaffLabel: "عضو الستاف المُبلَّغ عنه:",
+    reportedStaffLabel: "عضو الطاقم الاداري المُبلَّغ عنه:",
     typeUserReport: "النوع: بلاغ على عضو",
     caseLine: (caseId: string) => `رقم البلاغ: \`${caseId}\``,
     reporterLabel: "المُبلِّغ:",
@@ -111,7 +111,7 @@ export const modmailMessages = {
     targetIsBot: `${emojis.error} ما تقدر تحوّل البلاغ لبوت.`,
     targetIsHandler: `${emojis.error} هذا العضو مستلِم البلاغ أصلاً.`,
     targetIsReported: `${emojis.error} ما تقدر تحوّل البلاغ للعضو المُبلَّغ عنه.`,
-    targetNotStaff: `${emojis.error} لازم يكون العضو من الستاف أو أدمن.`,
+    targetNotStaff: `${emojis.error} لازم يكون العضو من الطاقم الاداري أو أدمن.`,
     raced: `${emojis.error} تغيّر مستلِم البلاغ قبل شوي — جرب مرة ثانية.`,
 
     done: (caseId: string, userId: string) =>

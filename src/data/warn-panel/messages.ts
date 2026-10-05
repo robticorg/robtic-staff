@@ -15,8 +15,8 @@ export const warnPanelMessages = {
     options: {
       timeout: { label: "تايم اوت عضو", description: "إعطاء العضو تايم اوت لمدة محددة" },
       jail: { label: "سجن عضو", description: "إعطاء العضو رتبة السجن" },
-      userWarn: { label: "تحذير عضو", description: "تحذير عضو عادي (مو ستاف)" },
-      staffWarn: { label: "تحذير ستاف", description: "تحذير عضو ستاف حسب الصلاحيات" },
+      userWarn: { label: "تحذير عضو", description: "تحذير عضو عادي (مو اداري)" },
+      staffWarn: { label: "تحذير اداري", description: "تحذير عضو في الطاقم الاداري حسب الصلاحيات" },
     },
   },
 
@@ -31,7 +31,7 @@ export const warnPanelMessages = {
     timeoutTitle: "تايم اوت عضو",
     jailTitle: "سجن عضو",
     userWarnTitle: "تحذير عضو",
-    staffWarnTitle: "تحذير ستاف",
+    staffWarnTitle: "تحذير اداري",
 
     user: { label: "المستخدم", placeholder: "اختر العضو" },
     reason: { label: "السبب", placeholder: "اكتب سبب الإجراء" },
@@ -50,7 +50,7 @@ export const warnPanelMessages = {
   },
 
   errors: {
-    notStaff: `${E.error} هذي اللوحة للستاف بس.`,
+    notStaff: `${E.error} هذي اللوحة للطاقم الاداري بس.`,
     unknownAction: `${E.error} إجراء غير معروف.`,
     userRequired: `${E.error} لازم تختار عضو.`,
     reasonRequired: `${E.error} لازم تكتب سبب.`,
@@ -71,7 +71,7 @@ export const warnPanelMessages = {
       `${E.error} ما تم تنفيذ السجن — ${reason}\nما انحفظت العقوبة كمنفّذة.`,
 
     jailDenied: {
-      TARGET_IS_STAFF: `${E.error} ما تقدر تسجن عضو ستاف — عقوبات الستاف تمشي بالتحذيرات.`,
+      TARGET_IS_STAFF: `${E.error} ما تقدر تسجن عضو في الطاقم الاداري — عقوبات الطاقم الاداري تمشي بالتحذيرات.`,
       TARGET_OUTRANKS_ACTOR: `${E.error} ما تقدر تسجن عضو رتبته أعلى منك أو مثلك.`,
     } as Record<string, string>,
 
@@ -92,6 +92,6 @@ export const warnPanelMessages = {
     demoted: (mention: string, from: number, to: number) =>
       `${E.warning} ${mention} وصل **3 تحذيرات** — تم تنزيله **${from} → ${to}** وتصفير تحذيراته.`,
     fired: (mention: string) =>
-      `${E.error} ${mention} وصل **3 تحذيرات** وهو على المستوى 0 — ما فيه مستوى أقل، فتم فصله من الستاف.`,
+      `${E.error} ${mention} وصل **3 تحذيرات** وهو على المستوى 0 — ما فيه مستوى أقل، فتم فصله من الطاقم الاداري.`,
   },
 } as const;

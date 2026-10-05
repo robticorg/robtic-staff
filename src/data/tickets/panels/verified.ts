@@ -3,6 +3,7 @@ import { colors } from "../../config/colors.ts";
 
 export const verifiedPanel: TicketPanelConfig = {
   id: "verified-girls",
+  ticketPrefix: "verify",
   name: "تـوثـيـق بـنـات",
   description: "اذا انتي بنت و تريدين رتبة توثيق فقط فكي هذا تكت",
   emoji: "<:FL_7b:1486139849131032587>",

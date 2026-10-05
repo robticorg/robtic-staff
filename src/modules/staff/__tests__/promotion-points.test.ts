@@ -3,10 +3,13 @@ import { DateTime } from "luxon";
 import { config } from "../../../config/index.ts";
 import { DomainError } from "../../../shared/utils/errors.ts";
 import { assertPositiveInteger } from "../../configuration/services/staff-config.service.ts";
+import { resolveCheckTier } from "../../../commands/prefix/staff/check.ts";
+import { StaffTier } from "../../configuration/types/enums.ts";
 import { buildCheckCards } from "../render/check-card.ts";
 import {
   StaffPromotionPointsService,
   belowLevelFilter,
+  isListedInCheck,
   type CheckEntry,
 } from "../services/staff-promotion-points.service.ts";
 
@@ -164,3 +167,25 @@ function countComponents(card: { components?: readonly unknown[] }): number {
     }, 0);
   return walk(card.components ?? []);
 }
+
+describe("!check visibility", () => {
+  const ADMIN = 0x8n;
+  const member = (id: string, admin: boolean) =>
+    ({ id, permissions: { has: (flag: bigint) => admin && flag === ADMIN } }) as unknown as Parameters<typeof isListedInCheck>[0];
+
+  it("hides administrators and hidden staff", () => {
+    expect(isListedInCheck(member("a", true), 0)).toBe(false);
+    expect(isListedInCheck(member("h", false), 2)).toBe(false);
+    expect(isListedInCheck(member("s", false), 0)).toBe(true);
+    expect(isListedInCheck(undefined, 0)).toBe(true);
+  });
+
+  it("reads the tier keyword", () => {
+    expect(resolveCheckTier("ship")).toBe(StaffTier.SHIP);
+    expect(resolveCheckTier("SHIP")).toBe(StaffTier.SHIP);
+    expect(resolveCheckTier("owner")).toBe(StaffTier.OWNER);
+    expect(resolveCheckTier("high")).toBe(StaffTier.HIGHSTAFF);
+    expect(resolveCheckTier("staff")).toBe(StaffTier.STAFF);
+    expect(resolveCheckTier("nope")).toBeNull();
+  });
+});

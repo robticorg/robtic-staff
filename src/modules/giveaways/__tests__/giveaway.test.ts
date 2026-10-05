@@ -9,7 +9,7 @@ import { giveawayTitle } from "../services/giveaway-message.ts";
 import { config } from "../../../config/index.ts";
 import { GiveawayModel, GiveawayStatus } from "../models/giveaway.model.ts";
 import { GiveawayProofModel } from "../models/giveaway-proof.model.ts";
-import { giveawayResultLines } from "../render/result.ts";
+import { buildGiveawayResult, giveawayResultLines } from "../render/result.ts";
 import { messageTexts, parseMessageRef } from "../services/giveaway-message.ts";
 import { findEndTime, isWinnerMessageFor, mentionedUserIds } from "../services/giveaway-parse.ts";
 import { giveawayService } from "../services/giveaway.service.ts";
@@ -122,6 +122,14 @@ describe("winner message", () => {
 });
 
 describe("giveaway result text", () => {
+  it("is sent as a plain message without mentions", () => {
+    const message = buildGiveawayResult([{ userId: "w1", provedBy: "s1" }], 1);
+    expect(message.components).toBeUndefined();
+    expect(message.flags).toBeUndefined();
+    expect(message.content).toContain("<@w1>");
+    expect(message.allowedMentions).toEqual({ parse: [], repliedUser: false });
+  });
+
   it("says who proved the condition and who did not, in Arabic", () => {
     const text = giveawayResultLines(
       [

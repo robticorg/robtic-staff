@@ -98,7 +98,7 @@ describe("off-duty notice", () => {
       }),
     );
     expect(all.filter((n) => n.type === BUTTON)).toHaveLength(0);
-    expect(all.some((n) => n.content?.includes("ما عاد في الستاف"))).toBe(true);
+    expect(all.some((n) => n.content?.includes("ما عاد في الطاقم الاداري"))).toBe(true);
     expect(all.some((n) => n.content?.includes("<@s2>"))).toBe(true);
   });
 });

@@ -1,5 +1,6 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
+import { LEGACY_TICKET_PREFIX, ticketPrefixes } from "../../../data/tickets/index.ts";
 import { buildTicketInfoCard } from "../../../modules/tickets/render/ticket-info.ts";
 import { ticketConfigService } from "../../../modules/tickets/services/ticket-config.service.ts";
 import { memberIsAdministrator } from "../../../modules/tickets/services/ticket-permissions.ts";
@@ -10,10 +11,14 @@ const M = ticketMessages.info;
 
 /**
  * Reads what the admin typed after !ticket:
- *   "12", "#12", "ticket-12"                 → the ticket id "ticket-12"
+ *   "12", "#12", "ticket-12"                 → the support ticket "ticket-12"
+ *   "apply-3", "res-7", …                    → that ticket type's own number
  *   "<#channelId>", "channelId", channel link → that ticket channel
  */
-export function parseTicketRef(raw: string | undefined): { ticketId: string } | { channelId: string } | null {
+export function parseTicketRef(
+  raw: string | undefined,
+  prefixes: readonly string[] = ticketPrefixes(),
+): { ticketId: string } | { channelId: string } | null {
   const token = raw?.trim();
   if (!token) return null;
   const channel =
@@ -21,8 +26,12 @@ export function parseTicketRef(raw: string | undefined): { ticketId: string } | 
     /^(\d{17,20})$/.exec(token) ??
     /channels\/\d{17,20}\/(\d{17,20})\/?$/.exec(token);
   if (channel) return { channelId: channel[1]! };
-  const number = /^(?:ticket-|#)?(\d{1,9})$/i.exec(token);
-  if (number) return { ticketId: `ticket-${Number(number[1])}` };
+  const number = /^#?(\d{1,9})$/.exec(token);
+  if (number) return { ticketId: `${LEGACY_TICKET_PREFIX}-${Number(number[1])}` };
+  const prefixed = /^([a-z]+)-(\d{1,9})$/i.exec(token);
+  if (prefixed && prefixes.includes(prefixed[1]!.toLowerCase())) {
+    return { ticketId: `${prefixed[1]!.toLowerCase()}-${Number(prefixed[2])}` };
+  }
   return null;
 }
 

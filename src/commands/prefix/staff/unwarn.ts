@@ -19,7 +19,7 @@ import { loadWarnChannels, textAfterTarget } from "../_shared/warn-config.ts";
 const M = prefixMessages.warn;
 
 /** `!unwarn @user staff` — lift the member's active staff warning. */
-const STAFF_KEYWORDS = new Set(["staff", "ستاف", "الستاف"]);
+const STAFF_KEYWORDS = new Set(["staff", "ستاف", "الستاف", "اداري", "الاداري"]);
 
 /**
  * Deliberately stricter than `Types.ObjectId.isValid`, which also accepts any

@@ -3,10 +3,10 @@ import { emojis } from "../emojis/index.ts";
 const E = emojis;
 
 export const statsMessages = {
-  notStaff: `${E.error} عرض الإحصائيات للستاف بس.`,
-  managerOnlyOthers: `${E.error} عرض إحصائيات عضو ثاني لمانجرات الستاف بس.`,
-  noStaffRecord: (mention: string) => `${E.error} ${mention} ما له سجل ستاف في هذا السيرفر.`,
-  leaderboardEmpty: "ما فيه ستاف مصنّف لهذه الفترة.",
+  notStaff: `${E.error} عرض الإحصائيات للطاقم الاداري بس.`,
+  managerOnlyOthers: `${E.error} عرض إحصائيات عضو ثاني لمانجرات الطاقم الاداري بس.`,
+  noStaffRecord: (mention: string) => `${E.error} ${mention} ما له سجل اداري في هذا السيرفر.`,
+  leaderboardEmpty: "ما فيه اداري مصنّف لهذه الفترة.",
 
   usageStats: `${E.warning} الطريقة: \`!احصائياتي [@عضو]\``,
   usageLeaderboard: `${E.warning} الطريقة: \`!المتصدرين [daily|weekly|monthly|all]\``,
@@ -25,16 +25,16 @@ export const statsMessages = {
     REPORT_CLAIM: "نقاط البلاغات",
     GIFT_CLAIM: "نقاط الهدايا",
     USER_WARNING: "نقاط تحذيرات الأعضاء",
-    STAFF_WARNING: "نقاط تحذيرات الستاف",
+    STAFF_WARNING: "نقاط تحذيرات الطاقم الاداري",
     MESSAGE: "نقاط الرسائل",
     JAIL: "نقاط السجن",
-    STAFF_ACCEPT: "نقاط قبول الستاف",
+    STAFF_ACCEPT: "نقاط قبول الطاقم الاداري",
     APPEAL_SUCCESS_PENALTY: "خصم استئناف مقبول",
     MANUAL_ADJUSTMENT: "تعديل يدوي",
     OTHER: "نقاط أخرى",
   } as Record<string, string>,
 
-  header: "**إحصائيات الستاف**",
+  header: "**إحصائيات الطاقم الاداري**",
   divider: "━━━━━━━━━━━━━━",
   line: (label: string, value: string | number) => `${label}: ${value}`,
 
@@ -54,7 +54,7 @@ export const statsMessages = {
       `تم تصفير عدّادات تكتات ${mention} (كانت ${previous}).`,
     nothingToDo: (mention: string) => `عدّادات تكتات ${mention} مصفّرة أصلاً.`,
     all: (resetCount: number, totalStaff: number) =>
-      `تم تصفير عدّادات التكتات لـ ${resetCount} من ${totalStaff} عضو ستاف.`,
+      `تم تصفير عدّادات التكتات لـ ${resetCount} من ${totalStaff} عضو في الطاقم الاداري.`,
     note: "سجلّ التكتات في قاعدة البيانات ما تغيّر — العدّادات بس رجعت صفر.",
   },
 
@@ -80,7 +80,7 @@ export const statsMessages = {
   lbMedal: (rank: number) => (rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `${rank}.`),
 
   admin: {
-    notStaff: (mention: string) => `${E.error} ${mention} مو عضو ستاف في هذا السيرفر.`,
+    notStaff: (mention: string) => `${E.error} ${mention} مو عضو في الطاقم الاداري في هذا السيرفر.`,
     defaultReason: (adminId: string) => `تعديل يدوي من <@${adminId}>`,
     added: (mention: string, amount: number, balance: number) =>
       `${E.success} تمت إضافة **${amount}** نقطة لـ ${mention}. الرصيد الحالي: **${balance}**.`,
@@ -90,7 +90,7 @@ export const statsMessages = {
       `${E.success} تم تصفير نقاط ${mention} (كان عنده **${previousBalance}** نقطة).`,
     resetNothingToDo: (mention: string) => `${E.warning} ${mention} أصلاً عنده **0** نقطة.`,
     resetAll: (resetCount: number, totalStaff: number) =>
-      `${E.success} تم تصفير نقاط **${resetCount}** من أصل **${totalStaff}** عضو ستاف.`,
+      `${E.success} تم تصفير نقاط **${resetCount}** من أصل **${totalStaff}** عضو في الطاقم الاداري.`,
   },
 
   card: {
@@ -205,12 +205,12 @@ export const statsMessages = {
     actions: {
       heading: (userId: string) => `## إحصائيات الأعمال — <@${userId}>`,
       reportsGroup: "__البلاغات__",
-      staffGroup: "__إدارة الستاف__",
+      staffGroup: "__إدارة الطاقم الاداري__",
       punishGroup: "__العقوبات والتحذيرات__",
       otherGroup: "__أخرى__",
-      staffAccepted: "الستاف اللي قبلهم",
+      staffAccepted: "الطاقم الاداري اللي قبلهم",
       applicationsRefused: "التقديمات اللي رفضها",
-      staffFired: "الستاف اللي طردهم",
+      staffFired: "الطاقم الاداري اللي طردهم",
       staffPromoted: "الترقيات",
       staffDemoted: "التنزيلات",
       girlsVerified: "البنات اللي وثّقهن",
@@ -250,7 +250,7 @@ export const statsMessages = {
     giftClaimsHandled: "طلبات الهدايا المعالجة",
     giftClaimsBreakdown: "طلبات الهدايا (موافقة / رفض / تسليم / طلب إضافي)",
     userWarningsIssued: "تحذيرات الأعضاء الصادرة",
-    staffWarningsIssued: "تحذيرات الستاف الصادرة",
+    staffWarningsIssued: "تحذيرات الطاقم الاداري الصادرة",
     warningsRevoked: "التحذيرات الملغاة",
     appealsHandled: "الاستئنافات المعالجة",
     appealsSuccessful: "الاستئنافات المقبولة",
@@ -271,11 +271,11 @@ export const ACTIVITY_LABELS: Record<string, string> = {
   GIFT_CLAIM_FULFILL: "سلّم طلب هدية",
   GIFT_CLAIM_REVIEW: "راجع طلب هدية",
   USER_WARNING: "أصدر تحذير لعضو",
-  STAFF_WARNING: "أصدر تحذير ستاف",
-  PROMOTE: "رقّى عضو ستاف",
-  DEMOTE: "نزّل عضو ستاف",
-  ACCEPT: "قبل عضو ستاف",
-  FIRE: "فصل عضو ستاف",
+  STAFF_WARNING: "أصدر تحذير اداري",
+  PROMOTE: "رقّى عضو في الطاقم الاداري",
+  DEMOTE: "نزّل عضو في الطاقم الاداري",
+  ACCEPT: "قبل عضو في الطاقم الاداري",
+  FIRE: "فصل عضو في الطاقم الاداري",
   PUNISHMENT_REQUEST: "طلب عقوبة",
   PUNISHMENT_APPROVED: "وافق على عقوبة",
   PUNISHMENT_REJECTED: "رفض عقوبة",

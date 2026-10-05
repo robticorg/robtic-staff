@@ -43,8 +43,8 @@ export default definePrefixCommand({
       if (!isManager && !isOwner) throw new PrefixAbort(prefixMessages.warn.detailNotAllowed);
       const kind = (w.type ?? "REAL") as "VERBAL" | "REAL";
       lines.push(
-        `**تحذير ستاف** \`${w._id.toString()}\``,
-        targetStaff ? `عضو الستاف: <@${targetStaff.userId}>` : `آيدي الستاف: ${w.staffId.toString()}`,
+        `**تحذير اداري** \`${w._id.toString()}\``,
+        targetStaff ? `عضو الطاقم الاداري: <@${targetStaff.userId}>` : `آيدي الطاقم الاداري: ${w.staffId.toString()}`,
         `نوع التحذير: ${prefixMessages.warn.typeLabel(kind)}`,
       );
       if (kind === "REAL" && w.level) {

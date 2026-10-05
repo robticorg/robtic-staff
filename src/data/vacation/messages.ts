@@ -9,8 +9,8 @@ export const vacationMessages = {
   break: {
     usage: `${E.warning} الطريقة: \`!بريك @عضو <المدة>\` — مثال: \`5m\` \`3d\` \`1w\` \`1M\``,
     invalidDuration: `${E.error} مدة غير صحيحة. استخدم \`5m\` (دقائق)، \`3d\` (أيام)، \`1w\` (أسابيع) أو \`1M\` (شهور).`,
-    reasonPlaceholder: "بريك بطلب من مانجر الستاف",
-    targetNotStaff: (mention: string) => `${E.error} ${mention} مو عضو ستاف.`,
+    reasonPlaceholder: "بريك بطلب من مانجر الطاقم الاداري",
+    targetNotStaff: (mention: string) => `${E.error} ${mention} مو عضو في الطاقم الاداري.`,
     targetNotInGuild: `${E.error} هذا العضو مو موجود في السيرفر.`,
     alreadyOnVacation: (mention: string) => `${E.error} ${mention} عنده إجازة / بريك مفتوح أصلاً.`,
     roleNotConfigured: `${E.error} رتبة الإجازة مو مضبوطة. شغّل \`/role set type:رتبة الإجازة role:@role\` أول.`,
@@ -28,7 +28,7 @@ export const vacationMessages = {
     usage: `${E.warning} الطريقة: \`!انهاء-بريك @عضو\``,
     notOnVacation: (mention: string) => `${E.error} ${mention} مو في إجازة / بريك حالياً.`,
     targetNotInGuild: `${E.warning} هذا العضو مو موجود في السيرفر — تم إلغاء الإجازة بس ما قدرنا نرجّع الرتب.`,
-    done: (mention: string) => `${E.success} تم إنهاء بريك ${mention} ورجعنا رتب الستاف حقه.`,
+    done: (mention: string) => `${E.success} تم إنهاء بريك ${mention} ورجعنا رتب الطاقم الاداري حقه.`,
     doneNoRestore: (mention: string) =>
       `${E.warning} تم إنهاء بريك ${mention}، بس بعض الرتب المحفوظة ما عادت موجودة وتم تجاوزها.`,
   },
@@ -45,7 +45,7 @@ export const vacationMessages = {
     reasonQuestion: "ليش تحتاج إجازة؟",
     durationLabel: "المدة",
     durationHint: "الرقم = أيام (مثال: 7). أضف m للشهور (مثال: 1m).",
-    notStaff: `${E.error} التقديم على إجازة لأعضاء الستاف بس.`,
+    notStaff: `${E.error} التقديم على إجازة لأعضاء الطاقم الاداري بس.`,
     alreadyOnVacation: `${E.error} عندك إجازة مفتوحة أو طلب قيد المراجعة أصلاً.`,
     reasonRequired: `${E.error} لازم تكتب سبب.`,
     invalidDuration: `${E.error} مدة غير صحيحة. أدخل عدد أيام (مثال: \`7\`) أو شهور (مثال: \`1m\`).`,
@@ -58,7 +58,7 @@ export const vacationMessages = {
 
   request: {
     heading: `${E.system} **طلب إجازة**`,
-    staff: (userId: string) => `**عضو الستاف:** <@${userId}> (\`${userId}\`)`,
+    staff: (userId: string) => `**عضو الطاقم الاداري:** <@${userId}> (\`${userId}\`)`,
     duration: (duration: string) => `**المدة:** ${duration}`,
     window: (startsAt: Date, endsAt: Date) =>
       `**الفترة:** <t:${Math.floor(startsAt.getTime() / 1000)}:f> → <t:${Math.floor(
@@ -72,11 +72,11 @@ export const vacationMessages = {
     approveButton: "قبول",
     refuseButton: "رفض",
     infoButton: "معلومات",
-    notAuthorized: `${E.error} البت في طلبات الإجازات لمانجرات الستاف بس.`,
+    notAuthorized: `${E.error} البت في طلبات الإجازات لمانجرات الطاقم الاداري بس.`,
     alreadyDecided: `${E.error} تم البت في طلب الإجازة هذا من قبل.`,
     gone: `${E.error} طلب الإجازة هذا ما عاد موجود.`,
     applicantGone: `${E.error} مقدّم الطلب ما عاد في السيرفر.`,
-    applicantNotStaff: `${E.error} مقدّم الطلب ما عاد عضو ستاف.`,
+    applicantNotStaff: `${E.error} مقدّم الطلب ما عاد عضو في الطاقم الاداري.`,
     approvedAck: `${E.success} تمت الموافقة — الإجازة الحين فعّالة.`,
     rejectedAck: `${E.success} تم رفض طلب الإجازة.`,
     activationFailed: `${E.error} ما قدرت أطبّق رتب الإجازة — الطلب ظل قيد المراجعة. جرب مرة ثانية.`,
@@ -104,12 +104,12 @@ export const vacationMessages = {
     rejected: (reason: string) =>
       ["تم رفض طلب إجازتك.", "", "**السبب:**", reason].join("\n"),
     completed:
-      "انتهت إجازتك ورجعت رتب الستاف حقك.",
+      "انتهت إجازتك ورجعت رتب الطاقم الاداري حقك.",
     brokenByManager:
-      "مانجر ستاف أنهى بريكك بدري. رجعت رتب الستاف حقك.",
+      "مانجر الطاقم الاداري أنهى بريكك بدري. رجعت رتب الطاقم الاداري حقك.",
     startedByManager: (duration: string, endsAt: Date) =>
       [
-        `مانجر ستاف حطّك في بريك في **${branding.communityName}**.`,
+        `مانجر الطاقم الاداري حطّك في بريك في **${branding.communityName}**.`,
         "",
         `**المدة:** ${duration}`,
         `بريكك ينتهي في: <t:${Math.floor(endsAt.getTime() / 1000)}:F>`,

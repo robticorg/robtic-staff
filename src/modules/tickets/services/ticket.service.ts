@@ -34,6 +34,8 @@ import { StaffApplicationWorkflow } from "../../../data/staff-application/panels
 import {
   independentPanelIds,
   panelIsAdminOnly,
+  ticketCounterKey,
+  ticketPrefixOf,
   type TicketPanelConfig,
 } from "../../../data/tickets/index.ts";
 import { StaffActivityType, staffActivityService, staffService } from "../../staff/index.ts";
@@ -214,9 +216,10 @@ export class TicketService extends BaseRepository<Ticket> {
     return ticket.panelId;
   }
 
-  async nextTicketId(guildId: GuildId): Promise<string> {
-    const seq = await nextSequence(`ticket:${guildId}`);
-    return `ticket-${seq}`;
+  async nextTicketId(guildId: GuildId, panel: Pick<TicketPanelConfig, "id" | "ticketPrefix">): Promise<string> {
+    const prefix = ticketPrefixOf(panel);
+    const seq = await nextSequence(ticketCounterKey(guildId, prefix));
+    return `${prefix}-${seq}`;
   }
 
   async createTicket(input: CreateTicketInput): Promise<CreateTicketResult> {
@@ -251,7 +254,7 @@ export class TicketService extends BaseRepository<Ticket> {
       throw new DomainError("TICKET_CATEGORY_INVALID", M.create.categoryMissing);
     }
 
-    const ticketId = await this.nextTicketId(guild.id);
+    const ticketId = await this.nextTicketId(guild.id, panel);
     const claimableRoleIds = [...new Set(input.claimableRoleIds ?? [])].filter((id) =>
       guild.roles.cache.has(id),
     );

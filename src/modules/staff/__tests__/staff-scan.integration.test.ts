@@ -378,7 +378,7 @@ describe.skipIf(!hasDb)("Staff scan (MongoDB + Discord fakes)", () => {
 
     expect(view.ok).toBe(true);
     expect(view.lines.join("\n")).toContain(`المستوى: **${staff!.currentRoleLevel}**`);
-    expect(view.lines.join("\n")).toContain("هاي ستاف");
+    expect(view.lines.join("\n")).toContain("ادارة عليا");
   });
 });
 
@@ -396,18 +396,18 @@ describe.skipIf(!hasDb)("/role check views", () => {
   it("shows the START role at level 0 (§17)", async () => {
     const text = (await view(R_START)).lines.join("\n");
     expect(text).toContain("المستوى: **0**");
-    expect(text).toContain("ستاف");
-    expect(text).toContain("بداية سلّم الستاف");
+    expect(text).toContain("اداري");
+    expect(text).toContain("بداية سلّم الطاقم الاداري");
   });
 
   it("shows a normal numbered role with its tier", async () => {
     const text = (await view(R_L4)).lines.join("\n");
     expect(text).toContain("المستوى: **4**");
-    expect(text).toContain("هاي ستاف");
+    expect(text).toContain("ادارة عليا");
   });
 
   it("labels the HIGHSTAFF, OWNER and SHIP boundary roles (§17)", async () => {
-    expect((await view(R_HIGH)).lines.join("\n")).toContain("بداية مستوى الهاي ستاف");
+    expect((await view(R_HIGH)).lines.join("\n")).toContain("بداية مستوى الادارة العليا");
     expect((await view(R_OWNER)).lines.join("\n")).toContain("بداية مستوى الأونر");
     expect((await view(R_SHIP)).lines.join("\n")).toContain("بداية مستوى الشيب");
   });
@@ -415,7 +415,7 @@ describe.skipIf(!hasDb)("/role check views", () => {
   it("shows the END role at the maximum level", async () => {
     const text = (await view(R_END)).lines.join("\n");
     expect(text).toContain("المستوى: **10**");
-    expect(text).toContain("نهاية سلّم الستاف");
+    expect(text).toContain("نهاية سلّم الطاقم الاداري");
   });
 
   it("marks an ignored role as excluded with no level (§15)", async () => {
@@ -427,7 +427,7 @@ describe.skipIf(!hasDb)("/role check views", () => {
 
   it("marks a non-staff role as outside the ladder (§16)", async () => {
     const text = (await view(R_COMMUNITY)).lines.join("\n");
-    expect(text).toContain("ليست ضمن مستويات الستاف");
+    expect(text).toContain("ليست ضمن مستويات الطاقم الاداري");
     expect(text).not.toContain("المستوى: **");
   });
 
