@@ -1,4 +1,4 @@
-import type { TicketPanelConfig } from "../types.ts";
+import { UNSET_ID, type TicketPanelConfig } from "../types.ts";
 import { colors } from "../../config/colors.ts";
 
 export const supportPanel: TicketPanelConfig = {
@@ -7,9 +7,7 @@ export const supportPanel: TicketPanelConfig = {
   description: "تواصل مع فريق الدعم الفني لحل مشاكل الخاصة بك.",
   emoji: "<a:736257973906571306:1485939519642537994>",
 
-  supportRoleId: "1536248963798274098",
-  categoryId: "1536249080924348447",
-  logChannelId: "1536249123265581056",
+  supportRoleId: UNSET_ID,
 
   questions: {
     enabled: true,

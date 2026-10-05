@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { config } from "../../../config/index.ts";
 import { staffApplicationConfig } from "../../../data/staff-application/config.ts";
 import { staffApplicationMessages } from "../../../data/staff-application/messages.ts";
-import { supportPanel } from "../../../data/tickets/panels/support.ts";
+import { getPanel, setPanelOverride } from "../../../data/tickets/index.ts";
 import { RoleConfigModel } from "../../configuration/models/role-config.model.ts";
 import { ChannelConfigModel } from "../../configuration/models/channel-config.model.ts";
 import { channelConfigService } from "../../configuration/services/channel-config.service.ts";
@@ -62,13 +62,21 @@ const GIRL_NOT_VERIFIED = "girl-not-verified";
 const GIRL_VERIFIED = "girl-verified";
 const STAFF_BLACKLIST = "staff-blacklist";
 const ALL_ROLES = [...LADDER, APPLY, TRANSFER, GIRLS, GIRL_NOT_VERIFIED, GIRL_VERIFIED, STAFF_BLACKLIST];
+const SETUP_CATEGORY = {
+  apply: "setup-apply-category",
+  transfer: "setup-transfer-category",
+  support: "setup-support-category",
+};
 const CATEGORIES = [
-  staffApplicationConfig.applicationCategoryId,
-  staffApplicationConfig.transferCategoryId,
-  supportPanel.categoryId!,
+  SETUP_CATEGORY.apply,
+  SETUP_CATEGORY.transfer,
+  SETUP_CATEGORY.support,
   "custom-apply-category",
   "custom-transfer-category",
 ];
+setPanelOverride("staff-application", { categoryId: SETUP_CATEGORY.apply });
+setPanelOverride("staff-transfer-application", { categoryId: SETUP_CATEGORY.transfer });
+setPanelOverride("support", { categoryId: SETUP_CATEGORY.support });
 
 let guild: FakeGuild;
 let owner: FakeMember;
@@ -224,13 +232,11 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       expect(JSON.stringify(channel.sent.map((m) => m.payload))).toContain(`tk:roleClaim:${ticket!.ticketId}:${APPLY}`);
     });
 
-    it("opens in the category set with /channels, falling back to the default", async () => {
+    it("opens in the category set with /channels, falling back to the /ticket setup category", async () => {
       const first = applicant();
       await staffApplicationService.submit(guild as never, first as never, draft(first.id), ApplicationDepartment.STAFF);
       const fallback = await ticketFor(first.id);
-      expect(guild.channels.byId.get(fallback!.channelId)!.parentId).toBe(
-        staffApplicationConfig.applicationCategoryId,
-      );
+      expect(guild.channels.byId.get(fallback!.channelId)!.parentId).toBe(SETUP_CATEGORY.apply);
 
       await channelConfigService.set({ guildId: GUILD, type: ChannelConfigType.APPLICATION_CATEGORY, channelId: "custom-apply-category" });
       await channelConfigService.set({ guildId: GUILD, type: ChannelConfigType.TRANSFER_CATEGORY, channelId: "custom-transfer-category" });
@@ -299,14 +305,14 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       expect(await ticketService.getOpenTicketForUser(GUILD, member.id)).toBeNull();
       const { ticket } = await ticketService.createTicket({
         guild: guild as never,
-        panel: supportPanel,
+        panel: getPanel("support")!,
         member: member as never,
         answers: [],
       });
       expect(ticket.panelId).toBe("support");
 
       const other = applicant();
-      await ticketService.createTicket({ guild: guild as never, panel: supportPanel, member: other as never, answers: [] });
+      await ticketService.createTicket({ guild: guild as never, panel: getPanel("support")!, member: other as never, answers: [] });
       await staffApplicationService.submit(guild as never, other as never, draft(other.id), ApplicationDepartment.STAFF);
       expect((await appFor(other.id))!.ticketId).not.toBeNull();
     });

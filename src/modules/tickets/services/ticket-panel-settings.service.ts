@@ -12,14 +12,18 @@ export interface PanelSetupInput {
   supportRoleId: RoleId;
   managerRoleId: RoleId | null;
   categoryId: ChannelId | null;
+  logChannelId: ChannelId | null;
   actorId: UserId;
 }
 
-function pushOverride(row: Pick<TicketPanelSettings, "panelId" | "supportRoleId" | "managerRoleId" | "categoryId">): void {
+function pushOverride(
+  row: Pick<TicketPanelSettings, "panelId" | "supportRoleId" | "managerRoleId" | "categoryId" | "logChannelId">,
+): void {
   setPanelOverride(row.panelId, {
     supportRoleId: row.supportRoleId,
     managerRoleId: row.managerRoleId,
     categoryId: row.categoryId,
+    logChannelId: row.logChannelId ?? null,
   });
 }
 
@@ -31,6 +35,7 @@ export class TicketPanelSettingsService {
       supportRoleId: input.supportRoleId,
       managerRoleId: input.managerRoleId,
       categoryId: input.categoryId,
+      logChannelId: input.logChannelId,
     };
     await TicketPanelSettingsModel.updateOne(
       { guildId: input.guildId, panelId: input.panelId },

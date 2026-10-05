@@ -1,6 +1,5 @@
 import { colors } from "../config/colors.ts";
 import { UNSET_ID, type TicketPanelConfig } from "../tickets/types.ts";
-import { staffSupportConfig } from "./config.ts";
 
 export const StaffSupportWorkflow = {
   STAFF_SUPPORT: "staff-support",
@@ -16,7 +15,6 @@ export const staffSupportPanel: TicketPanelConfig = {
   hidden: true,
 
   supportRoleId: UNSET_ID,
-  categoryId: staffSupportConfig.staffSupportCategoryId,
 
   questions: { enabled: false, items: [] },
 

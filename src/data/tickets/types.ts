@@ -94,12 +94,6 @@ export interface TicketPanelConfig {
 }
 
 export interface TicketMainConfig {
-  panelChannelId: ChannelId;
-
-  managerRoleId: RoleId;
-
-  transcriptChannelId: ChannelId;
-
   content: TicketV2Content;
 
   selectPlaceholder: string;

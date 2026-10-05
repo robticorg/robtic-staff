@@ -30,9 +30,7 @@ export const staffApplicationPanel: TicketPanelConfig = {
   independent: true,
   blacklistSlot: RoleConfigType.BLACKLIST,
   fastAccessContext: FastAccessContext.STAFF_APPLICATION,
-  categoryId: staffApplicationConfig.applicationCategoryId,
   categorySlot: ChannelConfigType.APPLICATION_CATEGORY,
-  logChannelId: "1536249123265581056",
 
   questions: { enabled: false, items: [] },
   claimer,
@@ -55,7 +53,6 @@ export const staffTransferApplicationPanel: TicketPanelConfig = {
   independent: true,
   blacklistSlot: RoleConfigType.BLACKLIST,
   fastAccessContext: FastAccessContext.STAFF_TRANSFER,
-  categoryId: staffApplicationConfig.transferCategoryId,
   categorySlot: ChannelConfigType.TRANSFER_CATEGORY,
 
   questions: { enabled: false, items: [] },

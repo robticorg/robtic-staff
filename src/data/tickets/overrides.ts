@@ -5,6 +5,7 @@ export interface TicketPanelOverride {
   supportRoleId?: RoleId | null;
   managerRoleId?: RoleId | null;
   categoryId?: ChannelId | null;
+  logChannelId?: ChannelId | null;
 }
 
 const overrides = new Map<string, TicketPanelOverride>();
@@ -29,5 +30,6 @@ export function applyPanelOverride(panel: TicketPanelConfig): TicketPanelConfig 
     ...(override.supportRoleId ? { supportRoleId: override.supportRoleId } : {}),
     ...(override.managerRoleId ? { managerRoleId: override.managerRoleId } : {}),
     ...(override.categoryId ? { categoryId: override.categoryId, categorySlot: undefined } : {}),
+    ...(override.logChannelId ? { logChannelId: override.logChannelId } : {}),
   };
 }

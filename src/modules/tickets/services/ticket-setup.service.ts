@@ -19,12 +19,15 @@ export class TicketSetupService {
     const panels = ticketConfigService.listPublicPanels();
     if (panels.length === 0) throw new ValidationError(M.noPanels);
 
-    const problems = await ticketConfigService.validateConfig(guild, { checkMainChannel: !target, panels });
+    const problems = await ticketConfigService.validateConfig(guild, { panels });
     if (problems.length > 0) {
       throw new DomainError("TICKET_CONFIG_INVALID", M.invalidConfig(problems), { problems });
     }
 
-    const channel = target ?? (await guild.channels.fetch(main.panelChannelId).catch(() => null));
+    const previous = target
+      ? null
+      : await TicketPanelDeploymentModel.findOne({ guildId: guild.id, key: "main" }).exec();
+    const channel = target ?? (previous ? await guild.channels.fetch(previous.channelId).catch(() => null) : null);
     if (
       !channel ||
       (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement)

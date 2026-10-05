@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { RESPONSIBILITY_APPLY_PANEL_ID } from "../../../data/tickets/panels/responsibility-apply.ts";
+import { clearPanelOverrides, setPanelOverride } from "../../../data/tickets/index.ts";
 import {
   UNSET_ID,
   isUnsetId,
@@ -124,16 +124,21 @@ describe("gift-claim panel needs no category", () => {
     expect(panel.logChannelId).toBeUndefined();
   });
 
-  it("keeps its support role, which still grants gift-manager rights", () => {
-    expect(panelIsAdminOnly(getPanel(GIFT_CLAIM_PANEL_ID)!)).toBe(false);
+  it("takes its support role from /ticket setup, which grants gift-manager rights", () => {
+    expect(panelIsAdminOnly(getPanel(GIFT_CLAIM_PANEL_ID)!)).toBe(true);
+    setPanelOverride(GIFT_CLAIM_PANEL_ID, { supportRoleId: "gift-support" });
+    try {
+      expect(panelIsAdminOnly(getPanel(GIFT_CLAIM_PANEL_ID)!)).toBe(false);
+    } finally {
+      clearPanelOverrides();
+    }
   });
 
-  it("leaves every channel-opening panel with a category", () => {
+  it("keeps no hardcoded roles, categories or log channels in any panel", () => {
     for (const panel of listPanels()) {
-      if (!panelCreatesChannel(panel)) continue;
-      if (panel.id === RESPONSIBILITY_APPLY_PANEL_ID) continue;
-      expect(panel.categoryId).toBeDefined();
-      expect(isUnsetId(panel.categoryId)).toBe(false);
+      expect(isUnsetId(panel.supportRoleId)).toBe(true);
+      expect(panel.categoryId).toBeUndefined();
+      expect(panel.logChannelId).toBeUndefined();
     }
   });
 });

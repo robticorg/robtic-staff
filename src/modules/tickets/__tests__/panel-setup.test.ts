@@ -55,9 +55,9 @@ describe("ticket managers", () => {
 });
 
 describe("/ticket setup and /ticket send forms", () => {
-  it("setup asks for the ticket type, support role, optional manager role and category", () => {
+  it("setup asks for the ticket type, support role, optional manager role, category and optional log channel", () => {
     const fields = modalFields(buildSetupModal([{ id: "support", name: "الدعم", description: "x" }]));
-    expect(fields.map((f) => f.custom_id)).toEqual(["type", "support", "manager", "category"]);
+    expect(fields.map((f) => f.custom_id)).toEqual(["type", "support", "manager", "category", "log"]);
     expect(fields.find((f) => f.custom_id === "manager")?.required).toBe(false);
   });
 

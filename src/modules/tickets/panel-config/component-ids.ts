@@ -10,6 +10,7 @@ export const PanelConfigField = {
   support: "support",
   manager: "manager",
   category: "category",
+  log: "log",
   panel: "panel",
   channel: "channel",
   title: "title",

@@ -60,6 +60,17 @@ export function buildSetupModal(panels: readonly Pick<TicketPanelConfig, "id" | 
             .setMaxValues(1)
             .setRequired(false),
         ),
+      new LabelBuilder()
+        .setLabel(S.logLabel)
+        .setDescription(S.logDescription)
+        .setChannelSelectMenuComponent(
+          new ChannelSelectMenuBuilder()
+            .setCustomId(PanelConfigField.log)
+            .setChannelTypes(ChannelType.GuildText)
+            .setMinValues(0)
+            .setMaxValues(1)
+            .setRequired(false),
+        ),
     );
 }
 

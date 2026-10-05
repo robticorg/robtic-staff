@@ -25,6 +25,8 @@ export const ticketSetupCommandMessages = {
     managerDescription: "تشوف التكت وتديره، بس ما تقدر تستلمه",
     categoryLabel: "كاتيقوري التكت",
     categoryDescription: "الكاتيقوري اللي تنفتح فيه رومات هذا التكت",
+    logLabel: "روم لوق التكت (اختياري)",
+    logDescription: "بدونه ينرسل اللوق لروم لوق التكتات في /channels",
   },
 
   sendModal: {
@@ -45,12 +47,19 @@ export const ticketSetupCommandMessages = {
     [TicketPanelKind.RESPONSIBILITY]: "لوحة التقديم على مسؤولية",
   } as Record<string, string>,
 
-  setupDone: (panelName: string, supportRoleId: string, managerRoleId: string | null, categoryId: string | null) =>
+  setupDone: (
+    panelName: string,
+    supportRoleId: string,
+    managerRoleId: string | null,
+    categoryId: string | null,
+    logChannelId: string | null,
+  ) =>
     [
       `${E.success} تم ضبط تكت **${panelName}**.`,
       `**رتبة الدعم:** <@&${supportRoleId}>`,
       `**مسؤول التكت:** ${managerRoleId ? `<@&${managerRoleId}>` : "ما فيه"}`,
       `**الكاتيقوري:** ${categoryId ? `<#${categoryId}>` : "—"}`,
+      `**روم اللوق:** ${logChannelId ? `<#${logChannelId}>` : "روم لوق التكتات العام"}`,
     ].join("\n"),
   sent: (kind: string, channelId: string, created: boolean) =>
     `${E.success} ${created ? "تم نشر" : "تم تحديث"} ${kind} في <#${channelId}>.`,

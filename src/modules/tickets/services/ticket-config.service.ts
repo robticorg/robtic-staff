@@ -57,24 +57,10 @@ export class TicketConfigService {
 
   async validateConfig(
     guild: Guild,
-    options: { checkMainChannel?: boolean; panels?: readonly TicketPanelConfig[] } = {},
+    options: { panels?: readonly TicketPanelConfig[] } = {},
   ): Promise<string[]> {
     const P = ticketMessages.setup.problem;
     const problems: string[] = [];
-    const main = this.getMainConfig();
-
-    if (options.checkMainChannel !== false) {
-      const panelChannel = await fetchChannel(guild, main.panelChannelId);
-      if (!panelChannel) problems.push(P.mainChannelMissing);
-      else if (
-        panelChannel.type !== ChannelType.GuildText &&
-        panelChannel.type !== ChannelType.GuildAnnouncement
-      ) {
-        problems.push(P.mainChannelNotText);
-      }
-    }
-
-    if (!(await roleExists(guild, main.managerRoleId))) problems.push(P.managerRoleMissing);
 
     const seen = new Set<string>();
     for (const panel of options.panels ?? this.listPanels()) {
@@ -82,20 +68,13 @@ export class TicketConfigService {
       seen.add(panel.id);
 
       if (!panelIsAdminOnly(panel) && !(await roleExists(guild, panel.supportRoleId))) {
-        problems.push(P.panelSupportRole(panel.id));
+        problems.push(P.panelSupportRole(panel.name));
       }
 
       if (panelCreatesChannel(panel)) {
         const category = await fetchChannel(guild, panel.categoryId);
         if (!category || category.type !== ChannelType.GuildCategory) {
-          problems.push(P.panelCategory(panel.id));
-        }
-
-        if (!panel.hidden) {
-          const logChannel = await fetchChannel(guild, panel.logChannelId);
-          if (!logChannel || !logChannel.isTextBased()) {
-            problems.push(P.panelLogChannel(panel.id));
-          }
+          problems.push(P.panelCategory(panel.name));
         }
       }
     }

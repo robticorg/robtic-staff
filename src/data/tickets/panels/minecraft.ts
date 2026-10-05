@@ -1,4 +1,4 @@
-import type { TicketPanelConfig } from "../types.ts";
+import { UNSET_ID, type TicketPanelConfig } from "../types.ts";
 import { colors } from "../../config/colors.ts";
 
 export const minecraftPanel: TicketPanelConfig = {
@@ -7,9 +7,7 @@ export const minecraftPanel: TicketPanelConfig = {
   description: "مشكلة متعلقة في خادم ماينكرافت فك ذا تكت و بيجيك دعم",
   emoji: "<a:minecraft:1549743494833377350>",
 
-  supportRoleId: "1538209900919005204",
-  categoryId: "1536249080924348447",
-  logChannelId: "1536249123265581056",
+  supportRoleId: UNSET_ID,
 
   questions: {
     enabled: true,

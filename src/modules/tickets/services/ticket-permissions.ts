@@ -138,7 +138,6 @@ export function memberHoldsManagerRole(
   member: GuildMember,
   panel?: Pick<TicketPanelConfig, "managerRoleId"> | null,
 ): boolean {
-  if (member.roles.cache.has(ticketMain.managerRoleId)) return true;
   return !!panel?.managerRoleId && !isUnsetId(panel.managerRoleId) && member.roles.cache.has(panel.managerRoleId);
 }
 

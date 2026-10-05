@@ -4,6 +4,8 @@ import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
 import { TicketLogAction } from "../types/enums.ts";
 import { buildTicketLogCard } from "../render/ticket-log-card.ts";
 import { recordTicketEvent } from "./ticket-history.ts";
+import { channelConfigService } from "../../configuration/services/channel-config.service.ts";
+import { ChannelConfigType } from "../../configuration/types/enums.ts";
 
 const log = logger.child("tickets:log");
 
@@ -54,7 +56,9 @@ export class TicketLogService {
     if (!card) return;
 
     try {
-      const logChannelId = ctx.panel.logChannelId;
+      const logChannelId =
+        ctx.panel.logChannelId ??
+        (await channelConfigService.getChannelId(ctx.guild.id, ChannelConfigType.TICKET_LOG));
       if (!logChannelId) return;
 
       const channel = await ctx.guild.channels.fetch(logChannelId).catch(() => null);

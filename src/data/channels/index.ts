@@ -46,6 +46,7 @@ export const CHANNEL_SLOT_META: Record<ChannelConfigType, ChannelSlotMeta> = {
   [ChannelConfigType.STAFF_LOG]: { label: "لوق أوامر الستاف", group: "اللوقات" },
   [ChannelConfigType.WARN_COMMAND_LOG]: { label: "لوق أوامر التحذير", group: "اللوقات" },
   [ChannelConfigType.TICKET_LOG]: { label: "لوق أوامر التكتات", group: "اللوقات" },
+  [ChannelConfigType.TICKET_TRANSCRIPTS]: { label: "روم نسخ التكتات", group: "اللوقات" },
 };
 
 export const CHANNEL_GROUP_ORDER: readonly string[] = [

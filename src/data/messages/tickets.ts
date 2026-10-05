@@ -21,12 +21,10 @@ export const ticketMessages = {
     invalidConfig: (problems: string[]) =>
       [`${E.error} إعدادات التكتات فيها مشاكل:`, ...problems.map((p) => `• ${p}`)].join("\n"),
     problem: {
-      mainChannelMissing: "الحقل main.panelChannelId مو مضبوط أو الروم مو موجود",
-      mainChannelNotText: "الحقل main.panelChannelId مو روم نصي",
-      managerRoleMissing: "الحقل main.managerRoleId مو مضبوط أو الرتبة مو موجودة",
-      panelSupportRole: (id: string) => `اللوحة "${id}": supportRoleId مو مضبوط أو الرتبة مو موجودة`,
-      panelCategory: (id: string) => `اللوحة "${id}": categoryId مو مضبوط أو مو كاتيقوري`,
-      panelLogChannel: (id: string) => `اللوحة "${id}": logChannelId مو مضبوط أو الروم مو موجود`,
+      mainChannelMissing: "اللوحة الرئيسية ما انرسلت قبل. انشرها بـ `/ticket send` واختر الروم.",
+      mainChannelNotText: "روم اللوحة الرئيسية مو روم نصي. انشرها من جديد بـ `/ticket send`.",
+      panelSupportRole: (name: string) => `تكت "${name}": رتبة الدعم ما عادت موجودة — اضبطها بـ \`/ticket setup\``,
+      panelCategory: (name: string) => `تكت "${name}": الكاتيقوري مو مضبوط — اضبطه بـ \`/ticket setup\``,
       panelDuplicateId: (id: string) => `آيدي لوحة مكرر "${id}"`,
       panelTooManyQuestions: (id: string, n: number, max: number) =>
         `اللوحة "${id}" فيها ${n} أسئلة؛ أكثر من ${max} تحتاج مودالات متعددة الصفحات (مدعومة، بس للعلم)`,

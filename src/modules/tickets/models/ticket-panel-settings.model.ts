@@ -13,6 +13,7 @@ export interface TicketPanelSettings extends Timestamps {
   supportRoleId: RoleId | null;
   managerRoleId: RoleId | null;
   categoryId: ChannelId | null;
+  logChannelId?: ChannelId | null;
   content?: TicketPanelContent | null;
   updatedBy?: UserId | null;
 }
@@ -26,6 +27,7 @@ const ticketPanelSettingsSchema = new Schema<TicketPanelSettings>(
     supportRoleId: { type: String, default: null },
     managerRoleId: { type: String, default: null },
     categoryId: { type: String, default: null },
+    logChannelId: { type: String, default: null },
     content: {
       title: { type: String, default: null },
       description: { type: String, default: null },

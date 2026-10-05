@@ -34,7 +34,7 @@ const data = new SlashCommandBuilder()
           .setName(CommandOption.TYPE)
           .setDescription(commandCopy.channels.sub.set.options.type)
           .setRequired(true)
-          .addChoices(...CHANNEL_CHOICES),
+          .setAutocomplete(true),
       )
       .addChannelOption((o) =>
         o
@@ -86,9 +86,20 @@ async function handleList(interaction: ChatInputCommandInteraction): Promise<voi
   await replyInfo(interaction, renderChannelOverview(map));
 }
 
+function matchChannelSlots(query: string): { name: string; value: string }[] {
+  const needle = query.trim().toLowerCase();
+  return CHANNEL_CHOICES.filter(
+    (choice) => !needle || choice.name.toLowerCase().includes(needle) || choice.value.toLowerCase().includes(needle),
+  ).slice(0, 25);
+}
+
 export default defineCommand({
   data,
   requiredPermissions: PermissionFlagsBits.Administrator,
+  async autocomplete(interaction) {
+    const focused = interaction.options.getFocused(true);
+    await interaction.respond(focused.name === CommandOption.TYPE ? matchChannelSlots(String(focused.value)) : []);
+  },
   async execute(interaction) {
     requireGuild(interaction);
     requireAdministrator(interaction);

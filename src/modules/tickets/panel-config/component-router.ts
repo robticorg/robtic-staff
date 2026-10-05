@@ -67,16 +67,19 @@ async function handleSetup(interaction: ModalSubmitInteraction<"cached">): Promi
     }
   }
 
+  const logChannelId = selectedChannel(interaction, PanelConfigField.log);
+
   await ticketPanelSettingsService.save({
     guildId: interaction.guildId,
     panelId: panel.id,
     supportRoleId,
     managerRoleId,
     categoryId: categoryId ?? null,
+    logChannelId,
     actorId: interaction.user.id,
   });
   await interaction.reply({
-    content: M.setupDone(panel.name, supportRoleId, managerRoleId, categoryId),
+    content: M.setupDone(panel.name, supportRoleId, managerRoleId, categoryId, logChannelId),
     flags: EPHEMERAL,
     allowedMentions: { parse: [] },
   });

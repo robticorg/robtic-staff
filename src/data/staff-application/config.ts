@@ -1,11 +1,7 @@
 import { colors } from "../config/colors.ts";
-import { staffSupportConfig } from "../staff-support/config.ts";
 import { StaffTier } from "../../modules/configuration/types/enums.ts";
 
 export const staffApplicationConfig = {
-  applicationCategoryId: staffSupportConfig.staffSupportCategoryId,
-  transferCategoryId: staffSupportConfig.staffSupportCategoryId,
-
   accentColor: colors.primary,
 
   minimumAge: 13,

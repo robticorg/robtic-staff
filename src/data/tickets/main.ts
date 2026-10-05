@@ -3,12 +3,6 @@ import { colors } from "../config/colors.ts";
 import { branding } from "../config/branding.ts";
 
 export const ticketMain: TicketMainConfig = {
-  panelChannelId: "1536249118681210953",
-
-  managerRoleId: "1536248952301813780",
-
-  transcriptChannelId: "1549770971622154293",
-
   selectPlaceholder: "اختر القسم اللي يناسب مشكلتك",
 
   content: {

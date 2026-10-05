@@ -1,4 +1,4 @@
-import type { TicketPanelConfig } from "../types.ts";
+import { UNSET_ID, type TicketPanelConfig } from "../types.ts";
 import { colors } from "../../config/colors.ts";
 
 export const verifiedPanel: TicketPanelConfig = {
@@ -7,9 +7,7 @@ export const verifiedPanel: TicketPanelConfig = {
   description: "اذا انتي بنت و تريدين رتبة توثيق فقط فكي هذا تكت",
   emoji: "<:FL_7b:1486139849131032587>",
 
-  supportRoleId: "1536248969611452476",
-  categoryId: "1536249080924348447",
-  logChannelId: "1536249123265581056",
+  supportRoleId: UNSET_ID,
 
   questions: {
     enabled: false,

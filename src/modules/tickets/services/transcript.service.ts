@@ -2,6 +2,8 @@ import { AttachmentBuilder, type Guild, type GuildTextBasedChannel } from "disco
 import { limits } from "../../../data/config/limits.ts";
 import { buildLogCard } from "../../../libs/discord/index.ts";
 import { isUnsetId } from "../../../data/tickets/index.ts";
+import { channelConfigService } from "../../configuration/services/channel-config.service.ts";
+import { ChannelConfigType } from "../../configuration/types/enums.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import type { Ticket } from "../models/ticket.model.ts";
 import {
@@ -103,10 +105,10 @@ export class TranscriptService {
 
   async sendToChannel(guild: Guild, transcript: TicketTranscriptDocument): Promise<void> {
     try {
-      const main = ticketConfigService.getMainConfig();
-      if (isUnsetId(main.transcriptChannelId)) return;
+      const channelId = await channelConfigService.getChannelId(guild.id, ChannelConfigType.TICKET_TRANSCRIPTS);
+      if (isUnsetId(channelId)) return;
 
-      const channel = await guild.channels.fetch(main.transcriptChannelId).catch(() => null);
+      const channel = await guild.channels.fetch(channelId!).catch(() => null);
       if (!channel || !channel.isTextBased() || !("send" in channel)) {
         log.warn("transcript channel unavailable");
         return;
