@@ -26,6 +26,7 @@ export interface ClaimContextInput {
 
 export function decideClaimEligibility(input: ClaimContextInput): Decision {
   if (input.memberIsOwner) return { ok: false, reason: "IS_OWNER" };
+  if (input.memberIsManager && !input.memberIsAdministrator) return { ok: false, reason: "IS_MANAGER" };
 
   const eligibleRole = input.panelIsAdminOnly
     ? input.memberIsAdministrator
@@ -133,9 +134,20 @@ export function memberIsAdministrator(member: GuildMember): boolean {
   return hasAdminAccess(member);
 }
 
-export function memberIsTicketManager(member: GuildMember): boolean {
+export function memberHoldsManagerRole(
+  member: GuildMember,
+  panel?: Pick<TicketPanelConfig, "managerRoleId"> | null,
+): boolean {
+  if (member.roles.cache.has(ticketMain.managerRoleId)) return true;
+  return !!panel?.managerRoleId && !isUnsetId(panel.managerRoleId) && member.roles.cache.has(panel.managerRoleId);
+}
+
+export function memberIsTicketManager(
+  member: GuildMember,
+  panel?: Pick<TicketPanelConfig, "managerRoleId"> | null,
+): boolean {
   if (memberIsAdministrator(member)) return true;
-  return member.roles.cache.has(ticketMain.managerRoleId);
+  return memberHoldsManagerRole(member, panel);
 }
 
 export function memberHasPanelSupportRole(
@@ -153,7 +165,7 @@ export function canClaimTicket(
 ): Decision {
   return decideClaimEligibility({
     memberHasSupportRole: memberHasPanelSupportRole(member, panel),
-    memberIsManager: memberIsTicketManager(member),
+    memberIsManager: memberHoldsManagerRole(member, panel),
     memberIsAdministrator: memberIsAdministrator(member),
     memberIsOwner: member.id === ticket.userId,
     claimer: panel.claimer,
@@ -217,7 +229,7 @@ export function canManageClosedTicket(
 ): boolean {
   return decideClosedTicketAccess({
     memberIsAdministrator: memberIsAdministrator(member),
-    memberIsManager: memberIsTicketManager(member),
+    memberIsManager: memberIsTicketManager(member, panel),
     memberIsClaimer: !!ticket.claimedByDiscordId && ticket.claimedByDiscordId === member.id,
     memberHasPanelSupportRole: memberHasPanelSupportRole(member, panel),
   });

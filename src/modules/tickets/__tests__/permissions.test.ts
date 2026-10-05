@@ -40,8 +40,8 @@ describe("decideClaimEligibility", () => {
     const strict = { ...claimer, supportRoleCanClaim: false };
     expect(decideClaimEligibility({ ...base, claimer: strict }).ok).toBe(false);
     expect(
-      decideClaimEligibility({ ...base, claimer: strict, memberIsManager: true }).ok,
-    ).toBe(true);
+      decideClaimEligibility({ ...base, claimer: strict, memberIsManager: true }).reason,
+    ).toBe("IS_MANAGER");
   });
 
   it("blocks a second claim (already claimed / not open)", () => {

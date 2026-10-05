@@ -57,6 +57,18 @@ export const responsibilityMessages = {
     already: `${E.warning} هذا المستخدم لديه هذه المسؤولية بالفعل.`,
   },
 
+  manage: {
+    title: (userId: string) => `## إدارة مسؤوليات <@${userId}>`,
+    hint: "اختر وش تبي تسوي:",
+    giveButton: "إعطاء مسؤولية",
+    takeButton: "إزالة مسؤولية",
+    giveModalTitle: "إعطاء مسؤولية",
+    takeModalTitle: "إزالة مسؤولية",
+    giveLabel: "المسؤوليات اللي تبي تعطيها",
+    takeLabel: "المسؤوليات اللي تبي تشيلها",
+    nothingPicked: `${E.warning} ما اخترت أي مسؤولية.`,
+  },
+
   remove: {
     menuTitle: (userId: string) => `## اختر المسؤولية المراد إزالتها\nمن العضو <@${userId}>`,
     menuPlaceholder: "اختر المسؤولية المراد إزالتها",

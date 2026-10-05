@@ -21,6 +21,7 @@ import type { ResponsibilityCategory } from "../types/enums.ts";
 import { parseResponsibilityDuration } from "../shared/duration.ts";
 import { ResponsibilityField, parseResponsibilityCustomId } from "./component-ids.ts";
 import { hasAdminAccess } from "../../access/index.ts";
+import { handleGiveButton, handleGiveModal, handleTakeButton, handleTakeModal } from "./manage.handler.ts";
 
 const log = logger.child("responsibilities:components");
 const EPHEMERAL = MessageFlags.Ephemeral;
@@ -137,7 +138,7 @@ async function handleRemove(
 }
 
 export async function routeResponsibilityComponent(interaction: Interaction): Promise<boolean> {
-  if (!interaction.isStringSelectMenu() && !interaction.isModalSubmit()) return false;
+  if (!interaction.isStringSelectMenu() && !interaction.isModalSubmit() && !interaction.isButton()) return false;
   const parsed = parseResponsibilityCustomId(interaction.customId);
   if (!parsed || !interaction.inCachedGuild()) return false;
 
@@ -154,11 +155,22 @@ export async function routeResponsibilityComponent(interaction: Interaction): Pr
       return true;
     }
 
-    if (!interaction.isStringSelectMenu()) return false;
     const [executorId, targetId] = parsed.args;
     if (!executorId || !targetId) return false;
     if (interaction.user.id !== executorId) {
       await interaction.reply({ content: E.notYours, flags: EPHEMERAL });
+      return true;
+    }
+    if (interaction.isButton()) {
+      if (parsed.action === "give") await handleGiveButton(interaction, executorId, targetId);
+      else if (parsed.action === "take") await handleTakeButton(interaction, executorId, targetId);
+      else return false;
+      return true;
+    }
+    if (interaction.isModalSubmit()) {
+      if (parsed.action === "givem") await handleGiveModal(interaction, targetId);
+      else if (parsed.action === "takem") await handleTakeModal(interaction, targetId);
+      else return false;
       return true;
     }
     if (parsed.action === "assign") await handleAssign(interaction, targetId);

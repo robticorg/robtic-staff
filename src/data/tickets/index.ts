@@ -4,13 +4,17 @@ import { verifiedPanel } from "./panels/verified.ts";
 import { supportPanel } from "./panels/support.ts";
 import { giftClaimPanel } from "./panels/gift-claim.ts";
 import { minecraftPanel } from "./panels/minecraft.ts";
+import { responsibilityApplyPanel } from "./panels/responsibility-apply.ts";
 import { staffSupportPanel } from "../staff-support/panels.ts";
 import {
   staffApplicationPanel,
   staffTransferApplicationPanel,
 } from "../staff-application/panels.ts";
 
+import { applyPanelOverride } from "./overrides.ts";
+
 export * from "./types.ts";
+export * from "./overrides.ts";
 export { ticketMain } from "./main.ts";
 
 export const tickets: TicketConfig = {
@@ -24,6 +28,7 @@ export const tickets: TicketConfig = {
     staffSupportPanel,
     staffApplicationPanel,
     staffTransferApplicationPanel,
+    responsibilityApplyPanel,
   ],
 };
 
@@ -42,15 +47,16 @@ export function panelCreatesChannel(
 }
 
 export function listPanels(): readonly TicketPanelConfig[] {
-  return tickets.panels;
+  return tickets.panels.map(applyPanelOverride);
 }
 
 export function listPublicPanels(): readonly TicketPanelConfig[] {
-  return tickets.panels.filter((p) => !p.hidden);
+  return listPanels().filter((p) => !p.hidden);
 }
 
 export function getPanel(panelId: string): TicketPanelConfig | undefined {
-  return tickets.panels.find((p) => p.id === panelId);
+  const panel = tickets.panels.find((p) => p.id === panelId);
+  return panel ? applyPanelOverride(panel) : undefined;
 }
 
 export function independentPanelIds(): string[] {

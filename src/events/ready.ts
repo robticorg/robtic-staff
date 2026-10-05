@@ -4,6 +4,7 @@ import { logger } from "../shared/utils/logger.ts";
 import { ticketService, transcriptCache } from "../modules/tickets/index.ts";
 import { ladderSyncService } from "../modules/configuration/index.ts";
 import { hiddenStaffLevelSyncService } from "../modules/staff/hidden/index.ts";
+import { ticketPanelSettingsService } from "../modules/tickets/services/ticket-panel-settings.service.ts";
 import { giftDeliveryRecoveryService } from "../modules/gift-claims/services/delivery/gift-delivery-recovery.service.ts";
 import {
   serverTagAuditService,
@@ -29,6 +30,9 @@ export default defineEvent({
     }
 
     for (const guild of client.guilds.cache.values()) {
+      await ticketPanelSettingsService
+        .loadGuild(guild.id)
+        .catch((err) => log.warn(`ticket panel settings load failed for ${guild.id}`, err));
       await ladderSyncService
         .sync(guild)
         .catch((err) => log.warn(`ladder sync failed for ${guild.id}`, err));

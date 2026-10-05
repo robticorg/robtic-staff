@@ -266,7 +266,7 @@ export class TicketService extends BaseRepository<Ticket> {
         guild,
         panel,
         member.id,
-        input.additionalRoleIds ?? [],
+        [...(input.additionalRoleIds ?? []), ...(panel.managerRoleId ? [panel.managerRoleId] : [])],
         claimableRoleIds,
       ),
       reason: `Ticket ${ticketId} (${panel.id}) for ${member.id}`,
@@ -394,6 +394,7 @@ export class TicketService extends BaseRepository<Ticket> {
       }
       if (gate.reason === "NOT_OPEN") throw new ValidationError(M.claim.notOpen);
       if (gate.reason === "IS_OWNER") throw new ValidationError(M.claim.cantClaimOwn);
+      if (gate.reason === "IS_MANAGER") throw new ValidationError(M.claim.managerCannotClaim);
       throw new ValidationError(M.claim.notEligible);
     }
 

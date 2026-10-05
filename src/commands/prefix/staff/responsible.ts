@@ -1,6 +1,7 @@
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { responsibilityMessages } from "../../../data/responsibilities/messages.ts";
-import { buildAssignMenu, buildRemoveMenu } from "../../../modules/responsibilities/render/menus.ts";
+import { buildManageCard } from "../../../modules/responsibilities/render/manage.ts";
+import { buildRemoveMenu } from "../../../modules/responsibilities/render/menus.ts";
 import {
   responsibilityAssignmentService,
   responsibilityAuthorizationService,
@@ -39,8 +40,6 @@ export default definePrefixCommand({
       return;
     }
 
-    const assignable = await responsibilityAssignmentService.assignableFor(ctx.guild, ctx.member, target.id);
-    if (assignable.length === 0) throw new PrefixAbort(M.assign.nothingToAssign);
-    await ctx.replyWith(buildAssignMenu(ctx.member.id, target.id, assignable));
+    await ctx.replyWith(buildManageCard(ctx.member.id, target.id));
   },
 });

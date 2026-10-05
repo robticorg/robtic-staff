@@ -55,24 +55,29 @@ export class TicketConfigService {
     return panel.questions.items.slice((page - 1) * size, page * size);
   }
 
-  async validateConfig(guild: Guild): Promise<string[]> {
+  async validateConfig(
+    guild: Guild,
+    options: { checkMainChannel?: boolean; panels?: readonly TicketPanelConfig[] } = {},
+  ): Promise<string[]> {
     const P = ticketMessages.setup.problem;
     const problems: string[] = [];
     const main = this.getMainConfig();
 
-    const panelChannel = await fetchChannel(guild, main.panelChannelId);
-    if (!panelChannel) problems.push(P.mainChannelMissing);
-    else if (
-      panelChannel.type !== ChannelType.GuildText &&
-      panelChannel.type !== ChannelType.GuildAnnouncement
-    ) {
-      problems.push(P.mainChannelNotText);
+    if (options.checkMainChannel !== false) {
+      const panelChannel = await fetchChannel(guild, main.panelChannelId);
+      if (!panelChannel) problems.push(P.mainChannelMissing);
+      else if (
+        panelChannel.type !== ChannelType.GuildText &&
+        panelChannel.type !== ChannelType.GuildAnnouncement
+      ) {
+        problems.push(P.mainChannelNotText);
+      }
     }
 
     if (!(await roleExists(guild, main.managerRoleId))) problems.push(P.managerRoleMissing);
 
     const seen = new Set<string>();
-    for (const panel of this.listPanels()) {
+    for (const panel of options.panels ?? this.listPanels()) {
       if (seen.has(panel.id)) problems.push(P.panelDuplicateId(panel.id));
       seen.add(panel.id);
 

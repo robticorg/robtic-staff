@@ -69,6 +69,8 @@ export interface TicketPanelConfig {
 
   supportRoleId: RoleId;
 
+  managerRoleId?: RoleId;
+
   fastAccessContext?: FastAccessContext;
 
   blacklistSlot?: RoleConfigType | null;

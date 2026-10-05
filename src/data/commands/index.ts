@@ -19,6 +19,7 @@ export const CommandName = {
   ADD_RES: "add-res",
   LEAD: "lead",
   WHITELIST: "whitelist",
+  TICKET: "ticket",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -90,6 +91,11 @@ export const InfoSubcommand = {
   PAGE_ADD: "add",
   PAGE_DELETE: "delete",
   PAGE_EDIT: "edit",
+} as const;
+
+export const TicketSubcommand = {
+  SETUP: "setup",
+  SEND: "send",
 } as const;
 
 export const WhitelistSubcommand = {

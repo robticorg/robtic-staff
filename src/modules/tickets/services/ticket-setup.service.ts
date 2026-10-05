@@ -1,4 +1,4 @@
-import { ChannelType, type Guild } from "discord.js";
+import { ChannelType, type Guild, type GuildBasedChannel } from "discord.js";
 import { DomainError, ValidationError } from "../../../shared/utils/errors.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import { TicketPanelDeploymentModel } from "../models/ticket-panel-deployment.model.ts";
@@ -14,17 +14,17 @@ export interface DeployResult {
 }
 
 export class TicketSetupService {
-  async deploy(guild: Guild): Promise<DeployResult> {
+  async deploy(guild: Guild, target?: GuildBasedChannel): Promise<DeployResult> {
     const main = ticketConfigService.getMainConfig();
     const panels = ticketConfigService.listPublicPanels();
     if (panels.length === 0) throw new ValidationError(M.noPanels);
 
-    const problems = await ticketConfigService.validateConfig(guild);
+    const problems = await ticketConfigService.validateConfig(guild, { checkMainChannel: !target, panels });
     if (problems.length > 0) {
       throw new DomainError("TICKET_CONFIG_INVALID", M.invalidConfig(problems), { problems });
     }
 
-    const channel = await guild.channels.fetch(main.panelChannelId).catch(() => null);
+    const channel = target ?? (await guild.channels.fetch(main.panelChannelId).catch(() => null));
     if (
       !channel ||
       (channel.type !== ChannelType.GuildText && channel.type !== ChannelType.GuildAnnouncement)

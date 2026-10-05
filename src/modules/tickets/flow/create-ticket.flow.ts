@@ -27,6 +27,7 @@ export async function runCreateTicket(
   member: GuildMember,
   panel: TicketPanelConfig,
   answers: TicketAnswer[],
+  options: { duplicateScope?: "GUILD" | "PANEL"; metadata?: Record<string, unknown> } = {},
 ): Promise<CreatedTicket | null> {
   if (!interaction.deferred && !interaction.replied) {
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
@@ -38,6 +39,7 @@ export async function runCreateTicket(
       panel,
       member,
       answers,
+      ...options,
     });
 
     const faqEntries = panel.faq.enabled ? await faqService.list(member.guild.id, panel.id) : [];

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+import { RESPONSIBILITY_APPLY_PANEL_ID } from "../../../data/tickets/panels/responsibility-apply.ts";
 import {
   UNSET_ID,
   isUnsetId,
@@ -98,9 +99,15 @@ describe("configured panel is unaffected", () => {
     expect(decideClaimEligibility(base)).toEqual({ ok: true });
   });
 
-  it("still lets a manager claim", () => {
+  it("never lets a ticket manager claim, even with the support role", () => {
     expect(decideClaimEligibility({ ...base, memberHasSupportRole: false, memberIsManager: true }))
-      .toEqual({ ok: true });
+      .toEqual({ ok: false, reason: "IS_MANAGER" });
+    expect(decideClaimEligibility({ ...base, memberHasSupportRole: true, memberIsManager: true }))
+      .toEqual({ ok: false, reason: "IS_MANAGER" });
+  });
+
+  it("still lets an administrator claim", () => {
+    expect(decideClaimEligibility({ ...base, memberIsManager: true, memberIsAdministrator: true }).ok).toBe(true);
   });
 });
 
@@ -124,6 +131,7 @@ describe("gift-claim panel needs no category", () => {
   it("leaves every channel-opening panel with a category", () => {
     for (const panel of listPanels()) {
       if (!panelCreatesChannel(panel)) continue;
+      if (panel.id === RESPONSIBILITY_APPLY_PANEL_ID) continue;
       expect(panel.categoryId).toBeDefined();
       expect(isUnsetId(panel.categoryId)).toBe(false);
     }
