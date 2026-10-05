@@ -1,6 +1,6 @@
 import { extractUserIds } from "./parse.ts";
 
-export const RESPONSIBILITY_REMOVE_KEYWORDS: ReadonlySet<string> = new Set(["ازالة", "إزالة", "remove"]);
+export const RESPONSIBILITY_REMOVE_KEYWORDS: ReadonlySet<string> = new Set(["ازالة", "إزالة", "حذف", "remove", "delete"]);
 
 export interface ParsedResponsibleArgs {
   remove: boolean;

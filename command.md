@@ -60,7 +60,7 @@ Commands used in the wrong place (for example a ticket command outside a ticket)
 | `!break` | بريك · اجازة · إجازة | Put a staff member on break. Their claimed tickets are reopened for others | `!break @user <duration>` — e.g. `5m` `3d` `1w` `1M` | Staff Manager, Administrators |
 | `!unbreak` | انهاء-بريك · فك-بريك · ارجع | End a staff member's break early | `!unbreak @user` | Staff Manager, Administrators |
 | `!come` | تعال · حضور · نداء | DM a member asking them to come to this channel | `!come @user <reason>` | High Staff+, Administrators |
-| `!responsible` | مسؤولية · مسئولية | Give or remove a responsibility (opens a menu) | Give: `!responsible @user` — Remove: `!responsible remove @user` or `!responsible @user remove` (`ازالة` works too) | Owner Manager, Staff Manager, Administrators (each only the responsibilities they may assign) |
+| `!responsible` | مسؤولية · مسئولية | Give or remove a responsibility (opens a menu) | Give: `!responsible @user` — Remove: `!responsible remove @user` or `!responsible @user remove` (`حذف`, `ازالة` and `delete` work too) — the menu lists only that member's responsibilities | Owner Manager, Staff Manager, Administrators (each only the responsibilities they may assign) |
 | `!staff-check` | فحص-ستاف · معلومات-ستاف | Staff profile card (rank, tier, type, accepted by…) | `!staff-check @user` or `!staff-check <id>` | Rank Manager, Administrators |
 | `!check` | فحص | Weekly promotion check: who reached the required points | `!check` | Rank Manager, Administrators |
 

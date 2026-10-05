@@ -66,6 +66,12 @@ describe("parseResponsibleArgs", () => {
     expect(parseResponsibleArgs(["REMOVE", MENTION]).remove).toBe(true);
   });
 
+  it("reads حذف and delete as remove too", () => {
+    for (const args of [["حذف", MENTION], [MENTION, "حذف"], ["delete", MENTION], [MENTION, "DELETE"]]) {
+      expect(parseResponsibleArgs(args)).toEqual({ remove: true, targetId: USER });
+    }
+  });
+
   it("returns no target without a mention", () => {
     expect(parseResponsibleArgs([]).targetId).toBeNull();
   });
