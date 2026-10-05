@@ -28,8 +28,8 @@ describe("main ticket panel entry", () => {
     const publicIds = listPublicPanels().map((p) => p.id);
     expect(publicIds).toContain(StaffApplicationWorkflow.STAFF_APPLICATION);
     expect(publicIds).not.toContain(StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION);
-    expect(getPanel(StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION)).toBe(
-      staffTransferApplicationPanel,
+    expect(getPanel(StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION)?.id).toBe(
+      staffTransferApplicationPanel.id,
     );
   });
 

@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import { config } from "../../../config/index.ts";
 import { staffApplicationConfig } from "../../../data/staff-application/config.ts";
 import { staffApplicationMessages } from "../../../data/staff-application/messages.ts";
-import { getPanel, setPanelOverride } from "../../../data/tickets/index.ts";
+import { clearPanelOverrides, getPanel, setPanelOverride } from "../../../data/tickets/index.ts";
 import { RoleConfigModel } from "../../configuration/models/role-config.model.ts";
 import { ChannelConfigModel } from "../../configuration/models/channel-config.model.ts";
 import { channelConfigService } from "../../configuration/services/channel-config.service.ts";
@@ -74,9 +74,6 @@ const CATEGORIES = [
   "custom-apply-category",
   "custom-transfer-category",
 ];
-setPanelOverride("staff-application", { categoryId: SETUP_CATEGORY.apply });
-setPanelOverride("staff-transfer-application", { categoryId: SETUP_CATEGORY.transfer });
-setPanelOverride("support", { categoryId: SETUP_CATEGORY.support });
 
 let guild: FakeGuild;
 let owner: FakeMember;
@@ -171,11 +168,15 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
     await cleanup();
     await seed();
     registerApplicationLifecycle();
+    setPanelOverride("staff-application", { categoryId: SETUP_CATEGORY.apply });
+    setPanelOverride("staff-transfer-application", { categoryId: SETUP_CATEGORY.transfer });
+    setPanelOverride("support", { categoryId: SETUP_CATEGORY.support });
     globalThis.fetch = (async () => new Response(new Uint8Array([1, 2, 3, 4]))) as unknown as typeof fetch;
   });
 
   afterAll(async () => {
     globalThis.fetch = realFetch;
+    clearPanelOverrides();
     await cleanup();
   });
 
