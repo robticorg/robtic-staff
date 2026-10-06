@@ -37,15 +37,28 @@ class FastAccessRunner {
     if (!entry.enabled) return { delivered: false, reason: "DISABLED" };
 
     const detected = await detectFastAccessContext(input.channelId, input.guildId);
-    if (!detected || detected.context !== entry.contextType) {
+    const isPublic = entry.contextType === FastAccessContext.PUBLIC;
+    if (!isFastAccessAllowedIn(entry.contextType, detected?.context ?? null)) {
       return { delivered: false, reason: "WRONG_CONTEXT" };
     }
 
-    const denied = await this.authorize(input.member, detected);
+    const denied = detected
+      ? await this.authorize(input.member, detected)
+      : (await staffPermissionService.canActAsStaff(input.member))
+        ? null
+        : "NOT_STAFF";
     if (denied) return { delivered: false, reason: denied };
 
     const channel = await input.member.guild.channels.fetch(input.channelId).catch(() => null);
     if (!channel) return { delivered: false, reason: "WRONG_CONTEXT" };
+
+    if (!detected) {
+      if (!("send" in channel)) return { delivered: false, reason: "WRONG_CONTEXT" };
+      await channel
+        .send({ content: entry.message, allowedMentions: { parse: [] } })
+        .catch((err) => log.warn("fast-access public send failed", err));
+      return { delivered: true, context: FastAccessContext.PUBLIC };
+    }
 
     if (detected.ticket) {
       if ("send" in channel) {
@@ -53,7 +66,7 @@ class FastAccessRunner {
           .send({ content: entry.message, allowedMentions: { parse: [] } })
           .catch((err) => log.warn("fast-access support send failed", err));
       }
-      return { delivered: true, context: detected.context };
+      return { delivered: true, context: isPublic ? FastAccessContext.PUBLIC : detected.context };
     }
 
     const kase = await modmailCaseService.getByCaseId(detected.referenceId);
@@ -71,7 +84,7 @@ class FastAccessRunner {
       sourceMessageId: input.sourceMessageId,
       thread: channel,
     });
-    return { delivered: true, context: detected.context };
+    return { delivered: true, context: isPublic ? FastAccessContext.PUBLIC : detected.context };
   }
 
   private async authorize(
@@ -90,6 +103,14 @@ class FastAccessRunner {
     }
     return (await staffPermissionService.canActAsStaff(member)) ? null : "NOT_STAFF";
   }
+}
+
+export function isFastAccessAllowedIn(
+  macroContext: FastAccessContext,
+  channelContext: FastAccessContext | null,
+): boolean {
+  if (macroContext === FastAccessContext.PUBLIC) return true;
+  return channelContext === macroContext;
 }
 
 export const fastAccessRunner = new FastAccessRunner();

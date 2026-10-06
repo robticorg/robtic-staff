@@ -145,6 +145,7 @@ export const FastAccessContext = {
 
   STAFF_APPLICATION: "STAFF_APPLICATION",
   STAFF_TRANSFER: "STAFF_TRANSFER",
+  PUBLIC: "PUBLIC",
 } as const;
 export type FastAccessContext = (typeof FastAccessContext)[keyof typeof FastAccessContext];
 export const FAST_ACCESS_CONTEXT_VALUES = Object.values(FastAccessContext);

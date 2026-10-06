@@ -50,6 +50,8 @@ describe("points request validation", () => {
     expect(typeOf("Ticket")).toBe(StaffPointTransactionType.TICKET_CLAIM);
     expect(typeOf("msg")).toBe(StaffPointTransactionType.MESSAGE);
     expect(typeOf(" MSG ")).toBe(StaffPointTransactionType.MESSAGE);
+    expect(typeOf("warning")).toBe(StaffPointTransactionType.USER_WARNING);
+    expect(typeOf("Warn")).toBe(StaffPointTransactionType.USER_WARNING);
     // Full names still work; no type still means OTHER.
     expect(typeOf("TICKET_CLAIM")).toBe(StaffPointTransactionType.TICKET_CLAIM);
     expect(typeOf(undefined)).toBe(StaffPointTransactionType.OTHER);

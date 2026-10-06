@@ -21,6 +21,8 @@ export type PointsRequestResult =
 export const POINT_TYPE_ALIASES: Readonly<Record<string, StaffPointTransactionType>> = {
   ticket: StaffPointTransactionType.TICKET_CLAIM,
   msg: StaffPointTransactionType.MESSAGE,
+  warning: StaffPointTransactionType.USER_WARNING,
+  warn: StaffPointTransactionType.USER_WARNING,
 };
 
 /** undefined → OTHER (no type given); an unknown value → null. */

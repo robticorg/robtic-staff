@@ -58,6 +58,7 @@ const data = new SlashCommandBuilder()
             { name: "الدعم (التكتات)", value: FastAccessContext.SUPPORT },
             { name: "التقديم على الطاقم الاداري", value: FastAccessContext.STAFF_APPLICATION },
             { name: "نقل الطاقم الاداري", value: FastAccessContext.STAFF_TRANSFER },
+            { name: "عام (أي مكان)", value: FastAccessContext.PUBLIC },
           ),
       ),
   )

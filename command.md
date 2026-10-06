@@ -174,4 +174,4 @@ Gift orders (from the gift ticket or from `!gift` by staff) are approved or reje
 
 ## Fast Access macros
 
-Staff type `$<cmd>` (prefix set by `FAST_ACCESS_PREFIX`) to send a saved message in the matching context. Macros are managed with `/fast-access`.
+Staff type `$<cmd>` (prefix set by `FAST_ACCESS_PREFIX`) to send a saved message in the matching context. A macro with context `PUBLIC` ("عام (أي مكان)") works in any channel: in a ticket it is posted in the ticket, in a modmail thread it is relayed to the user, anywhere else it is posted in the channel. Macros are managed with `/fast-access`.
