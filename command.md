@@ -62,7 +62,7 @@ Commands used in the wrong place (for example a ticket command outside a ticket)
 | `!come` | تعال · حضور · نداء | DM a member asking them to come to this channel | `!come @user <reason>` | High Staff+, Administrators |
 | `!responsible` | مسؤولية · مسئولية | Manage a member's responsibilities: shows two buttons — **Give** opens a form listing only the responsibilities they don't have, **Remove** opens a form listing only the ones they hold (several can be picked at once). `حذف` / `ازالة` / `remove` / `delete` jump straight to the remove menu | `!responsible @user` · `!responsible حذف @user` | Owner Manager, Staff Manager, Administrators (each only the responsibilities they may assign) |
 | `!staff-check` | فحص-ستاف · معلومات-ستاف · فحص-اداري · معلومات-اداري | Staff profile card (rank, tier, type, accepted by…) | `!staff-check @user` or `!staff-check <id>` | Rank Manager, Administrators |
-| `!check` | فحص | Weekly promotion check: who reached the required points. Lists every staff member from normal staff up to ship in role order; administrators and hidden staff are never shown. Add a tier to list only that tier | `!check` · `!check staff` · `!check high` · `!check owner` · `!check ship` | Rank Manager, Administrators |
+| `!check` | فحص | Promotion check: who reached the required points in the last 7 days (rolling, not reset on Monday). Lists every staff member from normal staff up to ship in role order; administrators and hidden staff are never shown. Add a tier to list only that tier | `!check` · `!check staff` · `!check high` · `!check owner` · `!check ship` | Rank Manager, Administrators |
 
 ---
 
@@ -97,6 +97,7 @@ Commands used in the wrong place (for example a ticket command outside a ticket)
 | `!from` | من · من-طرف · جابه | Set who recruited the applicant (add `replace` to change it) | `!from @owner` · `!from @owner replace` | Same as `!refuse` — inside an application ticket. Replacing: Administrators |
 | `!verify` | توثيق | Give the verified role to a girl member | `!verify @user` | Girls Manager, Administrators |
 | `!server` | سيرفر · رابط-السيرفر | Resolve an invite into `https://discord.gg/<code>` with the server name, member count and online count. Accepts `ExRgT`, `.gg/ExRgT`, `discord.gg/ExRgT` or a full link. Ignored silently outside application tickets | `!server ExRgT` | Anyone inside a staff application / transfer ticket |
+| `!bots` | بوتات · البوتات | List every bot in the server: mention, tag, ID, whether it has Administrator, and when it joined. Bots with Administrator are listed first; long lists are split over several messages | `!bots` | Administrators |
 
 ---
 

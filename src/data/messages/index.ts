@@ -16,6 +16,7 @@ export { staffMessages } from "./staff.ts";
 export { warningMessages } from "./warnings.ts";
 export { ticketMessages } from "./tickets.ts";
 export { prefixMessages } from "./prefix.ts";
+export { botsMessages } from "./bots.ts";
 export { fastAccessMessages } from "./fast-access.ts";
 export { punishmentMessages } from "./punishment.ts";
 export { statsMessages, ACTIVITY_LABELS } from "./stats.ts";

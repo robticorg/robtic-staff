@@ -21,6 +21,7 @@ export const PREFIX_COMMAND_LOG_SLOTS: Readonly<Record<string, ChannelConfigType
   giveaway: ChannelConfigType.STAFF_LOG,
   done: ChannelConfigType.STAFF_LOG,
   server: ChannelConfigType.STAFF_LOG,
+  bots: ChannelConfigType.STAFF_LOG,
   hidden: ChannelConfigType.STAFF_LOG,
   back: ChannelConfigType.STAFF_LOG,
   responsible: ChannelConfigType.STAFF_LOG,

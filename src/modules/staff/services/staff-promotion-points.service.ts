@@ -78,6 +78,11 @@ export class StaffPromotionPointsService {
     return { start, end: now };
   }
 
+  /** The full seven days before `now`, so `!check` never shows a half-empty week. */
+  getCheckRange(now: Date = new Date()): WeekRange {
+    return { start: new Date(now.getTime() - CHECK_WINDOW_MS), end: now };
+  }
+
   /** Net sum of this week's point transactions for one staff member. */
   async getWeeklyPoints(staffId: IdLike, now: Date = new Date()): Promise<number> {
     const range = this.getCurrentWeekRange(now);
@@ -102,6 +107,7 @@ export class StaffPromotionPointsService {
     guildId: GuildId,
     now: Date = new Date(),
     belowLevel: number | null = null,
+    range: WeekRange = this.getCurrentWeekRange(now),
   ): Promise<StaffWeeklyPoints[]> {
     const staff = await StaffModel.find(
       { guildId, status: StaffStatus.ACTIVE, ...belowLevelFilter(belowLevel) },
@@ -112,7 +118,6 @@ export class StaffPromotionPointsService {
 
     if (staff.length === 0) return [];
 
-    const range = this.getCurrentWeekRange(now);
     const rows = await StaffPointTransactionModel.aggregate<{
       _id: Types.ObjectId;
       total: number;
@@ -154,10 +159,11 @@ export class StaffPromotionPointsService {
     tier: StaffTier | null = null,
   ): Promise<CheckResult> {
     const hierarchy = await getHierarchy(guild.id);
+    const range = this.getCheckRange(now);
 
     const [requiredPoints, weekly] = await Promise.all([
       this.getRequiredPoints(guild.id),
-      this.getAllStaffWeeklyPoints(guild.id, now),
+      this.getAllStaffWeeklyPoints(guild.id, now, null, range),
     ]);
 
     const inTier = tier ? weekly.filter((w) => getTierForLevel(hierarchy, w.currentRoleLevel) === tier) : weekly;
@@ -196,7 +202,7 @@ export class StaffPromotionPointsService {
       )
       .map(({ currentRoleLevel: _level, ...entry }) => entry);
 
-    return { requiredPoints, range: this.getCurrentWeekRange(now), entries };
+    return { requiredPoints, range, entries };
   }
 }
 
@@ -205,6 +211,7 @@ export function isListedInCheck(member: GuildMember | undefined, hiddenLevel: nu
   return !hasAdminAccess(member);
 }
 
+const CHECK_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 const MEMBER_FETCH_CHUNK = 100;
 
 async function fetchMembers(

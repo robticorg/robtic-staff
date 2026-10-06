@@ -16,6 +16,14 @@ import {
 const service = new StaffPromotionPointsService();
 const NOW = new Date("2026-03-11T14:30:00.000Z");
 
+describe("getCheckRange", () => {
+  it("covers the full seven days before now", () => {
+    const range = service.getCheckRange(NOW);
+    expect(range.end).toEqual(NOW);
+    expect(NOW.getTime() - range.start.getTime()).toBe(7 * 86_400_000);
+  });
+});
+
 describe("getCurrentWeekRange", () => {
   it("starts on Monday at 00:00 in the configured timezone", () => {
     const range = service.getCurrentWeekRange(NOW);

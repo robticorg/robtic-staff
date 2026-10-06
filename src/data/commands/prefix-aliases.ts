@@ -23,6 +23,7 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   giveaway: ["قيف-اواي", "قيفاواي", "سحب"],
   done: ["نفذ", "نفّذ", "تم-الشرط"],
   server: ["سيرفر", "رابط-السيرفر"],
+  bots: ["بوتات", "البوتات"],
   hidden: ["مخفية", "مخفي"],
   from: ["من", "من-طرف", "جابه"],
   transfer: ["نقل"],

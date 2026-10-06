@@ -53,14 +53,14 @@ export const staffMessages = {
 
     scope: PROMOTION_SCOPE,
     header: (points: number) =>
-      `## فحص نقاط الترقية\nالمطلوب: **${points}** نقطة هذا الأسبوع\n${PROMOTION_SCOPE}`,
+      `## فحص نقاط الترقية\nالمطلوب: **${points}** نقطة خلال آخر 7 أيام\n${PROMOTION_SCOPE}`,
     headerPage: (points: number, page: number, pages: number) =>
-      `## فحص نقاط الترقية (${page}/${pages})\nالمطلوب: **${points}** نقطة هذا الأسبوع\n${PROMOTION_SCOPE}`,
+      `## فحص نقاط الترقية (${page}/${pages})\nالمطلوب: **${points}** نقطة خلال آخر 7 أيام\n${PROMOTION_SCOPE}`,
     entry: (displayName: string, userId: string, weeklyPoints: number, decision: string) =>
       [
         `**اسم الاداري:** ${displayName}`,
         `**المنشن:** <@${userId}>`,
-        `**نقاط هذا الأسبوع:** ${weeklyPoints}`,
+        `**نقاط آخر 7 أيام:** ${weeklyPoints}`,
         `**القرار:** ${decision}`,
       ].join("\n"),
   },
