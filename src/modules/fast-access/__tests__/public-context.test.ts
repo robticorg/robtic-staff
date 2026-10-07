@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { FAST_ACCESS_CONTEXT_VALUES, FastAccessContext } from "../../configuration/types/enums.ts";
-import { isFastAccessAllowedIn } from "../fast-access-runner.ts";
+import { fastAccessArgs, fillFastAccessArgs, isFastAccessAllowedIn } from "../fast-access-runner.ts";
 
 describe("public fast-access macros", () => {
   it("is a valid context", () => {
@@ -17,5 +17,23 @@ describe("public fast-access macros", () => {
     expect(isFastAccessAllowedIn(FastAccessContext.SUPPORT, null)).toBe(false);
     expect(isFastAccessAllowedIn(FastAccessContext.SUPPORT, FastAccessContext.MODMAIL)).toBe(false);
     expect(isFastAccessAllowedIn(FastAccessContext.SUPPORT, FastAccessContext.SUPPORT)).toBe(true);
+  });
+});
+
+describe("fast-access [args]", () => {
+  it("reads everything typed after the command", () => {
+    expect(fastAccessArgs("$hi Ahmed  the  great ", "$", "hi")).toBe("Ahmed  the  great");
+    expect(fastAccessArgs("$ hi", "$", "hi")).toBe("");
+  });
+
+  it("fills every [args] in the message, any case", () => {
+    expect(fillFastAccessArgs("Welcome [args]! [ARGS]", "Ahmed")).toBe("Welcome Ahmed! Ahmed");
+    expect(fillFastAccessArgs("Rules: [args]", "")).toBe("Rules:");
+    expect(fillFastAccessArgs("no placeholder", "x")).toBe("no placeholder");
+  });
+
+  it("keeps $ patterns in the args literal and caps the length", () => {
+    expect(fillFastAccessArgs("[args]", "$& $1")).toBe("$& $1");
+    expect(fillFastAccessArgs("[args]", "a".repeat(3000))).toHaveLength(2000);
   });
 });

@@ -21,6 +21,8 @@ export interface ExecuteFastAccessInput {
   member: GuildMember;
   command: string;
   sourceMessageId: string;
+  args?: string;
+  replyToMessageId?: string | null;
 }
 
 export type ExecuteOutcome =
@@ -52,10 +54,15 @@ class FastAccessRunner {
     const channel = await input.member.guild.channels.fetch(input.channelId).catch(() => null);
     if (!channel) return { delivered: false, reason: "WRONG_CONTEXT" };
 
+    const content = fillFastAccessArgs(entry.message, input.args ?? "");
+    const reply = input.replyToMessageId
+      ? { messageReference: { messageId: input.replyToMessageId, failIfNotExists: false } }
+      : {};
+
     if (!detected) {
       if (!("send" in channel)) return { delivered: false, reason: "WRONG_CONTEXT" };
       await channel
-        .send({ content: entry.message, allowedMentions: { parse: [] } })
+        .send({ content, allowedMentions: { parse: [] }, ...reply })
         .catch((err) => log.warn("fast-access public send failed", err));
       return { delivered: true, context: FastAccessContext.PUBLIC };
     }
@@ -63,7 +70,7 @@ class FastAccessRunner {
     if (detected.ticket) {
       if ("send" in channel) {
         await channel
-          .send({ content: entry.message, allowedMentions: { parse: [] } })
+          .send({ content, allowedMentions: { parse: [] }, ...reply })
           .catch((err) => log.warn("fast-access support send failed", err));
       }
       return { delivered: true, context: isPublic ? FastAccessContext.PUBLIC : detected.context };
@@ -79,7 +86,7 @@ class FastAccessRunner {
     await modmailService.relayStaffToUser({
       caseId: kase.caseId,
       member: input.member,
-      content: entry.message,
+      content,
       attachments: [],
       sourceMessageId: input.sourceMessageId,
       thread: channel,
@@ -105,6 +112,18 @@ class FastAccessRunner {
   }
 }
 
+const ARGS_PLACEHOLDER = /\[args\]/gi;
+const MAX_CONTENT_LENGTH = 2000;
+
+export function fillFastAccessArgs(template: string, args: string): string {
+  const filled = template.replace(ARGS_PLACEHOLDER, () => args.trim()).trim();
+  return filled.length > MAX_CONTENT_LENGTH ? filled.slice(0, MAX_CONTENT_LENGTH) : filled;
+}
+
+export function fastAccessArgs(content: string, prefix: string, token: string): string {
+  return content.slice(prefix.length).trimStart().slice(token.length).trim();
+}
+
 export function isFastAccessAllowedIn(
   macroContext: FastAccessContext,
   channelContext: FastAccessContext | null,
@@ -128,6 +147,13 @@ export async function runFastAccess(message: Message): Promise<boolean> {
     message.member ?? (await message.guild.members.fetch(message.author.id).catch(() => null));
   if (!member) return true;
 
+  const replyToMessageId = message.reference?.messageId ?? null;
+  let args = fastAccessArgs(message.content, prefix, token);
+  if (!args && replyToMessageId) {
+    const replied = await message.channel.messages.fetch(replyToMessageId).catch(() => null);
+    args = replied?.content ?? "";
+  }
+
   try {
     await fastAccessRunner.execute({
       guildId: message.guild.id,
@@ -135,6 +161,8 @@ export async function runFastAccess(message: Message): Promise<boolean> {
       member,
       command: token,
       sourceMessageId: message.id,
+      args,
+      replyToMessageId,
     });
   } catch (err) {
     log.error("fast-access execution failed", err);

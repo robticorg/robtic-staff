@@ -298,7 +298,7 @@ export const commandCopy = {
         description: "إنشاء ماكرو Fast Access",
         options: {
           cmd: "اسم الماكرو (يُستخدم كـ $name)، مثال: rules",
-          message: "الرسالة اللي يرسلها الماكرو",
+          message: "الرسالة اللي يرسلها الماكرو — حط [args] مكان الكلام اللي يُكتب بعد الأمر",
           context: "وين ينفع تستخدم الماكرو",
         },
       },
