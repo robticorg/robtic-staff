@@ -28,6 +28,7 @@ import { configMessages } from "../../data/messages/config.ts";
 import { CommandError, requireAdministrator, requireGuild } from "../_shared/guards.ts";
 import { replySuccess } from "./responses.ts";
 import { HIDDEN_SET_CHOICES } from "./hidden.ts";
+import { getLevelStart } from "../../modules/configuration/utils/level-start.ts";
 
 const copy = commandCopy.role;
 
@@ -158,7 +159,7 @@ async function handleCheck(interaction: ChatInputCommandInteraction): Promise<vo
   const role = interaction.options.getRole(CommandOption.ROLE, true);
 
   const hierarchy = await getHierarchy(guild.id);
-  const view = buildRoleCheckView(hierarchy, role.id);
+  const view = buildRoleCheckView(hierarchy, role.id, await getLevelStart(guild.id));
 
   if (!view.ok) throw new CommandError(view.lines.join("\n"));
   await replySuccess(interaction, hierarchyMessages.roleCheck.title, ...view.lines);

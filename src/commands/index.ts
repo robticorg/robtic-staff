@@ -16,6 +16,7 @@ import addResCommand from "./add-res/index.ts";
 import leadCommand from "./lead/index.ts";
 import whitelistCommand from "./whitelist/index.ts";
 import ticketCommand from "./ticket/index.ts";
+import startCountCommand from "./start-count/index.ts";
 
 export const commands: SlashCommand[] = [
   roleCommand,
@@ -35,4 +36,5 @@ export const commands: SlashCommand[] = [
   leadCommand,
   whitelistCommand,
   ticketCommand,
+  startCountCommand,
 ];

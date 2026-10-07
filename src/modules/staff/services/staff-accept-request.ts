@@ -13,6 +13,7 @@ import {
 import type { StaffType } from "../types/enums.ts";
 import { AcceptArgProblem, parseAcceptArguments } from "./staff-accept-args.ts";
 import { staffTypeService } from "./staff-type.service.ts";
+import { getLevelStart, storedLevel } from "../../configuration/utils/level-start.ts";
 
 const M = prefixMessages.staff;
 
@@ -81,7 +82,8 @@ export async function resolveAcceptRequest(
   guildId: GuildId,
   request: AcceptRequest,
 ): Promise<ResolvedAcceptRequest> {
-  let level = request.level;
+  const start = await getLevelStart(guildId);
+  let level = request.level === null ? null : storedLevel(request.level, start);
 
   if (request.max) {
     const maxLevel = await resolveEndLevel(guildId);

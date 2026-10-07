@@ -32,32 +32,34 @@ import {
 } from "../../../modules/tickets/responsibility-apply/decision.service.ts";
 import { extractUserIds } from "../_shared/parse.ts";
 import { requireTargetMember } from "../_shared/target.ts";
+import { getLevelStart, shownLevel } from "../../../modules/configuration/utils/level-start.ts";
 
 const M = prefixMessages.staff;
 
-function acceptedReply(targetId: string, result: AcceptResult, tier: StaffTier | null): string {
-  const line = acceptedLine(targetId, result, tier);
+function acceptedReply(targetId: string, result: AcceptResult, tier: StaffTier | null, start: number): string {
+  const line = acceptedLine(targetId, result, tier, start);
   if (!result.awaitingIdentity) return line;
   return `${line}\n${serverTagMessages.notice.awaitingIdentity(targetId, result.awaitingIdentity.dmSent)}`;
 }
 
-function acceptedLine(targetId: string, result: AcceptResult, tier: StaffTier | null): string {
+function acceptedLine(targetId: string, result: AcceptResult, tier: StaffTier | null, start: number): string {
   const mention = `<@${targetId}>`;
+  const level = shownLevel(result.level, start);
   const tierLabel = tier ? STAFF_TIER_LABELS[tier] : null;
 
   if (tierLabel && result.staffType) {
     return M.acceptedWithTierAndType(
       mention,
-      result.level,
+      level,
       tierLabel,
       staffTypeLabel(result.staffType),
     );
   }
-  if (tierLabel) return M.acceptedWithTier(mention, result.level, tierLabel);
+  if (tierLabel) return M.acceptedWithTier(mention, level, tierLabel);
   if (result.staffType) {
-    return M.acceptedWithType(mention, result.level, staffTypeLabel(result.staffType));
+    return M.acceptedWithType(mention, level, staffTypeLabel(result.staffType));
   }
-  return M.accepted(mention, result.level);
+  return M.accepted(mention, level);
 }
 
 async function acceptInApplication(
@@ -84,7 +86,7 @@ async function acceptInApplication(
     application,
     isEmptyAcceptRequest(request) ? null : request,
   );
-  const line = acceptedReply(outcome.applicantId, outcome.result, request.tier);
+  const line = acceptedReply(outcome.applicantId, outcome.result, request.tier, await getLevelStart(ctx.guild.id));
   if (!applicant) return void (await ctx.reply(line));
   const first = await hiddenStaffService.grantFirstLevel(applicant, ctx.member.id);
   await ctx.reply(`${line}\n${hiddenStaffMessages.accept.acceptedHidden(applicant.id, first.roleId)}`);
@@ -132,7 +134,7 @@ export default definePrefixCommand({
       request.level,
       request.staffType,
     );
-    const line = acceptedReply(target.id, result, request.tier);
+    const line = acceptedReply(target.id, result, request.tier, await getLevelStart(ctx.guild.id));
     if (!hidden) return void (await ctx.reply(line));
     const first = await hiddenStaffService.grantFirstLevel(target, ctx.member.id);
     await ctx.reply(`${line}\n${hiddenStaffMessages.accept.acceptedHidden(target.id, first.roleId)}`);

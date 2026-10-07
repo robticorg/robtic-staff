@@ -66,6 +66,14 @@ export const StaffPointTransactionType = {
   JAIL: "JAIL",
   /** Accepting someone into the staff (!accept or in the application ticket). */
   STAFF_ACCEPT: "STAFF_ACCEPT",
+  /** Sharing a special publication (points API type "pub"). */
+  SPECIAL_POST: "SPECIAL_POST",
+  /** Creating a private channel (points API type "sub"). */
+  PRIVATE_CHANNEL_CREATE: "PRIVATE_CHANNEL_CREATE",
+  /** Deleting a private channel (points API type "sub-delete"). */
+  PRIVATE_CHANNEL_DELETE: "PRIVATE_CHANNEL_DELETE",
+  /** Giving the seller role (points API type "role"). */
+  SELLER_ROLE: "SELLER_ROLE",
   APPEAL_SUCCESS_PENALTY: "APPEAL_SUCCESS_PENALTY",
   MANUAL_ADJUSTMENT: "MANUAL_ADJUSTMENT",
   OTHER: "OTHER",

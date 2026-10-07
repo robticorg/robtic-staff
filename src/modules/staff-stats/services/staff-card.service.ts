@@ -8,6 +8,7 @@ import { StaffApplicationModel } from "../../applications/shared/staff-applicati
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType, StaffTier } from "../../configuration/types/enums.ts";
 import { getHierarchy, getRoleForLevel } from "../../configuration/utils/staff-levels.ts";
+import { getLevelStart } from "../../configuration/utils/level-start.ts";
 import { PunishmentModel } from "../../punishment/models/punishment.model.ts";
 import {
   StaffSupportRequestModel,
@@ -55,6 +56,8 @@ const DEMISSION_MATCH_WINDOW_MS = 5 * 60_000;
 const AVATAR_SIZE = 256;
 
 export interface StaffCardOverview {
+  /** /start-count — add to the levels when showing them. */
+  levelStart?: number;
   userId: UserId;
   avatarUrl: string | null;
   status: StaffStatus;
@@ -205,6 +208,7 @@ export class StaffCardService {
       : null;
 
     return {
+      levelStart: await getLevelStart(guild.id),
       userId,
       avatarUrl,
       status: staff.status,

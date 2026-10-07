@@ -11,7 +11,7 @@ const DAY_MS = 86_400_000;
 export function staffProfileLines(profile: StaffProfile, now: Date = new Date()): string[] {
   const lines = [
     P.status(P.statuses[profile.status] ?? profile.status),
-    P.level(profile.level, profile.ladderTop),
+    P.level(profile.level + (profile.levelStart ?? 0), profile.ladderTop + (profile.levelStart ?? 0)),
   ];
   if (profile.roleId) lines.push(P.role(profile.roleId));
   lines.push(P.tier(STAFF_TIER_LABELS[profile.tier]));

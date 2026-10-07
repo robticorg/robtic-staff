@@ -12,3 +12,4 @@ export * from "./staff-active-cases.service.ts";
 export * from "./staff-transfer-rules.ts";
 export * from "./staff-transfer.service.ts";
 export * from "./staff-scan.service.ts";
+export * from "./point-values.service.ts";

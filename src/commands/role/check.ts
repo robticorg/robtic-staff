@@ -11,6 +11,7 @@ import {
   type StaffHierarchy,
 } from "../../modules/configuration/utils/staff-levels.ts";
 import type { RoleId } from "../../shared/types/index.ts";
+import { shownLevel } from "../../modules/configuration/utils/level-start.ts";
 
 const M = hierarchyMessages.roleCheck;
 const P = hierarchyMessages.problems;
@@ -38,7 +39,7 @@ export interface RoleCheckView {
   lines: string[];
 }
 
-export function buildRoleCheckView(hierarchy: StaffHierarchy, roleId: RoleId): RoleCheckView {
+export function buildRoleCheckView(hierarchy: StaffHierarchy, roleId: RoleId, start = 0): RoleCheckView {
   const issues = validateHierarchy(hierarchy);
   if (issues.length > 0) {
     return { ok: false, lines: [P.heading, ...describeHierarchyIssues(issues)] };
@@ -57,7 +58,7 @@ export function buildRoleCheckView(hierarchy: StaffHierarchy, roleId: RoleId): R
     return { ok: true, lines };
   }
 
-  lines.push(M.level(info.level as number));
+  lines.push(M.level(shownLevel(info.level as number, start)));
   lines.push(M.tier(STAFF_TIER_LABELS[info.tier!]));
 
   const statuses: string[] = [];

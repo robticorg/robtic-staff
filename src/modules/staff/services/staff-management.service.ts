@@ -38,6 +38,7 @@ import { staffIdentityRequirementService } from "../../staff-identity/index.ts";
 import { staffTypeService } from "./staff-type.service.ts";
 import { StaffOffDutyReason, staffDutyEvents } from "./staff-duty-events.ts";
 import type { StaffType } from "../types/enums.ts";
+import { getLevelStart, shownLevel } from "../../configuration/utils/level-start.ts";
 
 const log = logger.child("staff-mgmt");
 
@@ -175,7 +176,10 @@ export class StaffManagementService {
 
     const level = resolveAcceptLevel(requestedLevel, ladder);
     if (level === null) {
-      throw new StaffAdminError(prefixMessages.staff.levelOutOfRange(maxLadderLevel(ladder)));
+      const start = await getLevelStart(guildId);
+      throw new StaffAdminError(
+        prefixMessages.staff.levelOutOfRange(shownLevel(0, start), shownLevel(maxLadderLevel(ladder), start)),
+      );
     }
 
     if (actor.kind === "MEMBER") {

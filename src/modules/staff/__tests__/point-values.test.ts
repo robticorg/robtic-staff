@@ -23,7 +23,7 @@ describe("point values", () => {
       "modules/warnings/services/warning-actions.service.ts",
     ]) {
       expect(src(file)).not.toMatch(/amount:\s*\d/);
-      expect(src(file)).toContain("DEFAULT_POINT_VALUES");
+      expect(src(file)).toMatch(/DEFAULT_POINT_VALUES|pointValuesService/);
     }
   });
 

@@ -11,6 +11,12 @@ export interface StaffConfig {
 
   autoclaimEnabled?: boolean;
 
+  /** Per-guild overrides of how many points each bot-awarded action is worth (/points values). */
+  pointValues?: Record<string, number>;
+
+  /** The number the first ladder role is shown as — 0 (default) or 1 (/start-count). */
+  levelStart?: number;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,6 +28,8 @@ const staffConfigSchema = new Schema<StaffConfig>(
     guildId: { type: String, required: true },
     promotionPointsRequired: { type: Number, min: 1 },
     autoclaimEnabled: { type: Boolean, default: false },
+    pointValues: { type: Schema.Types.Mixed, default: undefined },
+    levelStart: { type: Number, min: 0, max: 1 },
   },
   { timestamps: true, collection: "staff_configs" },
 );

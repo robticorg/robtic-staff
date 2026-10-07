@@ -9,7 +9,8 @@ import { defineCommand } from "../../discord/command.ts";
 import { CommandName, CommandOption, PointsSubcommand, commandCopy } from "../../data/commands/index.ts";
 import { statsMessages } from "../../data/messages/stats.ts";
 import { commonMessages } from "../../data/messages/common.ts";
-import { staffPointService, staffService } from "../../modules/staff/index.ts";
+import { pointValuesService, staffPointService, staffService } from "../../modules/staff/index.ts";
+import { buildPointValuesPanel } from "../../modules/staff/point-values/render.ts";
 import { StaffPointTransactionType } from "../../modules/staff/types/enums.ts";
 import { CommandError, requireAdministrator, requireGuild } from "../_shared/guards.ts";
 import { replySuccess } from "../_shared/responses.ts";
@@ -70,6 +71,9 @@ const data = new SlashCommandBuilder()
       .addUserOption((o) =>
         o.setName(CommandOption.MEMBER).setDescription(commandCopy.points.sub.reset.options.member),
       ),
+  )
+  .addSubcommand((s) =>
+    s.setName(PointsSubcommand.VALUES).setDescription(commandCopy.points.sub.values.description),
   );
 
 async function handleAdd(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -148,6 +152,11 @@ export default defineCommand({
         return handleRemove(interaction);
       case PointsSubcommand.RESET:
         return handleReset(interaction);
+      case PointsSubcommand.VALUES: {
+        const values = await pointValuesService.all(requireGuild(interaction).id);
+        await interaction.reply(buildPointValuesPanel(values));
+        return;
+      }
       default:
         throw new CommandError(commonMessages.errors.unknownSubcommand(sub));
     }

@@ -16,7 +16,7 @@ import {
   staffService,
 } from "../../staff/index.ts";
 import { StaffStatus } from "../../staff/types/enums.ts";
-import { DEFAULT_POINT_VALUES } from "../../staff/config/points.ts";
+import { pointValuesService } from "../../staff/services/point-values.service.ts";
 import {
   SYSTEM_ACTOR,
   staffManagementService,
@@ -225,7 +225,7 @@ export class WarningActionService {
     const ref = warning._id.toString();
     const award = await staffPointService.add({
       staffId: issuerStaff._id,
-      amount: DEFAULT_POINT_VALUES[StaffPointTransactionType.USER_WARNING],
+      amount: await pointValuesService.valueOf(params.guildId, StaffPointTransactionType.USER_WARNING),
       type: StaffPointTransactionType.USER_WARNING,
       referenceId: ref,
       reason: `User warning ${ref}`,
@@ -292,7 +292,7 @@ export class WarningActionService {
     const issuerStaff = await staffService.ensure(params.issuer.id, guildId);
     const award = await staffPointService.add({
       staffId: issuerStaff._id,
-      amount: DEFAULT_POINT_VALUES[StaffPointTransactionType.STAFF_WARNING],
+      amount: await pointValuesService.valueOf(guildId, StaffPointTransactionType.STAFF_WARNING),
       type: StaffPointTransactionType.STAFF_WARNING,
       referenceId: ref,
       reason: `Staff verbal warning ${ref}`,
@@ -372,7 +372,7 @@ export class WarningActionService {
     const issuerStaff = await staffService.ensure(params.issuer.id, guildId);
     const award = await staffPointService.add({
       staffId: issuerStaff._id,
-      amount: DEFAULT_POINT_VALUES[StaffPointTransactionType.STAFF_WARNING],
+      amount: await pointValuesService.valueOf(guildId, StaffPointTransactionType.STAFF_WARNING),
       type: StaffPointTransactionType.STAFF_WARNING,
       referenceId: ref,
       reason: `Staff real warning ${ref}`,

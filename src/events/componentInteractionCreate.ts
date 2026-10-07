@@ -17,6 +17,7 @@ import { routeGiveawayComponent } from "../modules/giveaways/handlers/component-
 import { routeHiddenStaffComponent } from "../modules/staff/hidden/handlers/component-router.ts";
 import { routePanelConfigComponent } from "../modules/tickets/panel-config/component-router.ts";
 import { routeResponsibilityApplyComponent } from "../modules/tickets/responsibility-apply/component-router.ts";
+import { routePointValuesComponent } from "../modules/staff/point-values/component-router.ts";
 
 const routers = [
   routeModmailComponent,
@@ -36,6 +37,7 @@ const routers = [
   routeHiddenStaffComponent,
   routePanelConfigComponent,
   routeResponsibilityApplyComponent,
+  routePointValuesComponent,
 ];
 
 export default defineEvent({

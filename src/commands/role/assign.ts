@@ -11,6 +11,7 @@ import {
 import { staffRoleAssignmentService } from "../../modules/staff/services/staff-role-assignment.service.ts";
 import { CommandError, requireGuild } from "../_shared/guards.ts";
 import { replySuccess } from "../_shared/responses.ts";
+import { getLevelStart, shownLevel } from "../../modules/configuration/utils/level-start.ts";
 
 const M = assignMessages;
 const P = acceptedRoleMessages.problems;
@@ -39,6 +40,7 @@ export async function handleAssign(interaction: ChatInputCommandInteraction): Pr
     });
 
     const all = await staffRoleAssignmentService.getAssignments(guild.id);
+    const start = await getLevelStart(guild.id);
 
     await replySuccess(
       interaction,
@@ -46,7 +48,7 @@ export async function handleAssign(interaction: ChatInputCommandInteraction): Pr
       M.role(assignment.roleId),
       assignment.fromLevel === null || assignment.toLevel === null
         ? M.allLevels
-        : M.range(assignment.fromLevel, assignment.toLevel),
+        : M.range(shownLevel(assignment.fromLevel, start), shownLevel(assignment.toLevel, start)),
       "",
       M.total(all.length),
       M.note,

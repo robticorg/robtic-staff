@@ -10,6 +10,7 @@ import {
 } from "../../modules/staff/services/staff-accepted-role.service.ts";
 import { CommandError, requireGuild } from "../_shared/guards.ts";
 import { replySuccess } from "../_shared/responses.ts";
+import { getLevelStart, shownLevel } from "../../modules/configuration/utils/level-start.ts";
 
 const M = acceptedRoleMessages;
 
@@ -36,13 +37,14 @@ export async function handleAccepted(interaction: ChatInputCommandInteraction): 
       toRole: to,
     });
 
+    const start = await getLevelStart(guild.id);
     await replySuccess(
       interaction,
       M.title,
       M.role(config.roleId),
       config.fromLevel === null || config.toLevel === null
         ? M.allLevels
-        : M.range(config.fromLevel, config.toLevel),
+        : M.range(shownLevel(config.fromLevel, start), shownLevel(config.toLevel, start)),
       M.note,
       M.existingNote,
     );

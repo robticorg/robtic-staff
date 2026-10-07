@@ -5,6 +5,7 @@ import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
 import { buildTicketNotice } from "../render/notice.ts";
 import { buildTransferDm } from "../render/transfer-dm.ts";
 import { ticketService, type TransferTicketResult } from "./ticket.service.ts";
+import { StaffPointTransactionType, pointValuesService } from "../../staff/index.ts";
 
 const log = logger.child("tickets:transfer");
 const M = ticketMessages.transfer;
@@ -40,7 +41,7 @@ export async function performTicketTransfer(
   await postChannelNote(actor, result, target);
 
   const done = result.pointAwarded
-    ? M.done(ticketId, target.id)
+    ? M.done(ticketId, target.id, await pointValuesService.valueOf(result.ticket.guildId, StaffPointTransactionType.TICKET_CLAIM))
     : M.doneNoPoint(ticketId, target.id);
   return {
     result,

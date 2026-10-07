@@ -8,6 +8,7 @@ import { ROLE_SLOT_LABELS } from "../../data/roles/index.ts";
 import { STAFF_TYPE_BY_ID } from "../../data/staff-types/index.ts";
 import { requireGuild } from "../_shared/guards.ts";
 import { replyInfo } from "../_shared/responses.ts";
+import { getLevelStart, shownLevel } from "../../modules/configuration/utils/level-start.ts";
 
 const O = configMessages.roleOverview;
 
@@ -51,7 +52,7 @@ function isLadderRung(row: RoleConfig): boolean {
   return typeof row.level === "number";
 }
 
-export function renderRoleOverview(guild: Guild, rows: readonly RoleConfig[]): string {
+export function renderRoleOverview(guild: Guild, rows: readonly RoleConfig[], start = 0): string {
   if (rows.length === 0) return `${O.title(branding.botName)}\n\n${O.nothingConfigured}`;
 
   const out: string[] = [O.title(branding.botName)];
@@ -62,10 +63,10 @@ export function renderRoleOverview(guild: Guild, rows: readonly RoleConfig[]): s
     out.push(O.ladderEmpty);
   } else {
     for (const rung of ladder) {
-      out.push(configMessages.role.ladderRung(rung.level as number, rung.roleId));
+      out.push(configMessages.role.ladderRung(shownLevel(rung.level as number, start), rung.roleId));
     }
     const end = ladder.at(-1);
-    if (end) out.push(configMessages.role.endLevelLine(end.level as number));
+    if (end) out.push(configMessages.role.endLevelLine(shownLevel(end.level as number, start)));
   }
 
   out.push("", O.group(O.tiersHeading));
@@ -75,7 +76,11 @@ export function renderRoleOverview(guild: Guild, rows: readonly RoleConfig[]): s
   } else {
     for (const row of boundaries) {
       out.push(
-        O.tierLine(STAFF_TIER_LABELS[row.boundary!], row.roleId, row.level ?? null),
+        O.tierLine(
+          STAFF_TIER_LABELS[row.boundary!],
+          row.roleId,
+          row.level == null ? null : shownLevel(row.level, start),
+        ),
       );
     }
   }
@@ -110,7 +115,11 @@ export function renderRoleOverview(guild: Guild, rows: readonly RoleConfig[]): s
   } else {
     for (const row of ranged) {
       out.push(
-        O.rangeLine(row.roleId, row.rangeFromLevel ?? null, row.rangeToLevel ?? null),
+        O.rangeLine(
+          row.roleId,
+          row.rangeFromLevel == null ? null : shownLevel(row.rangeFromLevel, start),
+          row.rangeToLevel == null ? null : shownLevel(row.rangeToLevel, start),
+        ),
       );
     }
   }
@@ -136,5 +145,5 @@ export function renderRoleOverview(guild: Guild, rows: readonly RoleConfig[]): s
 export async function handleList(interaction: ChatInputCommandInteraction): Promise<void> {
   const guild = requireGuild(interaction);
   const rows = await roleConfigService.listByGuild(guild.id);
-  await replyInfo(interaction, renderRoleOverview(guild, rows));
+  await replyInfo(interaction, renderRoleOverview(guild, rows, await getLevelStart(guild.id)));
 }

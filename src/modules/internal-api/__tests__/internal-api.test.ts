@@ -54,6 +54,11 @@ describe("points request validation", () => {
     expect(typeOf("Warn")).toBe(StaffPointTransactionType.USER_WARNING);
     // Full names still work; no type still means OTHER.
     expect(typeOf("TICKET_CLAIM")).toBe(StaffPointTransactionType.TICKET_CLAIM);
+    expect(typeOf("USER_WARNING")).toBe(StaffPointTransactionType.USER_WARNING);
+    expect(typeOf("pub")).toBe(StaffPointTransactionType.SPECIAL_POST);
+    expect(typeOf("sub")).toBe(StaffPointTransactionType.PRIVATE_CHANNEL_CREATE);
+    expect(typeOf("SUB-DELETE")).toBe(StaffPointTransactionType.PRIVATE_CHANNEL_DELETE);
+    expect(typeOf("role")).toBe(StaffPointTransactionType.SELLER_ROLE);
     expect(typeOf(undefined)).toBe(StaffPointTransactionType.OTHER);
     expect(typeOf("message points")).toBeNull();
   });

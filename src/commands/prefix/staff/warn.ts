@@ -16,6 +16,7 @@ import {
   splitVerbalMarker,
   textAfterTarget,
 } from "../_shared/warn-config.ts";
+import { getLevelStart, shownLevel } from "../../../modules/configuration/utils/level-start.ts";
 
 export default definePrefixCommand({
   name: "warn",
@@ -72,7 +73,7 @@ export default definePrefixCommand({
         proofExempt,
       });
       const lines = [prefixMessages.warn.realRecorded(mention, result.level)];
-      lines.push(...consequenceLines(mention, result.consequence));
+      lines.push(...consequenceLines(mention, result.consequence, await getLevelStart(ctx.guild.id)));
       await ctx.reply(lines.join("\n"));
       return;
     }
@@ -90,21 +91,21 @@ export default definePrefixCommand({
     if (result.escalation) {
       lines.push(prefixMessages.warn.convertedToReal(result.escalation.convertedVerbalCount));
       lines.push(prefixMessages.warn.realRecorded(mention, result.escalation.level));
-      lines.push(...consequenceLines(mention, result.escalation.consequence));
+      lines.push(...consequenceLines(mention, result.escalation.consequence, await getLevelStart(ctx.guild.id)));
     }
     await ctx.reply(lines.join("\n"));
   },
 });
 
 /** Warn 3 costs a demotion, or removal when there is no level left to drop to. */
-function consequenceLines(mention: string, consequence: WarningConsequence): string[] {
+function consequenceLines(mention: string, consequence: WarningConsequence, start: number): string[] {
   if (consequence.fired) return [prefixMessages.warn.firedNoLevelLeft(mention)];
   if (consequence.demoted) {
     return [
       prefixMessages.warn.demotedMaxWarnings(
         mention,
-        consequence.fromLevel ?? 0,
-        consequence.toLevel ?? 0,
+        shownLevel(consequence.fromLevel ?? 0, start),
+        shownLevel(consequence.toLevel ?? 0, start),
       ),
     ];
   }

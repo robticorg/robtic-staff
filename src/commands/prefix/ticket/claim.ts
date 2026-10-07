@@ -3,6 +3,7 @@ import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { buildTicketNotice } from "../../../modules/tickets/render/notice.ts";
 import { ticketService } from "../../../modules/tickets/services/ticket.service.ts";
 import { resolveTicketContext } from "../_shared/guards.ts";
+import { StaffPointTransactionType, pointValuesService } from "../../../modules/staff/index.ts";
 
 export default definePrefixCommand({
   name: "claim",
@@ -14,7 +15,10 @@ export default definePrefixCommand({
       buildTicketNotice(
         [
           result.pointAwarded
-            ? prefixMessages.ticket.claimed(ticket.ticketId)
+            ? prefixMessages.ticket.claimed(
+                ticket.ticketId,
+                await pointValuesService.valueOf(ticket.guildId, StaffPointTransactionType.TICKET_CLAIM),
+              )
             : prefixMessages.ticket.claimedNoPoint(ticket.ticketId),
         ],
         { tone: "success" },

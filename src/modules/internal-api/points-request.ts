@@ -18,11 +18,16 @@ export type PointsRequestResult =
   | { ok: true; value: PointsRequest }
   | { ok: false; error: string };
 
+/** Short names other bots send; the full type names (e.g. "TICKET_CLAIM", "USER_WARNING") work too. */
 export const POINT_TYPE_ALIASES: Readonly<Record<string, StaffPointTransactionType>> = {
   ticket: StaffPointTransactionType.TICKET_CLAIM,
   msg: StaffPointTransactionType.MESSAGE,
   warning: StaffPointTransactionType.USER_WARNING,
   warn: StaffPointTransactionType.USER_WARNING,
+  pub: StaffPointTransactionType.SPECIAL_POST,
+  sub: StaffPointTransactionType.PRIVATE_CHANNEL_CREATE,
+  "sub-delete": StaffPointTransactionType.PRIVATE_CHANNEL_DELETE,
+  role: StaffPointTransactionType.SELLER_ROLE,
 };
 
 /** undefined → OTHER (no type given); an unknown value → null. */

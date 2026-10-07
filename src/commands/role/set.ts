@@ -12,6 +12,7 @@ import { handleHiddenSlot, isHiddenSlot } from "./hidden.ts";
 import { buildStaffLadder } from "./ladder.ts";
 import { handleOwnerWarnSlot } from "./owner-warns.ts";
 import { replayLadder, replySuccess } from "./responses.ts";
+import { getLevelStart } from "../../modules/configuration/utils/level-start.ts";
 
 const SETTABLE = new Set<string>(ROLE_SET_SLOTS);
 
@@ -63,7 +64,7 @@ async function handleStart(interaction: ChatInputCommandInteraction): Promise<vo
     interaction,
     configMessages.role.startConfigured,
     configMessages.role.roleLine(role.id),
-    configMessages.role.levelLine(0),
+    configMessages.role.levelLine(await getLevelStart(guild.id)),
   );
 }
 

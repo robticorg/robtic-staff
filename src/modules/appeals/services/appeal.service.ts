@@ -18,7 +18,7 @@ import { punishmentAuditService } from "../../punishment/services/punishment-aud
 import { punishmentService } from "../../punishment/services/punishment.service.ts";
 import { PunishmentAuditAction, PunishmentStatus, PunishmentType } from "../../punishment/types/enums.ts";
 import type { PunishmentDocument } from "../../punishment/models/punishment.model.ts";
-import { APPEAL_SUCCESS_PENALTY } from "../../staff/config/points.ts";
+import { pointValuesService } from "../../staff/services/point-values.service.ts";
 import {
   StaffActivityType,
   StaffHistoryAction,
@@ -369,9 +369,13 @@ export class AppealService extends BaseRepository<Appeal> {
   ): Promise<void> {
     if (appeal.penaltyAppliedAt) return;
     const issuerStaff = await staffService.ensure(punishment.issuedBy, punishment.guildId);
+    const penalty = await pointValuesService.valueOf(
+      punishment.guildId,
+      StaffPointTransactionType.APPEAL_SUCCESS_PENALTY,
+    );
     const award = await staffPointService.add({
       staffId: issuerStaff._id,
-      amount: APPEAL_SUCCESS_PENALTY,
+      amount: penalty,
       type: StaffPointTransactionType.APPEAL_SUCCESS_PENALTY,
       referenceId: appeal.appealId,
       reason: `Warning appeal ${appeal.appealId} accepted`,
@@ -392,7 +396,7 @@ export class AppealService extends BaseRepository<Appeal> {
         action: StaffHistoryAction.APPEAL_PENALTY,
         performedBy: appeal.reviewedBy ?? "SYSTEM",
         reason: `Warning appeal ${appeal.appealId} accepted`,
-        metadata: { appealId: appeal.appealId, punishmentId: punishment.punishmentId, amount: APPEAL_SUCCESS_PENALTY },
+        metadata: { appealId: appeal.appealId, punishmentId: punishment.punishmentId, amount: penalty },
       });
     } else if (award.duplicate) {
       log.info(`appeal ${appeal.appealId} penalty already applied — skipped`);

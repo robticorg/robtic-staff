@@ -8,13 +8,12 @@ import { ChannelConfigType } from "../../configuration/types/enums.ts";
 const log = logger.child("responsibilities:log");
 const L = responsibilityMessages.log;
 
-export type ResponsibilityLogKind = "ASSIGNED" | "REMOVED" | "EXPIRED" | "RESTORED" | "PROBLEM";
+export type ResponsibilityLogKind = "ASSIGNED" | "REMOVED" | "EXPIRED" | "PROBLEM";
 
 const TITLE: Record<ResponsibilityLogKind, string> = {
   ASSIGNED: L.assigned,
   REMOVED: L.removed,
   EXPIRED: L.expired,
-  RESTORED: L.restored,
   PROBLEM: L.problem,
 };
 
@@ -22,7 +21,6 @@ const TONE: Record<ResponsibilityLogKind, LogTone> = {
   ASSIGNED: "success",
   REMOVED: "warning",
   EXPIRED: "neutral",
-  RESTORED: "info",
   PROBLEM: "error",
 };
 

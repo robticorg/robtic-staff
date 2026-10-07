@@ -11,12 +11,15 @@ import {
 import { StaffHistoryModel } from "../models/staff-history.model.ts";
 import { StaffHistoryAction, type StaffStatus } from "../types/enums.ts";
 import { staffService } from "./staff.service.ts";
+import { getLevelStart } from "../../configuration/utils/level-start.ts";
 
 export interface StaffProfile {
   userId: UserId;
   status: StaffStatus;
   level: number;
   ladderTop: number;
+  /** /start-count — add to `level` / `ladderTop` when showing them. */
+  levelStart?: number;
   roleId: RoleId | null;
   tier: StaffTier;
   acceptedBy: UserId | null;
@@ -57,6 +60,7 @@ export class StaffProfileService {
       status: staff.status,
       level,
       ladderTop,
+      levelStart: await getLevelStart(staff.guildId),
       roleId: getRoleForLevel(hierarchy, level),
       tier: getTierForLevel(hierarchy, level),
       acceptedBy: actorOrNull(staff.acceptedBy ?? firstAccept?.performedBy),

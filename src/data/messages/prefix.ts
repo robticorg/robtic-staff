@@ -1,12 +1,9 @@
 import { emojis } from "../emojis/index.ts";
-import { DEFAULT_POINT_VALUES } from "../../modules/staff/config/points.ts";
-import { StaffPointTransactionType } from "../../modules/staff/types/enums.ts";
 
 const E = emojis;
 
-/** "+2 نقاط" — follows the configured ticket-claim value. */
-const ticketPoints = DEFAULT_POINT_VALUES[StaffPointTransactionType.TICKET_CLAIM];
-const TICKET_POINTS = `+${ticketPoints} ${ticketPoints === 1 ? "نقطة" : "نقاط"}`;
+/** "+2 نقاط" — the amount comes from the guild's ticket-claim value (/points values). */
+const ticketPointsText = (points: number) => `+${points} ${points === 1 ? "نقطة" : "نقاط"}`;
 
 const WARNING_ORDINALS: Record<number, string> = {
   1: "التحذير الأول",
@@ -33,7 +30,7 @@ export const prefixMessages = {
   ticket: {
     notATicket: `${E.error} هذا الأمر يشتغل داخل روم التكت بس.`,
     ticketClosed: `${E.error} هذا التكت مغلق.`,
-    claimed: (ticketId: string) => `${E.success} استلمت \`${ticketId}\`. **${TICKET_POINTS}.**`,
+    claimed: (ticketId: string, points: number) => `${E.success} استلمت \`${ticketId}\`. **${ticketPointsText(points)}.**`,
     claimedNoPoint: (ticketId: string) => `${E.success} أنت الحين مسؤول عن \`${ticketId}\`.`,
     closed: (ticketId: string) => `${E.success} تم إغلاق \`${ticketId}\`.`,
     closedWithTranscript: (ticketId: string, transcriptId: string) =>
@@ -71,7 +68,7 @@ export const prefixMessages = {
     rolesNotConfigured: `${E.error} رتب الطاقم الاداري المرقّمة مو مضبوطة. شغّل \`/role set type:رتبة بداية الطاقم الاداري\` و \`/role set type:رتبة نهاية الطاقم الاداري\` أول.`,
     memberNotFound: `${E.error} هذا العضو مو موجود في السيرفر.`,
     notStaffMember: (userMention: string) => `${E.error} ${userMention} مو عضو في الطاقم الاداري.`,
-    levelOutOfRange: (max: number) => `${E.error} المستوى لازم يكون بين 0 و ${max}.`,
+    levelOutOfRange: (min: number, max: number) => `${E.error} المستوى لازم يكون بين ${min} و ${max}.`,
     accepted: (userMention: string, level: number) =>
       `${E.success} تم قبول ${userMention} كـ اداري على المستوى **${level}**.`,
     acceptedWithType: (userMention: string, level: number, typeLabel: string) =>
@@ -123,7 +120,7 @@ export const prefixMessages = {
       `${E.warning} ${userMention} في بريك — استخدم \`!unbreak\` لإرجاع رتبه.`,
     backDone: (userMention: string, level: number) =>
       `${E.success} تم إرجاع ${userMention} للطاقم الاداري على المستوى **${level}** مع رتبه.`,
-    alreadyMinLevel: (userMention: string) => `${E.warning} ${userMention} على المستوى 0 أصلاً. استخدم \`!فصل\` عشان تشيله.`,
+    alreadyMinLevel: (userMention: string) => `${E.warning} ${userMention} على أقل مستوى أصلاً. استخدم \`!فصل\` عشان تشيله.`,
     acceptUsage: `${E.warning} الطريقة: \`!قبول @عضو [المستوى]\``,
     fireUsage: `${E.warning} الطريقة: \`!فصل @عضو\` للفصل العادي · \`!فصل @عضو =\` للفصل + القائمة السوداء`,
     promoteUsage: `${E.warning} الطريقة: \`!ترقية @عضو [عدد-المستويات | high | owner | ship | max]\``,

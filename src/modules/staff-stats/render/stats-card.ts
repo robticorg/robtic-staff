@@ -44,6 +44,10 @@ const POINT_TYPE_ORDER = [
   "USER_WARNING",
   "JAIL",
   "STAFF_ACCEPT",
+  "SPECIAL_POST",
+  "PRIVATE_CHANNEL_CREATE",
+  "PRIVATE_CHANNEL_DELETE",
+  "SELLER_ROLE",
   "STAFF_WARNING",
   "APPEAL_SUCCESS_PENALTY",
   "MANUAL_ADJUSTMENT",
@@ -131,14 +135,15 @@ export function overviewLines(o: StaffCardOverview): string[] {
   const lines = [C.tier(STAFF_TIER_LABELS[o.tier] ?? o.tier)];
   if (o.staffType) lines.push(C.staffType(staffTypeLabel(o.staffType)));
   const resigned = o.fired?.kind === StaffExitKind.DEMISSION;
+  const start = o.levelStart ?? 0;
   if (o.fired) {
     lines.push(
       resigned
-        ? C.lastRoleBeforeLeaving(o.fired.roleId, o.fired.level)
-        : C.lastRoleBeforeFire(o.fired.roleId, o.fired.level),
+        ? C.lastRoleBeforeLeaving(o.fired.roleId, o.fired.level + start)
+        : C.lastRoleBeforeFire(o.fired.roleId, o.fired.level + start),
     );
   } else {
-    lines.push(C.levelRole(o.roleId, o.level));
+    lines.push(C.levelRole(o.roleId, o.level + start));
   }
   lines.push(C.acceptedBy(o.acceptedBy));
   if (o.acceptedAt) lines.push(C.acceptedAt(o.acceptedAt));

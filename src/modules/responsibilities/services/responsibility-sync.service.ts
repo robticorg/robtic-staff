@@ -6,10 +6,8 @@ import { responsibilityMessages } from "../../../data/responsibilities/messages.
 import { responsibilityAssignmentRepository } from "../repositories/responsibility-assignment.repository.ts";
 import { responsibilityRepository } from "../repositories/responsibility.repository.ts";
 import { ResponsibilityAssignmentStatus } from "../types/enums.ts";
-import { responsibilityAssignmentService } from "./responsibility-assignment.service.ts";
 import { responsibilityLogService } from "./responsibility-log.service.ts";
 import { responsibilityPermissionService } from "./responsibility-permission.service.ts";
-import { responsibilityRoleService } from "./responsibility-role.service.ts";
 
 const log = logger.child("responsibilities:sync");
 const MANUAL = "MANUAL";
@@ -36,10 +34,6 @@ export class ResponsibilitySyncService {
       log.warn(`responsibility role sync failed for ${newMember.id} in ${newMember.guild.id}`, err);
       return 0;
     }
-  }
-
-  handleMemberJoin(member: GuildMember): Promise<number> {
-    return this.restore(member);
   }
 
   private async closeForRemovedRole(member: GuildMember, roleId: RoleId): Promise<number> {
@@ -132,24 +126,6 @@ export class ResponsibilitySyncService {
       return entry?.executor?.id ?? null;
     } catch {
       return null;
-    }
-  }
-
-  private async restore(member: GuildMember): Promise<number> {
-    try {
-      const active = await responsibilityAssignmentService.getActiveResponsibilities(member.guild.id, member.id);
-      let restored = 0;
-      for (const { responsibility } of active) {
-        const roleId = responsibility.roleId;
-        if (member.roles.cache.has(roleId)) continue;
-        if (responsibilityRoleService.roleState(member.guild, roleId) !== "OK") continue;
-        await responsibilityRoleService.grant(member, roleId, "Active responsibility — role restored");
-        restored += 1;
-      }
-      return restored;
-    } catch (err) {
-      log.warn(`responsibility role restore failed for ${member.id} in ${member.guild.id}`, err);
-      return 0;
     }
   }
 }

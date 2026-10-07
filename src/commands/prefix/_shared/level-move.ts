@@ -15,6 +15,7 @@ import { PrefixAbort, requireRankManager } from "./guards.ts";
 import { splitHiddenMode } from "./hidden-mode.ts";
 import { parseMoveArgs } from "./move-args.ts";
 import { requireTargetMember } from "./target.ts";
+import { getLevelStart, shownLevel } from "../../../modules/configuration/utils/level-start.ts";
 
 const M = prefixMessages.staff;
 
@@ -73,6 +74,9 @@ export async function runLevelMove(
       : await staffManagementService.demote(target, actor, move);
 
   const mention = `<@${target.id}>`;
+  const start = await getLevelStart(ctx.guild.id);
+  const from = shownLevel(result.from, start);
+  const to = shownLevel(result.to, start);
   if (result.wrongWay) {
     // "max" pointing the wrong way just means they're already at the top.
     if (!parsed.tier) {
@@ -82,19 +86,19 @@ export async function runLevelMove(
     const label = STAFF_TIER_LABELS[parsed.tier];
     await ctx.reply(
       direction === "promote"
-        ? M.promoteTierNotHigher(mention, label, result.from)
-        : M.demoteTierNotLower(mention, label, result.from),
+        ? M.promoteTierNotHigher(mention, label, from)
+        : M.demoteTierNotLower(mention, label, from),
     );
     return;
   }
 
   if (direction === "promote") {
     await ctx.reply(
-      result.changed ? M.promoted(mention, result.from, result.to) : M.alreadyMaxLevel(mention),
+      result.changed ? M.promoted(mention, from, to) : M.alreadyMaxLevel(mention),
     );
   } else {
     await ctx.reply(
-      result.changed ? M.demoted(mention, result.from, result.to) : M.alreadyMinLevel(mention),
+      result.changed ? M.demoted(mention, from, to) : M.alreadyMinLevel(mention),
     );
   }
 }

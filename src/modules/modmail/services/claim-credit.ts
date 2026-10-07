@@ -6,6 +6,7 @@ import {
   StaffPointTransactionType,
   staffActivityService,
   staffPointService,
+  pointValuesService,
   staffService,
 } from "../../staff/index.ts";
 
@@ -13,12 +14,15 @@ export interface ClaimCreditDeps {
   points: Pick<typeof staffPointService, "add">;
   activity: Pick<typeof staffActivityService, "create">;
   staff: Pick<typeof staffService, "incrementCounters">;
+  /** The guild's value for the claim (/points values); left out, the default applies. */
+  pointValues?: Pick<typeof pointValuesService, "forStaff">;
 }
 
 const defaultDeps: ClaimCreditDeps = {
   points: staffPointService,
   activity: staffActivityService,
   staff: staffService,
+  pointValues: pointValuesService,
 };
 
 export async function applyClaimCredit(
@@ -28,7 +32,9 @@ export async function applyClaimCredit(
 ): Promise<{ pointAwarded: boolean }> {
   const award = await deps.points.add({
     staffId,
-    amount: DEFAULT_POINT_VALUES[StaffPointTransactionType.REPORT_CLAIM],
+    amount: deps.pointValues
+      ? await deps.pointValues.forStaff(staffId, StaffPointTransactionType.REPORT_CLAIM)
+      : DEFAULT_POINT_VALUES[StaffPointTransactionType.REPORT_CLAIM],
     type: StaffPointTransactionType.REPORT_CLAIM,
     referenceId: caseId,
     reason: staffMessages.points.reportClaimReason(caseId),

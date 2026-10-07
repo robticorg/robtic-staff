@@ -253,7 +253,7 @@ by not holding a Staff role.
 
 | Surface | Who |
 |---|---|
-| `/role · /channels · /points · /promote-points · /warn-setup · /ticket-setup · /vacation-setup · /faq` | Administrator only |
+| `/role · /channels · /points · /promote-points · /start-count · /warn-setup · /ticket-setup · /vacation-setup · /faq` | Administrator only |
 | Warning panel — تايم اوت · تحذير عضو | staff (`canActAsStaff`) |
 | Warning panel — سجن · `!jail` | staff, **non-staff targets only**, and only below the actor's own top role (Administrators unrestricted) |
 | Warning panel — تحذير ستاف | `canWarn()`: Staff Manager below Owner · Owner Manager at Owner · Administrator anywhere |
@@ -1001,8 +1001,11 @@ docker-compose publishes `8788:8788`). No token by default — set
 `INTERNAL_API_TOKEN` to require `Authorization: Bearer <token>` (10 wrong tokens
 from one IP block it for 10 minutes). Body: `guildId`, `userId` (both strings),
 `amount` (number or numeric string), optional `type`, `reason`, `idempotencyKey`.
-`type` is `"ticket"` (Ticket Points → `TICKET_CLAIM`) or `"msg"` (Message Points →
-`MESSAGE`), any case; left out, it's `OTHER`. `GET /internal/health` checks reachability.
+`type` (any case) is one of: `"ticket"` / `"TICKET_CLAIM"` (Ticket Points),
+`"msg"` (`MESSAGE`), `"warning"` / `"warn"` / `"USER_WARNING"`, `"pub"` (special
+publication share → `SPECIAL_POST`), `"sub"` (private channel created →
+`PRIVATE_CHANNEL_CREATE`), `"sub-delete"` (private channel deleted →
+`PRIVATE_CHANNEL_DELETE`), `"role"` (seller role given → `SELLER_ROLE`); left out, it's `OTHER`. `GET /internal/health` checks reachability.
 
 - Active staff: a `StaffPointTransaction` (`onBreak: false`, `balance`).
 - Staff on break: a `StaffBreakPoint` instead — never counted in totals,
@@ -2098,6 +2101,31 @@ tie-break + fired/blacklisted excluded + break kept + guild isolation + limit /
 zero-activity & unknown staff, detailed-vs-summary gating.
 
 ---
+
+## Point values and level numbering
+
+```
+/points values              → Administrator only; panel + two modals
+/start-count start:<0|1>    → Administrator only; default 0
+```
+
+**`/points values`** sets how many points each action the bot awards by itself
+is worth in this guild: ticket claim, report claim, staff accept (first modal)
+and user warning, staff warning, jail, accepted-appeal penalty (second modal).
+Each field is a whole number from -1000 to 1000, and `0` turns that award off.
+Values are stored as `pointValues` on `staff_configs`. A type that was never set
+uses `DEFAULT_POINT_VALUES` (`modules/staff/config/points.ts`), which stays the
+single place for the defaults. Every award site reads through
+`pointValuesService` (`modules/staff/services/point-values.service.ts`), and if
+the config can't be read it falls back to the default. Points-API types (`msg`,
+`pub`, `sub`, …) are unaffected: their amount is whatever the sender sends.
+
+**`/start-count`** picks the number the first ladder role is shown as. Levels are
+still **stored from 0**. Only what people see (`!accept`, promote/demote replies,
+`/role list`/`check`, the stats and profile cards) and what they type
+(`!accept @x 3`) shifts by `levelStart` (`modules/configuration/utils/level-start.ts`).
+Changing it never rewrites any staff record. The hidden-staff ladder keeps its
+own numbering.
 
 ## Weekly Staff Promotion Points
 

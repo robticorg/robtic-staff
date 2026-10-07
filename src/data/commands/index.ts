@@ -18,6 +18,7 @@ export const CommandName = {
   LEAD: "lead",
   WHITELIST: "whitelist",
   TICKET: "ticket",
+  START_COUNT: "start-count",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -25,6 +26,7 @@ export const PointsSubcommand = {
   ADD: "add",
   REMOVE: "remove",
   RESET: "reset",
+  VALUES: "values",
 } as const;
 export type PointsSubcommand = (typeof PointsSubcommand)[keyof typeof PointsSubcommand];
 
@@ -250,6 +252,15 @@ export const commandCopy = {
           member: "عضو الطاقم الاداري (اتركه فاضي عشان تصفّر نقاط كل الطاقم الاداري)",
         },
       },
+      values: {
+        description: "تحديد كم نقطة ياخذ الاداري على كل عمل (استلام تكت، تحذير، سجن...)",
+      },
+    },
+  },
+  startCount: {
+    description: "تحديد رقم أول مستوى في سلّم الرتب — 0 (الافتراضي) أو 1",
+    options: {
+      start: "الرقم اللي يبدأ منه العد",
     },
   },
   channels: {

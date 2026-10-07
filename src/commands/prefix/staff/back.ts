@@ -7,6 +7,7 @@ import {
 } from "../../../modules/staff/services/staff-management.service.ts";
 import { PrefixAbort, requireRankManager } from "../_shared/guards.ts";
 import { requireTargetMember } from "../_shared/target.ts";
+import { getLevelStart, shownLevel } from "../../../modules/configuration/utils/level-start.ts";
 
 const M = prefixMessages.staff;
 
@@ -30,7 +31,7 @@ export default definePrefixCommand({
       case "nothing-to-do":
         throw new PrefixAbort(M.backNothingToDo(mention));
       case "reinstated": {
-        const lines = [M.backDone(mention, result.level)];
+        const lines = [M.backDone(mention, shownLevel(result.level, await getLevelStart(ctx.guild.id)))];
         if (result.awaitingIdentity) {
           lines.push(serverTagMessages.notice.awaitingIdentity(target.id, result.awaitingIdentity.dmSent));
         }

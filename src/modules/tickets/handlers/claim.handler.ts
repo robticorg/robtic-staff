@@ -5,6 +5,7 @@ import { ticketMessages } from "../../../data/messages/tickets.ts";
 import { buildTicketNotice } from "../render/notice.ts";
 import { ticketConfigService } from "../services/ticket-config.service.ts";
 import { ticketService } from "../services/ticket.service.ts";
+import { StaffPointTransactionType, pointValuesService } from "../../staff/index.ts";
 
 const log = logger.child("tickets:claim");
 const M = ticketMessages;
@@ -35,7 +36,9 @@ export async function handleTicketClaim(
 
     const result = await ticketService.claimTicket(ticketId, interaction.member, panel);
     await interaction.editReply(
-      result.pointAwarded ? M.claim.success(ticketId) : M.claim.successNoPoint(ticketId),
+      result.pointAwarded
+        ? M.claim.success(ticketId, await pointValuesService.valueOf(ticket.guildId, StaffPointTransactionType.TICKET_CLAIM))
+        : M.claim.successNoPoint(ticketId),
     );
 
     const channel = interaction.channel;
