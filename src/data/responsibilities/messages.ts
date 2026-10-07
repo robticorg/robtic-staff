@@ -115,6 +115,8 @@ export const responsibilityMessages = {
     note: "ملاحظة",
     at: date,
     restoredNote: "الرتبة انشالت يدوياً والمسؤولية ما زالت فعّالة — تم إرجاعها.",
+    manualRemovedNote: "الرتبة انشالت يدوياً — تم إنهاء المسؤولية في قاعدة البيانات.",
+    manualAddedNote: "الرتبة انعطت يدوياً — تم تسجيل المسؤولية في قاعدة البيانات.",
     roleMissingNote: "رتبة المسؤولية ما عادت موجودة في السيرفر.",
     roleUnmanageableNote: "رتبة البوت تحت رتبة المسؤولية — ما قدر يديرها.",
   },
