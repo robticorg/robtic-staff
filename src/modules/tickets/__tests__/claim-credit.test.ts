@@ -78,7 +78,7 @@ describe("handover credits the new claimer", () => {
       source.indexOf("private async applyTransferOverwrites"),
     );
     expect(transfer.length).toBeGreaterThan(0);
-    expect(transfer).toContain("applyTicketClaimCredit(staff._id, ticketId)");
+    expect(transfer).toContain("applyTicketClaimCredit(staff._id, ticketId,");
     expect(transfer).toContain("pointAwarded");
   });
 

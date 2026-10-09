@@ -28,6 +28,8 @@ export interface GiftClaim extends Timestamps {
 
   source: GiftClaimSource;
   ticketId?: string;
+  /** The ticket's name for people (`support-1`), kept for the case card. */
+  ticketName?: string;
   requestedBy?: UserId;
   originChannelId?: string;
   account?: string;
@@ -83,6 +85,7 @@ const giftClaimSchema = new Schema<GiftClaim>(
       required: true,
     },
     ticketId: { type: String },
+    ticketName: { type: String },
     requestedBy: { type: String },
     originChannelId: { type: String },
     account: { type: String, trim: true, maxlength: 100 },

@@ -19,8 +19,8 @@ afterEach(() => clearPanelOverrides());
 
 describe("ticket setup overrides", () => {
   it("applies the support role, manager role and category saved by /ticket setup", () => {
-    setPanelOverride("support", { supportRoleId: "role-s", managerRoleId: "role-m", categoryId: "cat-1" });
-    const panel = getPanel("support")!;
+    setPanelOverride("g1", "support", { supportRoleId: "role-s", managerRoleId: "role-m", categoryId: "cat-1" });
+    const panel = getPanel("support", "g1")!;
     expect(panel.supportRoleId).toBe("role-s");
     expect(panel.managerRoleId).toBe("role-m");
     expect(panel.categoryId).toBe("cat-1");
@@ -28,14 +28,14 @@ describe("ticket setup overrides", () => {
   });
 
   it("keeps the code values when nothing is set", () => {
-    const before = getPanel("support")!;
-    setPanelOverride("support", { supportRoleId: null, managerRoleId: null, categoryId: null });
-    expect(getPanel("support")!.supportRoleId).toBe(before.supportRoleId);
+    const before = getPanel("support", "g1")!;
+    setPanelOverride("g1", "support", { supportRoleId: null, managerRoleId: null, categoryId: null });
+    expect(getPanel("support", "g1")!.supportRoleId).toBe(before.supportRoleId);
   });
 
   it("keeps the responsibility panel out of the main ticket menu", () => {
-    expect(listPublicPanels().some((p) => p.id === RESPONSIBILITY_APPLY_PANEL_ID)).toBe(false);
-    expect(getPanel(RESPONSIBILITY_APPLY_PANEL_ID)).toBeDefined();
+    expect(listPublicPanels(null).some((p) => p.id === RESPONSIBILITY_APPLY_PANEL_ID)).toBe(false);
+    expect(getPanel(RESPONSIBILITY_APPLY_PANEL_ID, null)).toBeDefined();
   });
 });
 

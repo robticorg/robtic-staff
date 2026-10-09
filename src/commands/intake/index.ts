@@ -52,7 +52,7 @@ function requireTarget(interaction: ChatInputCommandInteraction) {
 /** Ticket targets whose panel isn't set up in this server — closed until it is. */
 async function notSetUpTargets(guild: Guild): Promise<Set<string>> {
   const result = new Set<string>();
-  for (const panel of ticketConfigService.listPanels()) {
+  for (const panel of ticketConfigService.listPanels(guild.id)) {
     if (!(await ticketConfigService.isPanelReady(guild, panel))) result.add(`panel:${panel.id}`);
   }
   return result;

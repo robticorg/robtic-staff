@@ -31,7 +31,7 @@ export async function handleAddUserModal(
       await interaction.editReply(ticket ? M.common.wrongGuild : M.common.ticketGone);
       return;
     }
-    const panel = ticketConfigService.getPanel(ticket.panelId);
+    const panel = ticketConfigService.getPanel(ticket.panelId, ticket.guildId);
     if (!panel) {
       await interaction.editReply(M.create.unknownPanel);
       return;

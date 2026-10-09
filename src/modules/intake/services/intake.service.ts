@@ -43,7 +43,7 @@ const cache = new TtlCache<Closure | false>({ defaultTtlMs: CONFIG_CACHE_TTL_MS 
 export class IntakeService {
   /** Everything that can be closed: every ticket panel (hidden ones too) + each department. */
   targets(): IntakeTargetInfo[] {
-    const panels = listPanels().map((panel) => ({
+    const panels = listPanels(null).map((panel) => ({
       target: intakeTarget.panel(panel.id),
       label:
         panel.id === StaffApplicationWorkflow.STAFF_APPLICATION ? M.allApplicationsLabel : panel.name,
@@ -141,7 +141,7 @@ export class IntakeService {
   }
 
   isKnownPanel(panelId: string): boolean {
-    return !!getPanel(panelId);
+    return !!getPanel(panelId, null);
   }
 }
 

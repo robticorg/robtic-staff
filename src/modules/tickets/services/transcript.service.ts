@@ -5,7 +5,7 @@ import { isUnsetId } from "../../../data/tickets/index.ts";
 import { channelConfigService } from "../../configuration/services/channel-config.service.ts";
 import { ChannelConfigType } from "../../configuration/types/enums.ts";
 import { logger } from "../../../shared/utils/logger.ts";
-import type { Ticket } from "../models/ticket.model.ts";
+import { ticketName, type Ticket } from "../models/ticket.model.ts";
 import {
   TicketTranscriptModel,
   type TicketTranscriptDocument,
@@ -20,6 +20,8 @@ const log = logger.child("tickets:transcript");
 export interface TranscriptPayload {
   ticket: {
     ticketId: string;
+    /** The name people see (`support-1`); missing on transcripts saved before names existed. */
+    name?: string;
     panelId: string;
     guildId: string;
     channelId: string;
@@ -43,6 +45,7 @@ export class TranscriptService {
     const payload: TranscriptPayload = {
       ticket: {
         ticketId: ticket.ticketId,
+        name: ticket.name,
         panelId: ticket.panelId,
         guildId: ticket.guildId,
         channelId: ticket.channelId,
@@ -99,7 +102,7 @@ export class TranscriptService {
     const payload = JSON.parse(transcript.content) as TranscriptPayload;
     const text = "﻿" + renderTranscriptText(payload);
     return new AttachmentBuilder(Buffer.from(text, "utf-8"), {
-      name: `${transcript.ticketId}-transcript.txt`,
+      name: `${ticketName(payload.ticket)}-transcript.txt`,
     });
   }
 
@@ -120,7 +123,7 @@ export class TranscriptService {
       // The .txt is attached and shown inside the card as a file component.
       await channel.send(
         buildLogCard({
-          title: `### 📄 ${transcript.ticketId}`,
+          title: `### 📄 ${ticketName(payload.ticket)}`,
           tone: "info",
           fields: [
             { label: "العضو", value: `<@${payload.ticket.ownerId}>` },
@@ -129,7 +132,7 @@ export class TranscriptService {
               : []),
             {
               label: "القسم",
-              value: ticketConfigService.getPanel(payload.ticket.panelId)?.name ?? payload.ticket.panelId,
+              value: ticketConfigService.getPanel(payload.ticket.panelId, payload.ticket.guildId)?.name ?? payload.ticket.panelId,
             },
             { label: "عدد الرسائل", value: String(transcript.messageCount) },
           ],

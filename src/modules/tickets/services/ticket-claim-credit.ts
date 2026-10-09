@@ -29,6 +29,8 @@ export async function applyTicketClaimCredit(
   staffId: Types.ObjectId,
   ticketId: string,
   deps: TicketClaimCreditDeps = defaultDeps,
+  /** The ticket's name for people (`support-1`), shown in the point reason. */
+  label: string = ticketId,
 ): Promise<{ pointAwarded: boolean }> {
   const award = await deps.points.add({
     staffId,
@@ -37,7 +39,7 @@ export async function applyTicketClaimCredit(
       : DEFAULT_POINT_VALUES[StaffPointTransactionType.TICKET_CLAIM],
     type: StaffPointTransactionType.TICKET_CLAIM,
     referenceId: ticketId,
-    reason: staffMessages.points.ticketClaimReason(ticketId),
+    reason: staffMessages.points.ticketClaimReason(label),
   });
 
   if (!award.duplicate) {

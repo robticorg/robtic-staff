@@ -1,3 +1,4 @@
+import { ticketName } from "../../tickets/models/ticket.model.ts";
 import { ChannelType, type Guild, type GuildMember, type GuildTextBasedChannel } from "discord.js";
 import type { ChannelId, GuildId, RoleId, UserId } from "../../../shared/types/index.ts";
 import { ConflictError, DomainError } from "../../../shared/utils/errors.ts";
@@ -115,7 +116,7 @@ export class StaffSupportService {
       throw new StaffSupportError("STAFF_SUPPORT_REASON_REQUIRED", M.support.reasonRequired);
     }
 
-    const panel = ticketConfigService.getPanel(StaffSupportWorkflow.STAFF_SUPPORT);
+    const panel = ticketConfigService.getPanel(StaffSupportWorkflow.STAFF_SUPPORT, guild.id);
     if (!panel) {
       throw new StaffSupportError("STAFF_SUPPORT_PANEL_MISSING", M.support.categoryMissing);
     }
@@ -143,6 +144,7 @@ export class StaffSupportService {
       .send(
         buildSupportTicketMessage({
           ticketId: ticket.ticketId,
+          ticketName: ticketName(ticket),
           userId: member.id,
           reason,
           audience: visibility.audience,

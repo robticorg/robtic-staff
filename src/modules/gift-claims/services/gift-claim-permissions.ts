@@ -17,8 +17,8 @@ export function decideGiftManager(input: {
 }
 
 export class GiftClaimPermissionService {
-  panelSupportRoleId(): string | null {
-    const role = ticketConfigService.getPanel(GIFT_CLAIM_PANEL_ID)?.supportRoleId;
+  panelSupportRoleId(guildId: GuildId): string | null {
+    const role = ticketConfigService.getPanel(GIFT_CLAIM_PANEL_ID, guildId)?.supportRoleId;
 
     return isUnsetId(role) ? null : (role ?? null);
   }
@@ -29,7 +29,7 @@ export class GiftClaimPermissionService {
   }
 
   async isGiftManager(member: GuildMember): Promise<boolean> {
-    const panelRoleId = this.panelSupportRoleId();
+    const panelRoleId = this.panelSupportRoleId(member.guild.id);
     return decideGiftManager({
       isAdministrator: hasAdminAccess(member),
       hasPanelSupportRole: panelRoleId ? member.roles.cache.has(panelRoleId) : false,

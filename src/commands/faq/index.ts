@@ -74,7 +74,7 @@ const data = new SlashCommandBuilder()
 function panelScopeLabel(panelIds: string[]): string {
   if (panelIds.length === 0) return M.scopeAll;
   return panelIds
-    .map((id) => ticketConfigService.getPanel(id)?.name ?? id)
+    .map((id) => ticketConfigService.getPanel(id, null)?.name ?? id)
     .join("، ");
 }
 
@@ -112,7 +112,7 @@ async function handleAssign(interaction: ChatInputCommandInteraction): Promise<v
   const faqId = interaction.options.getString(CommandOption.FAQ, true);
   const panelId = interaction.options.getString(CommandOption.PANEL);
 
-  if (panelId && !ticketConfigService.getPanel(panelId)) {
+  if (panelId && !ticketConfigService.getPanel(panelId, null)) {
     throw new CommandError(M.unknownPanel);
   }
 
@@ -142,7 +142,7 @@ export default defineCommand({
     switch (sub) {
       case FaqSubcommand.ADD: {
         const panelId = interaction.options.getString(CommandOption.PANEL) ?? "";
-        if (panelId && !ticketConfigService.getPanel(panelId)) {
+        if (panelId && !ticketConfigService.getPanel(panelId, null)) {
           throw new CommandError(M.unknownPanel);
         }
         await interaction.showModal(buildFaqAddModal(panelId));
@@ -168,7 +168,7 @@ export default defineCommand({
       if (focused.name === CommandOption.PANEL) {
         const query = String(focused.value).toLowerCase();
         const matches = ticketConfigService
-          .listPanels()
+          .listPanels(null)
           .filter((p) => p.name.toLowerCase().includes(query))
           .slice(0, 25);
         await interaction.respond(matches.map((p) => ({ name: p.name, value: p.id })));

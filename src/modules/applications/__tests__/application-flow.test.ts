@@ -25,10 +25,10 @@ import { checkEvidence } from "../transfer/transfer-evidence.service.ts";
 
 describe("main ticket panel entry", () => {
   it("is an option of the existing ticket menu, the transfer ticket type is not", () => {
-    const publicIds = listPublicPanels().map((p) => p.id);
+    const publicIds = listPublicPanels(null).map((p) => p.id);
     expect(publicIds).toContain(StaffApplicationWorkflow.STAFF_APPLICATION);
     expect(publicIds).not.toContain(StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION);
-    expect(getPanel(StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION)?.id).toBe(
+    expect(getPanel(StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION, null)?.id).toBe(
       staffTransferApplicationPanel.id,
     );
   });
@@ -36,7 +36,7 @@ describe("main ticket panel entry", () => {
   it("gates both application tickets by the staff blacklist, not the ticket blacklist", () => {
     expect(staffApplicationPanel.blacklistSlot).toBe(RoleConfigType.BLACKLIST);
     expect(staffTransferApplicationPanel.blacklistSlot).toBe(RoleConfigType.BLACKLIST);
-    expect(getPanel("gift-claim")?.blacklistSlot).toBe(RoleConfigType.GIFT_BLACKLIST);
+    expect(getPanel("gift-claim", null)?.blacklistSlot).toBe(RoleConfigType.GIFT_BLACKLIST);
   });
 
   it("runs dedicated Fast Access contexts", () => {
@@ -188,7 +188,7 @@ describe("application ticket panel and information", () => {
   };
 
   it("offers Close, Options and Information and mentions the managers", () => {
-    const card = buildApplicationPanel("ticket-9", application, ["222", "333"]);
+    const card = buildApplicationPanel({ ticketId: "ticket-9" }, application, ["222", "333"]);
     const text = JSON.stringify(card.components?.map((c) => ("toJSON" in c ? c.toJSON() : c)));
     expect(text).toContain("tk:optClose:ticket-9");
     expect(text).toContain("tk:options:ticket-9");

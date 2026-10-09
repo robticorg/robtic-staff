@@ -1,4 +1,5 @@
 import type { TranscriptPayload } from "../services/transcript.service.ts";
+import { ticketName } from "../models/ticket.model.ts";
 
 interface EmbedLike {
   title?: string;
@@ -10,7 +11,7 @@ interface EmbedLike {
 
 export function renderTranscriptText(payload: TranscriptPayload): string {
   const header = [
-    `Ticket: ${payload.ticket.ticketId}`,
+    `Ticket: ${ticketName(payload.ticket)}`,
     `Panel: ${payload.ticket.panelId}`,
     `Opened by: ${payload.ticket.ownerId}`,
     payload.ticket.claimedByDiscordId ? `Claimed by: ${payload.ticket.claimedByDiscordId}` : undefined,

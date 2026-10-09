@@ -168,9 +168,9 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
     await cleanup();
     await seed();
     registerApplicationLifecycle();
-    setPanelOverride("staff-application", { categoryId: SETUP_CATEGORY.apply });
-    setPanelOverride("staff-transfer-application", { categoryId: SETUP_CATEGORY.transfer });
-    setPanelOverride("support", { categoryId: SETUP_CATEGORY.support });
+    setPanelOverride(GUILD, "staff-application", { categoryId: SETUP_CATEGORY.apply });
+    setPanelOverride(GUILD, "staff-transfer-application", { categoryId: SETUP_CATEGORY.transfer });
+    setPanelOverride(GUILD, "support", { categoryId: SETUP_CATEGORY.support });
     globalThis.fetch = (async () => new Response(new Uint8Array([1, 2, 3, 4]))) as unknown as typeof fetch;
   });
 
@@ -306,14 +306,14 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       expect(await ticketService.getOpenTicketForUser(GUILD, member.id)).toBeNull();
       const { ticket } = await ticketService.createTicket({
         guild: guild as never,
-        panel: getPanel("support")!,
+        panel: getPanel("support", GUILD)!,
         member: member as never,
         answers: [],
       });
       expect(ticket.panelId).toBe("support");
 
       const other = applicant();
-      await ticketService.createTicket({ guild: guild as never, panel: getPanel("support")!, member: other as never, answers: [] });
+      await ticketService.createTicket({ guild: guild as never, panel: getPanel("support", GUILD)!, member: other as never, answers: [] });
       await staffApplicationService.submit(guild as never, other as never, draft(other.id), ApplicationDepartment.STAFF);
       expect((await appFor(other.id))!.ticketId).not.toBeNull();
     });
@@ -580,7 +580,7 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       const member = applicant();
       await staffApplicationService.submit(guild as never, member as never, draft(member.id), ApplicationDepartment.STAFF);
       const ticket = await ticketFor(member.id);
-      const panel = (await import("../../../data/tickets/index.ts")).getPanel(ticket!.panelId)!;
+      const panel = (await import("../../../data/tickets/index.ts")).getPanel(ticket!.panelId, ticket!.guildId)!;
 
       await expect(ticketService.claimTicket(ticket!.ticketId, highStaff as never, panel)).rejects.toThrow();
       await expect(ticketService.claimRole(ticket!.ticketId, member as never, APPLY)).rejects.toThrow();
@@ -610,7 +610,7 @@ describe.skipIf(!hasDb)("staff applications on the ticket system (MongoDB + Disc
       const member = applicant();
       await staffApplicationService.submit(guild as never, member as never, draft(member.id), ApplicationDepartment.STAFF);
       const ticket = await ticketFor(member.id);
-      const panel = (await import("../../../data/tickets/index.ts")).getPanel(ticket!.panelId)!;
+      const panel = (await import("../../../data/tickets/index.ts")).getPanel(ticket!.panelId, ticket!.guildId)!;
       await ticketService.closeTicket(ticket!.ticketId, admin.id, panel, guild as never);
       expect((await appFor(member.id))!.applicationStatus).toBe(ApplicationStatus.CLOSED);
     });

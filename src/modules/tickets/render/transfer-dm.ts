@@ -9,7 +9,7 @@ import { ticketMessages } from "../../../data/messages/tickets.ts";
 const M = ticketMessages.transfer;
 
 export interface TransferDmInput {
-  ticketId: string;
+  ticketName: string;
   guildId: string;
   channelId: string;
   reason: string;
@@ -17,7 +17,7 @@ export interface TransferDmInput {
 
 export function buildTransferDm(input: TransferDmInput): BaseMessageOptions {
   return {
-    content: M.dm.body(input.ticketId, input.reason),
+    content: M.dm.body(input.ticketName, input.reason),
     components: [
       new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()

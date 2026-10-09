@@ -2,7 +2,7 @@ import { describe, expect, it } from "bun:test";
 import { getPanel } from "../../../data/tickets/index.ts";
 import { isSetupConfigurable, ticketSetupProblem } from "../panel-config/setup-rules.ts";
 
-const panel = (id: string) => getPanel(id)!;
+const panel = (id: string) => getPanel(id, null)!;
 
 describe("/ticket setup rules", () => {
   it("does not need a support role for the apply and transfer tickets, or staff support", () => {

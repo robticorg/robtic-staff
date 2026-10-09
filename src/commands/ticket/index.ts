@@ -26,7 +26,7 @@ export default defineCommand({
     requireAdministrator(interaction);
     const sub = interaction.options.getSubcommand();
     if (sub === TicketSubcommand.SETUP) {
-      await interaction.showModal(buildSetupModal(ticketConfigService.listPanels().filter(isSetupConfigurable)));
+      await interaction.showModal(buildSetupModal(ticketConfigService.listPanels(interaction.guildId).filter(isSetupConfigurable)));
       return;
     }
     if (sub === TicketSubcommand.SEND) {

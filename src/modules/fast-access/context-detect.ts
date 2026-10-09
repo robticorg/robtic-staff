@@ -25,7 +25,7 @@ export async function detectFastAccessContext(
     ticket.guildId === guildId &&
     (ACTIVE_TICKET_STATUSES as TicketStatus[]).includes(ticket.status)
   ) {
-    const panel = ticketConfigService.getPanel(ticket.panelId);
+    const panel = ticketConfigService.getPanel(ticket.panelId, ticket.guildId);
     return {
       context: panel?.fastAccessContext ?? FastAccessContext.SUPPORT,
       referenceId: ticket.ticketId,

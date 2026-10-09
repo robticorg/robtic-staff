@@ -7,6 +7,7 @@ import { buildTransferDm } from "../render/transfer-dm.ts";
 import { ticketService, type TransferTicketResult } from "./ticket.service.ts";
 import { StaffPointTransactionType, pointValuesService } from "../../staff/index.ts";
 
+import { ticketName } from "../models/ticket.model.ts";
 const log = logger.child("tickets:transfer");
 const M = ticketMessages.transfer;
 
@@ -32,7 +33,7 @@ export async function performTicketTransfer(
   const result = await ticketService.transferTicket({ ticketId, actor, target, panel, reason });
 
   const dmDelivered = await notifyTarget(target, {
-    ticketId,
+    ticketName: ticketName(result.ticket),
     guildId: result.ticket.guildId,
     channelId: result.ticket.channelId,
     reason: result.reason,
@@ -41,8 +42,8 @@ export async function performTicketTransfer(
   await postChannelNote(actor, result, target);
 
   const done = result.pointAwarded
-    ? M.done(ticketId, target.id, await pointValuesService.valueOf(result.ticket.guildId, StaffPointTransactionType.TICKET_CLAIM))
-    : M.doneNoPoint(ticketId, target.id);
+    ? M.done(ticketName(result.ticket), target.id, await pointValuesService.valueOf(result.ticket.guildId, StaffPointTransactionType.TICKET_CLAIM))
+    : M.doneNoPoint(ticketName(result.ticket), target.id);
   return {
     result,
     dmDelivered,
@@ -52,7 +53,7 @@ export async function performTicketTransfer(
 
 async function notifyTarget(
   target: GuildMember,
-  input: { ticketId: string; guildId: string; channelId: string; reason: string },
+  input: { ticketName: string; guildId: string; channelId: string; reason: string },
 ): Promise<boolean> {
   try {
     await target.send(buildTransferDm(input));

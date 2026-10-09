@@ -130,7 +130,7 @@ export class TicketClaimerReleaseService {
     ).exec();
     if (!updated) return false;
 
-    const panel = ticketConfigService.getPanel(updated.panelId);
+    const panel = ticketConfigService.getPanel(updated.panelId, updated.guildId);
     const channel = await guild.channels.fetch(updated.channelId).catch(() => null);
 
     if (channel && "permissionOverwrites" in channel) {

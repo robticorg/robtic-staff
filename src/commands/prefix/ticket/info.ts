@@ -57,12 +57,12 @@ export default definePrefixCommand({
     const ticket =
       "channelId" in ref
         ? await ticketService.getTicketByChannel(ref.channelId)
-        : await ticketService.getTicket(ref.ticketId);
+        : await ticketService.getTicketByName(ctx.guild.id, ref.ticketId);
     if (!ticket || ticket.guildId !== ctx.guild.id) {
       throw new PrefixAbort(M.notFound(ctx.args[0]));
     }
 
-    const panelName = ticketConfigService.getPanel(ticket.panelId)?.name ?? ticket.panelId;
+    const panelName = ticketConfigService.getPanel(ticket.panelId, ticket.guildId)?.name ?? ticket.panelId;
     await ctx.replyWith(buildTicketInfoCard(ticket, panelName));
   },
 });

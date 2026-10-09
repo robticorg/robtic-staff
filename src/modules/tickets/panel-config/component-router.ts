@@ -50,7 +50,7 @@ function text(interaction: ModalSubmitInteraction, id: string): string {
 
 async function handleSetup(interaction: ModalSubmitInteraction<"cached">): Promise<void> {
   const panelId = selectedString(interaction, PanelConfigField.type);
-  const panel = panelId ? ticketConfigService.getPanel(panelId) : undefined;
+  const panel = panelId ? ticketConfigService.getPanel(panelId, interaction.guildId) : undefined;
   if (!panel) throw new DomainError("TCFG_TYPE", M.errors.typeRequired);
   const supportRoleId = selectedRole(interaction, PanelConfigField.support);
   const managerRoleId = selectedRole(interaction, PanelConfigField.manager);

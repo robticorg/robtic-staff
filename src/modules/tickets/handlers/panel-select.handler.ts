@@ -35,7 +35,7 @@ export async function handlePanelSelect(interaction: StringSelectMenuInteraction
 
   try {
     const panelId = interaction.values[0];
-    const panel = panelId ? ticketConfigService.getPanel(panelId) : undefined;
+    const panel = panelId ? ticketConfigService.getPanel(panelId, interaction.guildId) : undefined;
 
     if (!panel || panel.hidden) {
       await interaction.reply({ content: M.create.unknownPanel, flags: MessageFlags.Ephemeral });

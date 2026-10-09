@@ -6,6 +6,7 @@ import { buildTicketLogCard } from "../render/ticket-log-card.ts";
 import { recordTicketEvent } from "./ticket-history.ts";
 import { channelConfigService } from "../../configuration/services/channel-config.service.ts";
 import { ChannelConfigType } from "../../configuration/types/enums.ts";
+import { TicketModel, ticketName } from "../models/ticket.model.ts";
 
 const log = logger.child("tickets:log");
 
@@ -13,6 +14,8 @@ export interface TicketLogContext {
   guild: Guild;
   panel: TicketPanelConfig;
   ticketId: string;
+  /** The ticket's name for people (`support-1`); looked up when left out. */
+  ticketName?: string;
   actorId: string;
   targetId?: string;
   roleId?: string;
@@ -52,6 +55,10 @@ export class TicketLogService {
       ...(historyDetail(action, ctx) ? { detail: historyDetail(action, ctx)! } : {}),
     });
 
+    if (!ctx.ticketName) {
+      const row = await TicketModel.findOne({ ticketId: ctx.ticketId }, { ticketId: 1, name: 1 }).lean().exec().catch(() => null);
+      ctx = { ...ctx, ticketName: row ? ticketName(row) : ctx.ticketId };
+    }
     const card = buildTicketLogCard(action, ctx);
     if (!card) return;
 

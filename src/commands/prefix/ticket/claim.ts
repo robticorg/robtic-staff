@@ -5,6 +5,7 @@ import { ticketService } from "../../../modules/tickets/services/ticket.service.
 import { resolveTicketContext } from "../_shared/guards.ts";
 import { StaffPointTransactionType, pointValuesService } from "../../../modules/staff/index.ts";
 
+import { ticketName } from "../../../modules/tickets/models/ticket.model.ts";
 export default definePrefixCommand({
   name: "claim",
   category: "ticket",
@@ -16,10 +17,10 @@ export default definePrefixCommand({
         [
           result.pointAwarded
             ? prefixMessages.ticket.claimed(
-                ticket.ticketId,
+                ticketName(ticket),
                 await pointValuesService.valueOf(ticket.guildId, StaffPointTransactionType.TICKET_CLAIM),
               )
-            : prefixMessages.ticket.claimedNoPoint(ticket.ticketId),
+            : prefixMessages.ticket.claimedNoPoint(ticketName(ticket)),
         ],
         { tone: "success" },
       ),

@@ -63,7 +63,7 @@ export class ApplicationTicketService {
       .catch(() => undefined);
 
     const panelMessage = await channel
-      .send(buildApplicationPanel(ticket.ticketId, application, managerRoleIds))
+      .send(buildApplicationPanel(ticket, application, managerRoleIds))
       .catch((err) => {
         log.warn(`application panel for ${application.applicationId} failed`, err);
         return null;
@@ -94,7 +94,7 @@ export class ApplicationTicketService {
     await message
       ?.edit(
         buildApplicationPanel(
-          ticket.ticketId,
+          ticket,
           application,
           ticket.claimableRoles.map((slot) => slot.roleId),
         ),

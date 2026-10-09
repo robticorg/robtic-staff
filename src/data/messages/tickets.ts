@@ -40,8 +40,8 @@ export const ticketMessages = {
     created: (channelId: string) => `${E.success} تم فتح التكت حقك: <#${channelId}>.`,
     failed: `${E.error} ما قدرت أفتح التكت. جرب مرة ثانية أو كلّم أحد الطاقم الاداري.`,
     categoryMissing: `${E.error} قسم التكت هذا فيه خطأ بالإعداد (كاتيقوري ديسكورد ناقص). تم إبلاغ الطاقم الاداري.`,
-    channelHeader: (ticketId: string, panelName: string) =>
-      `# ${panelName} · \`${ticketId}\``,
+    channelHeader: (ticketName: string, panelName: string) =>
+      `# ${panelName} · \`${ticketName}\``,
     answersHeading: "### الإجابات المرسلة",
     answerLine: (question: string, answer: string) => `**${question}**\n${answer}`,
     openedBy: (userId: string) => `فتحه <@${userId}>`,
@@ -61,8 +61,8 @@ export const ticketMessages = {
     managerCannotClaim: `${E.error} مسؤولين التكتات ما يستلمون التكتات — الاستلام لفريق الدعم.`,
     notOpen: `${E.error} هذا التكت ما عاد يمكن استلامه.`,
     alreadyClaimed: (userId: string) => `${E.error} هذا التكت مستلَم أصلاً من <@${userId}>.`,
-    success: (ticketId: string, points: number) => `${E.success} استلمت \`${ticketId}\`. **${ticketPointsText(points)}.**`,
-    successNoPoint: (ticketId: string) => `${E.success} أنت الحين مسؤول عن \`${ticketId}\`.`,
+    success: (ticketName: string, points: number) => `${E.success} استلمت \`${ticketName}\`. **${ticketPointsText(points)}.**`,
+    successNoPoint: (ticketName: string) => `${E.success} أنت الحين مسؤول عن \`${ticketName}\`.`,
     threadNote: (userMention: string) => `${E.staff} تم الاستلام من ${userMention}.`,
   },
 
@@ -115,18 +115,18 @@ export const ticketMessages = {
     targetNotStaff: `${E.error} لازم يكون العضو من الطاقم الاداري أو أدمن.`,
     raced: `${E.error} تغيّر مستلِم التكت قبل شوي — افتح الخيارات مرة ثانية.`,
 
-    done: (ticketId: string, userId: string, points: number) =>
-      `${E.success} تم تحويل \`${ticketId}\` إلى <@${userId}>. **${ticketPointsText(points)} له.**`,
-    doneNoPoint: (ticketId: string, userId: string) =>
-      `${E.success} تم تحويل \`${ticketId}\` إلى <@${userId}>. (أخذ نقطته عن هذا التكت قبل)`,
+    done: (ticketName: string, userId: string, points: number) =>
+      `${E.success} تم تحويل \`${ticketName}\` إلى <@${userId}>. **${ticketPointsText(points)} له.**`,
+    doneNoPoint: (ticketName: string, userId: string) =>
+      `${E.success} تم تحويل \`${ticketName}\` إلى <@${userId}>. (أخذ نقطته عن هذا التكت قبل)`,
     dmFailed: (userId: string) =>
       `${E.warning} ما قدرت أرسل رسالة خاصة لـ <@${userId}> — خاصه مغلق.`,
     channelNote: (fromUserId: string, toUserId: string, reason: string) =>
       `${E.transfer} تم تحويل التكت من <@${fromUserId}> إلى <@${toUserId}>.\n**سبب التحويل:** ${reason}`,
 
     dm: {
-      body: (ticketId: string, reason: string) =>
-        `لقد تم تحويل التكت رقم \`${ticketId}\` اليك يرجى توجه للتكت حالا\nسبب تحويل : ${reason}`,
+      body: (ticketName: string, reason: string) =>
+        `لقد تم تحويل التكت رقم \`${ticketName}\` اليك يرجى توجه للتكت حالا\nسبب تحويل : ${reason}`,
       button: "الذهاب للتكت",
     },
   },
@@ -161,7 +161,7 @@ export const ticketMessages = {
     adminOnly: `${E.error} \`!ticket\` للأدمن بس.`,
     usage: `${E.warning} الطريقة: \`!ticket <رقم التكت>\` مثل \`!ticket 12\` أو \`!ticket ticket-12\` أو آيدي روم التكت أو منشنه — أو داخل التكت: \`!ticket\``,
     notFound: (ref: string) => `${E.error} ما لقيت تكت بهذا الرقم: \`${ref.replace(/`/g, "")}\`.`,
-    title: (ticketId: string, panel: string) => `## 🎫 ${ticketId} — ${panel}`,
+    title: (ticketName: string, panel: string) => `## 🎫 ${ticketName} — ${panel}`,
     statuses: {
       OPEN: "🟢 مفتوح — ما أحد استلمه",
       CLAIMED: "🔵 مستلم",
@@ -219,17 +219,17 @@ export const ticketMessages = {
   },
 
   close: {
-    confirming: (ticketId: string, seconds: number) =>
-      `${E.warning} بيتم إغلاق \`${ticketId}\` خلال ${seconds} ثواني...`,
-    done: (ticketId: string) => `${E.success} تم إغلاق \`${ticketId}\`.`,
-    withTranscript: (ticketId: string) => `${E.success} تم إغلاق \`${ticketId}\` — تم حفظ النسخة.`,
+    confirming: (ticketName: string, seconds: number) =>
+      `${E.warning} بيتم إغلاق \`${ticketName}\` خلال ${seconds} ثواني...`,
+    done: (ticketName: string) => `${E.success} تم إغلاق \`${ticketName}\`.`,
+    withTranscript: (ticketName: string) => `${E.success} تم إغلاق \`${ticketName}\` — تم حفظ النسخة.`,
     channelWillDelete: `${E.warning} راح ينحذف هذا التكت بعد شوي.`,
     notAllowed: `${E.error} ما عندك صلاحية تغلق هذا التكت.`,
   },
 
   /** The admin control card left behind when a panel closes tickets without deleting them. */
   closedPanel: {
-    heading: (ticketId: string) => `## ${E.lock} تم إغلاق \`${ticketId}\``,
+    heading: (ticketName: string) => `## ${E.lock} تم إغلاق \`${ticketName}\``,
     closedBy: (userId: string) => `**أغلقه:** <@${userId}>`,
     closedAt: (date: Date) => `**وقت الإغلاق:** <t:${Math.floor(date.getTime() / 1000)}:F>`,
     owner: (userId: string) => `**صاحب التكت:** <@${userId}>`,
@@ -248,12 +248,12 @@ export const ticketMessages = {
     notAllowed: `${E.error} ما عندك صلاحية تدير هذا التكت المغلق.`,
     notClosed: `${E.error} هذا التكت مو مغلق.`,
     transcriptUnavailable: `${E.error} ما فيه نسخة محفوظة لهذا التكت وما قدرت أطلع وحدة.`,
-    transcriptReady: (ticketId: string) => `${E.success} نسخة \`${ticketId}\`:`,
+    transcriptReady: (ticketName: string) => `${E.success} نسخة \`${ticketName}\`:`,
     deleting: `${E.warning} جاري حذف الروم…`,
   },
 
   reopen: {
-    done: (ticketId: string) => `${E.success} تم إعادة فتح \`${ticketId}\`.`,
+    done: (ticketName: string) => `${E.success} تم إعادة فتح \`${ticketName}\`.`,
     channelNote: (userId: string) =>
       `${E.success} تم إعادة فتح التكت بواسطة <@${userId}> — صار يستقبل ردود من جديد.`,
     raced: `${E.error} تغيّرت حالة التكت قبل شوي — جرب مرة ثانية.`,

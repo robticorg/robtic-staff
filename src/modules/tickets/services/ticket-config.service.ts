@@ -21,30 +21,31 @@ export class TicketConfigService {
     return tickets.main;
   }
 
-  listPanels(): readonly TicketPanelConfig[] {
-    return listPanels();
+  /** `guildId`: the server whose setup to apply; `null` only for names/ids (see `listPanels`). */
+  listPanels(guildId: string | null): readonly TicketPanelConfig[] {
+    return listPanels(guildId);
   }
 
-  listPublicPanels(): readonly TicketPanelConfig[] {
-    return listPublicPanels();
+  listPublicPanels(guildId: string | null): readonly TicketPanelConfig[] {
+    return listPublicPanels(guildId);
   }
 
-  getPanel(panelId: string): TicketPanelConfig | undefined {
-    return getPanel(panelId);
+  getPanel(panelId: string, guildId: string | null): TicketPanelConfig | undefined {
+    return getPanel(panelId, guildId);
   }
 
-  getPanelOrThrow(panelId: string): TicketPanelConfig {
-    const panel = getPanel(panelId);
+  getPanelOrThrow(panelId: string, guildId: string | null): TicketPanelConfig {
+    const panel = getPanel(panelId, guildId);
     if (!panel) throw new NotFoundError("ticket panel", { panelId });
     return panel;
   }
 
-  getPanelConfig(panelId: string): TicketPanelConfig | undefined {
-    return this.getPanel(panelId);
+  getPanelConfig(panelId: string, guildId: string | null): TicketPanelConfig | undefined {
+    return this.getPanel(panelId, guildId);
   }
 
   hasPanels(): boolean {
-    return listPublicPanels().length > 0;
+    return listPublicPanels(null).length > 0;
   }
 
   questionPageCount(panel: TicketPanelConfig): number {
@@ -65,7 +66,7 @@ export class TicketConfigService {
     const problems: string[] = [];
 
     const seen = new Set<string>();
-    for (const panel of options.panels ?? this.listPanels()) {
+    for (const panel of options.panels ?? this.listPanels(guild.id)) {
       if (seen.has(panel.id)) problems.push(P.panelDuplicateId(panel.id));
       seen.add(panel.id);
 
@@ -107,7 +108,7 @@ export class TicketConfigService {
    */
   async listOpenPublicPanels(guild: Guild): Promise<TicketPanelConfig[]> {
     const states = await Promise.all(
-      listPublicPanels().map(async (panel) => {
+      listPublicPanels(guild.id).map(async (panel) => {
         const ready = await this.isPanelReady(guild, panel);
         const closed = ready ? await intakeService.closure(guild.id, intakeTarget.panel(panel.id)) : null;
         return ready && !closed ? panel : null;

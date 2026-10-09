@@ -29,7 +29,13 @@ export interface TicketEvent {
 }
 
 export interface Ticket extends Timestamps {
+  /**
+   * The ticket's id across the whole bot (lookups, buttons, transcripts): a UUID. Tickets made
+   * before UUIDs keep their old id (e.g. `support-12`), which was already unique.
+   */
   ticketId: string;
+  /** What people see and type: `support-1`, `minecraft-3`… — numbered per server, unique per server. */
+  name?: string;
   guildId: GuildId;
   channelId: ChannelId;
   userId: UserId;
@@ -78,6 +84,11 @@ export interface Ticket extends Timestamps {
 
 export const TICKET_EVENT_CAP = 100;
 
+/** The ticket's name for people (`support-1`); old tickets have none, and their id is their name. */
+export function ticketName(ticket: Pick<Ticket, "ticketId" | "name">): string {
+  return ticket.name ?? ticket.ticketId;
+}
+
 export type TicketDocument = HydratedDocument<Ticket>;
 
 const answerSchema = new Schema<TicketAnswer>(
@@ -114,6 +125,7 @@ const eventSchema = new Schema<TicketEvent>(
 const ticketSchema = new Schema<Ticket>(
   {
     ticketId: { type: String, required: true, unique: true },
+    name: { type: String },
     guildId: { type: String, required: true, index: true },
     channelId: { type: String, required: true, index: true },
     userId: { type: String, required: true, index: true },
@@ -164,6 +176,7 @@ const ticketSchema = new Schema<Ticket>(
   { timestamps: true, collection: "tickets" },
 );
 
+ticketSchema.index({ guildId: 1, name: 1 }, { unique: true, partialFilterExpression: { name: { $type: "string" } } });
 ticketSchema.index({ guildId: 1, userId: 1, status: 1 });
 ticketSchema.index({ guildId: 1, panelId: 1, createdAt: -1 });
 ticketSchema.index({ guildId: 1, claimedBy: 1, claimedAt: -1 });

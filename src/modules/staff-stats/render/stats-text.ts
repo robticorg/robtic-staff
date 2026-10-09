@@ -78,7 +78,7 @@ function ticketsByPanelLines(
   return [
     S.ticketsByPanelHeading,
     ...entries.map(([panelId, stat]) =>
-      S.ticketsByPanelRow(ticketConfigService.getPanel(panelId)?.name ?? panelId, stat),
+      S.ticketsByPanelRow(ticketConfigService.getPanel(panelId, null)?.name ?? panelId, stat),
     ),
   ];
 }

@@ -12,7 +12,7 @@ import { emojis } from "../../../data/emojis/index.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
 import type { Faq } from "../models/faq.model.ts";
-import type { Ticket } from "../models/ticket.model.ts";
+import { ticketName, type Ticket } from "../models/ticket.model.ts";
 import { TicketCustomId } from "../handlers/component-ids.ts";
 import { applyV2Content, v2MessageOptions } from "./v2.ts";
 
@@ -24,13 +24,13 @@ export function shouldShowFaqMenu(panel: TicketPanelConfig, faqCount: number): b
 
 export function buildTicketMessage(
   panel: TicketPanelConfig,
-  ticket: Pick<Ticket, "ticketId" | "userId" | "answers">,
+  ticket: Pick<Ticket, "ticketId" | "name" | "userId" | "answers">,
   faqEntries: readonly Faq[],
 ): BaseMessageOptions {
   const container = new ContainerBuilder();
 
   container.addTextDisplayComponents((t) =>
-    t.setContent(M.create.channelHeader(ticket.ticketId, panel.name)),
+    t.setContent(M.create.channelHeader(ticketName(ticket), panel.name)),
   );
   container.addTextDisplayComponents((t) => t.setContent(M.create.openedBy(ticket.userId)));
 

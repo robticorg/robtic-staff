@@ -6,7 +6,7 @@ import {
 } from "discord.js";
 import { colors } from "../../../data/config/colors.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
-import type { Ticket } from "../models/ticket.model.ts";
+import { ticketName, type Ticket } from "../models/ticket.model.ts";
 import { TicketLogAction } from "../types/enums.ts";
 
 const I = ticketMessages.info;
@@ -38,6 +38,7 @@ const ACTION_LABEL: Record<string, string> = {
 type InfoTicket = Pick<
   Ticket,
   | "ticketId"
+  | "name"
   | "userId"
   | "status"
   | "answers"
@@ -79,7 +80,7 @@ export function buildTicketInfoCard(ticket: InfoTicket, panelName: string): Base
   container.addTextDisplayComponents((t) =>
     t.setContent(
       [
-        I.title(ticket.ticketId, panelName),
+        I.title(ticketName(ticket), panelName),
         I.status(I.statuses[ticket.status] ?? ticket.status),
         ticket.createdAt ? I.openedBy(ticket.userId, ticket.createdAt) : null,
       ]

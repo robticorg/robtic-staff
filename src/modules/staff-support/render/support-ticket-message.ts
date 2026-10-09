@@ -19,6 +19,8 @@ const VISIBILITY_NOTE: Record<SupportAudience, string> = {
 
 export interface SupportTicketMessageInput {
   ticketId: string;
+  /** The name people see (`staff-1`). */
+  ticketName: string;
   userId: string;
   reason: string;
   audience: SupportAudience;
@@ -30,7 +32,7 @@ export function buildSupportTicketMessage(
   const container = new ContainerBuilder().setAccentColor(colors.primary);
 
   container.addTextDisplayComponents(
-    new TextDisplayBuilder().setContent(S.channelHeader(input.ticketId)),
+    new TextDisplayBuilder().setContent(S.channelHeader(input.ticketName)),
   );
   container.addTextDisplayComponents(
     new TextDisplayBuilder().setContent(S.openedBy(input.userId)),

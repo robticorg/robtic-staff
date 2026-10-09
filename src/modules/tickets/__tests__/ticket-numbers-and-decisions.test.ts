@@ -4,18 +4,18 @@ import { canDecide } from "../responsibility-apply/decision.service.ts";
 
 describe("ticket numbering per type", () => {
   it("keeps the support ticket on the existing shared counter", () => {
-    expect(ticketPrefixOf(getPanel("support")!)).toBe(LEGACY_TICKET_PREFIX);
+    expect(ticketPrefixOf(getPanel("support", null)!)).toBe(LEGACY_TICKET_PREFIX);
     expect(ticketCounterKey("g1", LEGACY_TICKET_PREFIX)).toBe("ticket:g1");
   });
 
   it("gives every other ticket type its own counter and prefix", () => {
-    expect(ticketPrefixOf(getPanel("staff-application")!)).toBe("apply");
-    expect(ticketPrefixOf(getPanel("responsibility-apply")!)).toBe("res");
+    expect(ticketPrefixOf(getPanel("staff-application", null)!)).toBe("apply");
+    expect(ticketPrefixOf(getPanel("responsibility-apply", null)!)).toBe("res");
     expect(ticketCounterKey("g1", "apply")).toBe("ticket:g1:apply");
   });
 
   it("never shares a prefix between two ticket types", () => {
-    const prefixes = listPanels().map(ticketPrefixOf);
+    const prefixes = listPanels(null).map(ticketPrefixOf);
     expect(new Set(prefixes).size).toBe(prefixes.length);
   });
 });

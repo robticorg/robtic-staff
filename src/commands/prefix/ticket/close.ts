@@ -13,6 +13,7 @@ import { modmailService } from "../../../modules/modmail/services/modmail.servic
 import { reportPermissionService } from "../../../modules/modmail/services/report-permissions.service.ts";
 import { ModmailCaseStatus } from "../../../modules/modmail/types/enums.ts";
 
+import { ticketName } from "../../../modules/tickets/models/ticket.model.ts";
 export default definePrefixCommand({
   name: "close",
   category: "ticket",
@@ -26,7 +27,7 @@ export default definePrefixCommand({
 
     await ctx.replyWith(
       buildTicketNotice(
-        [ticketMessages.close.confirming(ticket.ticketId, limits.ticketCloseConfirmSeconds)],
+        [ticketMessages.close.confirming(ticketName(ticket), limits.ticketCloseConfirmSeconds)],
         { tone: "warning" },
       ),
     );

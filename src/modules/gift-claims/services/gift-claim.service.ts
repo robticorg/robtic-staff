@@ -24,9 +24,17 @@ import { requireGiftClaimClient } from "../runtime.ts";
 import { giftClaimPanel } from "../../../data/tickets/panels/gift-claim.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import { isBlacklistedFor } from "../../tickets/services/ticket-blacklist.ts";
+import { TicketModel, ticketName } from "../../tickets/models/ticket.model.ts";
 
 const log = logger.child("gift-claim");
 const M = giftClaimMessages;
+
+/** The ticket a claim came from: its id, plus the name people know it by (`support-1`). */
+async function ticketRef(ticketId: string | null): Promise<{ ticketId?: string; ticketName?: string }> {
+  if (!ticketId) return {};
+  const ticket = await TicketModel.findOne({ ticketId }, { ticketId: 1, name: 1 }).lean().exec().catch(() => null);
+  return { ticketId, ticketName: ticket ? ticketName(ticket) : ticketId };
+}
 
 export class GiftClaimError extends DomainError {}
 
@@ -246,7 +254,7 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       rewardName: input.rewardName.slice(0, 200) || M.case.rewardFallback,
       status: GiftClaimStatus.APPROVED,
       source: GiftClaimSource.COMMAND,
-      ...(input.ticketId ? { ticketId: input.ticketId } : {}),
+      ...(await ticketRef(input.ticketId)),
       originChannelId: input.originChannelId,
       deliveryType: input.deliveryType,
       ...(input.amount ? { amount: input.amount } : {}),
@@ -299,7 +307,7 @@ export class GiftClaimService extends BaseRepository<GiftClaim> {
       ...(input.account ? { account: input.account } : {}),
       status: GiftClaimStatus.PENDING,
       source: GiftClaimSource.REQUEST,
-      ...(input.ticketId ? { ticketId: input.ticketId } : {}),
+      ...(await ticketRef(input.ticketId)),
       requestedBy: input.staffId,
       originChannelId: input.originChannelId,
       ...(input.deliveryType ? { deliveryType: input.deliveryType } : {}),

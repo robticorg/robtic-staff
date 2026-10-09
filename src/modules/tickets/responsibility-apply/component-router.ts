@@ -15,8 +15,8 @@ const log = logger.child("tickets:responsibility-apply");
 const E = responsibilityApplyMessages.errors;
 const EPHEMERAL = MessageFlags.Ephemeral;
 
-function readyPanel(): TicketPanelConfig | null {
-  const panel = ticketConfigService.getPanel(RESPONSIBILITY_APPLY_PANEL_ID);
+function readyPanel(guildId: string): TicketPanelConfig | null {
+  const panel = ticketConfigService.getPanel(RESPONSIBILITY_APPLY_PANEL_ID, guildId);
   if (!panel || panelIsAdminOnly(panel)) return null;
   if (panelCreatesChannel(panel) && isUnsetId(panel.categoryId)) return null;
   return panel;
@@ -47,7 +47,7 @@ function checked(interaction: ModalSubmitInteraction, id: string): boolean {
 }
 
 async function handleOpen(interaction: ButtonInteraction<"cached">): Promise<void> {
-  if (!readyPanel()) {
+  if (!readyPanel(interaction.guildId)) {
     await interaction.reply({ content: E.notConfigured, flags: EPHEMERAL });
     return;
   }
@@ -60,7 +60,7 @@ async function handleOpen(interaction: ButtonInteraction<"cached">): Promise<voi
 }
 
 async function handleSubmit(interaction: ModalSubmitInteraction<"cached">): Promise<void> {
-  const panel = readyPanel();
+  const panel = readyPanel(interaction.guildId);
   if (!panel) {
     await interaction.reply({ content: E.notConfigured, flags: EPHEMERAL });
     return;

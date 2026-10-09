@@ -9,13 +9,13 @@ describe("intake targets", () => {
   const targets = intakeService.targets();
 
   it("offers every ticket panel, hidden ones included, plus each department", () => {
-    for (const panel of listPanels()) {
+    for (const panel of listPanels(null)) {
       expect(intakeService.describe(intakeTarget.panel(panel.id))).not.toBeNull();
     }
     for (const dept of APPLICATION_DEPARTMENT_VALUES) {
       expect(intakeService.describe(intakeTarget.department(dept))?.group).toBe("APPLICATION");
     }
-    expect(targets).toHaveLength(listPanels().length + APPLICATION_DEPARTMENT_VALUES.length);
+    expect(targets).toHaveLength(listPanels(null).length + APPLICATION_DEPARTMENT_VALUES.length);
   });
 
   it("groups the application and transfer panels under applications", () => {

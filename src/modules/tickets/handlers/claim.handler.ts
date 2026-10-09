@@ -7,6 +7,7 @@ import { ticketConfigService } from "../services/ticket-config.service.ts";
 import { ticketService } from "../services/ticket.service.ts";
 import { StaffPointTransactionType, pointValuesService } from "../../staff/index.ts";
 
+import { ticketName } from "../models/ticket.model.ts";
 const log = logger.child("tickets:claim");
 const M = ticketMessages;
 
@@ -28,7 +29,7 @@ export async function handleTicketClaim(
       await interaction.editReply(M.common.wrongGuild);
       return;
     }
-    const panel = ticketConfigService.getPanel(ticket.panelId);
+    const panel = ticketConfigService.getPanel(ticket.panelId, ticket.guildId);
     if (!panel) {
       await interaction.editReply(M.create.unknownPanel);
       return;
@@ -37,8 +38,8 @@ export async function handleTicketClaim(
     const result = await ticketService.claimTicket(ticketId, interaction.member, panel);
     await interaction.editReply(
       result.pointAwarded
-        ? M.claim.success(ticketId, await pointValuesService.valueOf(ticket.guildId, StaffPointTransactionType.TICKET_CLAIM))
-        : M.claim.successNoPoint(ticketId),
+        ? M.claim.success(ticketName(ticket), await pointValuesService.valueOf(ticket.guildId, StaffPointTransactionType.TICKET_CLAIM))
+        : M.claim.successNoPoint(ticketName(ticket)),
     );
 
     const channel = interaction.channel;

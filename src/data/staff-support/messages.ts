@@ -32,7 +32,7 @@ export const staffSupportMessages = {
     created: (channelId: string) => `${E.success} تم فتح طلب الدعم حقك: <#${channelId}>.`,
     failed: `${E.error} ما قدرت أفتح طلب الدعم. جرب مرة ثانية.`,
 
-    channelHeader: (ticketId: string) => `# دعم الادارة · \`${ticketId}\``,
+    channelHeader: (ticketName: string) => `# دعم الادارة · \`${ticketName}\``,
     openedBy: (userId: string) => `مقدّم الطلب: <@${userId}>`,
     reasonLine: (reason: string) => `**السبب**\n${reason}`,
     visibilityStaff: "-# يشوف هذا الطلب: مانجر الطاقم الاداري ومانجر الأونر.",

@@ -86,7 +86,7 @@ export async function resolveTicketContext(
   if (!acceptable.includes(ticket.status)) {
     throw new PrefixAbort(prefixMessages.ticket.ticketClosed);
   }
-  const panel = ticketConfigService.getPanel(ticket.panelId);
+  const panel = ticketConfigService.getPanel(ticket.panelId, ticket.guildId);
   if (!panel) throw new PrefixAbort();
   return { ticket, panel };
 }

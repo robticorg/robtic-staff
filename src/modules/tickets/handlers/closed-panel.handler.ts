@@ -9,7 +9,7 @@ import { DomainError } from "../../../shared/utils/errors.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
-import type { TicketDocument } from "../models/ticket.model.ts";
+import { ticketName, type TicketDocument } from "../models/ticket.model.ts";
 import { buildTicketNotice } from "../render/notice.ts";
 import { ticketConfigService } from "../services/ticket-config.service.ts";
 import { canManageClosedTicket } from "../services/ticket-permissions.ts";
@@ -45,7 +45,7 @@ async function resolve(
     });
     return null;
   }
-  const panel = ticketConfigService.getPanel(ticket.panelId);
+  const panel = ticketConfigService.getPanel(ticket.panelId, ticket.guildId);
   if (!panel) {
     await interaction.reply({ content: M.create.unknownPanel, ...EPHEMERAL });
     return null;
@@ -96,7 +96,7 @@ export async function handleClosedTranscript(
   }
 
   await interaction.editReply({
-    content: P.transcriptReady(ticketId),
+    content: P.transcriptReady(ticketName(ticket)),
     files: [transcriptService.toAttachment(transcript)],
   });
 }
@@ -112,7 +112,7 @@ export async function handleClosedReopen(
 
   try {
     await ticketService.reopenTicket(ticketId, resolved.member, resolved.panel);
-    await interaction.editReply(M.reopen.done(ticketId));
+    await interaction.editReply(M.reopen.done(ticketName(resolved.ticket)));
 
     const channel = interaction.channel;
     if (channel?.isTextBased() && "send" in channel) {

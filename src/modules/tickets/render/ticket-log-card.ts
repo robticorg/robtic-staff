@@ -83,7 +83,7 @@ export function ticketLogContent(
   if (!title) return null;
 
   const fields: Field[] = [
-    { name: L.ticket, value: `\`${ctx.ticketId}\``, inline: true },
+    { name: L.ticket, value: `\`${ctx.ticketName ?? ctx.ticketId}\``, inline: true },
     { name: L.actor, value: `<@${ctx.actorId}>`, inline: true },
   ];
 

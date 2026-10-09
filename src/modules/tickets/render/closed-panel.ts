@@ -9,7 +9,7 @@ import {
 import { colors } from "../../../data/config/colors.ts";
 import { emojis } from "../../../data/emojis/index.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
-import type { Ticket } from "../models/ticket.model.ts";
+import { ticketName, type Ticket } from "../models/ticket.model.ts";
 import { TicketCustomId } from "../handlers/component-ids.ts";
 import { v2MessageOptions } from "./v2.ts";
 
@@ -22,12 +22,12 @@ const P = ticketMessages.closedPanel;
 export function buildClosedTicketPanel(
   ticket: Pick<
     Ticket,
-    "ticketId" | "userId" | "claimedByDiscordId" | "closedBy" | "closedAt" | "transcriptId"
+    "ticketId" | "name" | "userId" | "claimedByDiscordId" | "closedBy" | "closedAt" | "transcriptId"
   >,
 ): BaseMessageOptions {
   const container = new ContainerBuilder().setAccentColor(colors.neutral);
 
-  container.addTextDisplayComponents((t) => t.setContent(P.heading(ticket.ticketId)));
+  container.addTextDisplayComponents((t) => t.setContent(P.heading(ticketName(ticket))));
 
   container.addSeparatorComponents((s) =>
     s.setDivider(true).setSpacing(SeparatorSpacingSize.Small),

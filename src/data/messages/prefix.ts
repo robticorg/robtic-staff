@@ -30,13 +30,13 @@ export const prefixMessages = {
   ticket: {
     notATicket: `${E.error} هذا الأمر يشتغل داخل روم التكت بس.`,
     ticketClosed: `${E.error} هذا التكت مغلق.`,
-    claimed: (ticketId: string, points: number) => `${E.success} استلمت \`${ticketId}\`. **${ticketPointsText(points)}.**`,
-    claimedNoPoint: (ticketId: string) => `${E.success} أنت الحين مسؤول عن \`${ticketId}\`.`,
-    closed: (ticketId: string) => `${E.success} تم إغلاق \`${ticketId}\`.`,
-    closedWithTranscript: (ticketId: string, transcriptId: string) =>
-      `${E.success} تم إغلاق \`${ticketId}\` — تم حفظ النسخة \`${transcriptId}\`.`,
+    claimed: (ticketName: string, points: number) => `${E.success} استلمت \`${ticketName}\`. **${ticketPointsText(points)}.**`,
+    claimedNoPoint: (ticketName: string) => `${E.success} أنت الحين مسؤول عن \`${ticketName}\`.`,
+    closed: (ticketName: string) => `${E.success} تم إغلاق \`${ticketName}\`.`,
+    closedWithTranscript: (ticketName: string, transcriptId: string) =>
+      `${E.success} تم إغلاق \`${ticketName}\` — تم حفظ النسخة \`${transcriptId}\`.`,
     willBeDeleted: `${E.warning} راح ينحذف هذا التكت بعد شوي.`,
-    deleted: (ticketId: string) => `${E.success} تم حذف \`${ticketId}\` (السجل محفوظ).`,
+    deleted: (ticketName: string) => `${E.success} تم حذف \`${ticketName}\` (السجل محفوظ).`,
     renamed: (name: string) => `${E.success} تم تغيير اسم التكت إلى \`${name}\`.`,
     renameUsage: `${E.warning} الطريقة: \`!تغيير-الاسم <الاسم-الجديد>\``,
     transcriptSaved: (transcriptId: string) =>

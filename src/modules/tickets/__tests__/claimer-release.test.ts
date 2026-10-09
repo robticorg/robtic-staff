@@ -115,7 +115,7 @@ try {
 }
 
 const GUILD = "release-itest-guild";
-const panel = getPanel("support")!;
+const panel = getPanel("support", null)!;
 
 function fakeGuild() {
   const sent: unknown[] = [];

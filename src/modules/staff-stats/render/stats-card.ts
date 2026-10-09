@@ -273,7 +273,7 @@ export function buildTicketStatsView(ids: StatsCardIds, t: TicketStatRow): BaseM
   const body = [T.totals(t.claimed, t.completed, t.assignedNow)];
   if (panels.length === 0) body.push("", T.empty);
   for (const [panelId, stat] of panels) {
-    body.push("", T.panel(ticketConfigService.getPanel(panelId)?.name ?? panelId), T.panelRow(stat));
+    body.push("", T.panel(ticketConfigService.getPanel(panelId, null)?.name ?? panelId), T.panelRow(stat));
   }
   return subView(ids, StatsView.TICKETS, T.heading(ids.targetId), body.join("\n"));
 }

@@ -40,19 +40,19 @@ describe("ticket panel in a new server", () => {
   });
 
   it("opens by itself once it is set up", async () => {
-    setPanelOverride(supportPanel.id, { supportRoleId: ROLE, categoryId: CATEGORY });
+    setPanelOverride(guild.id, supportPanel.id, { supportRoleId: ROLE, categoryId: CATEGORY });
     expect(await openIds()).toContain(supportPanel.id);
     expect(await openIds()).not.toContain(minecraftPanel.id);
   });
 
   it("a set-up type closed with /intake close is left off too", async () => {
-    setPanelOverride(supportPanel.id, { supportRoleId: ROLE, categoryId: CATEGORY });
+    setPanelOverride(guild.id, supportPanel.id, { supportRoleId: ROLE, categoryId: CATEGORY });
     closed.add(intakeTarget.panel(supportPanel.id));
     expect(await openIds()).not.toContain(supportPanel.id);
   });
 
   it("a support role that was deleted makes it closed again", async () => {
-    setPanelOverride(supportPanel.id, { supportRoleId: "100000000000000099", categoryId: CATEGORY });
+    setPanelOverride(guild.id, supportPanel.id, { supportRoleId: "100000000000000099", categoryId: CATEGORY });
     expect(await openIds()).not.toContain(supportPanel.id);
   });
 

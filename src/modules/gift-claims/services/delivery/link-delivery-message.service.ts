@@ -187,7 +187,7 @@ export class LinkDeliveryMessageService {
   private async overwrites(guild: Guild, userId: string): Promise<OverwriteResolvable[]> {
     const view = [PermissionFlagsBits.ViewChannel, PermissionFlagsBits.ReadMessageHistory];
     const managerRoles = [
-      giftClaimPermissionService.panelSupportRoleId(),
+      giftClaimPermissionService.panelSupportRoleId(guild.id),
       await giftClaimPermissionService.giftManagerRoleId(guild.id),
     ].filter((id): id is string => !!id && guild.roles.cache.has(id));
 

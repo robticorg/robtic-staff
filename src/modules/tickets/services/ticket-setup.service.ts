@@ -18,13 +18,13 @@ export interface DeployResult {
 export class TicketSetupService {
   async deploy(guild: Guild, target?: GuildBasedChannel): Promise<DeployResult> {
     const main = ticketConfigService.getMainConfig();
-    if (ticketConfigService.listPublicPanels().length === 0) throw new ValidationError(M.noPanels);
+    if (ticketConfigService.listPublicPanels(null).length === 0) throw new ValidationError(M.noPanels);
 
     // Panels that aren't set up (or are closed with /intake close) are left off, not an error:
     // the panel can be sent in a fresh server and fills in as each type gets set up.
     const panels = await ticketConfigService.listOpenPublicPanels(guild);
     const notSetUp: string[] = [];
-    for (const panel of ticketConfigService.listPublicPanels()) {
+    for (const panel of ticketConfigService.listPublicPanels(guild.id)) {
       if (!(await ticketConfigService.isPanelReady(guild, panel))) notSetUp.push(panel.name);
     }
 

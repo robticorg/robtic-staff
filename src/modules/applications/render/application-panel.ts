@@ -1,3 +1,4 @@
+import { ticketName, type Ticket } from "../../tickets/models/ticket.model.ts";
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -60,15 +61,16 @@ function ineligibleLines(evaluation: StaffApplication["evaluation"]): string[] {
 }
 
 export function buildApplicationPanel(
-  ticketId: string,
+  ticket: Pick<Ticket, "ticketId" | "name">,
   application: ApplicationPanelInput,
   managerRoleIds: readonly string[],
 ): BaseMessageOptions {
+  const { ticketId } = ticket;
   const isTransfer = application.type === ApplicationType.TRANSFER_APPLICATION;
   const container = new ContainerBuilder().setAccentColor(toneFor(application.applicationStatus));
 
   container.addTextDisplayComponents((t) =>
-    t.setContent(isTransfer ? T.transferHeader(ticketId) : T.applicationHeader(ticketId)),
+    t.setContent(isTransfer ? T.transferHeader(ticketName(ticket)) : T.applicationHeader(ticketName(ticket))),
   );
   container.addTextDisplayComponents((t) =>
     t.setContent(isTransfer ? T.transferOpened : T.applicationOpened),

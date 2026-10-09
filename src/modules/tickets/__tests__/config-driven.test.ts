@@ -24,9 +24,9 @@ describe("ticket panel is fully config-driven", () => {
 
   it("getPanel works for every configured id and nothing else (no branching)", () => {
     for (const panel of tickets.panels) {
-      expect(ticketConfigService.getPanel(panel.id)?.id).toBe(panel.id);
+      expect(ticketConfigService.getPanel(panel.id, null)?.id).toBe(panel.id);
     }
-    expect(ticketConfigService.getPanel("does-not-exist")).toBeUndefined();
+    expect(ticketConfigService.getPanel("does-not-exist", null)).toBeUndefined();
   });
 });
 

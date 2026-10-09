@@ -5,7 +5,7 @@ import { sleep } from "../../../shared/utils/sleep.ts";
 import { limits } from "../../../data/config/limits.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import type { TicketPanelConfig } from "../../../data/tickets/index.ts";
-import type { TicketDocument } from "../models/ticket.model.ts";
+import { ticketName, type TicketDocument } from "../models/ticket.model.ts";
 import { buildTicketNotice } from "../render/notice.ts";
 import { buildTicketOptionsUi } from "../render/options-ui.ts";
 import { buildAddUserModal, buildRemoveUserModal } from "../render/add-remove-modals.ts";
@@ -36,7 +36,7 @@ async function resolve(
     await reject(interaction, ticket ? M.common.wrongGuild : M.common.ticketGone);
     return null;
   }
-  const panel = ticketConfigService.getPanel(ticket.panelId);
+  const panel = ticketConfigService.getPanel(ticket.panelId, ticket.guildId);
   if (!panel) {
     await reject(interaction, M.create.unknownPanel);
     return null;
@@ -96,7 +96,7 @@ export async function handleOptionsClose(
 
   await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
-  const confirming = M.close.confirming(ticketId, limits.ticketCloseConfirmSeconds);
+  const confirming = M.close.confirming(ticketName(resolved.ticket), limits.ticketCloseConfirmSeconds);
   await interaction.editReply(confirming);
   const channel = interaction.channel;
   if (channel?.isTextBased() && "send" in channel) {
@@ -117,7 +117,7 @@ export async function handleOptionsClose(
     // When the channel survives, `closeTicket` leaves the closed-ticket panel in
     // it — no separate "closed" notice, it would just repeat the panel heading.
     await interaction.editReply(
-      result.transcriptId ? M.close.withTranscript(ticketId) : M.close.done(ticketId),
+      result.transcriptId ? M.close.withTranscript(ticketName(resolved.ticket)) : M.close.done(ticketName(resolved.ticket)),
     );
   } catch (err) {
     if (err instanceof DomainError) {

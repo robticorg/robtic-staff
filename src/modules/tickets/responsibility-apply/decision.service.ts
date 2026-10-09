@@ -53,7 +53,7 @@ export class ResponsibilityDecisionService {
     reason: string | null;
   }): Promise<DecisionResult> {
     const { guild, actor, ticket } = input;
-    const panel = ticketConfigService.getPanel(ticket.panelId);
+    const panel = ticketConfigService.getPanel(ticket.panelId, ticket.guildId);
     if (actor.id === ticket.userId) throw new ResponsibilityDecisionError(D.selfDecision);
     const allowed = canDecide({
       isAdministrator: hasAdminAccess(actor),

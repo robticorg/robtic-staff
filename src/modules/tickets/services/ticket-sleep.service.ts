@@ -148,7 +148,7 @@ export class TicketSleepService {
         .catch(() => undefined);
     }
 
-    const panel = ticketConfigService.getPanel(ticket.panelId);
+    const panel = ticketConfigService.getPanel(ticket.panelId, ticket.guildId);
     if (panel) {
       await ticketLogService.record(TicketLogAction.TICKET_SLEEP_CANCELLED, {
         guild: message.guild,
@@ -207,7 +207,7 @@ export class TicketSleepService {
       log.warn(`ticket ${ticket.ticketId} is due but guild ${ticket.guildId} is unavailable`);
       return false;
     }
-    const panel = ticketConfigService.getPanel(ticket.panelId);
+    const panel = ticketConfigService.getPanel(ticket.panelId, ticket.guildId);
     if (!panel) {
       await this.clearSleep(ticket.ticketId);
       log.warn(`ticket ${ticket.ticketId} is due but its panel "${ticket.panelId}" is gone`);

@@ -17,9 +17,9 @@ export interface PanelSetupInput {
 }
 
 function pushOverride(
-  row: Pick<TicketPanelSettings, "panelId" | "supportRoleId" | "managerRoleId" | "categoryId" | "logChannelId">,
+  row: Pick<TicketPanelSettings, "guildId" | "panelId" | "supportRoleId" | "managerRoleId" | "categoryId" | "logChannelId">,
 ): void {
-  setPanelOverride(row.panelId, {
+  setPanelOverride(row.guildId, row.panelId, {
     supportRoleId: row.supportRoleId,
     managerRoleId: row.managerRoleId,
     categoryId: row.categoryId,
@@ -29,8 +29,9 @@ function pushOverride(
 
 export class TicketPanelSettingsService {
   async save(input: PanelSetupInput): Promise<void> {
-    if (!getPanel(input.panelId)) throw new Error(`Unknown ticket panel ${input.panelId}`);
+    if (!getPanel(input.panelId, null)) throw new Error(`Unknown ticket panel ${input.panelId}`);
     const row = {
+      guildId: input.guildId,
       panelId: input.panelId,
       supportRoleId: input.supportRoleId,
       managerRoleId: input.managerRoleId,

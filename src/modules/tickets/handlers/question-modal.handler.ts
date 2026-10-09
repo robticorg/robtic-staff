@@ -23,7 +23,7 @@ export async function handleQuestionModal(
 ): Promise<void> {
   if (!interaction.inCachedGuild()) return;
 
-  const panel = ticketConfigService.getPanel(panelId);
+  const panel = ticketConfigService.getPanel(panelId, interaction.guildId);
   if (!panel) {
     await interaction.reply({ content: M.create.unknownPanel, flags: MessageFlags.Ephemeral });
     return;
@@ -70,7 +70,7 @@ export async function handleQuestionContinue(
   panelId: string,
   page: number,
 ): Promise<void> {
-  const panel = ticketConfigService.getPanel(panelId);
+  const panel = ticketConfigService.getPanel(panelId, interaction.guildId);
   if (!panel) {
     await interaction.reply({ content: M.create.unknownPanel, flags: MessageFlags.Ephemeral });
     return;

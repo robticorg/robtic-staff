@@ -38,7 +38,7 @@ export default defineCommand({
     if (!(ACTIVE_TICKET_STATUSES as TicketStatus[]).includes(ticket.status)) {
       throw new CommandError(M.sleep.notOpen);
     }
-    const panel = ticketConfigService.getPanel(ticket.panelId);
+    const panel = ticketConfigService.getPanel(ticket.panelId, ticket.guildId);
     if (!panel) throw new CommandError(M.create.unknownPanel);
 
     const durationMs = resolveSleepDuration(interaction.options.getString(CommandOption.TIME));

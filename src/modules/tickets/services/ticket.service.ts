@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import {
   AuditLogEvent,
   ChannelType,
@@ -39,7 +40,7 @@ import {
   type TicketPanelConfig,
 } from "../../../data/tickets/index.ts";
 import { StaffActivityType, staffActivityService, staffService } from "../../staff/index.ts";
-import { TicketModel, type Ticket, type TicketAnswer } from "../models/ticket.model.ts";
+import { TicketModel, ticketName, type Ticket, type TicketAnswer } from "../models/ticket.model.ts";
 import {
   ACTIVE_TICKET_STATUSES,
   TicketLogAction,
@@ -216,10 +217,22 @@ export class TicketService extends BaseRepository<Ticket> {
     return ticket.panelId;
   }
 
-  async nextTicketId(guildId: GuildId, panel: Pick<TicketPanelConfig, "id" | "ticketPrefix">): Promise<string> {
+  /** The next name for people in this server: `support-1`, `support-2`… (counted per server). */
+  async nextTicketName(guildId: GuildId, panel: Pick<TicketPanelConfig, "id" | "ticketPrefix">): Promise<string> {
     const prefix = ticketPrefixOf(panel);
     const seq = await nextSequence(ticketCounterKey(guildId, prefix));
     return `${prefix}-${seq}`;
+  }
+
+  /**
+   * A ticket by what people type (`support-3`), in one server. Tickets made before names existed
+   * are found by their old id, which is the same text.
+   */
+  async getTicketByName(guildId: GuildId, name: string): Promise<TicketDoc | null> {
+    return (
+      (await this.findOne({ guildId, name })) ??
+      (await this.findOne({ guildId, ticketId: name, name: { $exists: false } }))
+    );
   }
 
   async createTicket(input: CreateTicketInput): Promise<CreateTicketResult> {
@@ -254,13 +267,15 @@ export class TicketService extends BaseRepository<Ticket> {
       throw new DomainError("TICKET_CATEGORY_INVALID", M.create.categoryMissing);
     }
 
-    const ticketId = await this.nextTicketId(guild.id, panel);
+    // The UUID is the ticket everywhere in the bot; the name is what people see in this server.
+    const ticketId = randomUUID();
+    const name = await this.nextTicketName(guild.id, panel);
     const claimableRoleIds = [...new Set(input.claimableRoleIds ?? [])].filter((id) =>
       guild.roles.cache.has(id),
     );
 
     const channel = await guild.channels.create({
-      name: ticketId,
+      name,
       type: ChannelType.GuildText,
       parent: (category as CategoryChannel).id,
       // Set at creation — costs no extra request; claim/handover update it later.
@@ -272,7 +287,7 @@ export class TicketService extends BaseRepository<Ticket> {
         [...(input.additionalRoleIds ?? []), ...(panel.managerRoleId ? [panel.managerRoleId] : [])],
         claimableRoleIds,
       ),
-      reason: `Ticket ${ticketId} (${panel.id}) for ${member.id}`,
+      reason: `Ticket ${name} (${panel.id}) for ${member.id}`,
     });
 
     transcriptCache.track(channel.id);
@@ -281,6 +296,7 @@ export class TicketService extends BaseRepository<Ticket> {
     try {
       ticket = await this.insert({
         ticketId,
+        name,
         guildId: guild.id,
         channelId: channel.id,
         userId: member.id,
@@ -302,6 +318,7 @@ export class TicketService extends BaseRepository<Ticket> {
       guild,
       panel,
       ticketId,
+      ticketName: name,
       actorId: member.id,
     });
 
@@ -423,7 +440,7 @@ export class TicketService extends BaseRepository<Ticket> {
       throw new ConflictError(M.claim.alreadyClaimed(fresh?.claimedByDiscordId ?? "someone"));
     }
 
-    const { pointAwarded } = await applyTicketClaimCredit(staff._id, ticketId);
+    const { pointAwarded } = await applyTicketClaimCredit(staff._id, ticketId, undefined, ticketName(ticket));
 
     await this.applyClaimOverwrites(member.guild, panel, claimed, member.id).catch((err) =>
       log.warn("claim overwrite update failed", err),
@@ -559,7 +576,7 @@ export class TicketService extends BaseRepository<Ticket> {
     }
     if (!claimed) throw new ConflictError(M.roleClaim.slotClosed);
 
-    const { pointAwarded } = await applyTicketClaimCredit(staff._id, ticketId);
+    const { pointAwarded } = await applyTicketClaimCredit(staff._id, ticketId, undefined, ticketName(ticket));
 
     await this.grantMemberAccess(member.guild, claimed.channelId, member.id).catch((err) =>
       log.warn("role claim overwrite update failed", err),
@@ -686,7 +703,7 @@ export class TicketService extends BaseRepository<Ticket> {
     // index keeps this to one point per person per ticket, so handing a ticket
     // back to someone who already held it awards nothing the second time. The
     // previous claimer keeps the point they already earned.
-    const { pointAwarded } = await applyTicketClaimCredit(staff._id, ticketId);
+    const { pointAwarded } = await applyTicketClaimCredit(staff._id, ticketId, undefined, ticketName(ticket));
 
     await this.applyTransferOverwrites(
       actor.guild,
@@ -1151,9 +1168,9 @@ export class TicketService extends BaseRepository<Ticket> {
     });
   }
 
-  private async panelFor(ticket: Pick<Ticket, "panelId">): Promise<TicketPanelConfig> {
+  private async panelFor(ticket: Pick<Ticket, "panelId" | "guildId">): Promise<TicketPanelConfig> {
     const { getPanel } = await import("../../../data/tickets/index.ts");
-    const panel = getPanel(ticket.panelId);
+    const panel = getPanel(ticket.panelId, ticket.guildId);
     if (!panel) {
       throw new DomainError("TICKET_PANEL_GONE", M.create.unknownPanel, { panelId: ticket.panelId });
     }

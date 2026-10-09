@@ -46,17 +46,21 @@ export function panelCreatesChannel(
   return panel.createsChannel !== false;
 }
 
-export function listPanels(): readonly TicketPanelConfig[] {
-  return tickets.panels.map(applyPanelOverride);
+/**
+ * Panels as set up in `guildId` (support role, category, log room are per server). Pass `null`
+ * only when nothing server-specific is used — a name or an id.
+ */
+export function listPanels(guildId: string | null): readonly TicketPanelConfig[] {
+  return tickets.panels.map((p) => applyPanelOverride(p, guildId));
 }
 
-export function listPublicPanels(): readonly TicketPanelConfig[] {
-  return listPanels().filter((p) => !p.hidden);
+export function listPublicPanels(guildId: string | null): readonly TicketPanelConfig[] {
+  return listPanels(guildId).filter((p) => !p.hidden);
 }
 
-export function getPanel(panelId: string): TicketPanelConfig | undefined {
+export function getPanel(panelId: string, guildId: string | null): TicketPanelConfig | undefined {
   const panel = tickets.panels.find((p) => p.id === panelId);
-  return panel ? applyPanelOverride(panel) : undefined;
+  return panel ? applyPanelOverride(panel, guildId) : undefined;
 }
 
 export const LEGACY_TICKET_PREFIX = "ticket";

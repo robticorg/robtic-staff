@@ -144,8 +144,8 @@ export const staffApplicationMessages = {
   },
 
   ticket: {
-    applicationHeader: (ticketId: string) => `## طلب تقديم · \`${ticketId}\``,
-    transferHeader: (ticketId: string) => `## طلب نقل · \`${ticketId}\``,
+    applicationHeader: (ticketName: string) => `## طلب تقديم · \`${ticketName}\``,
+    transferHeader: (ticketName: string) => `## طلب نقل · \`${ticketName}\``,
     applicationOpened: "تم فتح طلب تقديم جديد.\nبانتظار أحد المسؤولين لاستلام الطلب.",
     transferOpened: "تم فتح طلب نقل جديد.\nبانتظار أحد مسؤولي النقل لاستلام الطلب.",
     applicant: (userId: string) => `**المتقدم:** <@${userId}>`,
