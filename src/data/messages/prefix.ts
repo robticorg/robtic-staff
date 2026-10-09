@@ -21,7 +21,7 @@ export const prefixMessages = {
     genericError: `${E.error} صار خطأ وأنا أنفذ الأمر.`,
     notStaff: `${E.error} ما عندك صلاحية تستخدم هذا.`,
     notStaffManager: `${E.error} هذا لمانجرات الطاقم الاداري بس.`,
-    notApplyManager: `${E.error} هذا لمانجرات التقديم بس.`,
+    notAcceptManager: `${E.error} هذا لمانجرات التقديم ومانجرات التحويل بس.`,
     notHighStaff: `${E.error} هذا الأمر للادارة العليا فما فوق.`,
     usage: (usage: string) => `${E.warning} الطريقة: \`${usage}\``,
     needUserTarget: `${E.warning} منشن العضو أو حط الآيدي حقه.`,

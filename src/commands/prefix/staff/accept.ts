@@ -24,7 +24,7 @@ import { staffService } from "../../../modules/staff/services/staff.service.ts";
 import { StaffStatus } from "../../../modules/staff/types/enums.ts";
 import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
 import { hiddenStaffService } from "../../../modules/staff/hidden/index.ts";
-import { PrefixAbort, requireApplyManager } from "../_shared/guards.ts";
+import { PrefixAbort, requireAcceptManager } from "../_shared/guards.ts";
 import { splitHiddenMode } from "../_shared/hidden-mode.ts";
 import {
   ResponsibilityDecision,
@@ -113,7 +113,7 @@ export default definePrefixCommand({
     const application = await applicationContextService.forChannel(ctx.guild.id, ctx.channel.id);
     if (application) return acceptInApplication(ctx, application, args, hidden);
 
-    await requireApplyManager(ctx);
+    await requireAcceptManager(ctx);
     const target = await requireTargetMember(ctx, "!accept @user [level|tier|max] [type] [hidden]");
     if (hidden) await hiddenStaffService.assertCanAccept(ctx.member, target);
 

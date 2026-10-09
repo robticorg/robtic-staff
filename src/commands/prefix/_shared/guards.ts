@@ -49,9 +49,10 @@ export async function requireRankManager(ctx: PrefixContext): Promise<void> {
   }
 }
 
-export async function requireApplyManager(ctx: PrefixContext): Promise<void> {
-  if (!(await staffPermissionService.isApplyManager(ctx.member))) {
-    throw new PrefixAbort(prefixMessages.common.notApplyManager);
+/** Apply Manager or Transfer Manager (or an administrator). */
+export async function requireAcceptManager(ctx: PrefixContext): Promise<void> {
+  if (!(await staffPermissionService.isAcceptManager(ctx.member))) {
+    throw new PrefixAbort(prefixMessages.common.notAcceptManager);
   }
 }
 

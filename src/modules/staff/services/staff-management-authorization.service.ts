@@ -127,6 +127,11 @@ export class StaffManagementAuthorizationService {
     return responsibilityPermissionService.holds(actor, RoleConfigType.APPLY_MANAGER);
   }
 
+  /** Apply Managers and Transfer Managers can both accept. */
+  async isAcceptManager(actor: GuildMember): Promise<boolean> {
+    return (await this.isApplyManager(actor)) || (await this.isTransferManager(actor));
+  }
+
   async getAuthority(actor: GuildMember, guildId: GuildId = actor.guild.id): Promise<ActorAuthority> {
     const hierarchy = await getHierarchy(guildId);
     const ownerStartLevel = hierarchy.boundaryLevels[StaffTier.OWNER];
@@ -302,7 +307,7 @@ export class StaffManagementAuthorizationService {
     if (invalid) return invalid;
 
     if (this.isAdministrator(actor)) return allow();
-    if (!(await this.isApplyManager(actor))) return deny(DenyReason.NOT_A_MANAGER);
+    if (!(await this.isAcceptManager(actor))) return deny(DenyReason.NOT_A_MANAGER);
     if (actor.id === target.id) return deny(DenyReason.SELF_ACCEPT);
 
     const actorLevel = highestLevelFromRoleIds(hierarchy, actor.roles.cache.keys());

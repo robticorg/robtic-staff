@@ -28,6 +28,7 @@ const R_STAFF_MARKER = "r-staff-marker";
 const R_STAFF_MANAGER = "r-staff-manager";
 const R_OWNER_MANAGER = "r-owner-manager";
 const R_APPLY_MANAGER = "r-apply-manager";
+const R_TRANSFER_MANAGER = "r-transfer-manager";
 const R_IGNORE = "r-ignore";
 const R_BLACKLIST = "r-blacklist";
 
@@ -61,6 +62,8 @@ const ownerManagerAt = (level: number, id = "om") =>
   member(id, [R_STAFF_MARKER, R_OWNER_MANAGER, rung(level)]);
 const applyManagerAt = (level: number, id = "am") =>
   member(id, [R_STAFF_MARKER, R_APPLY_MANAGER, rung(level)]);
+const transferManagerAt = (level: number, id = "tm") =>
+  member(id, [R_STAFF_MARKER, R_TRANSFER_MANAGER, rung(level)]);
 const administrator = (id = "admin") => member(id, [R_STAFF_MARKER], true);
 const plainStaff = (level: number, id = "plain") =>
   member(id, [R_STAFF_MARKER, rung(level)]);
@@ -74,6 +77,7 @@ async function seed(guildId = GUILD, opts: { ship?: boolean; owner?: boolean } =
     { guildId, roleId: R_STAFF_MANAGER, type: RoleConfigType.STAFF_MANAGER },
     { guildId, roleId: R_OWNER_MANAGER, type: RoleConfigType.OWNER_MANAGER },
     { guildId, roleId: R_APPLY_MANAGER, type: RoleConfigType.APPLY_MANAGER },
+    { guildId, roleId: R_TRANSFER_MANAGER, type: RoleConfigType.TRANSFER_MANAGER },
     { guildId, roleId: R_IGNORE, type: RoleConfigType.IGNORE },
     { guildId, roleId: R_BLACKLIST, type: RoleConfigType.BLACKLIST },
   ];
@@ -280,7 +284,7 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
     ).toBe(true);
   });
 
-  it("blocks a Staff Manager or Owner Manager from accepting — Apply Manager only", async () => {
+  it("blocks a Staff Manager or Owner Manager from accepting — Apply or Transfer Manager only", async () => {
     const smDecision = await auth.canAccept(staffManagerAt(11), plainStaff(0, "t"), 0);
     expect(smDecision.allowed).toBe(false);
     expect((smDecision as { reason: DenyReason }).reason).toBe(DenyReason.NOT_A_MANAGER);
@@ -306,6 +310,13 @@ describe.skipIf(!hasDb)("Staff management authorization", () => {
     const hs = applyManagerAt(HIGHSTAFF_LEVEL, "am-hs");
     expect((await auth.canAccept(hs, plainStaff(0, "t"), HIGHSTAFF_LEVEL)).allowed).toBe(false);
     expect((await auth.canAccept(hs, plainStaff(0, "t"), HIGHSTAFF_LEVEL - 1)).allowed).toBe(true);
+  });
+
+  it("lets a Transfer Manager accept too, with the same tier limit", async () => {
+    const tm = transferManagerAt(OWNER_LEVEL);
+    expect((await auth.canAccept(tm, plainStaff(0, "t"), OWNER_LEVEL - 1)).allowed).toBe(true);
+    expect((await auth.canAccept(tm, plainStaff(0, "t"), OWNER_LEVEL)).allowed).toBe(false);
+    expect((await auth.canAccept(tm, tm, 0)).allowed).toBe(false);
   });
 
   it("blocks an Apply Manager from accepting themselves", async () => {

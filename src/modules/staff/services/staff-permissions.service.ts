@@ -56,6 +56,15 @@ export class StaffPermissionService {
     if (this.isAdministrator(member)) return true;
     return responsibilityPermissionService.holds(member, RoleConfigType.APPLY_MANAGER);
   }
+
+  /** Who may use !accept: an Apply Manager or a Transfer Manager (or an administrator). */
+  async isAcceptManager(member: GuildMember): Promise<boolean> {
+    if (this.isAdministrator(member)) return true;
+    return (
+      (await responsibilityPermissionService.holds(member, RoleConfigType.APPLY_MANAGER)) ||
+      (await responsibilityPermissionService.holds(member, RoleConfigType.TRANSFER_MANAGER))
+    );
+  }
 }
 
 export const staffPermissionService = new StaffPermissionService();
