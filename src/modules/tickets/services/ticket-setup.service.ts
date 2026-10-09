@@ -11,17 +11,21 @@ export interface DeployResult {
   channelId: string;
   panelCount: number;
   created: boolean;
+  /** Public panels left off because they aren't set up yet — they appear once they are. */
+  notSetUp: string[];
 }
 
 export class TicketSetupService {
   async deploy(guild: Guild, target?: GuildBasedChannel): Promise<DeployResult> {
     const main = ticketConfigService.getMainConfig();
-    const panels = ticketConfigService.listPublicPanels();
-    if (panels.length === 0) throw new ValidationError(M.noPanels);
+    if (ticketConfigService.listPublicPanels().length === 0) throw new ValidationError(M.noPanels);
 
-    const problems = await ticketConfigService.validateConfig(guild, { panels });
-    if (problems.length > 0) {
-      throw new DomainError("TICKET_CONFIG_INVALID", M.invalidConfig(problems), { problems });
+    // Panels that aren't set up (or are closed with /intake close) are left off, not an error:
+    // the panel can be sent in a fresh server and fills in as each type gets set up.
+    const panels = await ticketConfigService.listOpenPublicPanels(guild);
+    const notSetUp: string[] = [];
+    for (const panel of ticketConfigService.listPublicPanels()) {
+      if (!(await ticketConfigService.isPanelReady(guild, panel))) notSetUp.push(panel.name);
     }
 
     const previous = target
@@ -44,7 +48,7 @@ export class TicketSetupService {
         await message.edit(payload);
         existing.panelCount = panels.length;
         await existing.save();
-        return { channelId: channel.id, panelCount: panels.length, created: false };
+        return { channelId: channel.id, panelCount: panels.length, created: false, notSetUp };
       }
     }
 
@@ -65,7 +69,27 @@ export class TicketSetupService {
       }
     }
 
-    return { channelId: channel.id, panelCount: panels.length, created: true };
+    return { channelId: channel.id, panelCount: panels.length, created: true, notSetUp };
+  }
+
+  /**
+   * Re-renders the sent ticket panel with what is open right now — after `/intake close|open`,
+   * after a type is set up, and on startup. Does nothing when no panel was sent in this server.
+   */
+  async refresh(guild: Guild): Promise<void> {
+    const deployment = await TicketPanelDeploymentModel.findOne({ guildId: guild.id, key: "main" }).exec();
+    if (!deployment) return;
+    const channel = await guild.channels.fetch(deployment.channelId).catch(() => null);
+    if (!channel?.isTextBased()) return;
+    const message = await channel.messages.fetch(deployment.messageId).catch(() => null);
+    if (!message) return;
+
+    const panels = await ticketConfigService.listOpenPublicPanels(guild);
+    await message.edit(buildTicketPanelMessage(ticketConfigService.getMainConfig(), panels));
+    if (deployment.panelCount !== panels.length) {
+      deployment.panelCount = panels.length;
+      await deployment.save();
+    }
   }
 }
 

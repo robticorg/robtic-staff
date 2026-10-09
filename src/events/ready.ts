@@ -6,6 +6,7 @@ import { ladderSyncService } from "../modules/configuration/index.ts";
 import { hiddenStaffLevelSyncService } from "../modules/staff/hidden/index.ts";
 import { ticketPanelSettingsService } from "../modules/tickets/services/ticket-panel-settings.service.ts";
 import { giftDeliveryRecoveryService } from "../modules/gift-claims/services/delivery/gift-delivery-recovery.service.ts";
+import { ticketSetupService } from "../modules/tickets/services/ticket-setup.service.ts";
 import {
   serverTagAuditService,
   serverTagExpirationService,
@@ -33,6 +34,9 @@ export default defineEvent({
       await ticketPanelSettingsService
         .loadGuild(guild.id)
         .catch((err) => log.warn(`ticket panel settings load failed for ${guild.id}`, err));
+      void ticketSetupService
+        .refresh(guild)
+        .catch((err) => log.warn(`ticket panel refresh failed for ${guild.id}`, err));
       await ladderSyncService
         .sync(guild)
         .catch((err) => log.warn(`ladder sync failed for ${guild.id}`, err));

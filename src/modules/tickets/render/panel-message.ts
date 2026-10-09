@@ -18,6 +18,12 @@ export function buildTicketPanelMessage(
   const container = new ContainerBuilder();
   applyV2Content(container, main.content);
 
+  // Everything closed or not set up yet: a select menu needs at least one option, so say so instead.
+  if (panels.length === 0) {
+    container.addTextDisplayComponents((t) => t.setContent(ticketMessages.panel.noneOpen));
+    return v2MessageOptions(container);
+  }
+
   const options = panels
     .slice(0, limits.selectMenuMaxOptions)
     .map((panel) => {

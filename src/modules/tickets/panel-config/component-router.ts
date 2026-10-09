@@ -85,6 +85,8 @@ async function handleSetup(interaction: ModalSubmitInteraction<"cached">): Promi
     flags: EPHEMERAL,
     allowedMentions: { parse: [] },
   });
+  // Set up now: it shows on the sent panel by itself (unless closed with /intake close).
+  await ticketSetupService.refresh(interaction.guild).catch((err) => log.warn("ticket panel refresh failed", err));
 }
 
 async function handleSend(interaction: ModalSubmitInteraction<"cached">): Promise<void> {
@@ -100,7 +102,7 @@ async function handleSend(interaction: ModalSubmitInteraction<"cached">): Promis
 
   await interaction.deferReply({ flags: EPHEMERAL });
   const target = channel as GuildTextBasedChannel;
-  let result: { channelId: string; created: boolean };
+  let result: { channelId: string; created: boolean; notSetUp?: string[] };
   if (kind === TicketPanelKind.MAIN) result = await ticketSetupService.deploy(interaction.guild, channel);
   else if (kind === TicketPanelKind.STAFF) result = await staffSupportPanelService.deploy(interaction.guild, target);
   else if (kind === TicketPanelKind.RESPONSIBILITY) {
@@ -111,7 +113,9 @@ async function handleSend(interaction: ModalSubmitInteraction<"cached">): Promis
     });
   } else throw new DomainError("TCFG_PANEL", M.errors.panelRequired);
 
-  await interaction.editReply(M.sent(M.kinds[kind] ?? kind, result.channelId, result.created));
+  const lines = [M.sent(M.kinds[kind] ?? kind, result.channelId, result.created)];
+  if (result.notSetUp?.length) lines.push(M.hiddenNotSetUp(result.notSetUp));
+  await interaction.editReply(lines.join("\n"));
 }
 
 export async function routePanelConfigComponent(interaction: Interaction): Promise<boolean> {

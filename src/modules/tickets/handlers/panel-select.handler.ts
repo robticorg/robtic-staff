@@ -14,6 +14,7 @@ import { ticketService } from "../services/ticket.service.ts";
 import { ticketDraftStore } from "./draft-store.ts";
 import { IntakeClosedError, intakeService } from "../../intake/services/intake.service.ts";
 import { buildQuestionModal } from "../render/question-modal.ts";
+import { intakeMessages } from "../../../data/intake/messages.ts";
 
 const M = ticketMessages;
 const log = logger.child("tickets:panel-select");
@@ -22,7 +23,7 @@ async function resetPanelMenu(interaction: StringSelectMenuInteraction): Promise
   try {
     if (!interaction.message.editable) return;
     const main = ticketConfigService.getMainConfig();
-    const panels = ticketConfigService.listPublicPanels();
+    const panels = await ticketConfigService.listOpenPublicPanels(interaction.guild!);
     await interaction.message.edit(buildTicketPanelMessage(main, panels));
   } catch (err) {
     log.warn("panel select menu reset failed", err);
@@ -38,6 +39,12 @@ export async function handlePanelSelect(interaction: StringSelectMenuInteraction
 
     if (!panel || panel.hidden) {
       await interaction.reply({ content: M.create.unknownPanel, flags: MessageFlags.Ephemeral });
+      return;
+    }
+
+    // A menu sent before the type lost its setup can still offer it: it counts as closed.
+    if (!(await ticketConfigService.isPanelReady(interaction.guild, panel))) {
+      await interaction.reply({ content: intakeMessages.closed(panel.name, null), flags: MessageFlags.Ephemeral });
       return;
     }
 

@@ -30,6 +30,7 @@ export const ticketMessages = {
 
   panel: {
     selectPlaceholderFallback: "اختر قسم…",
+    noneOpen: `${E.warning} ما فيه أقسام تكتات مفتوحة حالياً.`,
   },
 
   create: {

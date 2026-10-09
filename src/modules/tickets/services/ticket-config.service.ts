@@ -13,6 +13,8 @@ import {
   type TicketPanelConfig,
 } from "../../../data/tickets/index.ts";
 import { NotFoundError } from "../../../shared/utils/errors.ts";
+import { channelConfigService } from "../../configuration/services/channel-config.service.ts";
+import { intakeService, intakeTarget } from "../../intake/services/intake.service.ts";
 
 export class TicketConfigService {
   getMainConfig(): TicketMainConfig {
@@ -67,19 +69,51 @@ export class TicketConfigService {
       if (seen.has(panel.id)) problems.push(P.panelDuplicateId(panel.id));
       seen.add(panel.id);
 
-      if (!panelIsAdminOnly(panel) && !(await roleExists(guild, panel.supportRoleId))) {
-        problems.push(P.panelSupportRole(panel.name));
-      }
+      problems.push(...(await this.panelProblems(guild, panel)));
+    }
 
-      if (panelCreatesChannel(panel)) {
-        const category = await fetchChannel(guild, panel.categoryId);
-        if (!category || category.type !== ChannelType.GuildCategory) {
-          problems.push(P.panelCategory(panel.name));
-        }
+    return problems;
+  }
+
+  /** What still has to be set up before members can open this panel; empty = ready. */
+  async panelProblems(guild: Guild, panel: TicketPanelConfig): Promise<string[]> {
+    const P = ticketMessages.setup.problem;
+    const problems: string[] = [];
+
+    if (!panelIsAdminOnly(panel) && !(await roleExists(guild, panel.supportRoleId))) {
+      problems.push(P.panelSupportRole(panel.name));
+    }
+
+    if (panelCreatesChannel(panel)) {
+      const slotted = panel.categorySlot
+        ? await channelConfigService.getChannelId(guild.id, panel.categorySlot).catch(() => null)
+        : null;
+      const category = await fetchChannel(guild, slotted ?? panel.categoryId);
+      if (!category || category.type !== ChannelType.GuildCategory) {
+        problems.push(P.panelCategory(panel.name));
       }
     }
 
     return problems;
+  }
+
+  async isPanelReady(guild: Guild, panel: TicketPanelConfig): Promise<boolean> {
+    return (await this.panelProblems(guild, panel)).length === 0;
+  }
+
+  /**
+   * The public panels members can actually open in this server: set up, and not closed with
+   * `/intake close`. A panel that isn't set up counts as closed, and shows up by itself once it is.
+   */
+  async listOpenPublicPanels(guild: Guild): Promise<TicketPanelConfig[]> {
+    const states = await Promise.all(
+      listPublicPanels().map(async (panel) => {
+        const ready = await this.isPanelReady(guild, panel);
+        const closed = ready ? await intakeService.closure(guild.id, intakeTarget.panel(panel.id)) : null;
+        return ready && !closed ? panel : null;
+      }),
+    );
+    return states.filter((p): p is TicketPanelConfig => p !== null);
   }
 }
 

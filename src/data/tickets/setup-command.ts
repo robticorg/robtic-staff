@@ -63,6 +63,8 @@ export const ticketSetupCommandMessages = {
     ].join("\n"),
   sent: (kind: string, channelId: string, created: boolean) =>
     `${E.success} ${created ? "تم نشر" : "تم تحديث"} ${kind} في <#${channelId}>.`,
+  hiddenNotSetUp: (names: string[]) =>
+    `${E.warning} مقفلة لأنها مو مضبوطة (تظهر لحالها بعد \`/ticket setup\`): ${names.map((n) => `**${n}**`).join("، ")}`,
 
   errors: {
     adminOnly: `${E.error} هذا للأدمن بس.`,

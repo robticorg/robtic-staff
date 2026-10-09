@@ -24,6 +24,8 @@ export const intakeMessages = {
     unknownTarget: "هذا الخيار غير معروف — اختر من القائمة.",
     closedDone: (label: string) => `${E.success} تم قفل **${label}**. التكتات المفتوحة ما تتأثر.`,
     openedDone: (label: string) => `${E.success} تم فتح **${label}**.`,
+    openedNotSetUp: (label: string) =>
+      `${E.success} تم فتح **${label}** — بس ما بيظهر في اللوحة لين يتضبط بـ \`/ticket setup\`.`,
     alreadyClosed: (label: string) => `${E.warning} **${label}** مقفل أصلاً.`,
     alreadyOpen: (label: string) => `${E.warning} **${label}** مفتوح أصلاً.`,
 
@@ -31,6 +33,7 @@ export const intakeMessages = {
     applicationsGroup: "__التقديمات__",
     ticketsGroup: "__التكتات__",
     openRow: (label: string) => `🟢 ${label}`,
+    notSetUpRow: (label: string) => `🔴 ${label} — مو مضبوط (يتفتح لحاله بعد \`/ticket setup\`)`,
     closedRow: (label: string, by: string, at: Date, reason: string | null) =>
       `🔴 ${label} — قفله <@${by}> <t:${Math.floor(at.getTime() / 1000)}:R>${reason ? ` — ${reason}` : ""}`,
   },

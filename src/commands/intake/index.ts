@@ -4,6 +4,7 @@ import {
   PermissionFlagsBits,
   SlashCommandBuilder,
   type ChatInputCommandInteraction,
+  type Guild,
   type SlashCommandStringOption,
 } from "discord.js";
 import { defineCommand } from "../../discord/command.ts";
@@ -12,6 +13,8 @@ import { commonMessages } from "../../data/messages/common.ts";
 import { intakeMessages } from "../../data/intake/messages.ts";
 import { logger } from "../../shared/utils/logger.ts";
 import { intakeService } from "../../modules/intake/services/intake.service.ts";
+import { ticketConfigService } from "../../modules/tickets/services/ticket-config.service.ts";
+import { ticketSetupService } from "../../modules/tickets/services/ticket-setup.service.ts";
 import { CommandError, requireAdministrator, requireGuild } from "../_shared/guards.ts";
 
 const log = logger.child("command:intake");
@@ -46,12 +49,29 @@ function requireTarget(interaction: ChatInputCommandInteraction) {
   return info;
 }
 
-async function handleList(interaction: ChatInputCommandInteraction, guildId: string): Promise<void> {
-  const rows = await intakeService.list(guildId);
+/** Ticket targets whose panel isn't set up in this server — closed until it is. */
+async function notSetUpTargets(guild: Guild): Promise<Set<string>> {
+  const result = new Set<string>();
+  for (const panel of ticketConfigService.listPanels()) {
+    if (!(await ticketConfigService.isPanelReady(guild, panel))) result.add(`panel:${panel.id}`);
+  }
+  return result;
+}
+
+/** Keep the sent ticket panel in step with what is open. Never fails the command. */
+function refreshPanel(guild: Guild): void {
+  void ticketSetupService.refresh(guild).catch((err) => log.warn("ticket panel refresh failed", err));
+}
+
+async function handleList(interaction: ChatInputCommandInteraction, guild: Guild): Promise<void> {
+  const rows = await intakeService.list(guild.id);
+  const notSetUp = await notSetUpTargets(guild);
   const line = (r: (typeof rows)[number]) =>
     r.closure
       ? M.closedRow(r.label, r.closure.closedBy, r.closure.closedAt, r.closure.reason ?? null)
-      : M.openRow(r.label);
+      : r.group === "TICKET" && notSetUp.has(r.target)
+        ? M.notSetUpRow(r.label)
+        : M.openRow(r.label);
   const body = [
     M.listTitle,
     "",
@@ -81,19 +101,22 @@ export default defineCommand({
           content: closed ? M.closedDone(info.label) : M.alreadyClosed(info.label),
           flags: MessageFlags.Ephemeral,
         });
+        refreshPanel(guild);
         return;
       }
       case IntakeSubcommand.OPEN: {
         const info = requireTarget(interaction);
         const opened = await intakeService.open(guild.id, info.target);
+        const waitingForSetup = opened && (await notSetUpTargets(guild)).has(info.target);
         await interaction.reply({
-          content: opened ? M.openedDone(info.label) : M.alreadyOpen(info.label),
+          content: !opened ? M.alreadyOpen(info.label) : waitingForSetup ? M.openedNotSetUp(info.label) : M.openedDone(info.label),
           flags: MessageFlags.Ephemeral,
         });
+        refreshPanel(guild);
         return;
       }
       case IntakeSubcommand.LIST:
-        return handleList(interaction, guild.id);
+        return handleList(interaction, guild);
       default:
         throw new CommandError(commonMessages.errors.unknownSubcommand(sub));
     }
