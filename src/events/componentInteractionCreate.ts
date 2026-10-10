@@ -18,6 +18,7 @@ import { routeHiddenStaffComponent } from "../modules/staff/hidden/handlers/comp
 import { routePanelConfigComponent } from "../modules/tickets/panel-config/component-router.ts";
 import { routeResponsibilityApplyComponent } from "../modules/tickets/responsibility-apply/component-router.ts";
 import { routePointValuesComponent } from "../modules/staff/point-values/component-router.ts";
+import { routeBotProfileComponent } from "../modules/bot-profile/component-router.ts";
 
 const routers = [
   routeModmailComponent,
@@ -38,6 +39,7 @@ const routers = [
   routePanelConfigComponent,
   routeResponsibilityApplyComponent,
   routePointValuesComponent,
+  routeBotProfileComponent,
 ];
 
 export default defineEvent({

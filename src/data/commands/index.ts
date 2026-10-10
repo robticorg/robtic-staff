@@ -19,6 +19,7 @@ export const CommandName = {
   WHITELIST: "whitelist",
   TICKET: "ticket",
   START_COUNT: "start-count",
+  PROFILE: "profile",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -255,6 +256,12 @@ export const commandCopy = {
       values: {
         description: "تحديد كم نقطة ياخذ الاداري على كل عمل (استلام تكت، تحذير، سجن...)",
       },
+    },
+  },
+  profile: {
+    description: "بروفايل البوت في هذا السيرفر",
+    subcommands: {
+      config: "تعديل لوقو وبنر واسم وبايو البوت في هذا السيرفر",
     },
   },
   startCount: {
