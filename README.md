@@ -442,22 +442,23 @@ Discord → MongoDB → history. Pure decision logic lives in
 
 ---
 
-## Server Tag — role reconciliation
+## Server Tag — staff check
+
+This bot only **checks** whether a member wears the server tag. It never gives or removes
+the tag role — Robtic System does that (`/tag setup`). The role in the `tag` slot
+(`/role set type:tag`) is kept only as the switch that turns the audit on for a server.
 
 Live `userUpdate` / `guildMemberAdd` events remain the fast path. `ServerTagAuditService`
-is the catch-up for everything the gateway could not report — a tag role handed
-out by hand, a tag toggled while the process was down, a member who joined before
-the role was configured. It runs **once on every boot** (`serverTagConfig
-.auditIntervalMs` > 0 also schedules it periodically) and decides from state
-alone via the pure `decideAuditAction`:
+is the catch-up for everything the gateway could not report — a tag toggled while the
+process was down. It runs **once on every boot** (`serverTagConfig.auditIntervalMs` > 0
+also schedules it periodically) and decides from state alone via the pure
+`decideAuditAction`:
 
-| tag | tag role | staff | → |
-|---|---|---|---|
-| on | missing | — | grant the role (and lift an active restriction) |
-| on | held | — | nothing, unless a restriction is still running → lift it |
-| off | held | — | remove the role (+ the restriction path, for staff) |
-| off | missing | yes | the restriction path — 3-day deadline, snapshot + DM |
-| off | missing | no | nothing |
+| tag or identifier in name | staff | → |
+|---|---|---|
+| yes | — | nothing, unless a restriction is still running → lift it |
+| no | yes | the restriction path — 3-day deadline, snapshot + DM |
+| no | no | nothing |
 
 Consistent members are never written to and never logged, so a sweep over a full
 guild is silent. Real writes are spaced by `auditActionDelayMs` (250ms) so a
@@ -487,8 +488,8 @@ dropping the tag is not a punishable offence, so `fire(..., blacklist: false)`
 is used and the Blacklist role is never added. The restriction row is claimed
 atomically (`ACTIVE → EXPIRED`) before anything is written, so two concurrent
 sweeps can never fire or wipe twice. `rolesRestored` is recorded as `false`, and
-because the closed row is no longer `isActive`, re-adding the tag later only
-grants the tag role — it cannot resurrect the staff position.
+because the closed row is no longer `isActive`, re-adding the tag later
+cannot resurrect the staff position.
 
 Points are zeroed through the same `staffPointService.resetToZero` that
 `/points reset` uses: it posts a compensating transaction, so the balance lands

@@ -185,8 +185,8 @@ describe("log card rendering", () => {
     expect(card).toContain(M.log.results.restoreFailed);
   });
 
-  it("omits the tag-role lines when no tag role is configured", () => {
-    const card = buildServerTagLog({ kind: "TAG_ENABLED", userId: USER, tagRoleId: null });
+  it("a tag-enabled card names the member and nothing about a role", () => {
+    const card = buildServerTagLog({ kind: "TAG_ENABLED", userId: USER });
     expect(card.split("\n")).toHaveLength(2);
     expect(card).toContain(M.log.headings.tagEnabled);
   });

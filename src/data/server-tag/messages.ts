@@ -86,7 +86,6 @@ export const serverTagMessages = {
 
     labels: {
       member: "العضو",
-      tagRole: "رتبة التاق",
       duration: "المدة",
       expiresAt: "ينتهي",
       reason: "السبب",
@@ -106,8 +105,6 @@ export const serverTagMessages = {
     } as Record<string, string>,
 
     results: {
-      granted: "تم إعطاء رتبة التاق",
-      removed: "تم سحب رتبة التاق",
       restoreFailed: "ديسكورد رفض إرجاع الرتب",
       partial: "تمت الإعادة مع تجاوز بعض الرتب",
       done: "تمت بنجاح",
@@ -115,8 +112,6 @@ export const serverTagMessages = {
 
     problems: {
       botMissingPermission: "ناقصني صلاحية **Manage Roles** — نظام تاق السيرفر متوقف.",
-      tagRoleNotConfigured: "رتبة التاق مو مضبوطة. شغّل `/role set type:رتبة التاق role:@role`.",
-      tagRoleMissing: "رتبة التاق المضبوطة ما عادت موجودة. أعد تشغيل `/role set type:رتبة التاق`.",
       hierarchy: "ما أقدر أدير هذي الرتب — رتبتي لازم تكون فوقها.",
       memberGone: "العضو مو موجود في السيرفر حالياً — التقييد محفوظ لين يرجع أو تنتهي مدته.",
       restoreFailed: "فشلت إعادة رتب الطاقم الاداري — راجع صلاحيات البوت وترتيب الرتب.",

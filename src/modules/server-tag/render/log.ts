@@ -7,8 +7,8 @@ const L = serverTagMessages.log;
 const LB = L.labels;
 
 export type ServerTagLogEvent =
-  | { kind: "TAG_ENABLED"; userId: UserId; tagRoleId?: RoleId | null }
-  | { kind: "TAG_DISABLED"; userId: UserId; tagRoleId?: RoleId | null }
+  | { kind: "TAG_ENABLED"; userId: UserId }
+  | { kind: "TAG_DISABLED"; userId: UserId }
   | {
       kind: "RESTRICTED";
       userId: UserId;
@@ -35,23 +35,11 @@ export type ServerTagLogEvent =
 
 export function buildServerTagLog(event: ServerTagLogEvent): string {
   switch (event.kind) {
-    case "TAG_ENABLED": {
-      const lines = [L.headings.tagEnabled, L.line(LB.member, L.target(event.userId))];
-      if (event.tagRoleId) {
-        lines.push(L.line(LB.tagRole, `<@&${event.tagRoleId}>`));
-        lines.push(L.line(LB.result, L.results.granted));
-      }
-      return lines.join("\n");
-    }
+    case "TAG_ENABLED":
+      return [L.headings.tagEnabled, L.line(LB.member, L.target(event.userId))].join("\n");
 
-    case "TAG_DISABLED": {
-      const lines = [L.headings.tagDisabled, L.line(LB.member, L.target(event.userId))];
-      if (event.tagRoleId) {
-        lines.push(L.line(LB.tagRole, `<@&${event.tagRoleId}>`));
-        lines.push(L.line(LB.result, L.results.removed));
-      }
-      return lines.join("\n");
-    }
+    case "TAG_DISABLED":
+      return [L.headings.tagDisabled, L.line(LB.member, L.target(event.userId))].join("\n");
 
     case "RESTRICTED": {
       return [

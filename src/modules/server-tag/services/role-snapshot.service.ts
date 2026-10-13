@@ -68,6 +68,10 @@ export class RoleSnapshotService {
     return ids;
   }
 
+  /**
+   * The role in the TAG slot. This bot never gives or removes it — Robtic System does — it only
+   * marks a server as running the tag checks, which is what the audit reads it for.
+   */
   getTagRoleId(guildId: GuildId): Promise<RoleId | null> {
     return roleConfigService
       .getByType(guildId, RoleConfigType.TAG)
@@ -165,36 +169,6 @@ export class RoleSnapshotService {
     } catch (err) {
       log.error(`staff role restore failed for ${member.id} in ${member.guild.id}`, err);
       return { restored: [], missing, blocked, failed: true };
-    }
-  }
-
-  async addTagRole(member: GuildMember, tagRoleId: RoleId, reason: string): Promise<boolean> {
-    if (member.roles.cache.has(tagRoleId)) return false;
-    if (!this.botCanManage(member.guild, tagRoleId)) {
-      log.warn(`cannot grant tag role ${tagRoleId} in ${member.guild.id} — hierarchy`);
-      return false;
-    }
-    try {
-      await member.roles.add(tagRoleId, reason);
-      return true;
-    } catch (err) {
-      log.error(`tag role grant failed for ${member.id} in ${member.guild.id}`, err);
-      return false;
-    }
-  }
-
-  async removeTagRole(member: GuildMember, tagRoleId: RoleId, reason: string): Promise<boolean> {
-    if (!member.roles.cache.has(tagRoleId)) return false;
-    if (!this.botCanManage(member.guild, tagRoleId)) {
-      log.warn(`cannot remove tag role ${tagRoleId} in ${member.guild.id} — hierarchy`);
-      return false;
-    }
-    try {
-      await member.roles.remove(tagRoleId, reason);
-      return true;
-    } catch (err) {
-      log.error(`tag role removal failed for ${member.id} in ${member.guild.id}`, err);
-      return false;
     }
   }
 }

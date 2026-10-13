@@ -97,15 +97,9 @@ export class ServerTagService {
       return "member-gone";
     }
 
-    const tagRoleId = await this.grantTagRole(member);
-
     const restriction = await staffTagRestrictionService.getActiveRestriction(guild.id, userId);
     if (!restriction) {
-      await serverTagLogService.post(guild.id, {
-        kind: "TAG_ENABLED",
-        userId,
-        tagRoleId,
-      });
+      await serverTagLogService.post(guild.id, { kind: "TAG_ENABLED", userId });
       return "granted";
     }
 
@@ -125,23 +119,17 @@ export class ServerTagService {
       return "member-gone";
     }
 
-    const tagRoleId = await this.removeTagRole(member);
-
     if (!(await staffPermissionService.isStaff(member))) {
-      await serverTagLogService.post(guild.id, {
-        kind: "TAG_DISABLED",
-        userId,
-        tagRoleId,
-      });
+      await serverTagLogService.post(guild.id, { kind: "TAG_DISABLED", userId });
       return "removed";
     }
 
     if (staffIdentityRequirementService.isIdentityCompliant(member).compliant) {
-      await serverTagLogService.post(guild.id, { kind: "TAG_DISABLED", userId, tagRoleId });
+      await serverTagLogService.post(guild.id, { kind: "TAG_DISABLED", userId });
       return "compliant";
     }
 
-    return this.applyStaffRestriction(member, tagRoleId);
+    return this.applyStaffRestriction(member);
   }
 
   async handleIdentityChange(guild: Guild, userId: UserId): Promise<ServerTagOutcome> {
@@ -163,38 +151,7 @@ export class ServerTagService {
 
     if (restriction) return "noop";
     if (!(await staffPermissionService.isStaff(member))) return "noop";
-    return this.applyStaffRestriction(member, null);
-  }
-
-  async grantTagRole(member: GuildMember): Promise<string | null> {
-    const tagRoleId = await roleSnapshotService.getTagRoleId(member.guild.id);
-    if (!tagRoleId) return null;
-    if (!member.guild.roles.cache.has(tagRoleId)) {
-      log.warn(`configured tag role ${tagRoleId} no longer exists in ${member.guild.id}`);
-      await serverTagLogService.post(member.guild.id, {
-        kind: "PROBLEM",
-        userId: member.id,
-        detail: M.log.problems.tagRoleMissing,
-      });
-      return null;
-    }
-    const added = await roleSnapshotService.addTagRole(
-      member,
-      tagRoleId,
-      "Server Tag enabled for this guild",
-    );
-    return added ? tagRoleId : null;
-  }
-
-  async removeTagRole(member: GuildMember): Promise<string | null> {
-    const tagRoleId = await roleSnapshotService.getTagRoleId(member.guild.id);
-    if (!tagRoleId) return null;
-    const removed = await roleSnapshotService.removeTagRole(
-      member,
-      tagRoleId,
-      "Server Tag removed for this guild",
-    );
-    return removed ? tagRoleId : null;
+    return this.applyStaffRestriction(member);
   }
 
   /**
@@ -230,10 +187,7 @@ export class ServerTagService {
     return { dmSent };
   }
 
-  private async applyStaffRestriction(
-    member: GuildMember,
-    tagRoleId: string | null,
-  ): Promise<ServerTagOutcome> {
+  private async applyStaffRestriction(member: GuildMember): Promise<ServerTagOutcome> {
     const guildId = member.guild.id;
 
     if (!roleSnapshotService.botCanManageRoles(member.guild)) {
@@ -249,11 +203,7 @@ export class ServerTagService {
     const snapshot = await roleSnapshotService.captureStaffRoles(member, guildId);
     if (snapshot.length === 0) {
       log.debug(`no managed staff roles on ${member.id} in ${guildId} — nothing to restrict`);
-      await serverTagLogService.post(guildId, {
-        kind: "TAG_DISABLED",
-        userId: member.id,
-        tagRoleId,
-      });
+      await serverTagLogService.post(guildId, { kind: "TAG_DISABLED", userId: member.id });
       return "removed";
     }
 
@@ -451,9 +401,6 @@ export class ServerTagService {
   async reconcileMember(member: GuildMember, now: Date = new Date()): Promise<ServerTagOutcome> {
     const guildId = member.guild.id;
     const usingTag = isUsingGuildTag(member.user, guildId);
-
-    if (usingTag) await this.grantTagRole(member);
-    else await this.removeTagRole(member);
 
     const restriction = await staffTagRestrictionService.getActiveRestriction(guildId, member.id);
     if (!restriction) return usingTag ? "granted" : "noop";

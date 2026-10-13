@@ -239,34 +239,34 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     ]);
   });
 
-  it("grants the Tag Role to a normal member who enables the Server Tag", async () => {
+  it("never gives the Tag Role when a normal member enables the Server Tag", async () => {
     const member = addMember(guild, "u-normal", [R_COMMUNITY]);
 
     const outcome = await serverTagService.handleTagAdded(guild as never, member.id);
 
     expect(outcome).toBe("granted");
-    expect(member.roles.cache.has(R_TAG)).toBe(true);
+    expect(member.roles.cache.has(R_TAG)).toBe(false);
     expect(await activeRestriction(member.id)).toBeNull();
   });
 
-  it("removes only the Tag Role when a non-staff member drops the tag", async () => {
+  it("touches no role when a non-staff member drops the tag — the Tag Role stays", async () => {
     const member = addMember(guild, "u-normal", [R_COMMUNITY, R_TAG]);
 
     const outcome = await serverTagService.handleTagRemoved(guild as never, member.id);
 
     expect(outcome).toBe("removed");
-    expect(member.roles.cache.has(R_TAG)).toBe(false);
+    expect(member.roles.cache.has(R_TAG)).toBe(true);
     expect(member.roles.cache.has(R_COMMUNITY)).toBe(true);
 
     expect(await activeRestriction(member.id)).toBeNull();
   });
 
-  it("grants the Tag Role to a staff member without touching their staff roles", async () => {
+  it("leaves a staff member's roles alone when they enable the tag", async () => {
     const member = addMember(guild, "u-staff", [R_STAFF, R_START]);
 
     await serverTagService.handleTagAdded(guild as never, member.id);
 
-    expect(member.roles.cache.has(R_TAG)).toBe(true);
+    expect(member.roles.cache.has(R_TAG)).toBe(false);
     expect(member.roles.cache.has(R_STAFF)).toBe(true);
     expect(member.roles.cache.has(R_START)).toBe(true);
   });
@@ -305,7 +305,7 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
 
     expect(member.roles.cache.has(R_BLACKLIST)).toBe(true);
     expect(member.roles.cache.has(R_COMMUNITY)).toBe(true);
-    expect(member.roles.cache.has(R_TAG)).toBe(false);
+    expect(member.roles.cache.has(R_TAG)).toBe(true);
 
     const windowMs = restriction!.expiresAt.getTime() - restriction!.startedAt.getTime();
     expect(windowMs).toBe(3 * 86_400_000);
@@ -501,7 +501,7 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
 
     expect(outcome).toBe("restored");
     expect(rejoined.roles.cache.has(R_STAFF)).toBe(true);
-    expect(rejoined.roles.cache.has(R_TAG)).toBe(true);
+    expect(rejoined.roles.cache.has(R_TAG)).toBe(false);
     expect(await activeRestriction(member.id)).toBeNull();
   });
 
@@ -632,7 +632,7 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     await serverTagService.handleTagAdded(guild as never, member.id);
     await serverTagService.handleTagAdded(guild as never, member.id);
 
-    expect(member.roles.cache.has(R_TAG)).toBe(true);
+    expect(member.roles.cache.has(R_TAG)).toBe(false);
     expect(await StaffTagRestrictionModel.countDocuments({ staffId: member.id })).toBe(0);
   });
 

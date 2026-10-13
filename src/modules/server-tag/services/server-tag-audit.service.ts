@@ -13,8 +13,6 @@ import { staffTagRestrictionService } from "./staff-tag-restriction.service.ts";
 const log = logger.child("server-tag:audit");
 
 export const TagAuditAction = {
-  GRANT: "GRANT",
-
   REVOKE: "REVOKE",
 
   LIFT: "LIFT",
@@ -24,7 +22,6 @@ export type TagAuditAction = (typeof TagAuditAction)[keyof typeof TagAuditAction
 
 export interface AuditMemberInput {
   usingTag: boolean;
-  hasTagRole: boolean;
 
   isStaff: boolean;
   hasActiveRestriction: boolean;
@@ -33,14 +30,7 @@ export interface AuditMemberInput {
 }
 
 export function decideAuditAction(input: AuditMemberInput): TagAuditAction {
-  if (input.usingTag) {
-    if (!input.hasTagRole) return TagAuditAction.GRANT;
-
-    return input.hasActiveRestriction ? TagAuditAction.LIFT : TagAuditAction.NONE;
-  }
-
-  if (input.hasTagRole) return TagAuditAction.REVOKE;
-  if (input.displayNameCompliant) {
+  if (input.usingTag || input.displayNameCompliant) {
     return input.hasActiveRestriction ? TagAuditAction.LIFT : TagAuditAction.NONE;
   }
   if (input.isStaff && !input.hasActiveRestriction) return TagAuditAction.REVOKE;
@@ -49,7 +39,6 @@ export function decideAuditAction(input: AuditMemberInput): TagAuditAction {
 
 export interface AuditTally {
   scanned: number;
-  granted: number;
   revoked: number;
   lifted: number;
   unchanged: number;
@@ -61,7 +50,6 @@ export interface AuditTally {
 function emptyTally(): AuditTally {
   return {
     scanned: 0,
-    granted: 0,
     revoked: 0,
     lifted: 0,
     unchanged: 0,
@@ -82,11 +70,6 @@ export class ServerTagAuditService {
       log.debug(`no TAG role configured for ${guild.id} — nothing to reconcile`);
       return tally;
     }
-    if (!guild.roles.cache.has(tagRoleId)) {
-      log.warn(`configured tag role ${tagRoleId} no longer exists in ${guild.id} — audit skipped`);
-      return tally;
-    }
-
     const [staffRoleIds, restricted] = await Promise.all([
       staffPermissionService.staffRoleIds(guild.id),
       staffTagRestrictionService.listActiveStaffIds(guild.id),
@@ -100,7 +83,6 @@ export class ServerTagAuditService {
 
       const action = decideAuditAction({
         usingTag: isUsingGuildTag(member.user, guild.id),
-        hasTagRole: member.roles.cache.has(tagRoleId),
         isStaff: holdsStaffRole(member, staffRoleIds),
         hasActiveRestriction: restricted.has(member.id),
         displayNameCompliant:
@@ -118,8 +100,7 @@ export class ServerTagAuditService {
           continue;
         }
         await this.apply(guild, member.id, action);
-        if (action === TagAuditAction.GRANT) tally.granted += 1;
-        else if (action === TagAuditAction.REVOKE) tally.revoked += 1;
+        if (action === TagAuditAction.REVOKE) tally.revoked += 1;
         else tally.lifted += 1;
       } catch (err) {
         tally.failed += 1;
@@ -131,9 +112,9 @@ export class ServerTagAuditService {
       }
     }
 
-    if (tally.granted + tally.revoked + tally.lifted + tally.unverified + tally.failed > 0) {
+    if (tally.revoked + tally.lifted + tally.unverified + tally.failed > 0) {
       log.info(
-        `audit ${guild.id}: ${tally.scanned} scanned — ${tally.granted} granted, ` +
+        `audit ${guild.id}: ${tally.scanned} scanned — ` +
           `${tally.revoked} revoked, ${tally.lifted} lifted, ` +
           `${tally.unverified} unverified, ${tally.failed} failed`,
       );
@@ -158,8 +139,7 @@ export class ServerTagAuditService {
 
   private apply(guild: Guild, userId: string, action: TagAuditAction): Promise<unknown> {
     if (action === TagAuditAction.REVOKE) return serverTagService.handleTagRemoved(guild, userId);
-    if (action === TagAuditAction.LIFT) return serverTagService.handleIdentityChange(guild, userId);
-    return serverTagService.handleTagAdded(guild, userId);
+    return serverTagService.handleIdentityChange(guild, userId);
   }
 
   async auditAll(): Promise<AuditTally> {
@@ -174,7 +154,6 @@ export class ServerTagAuditService {
       try {
         const tally = await this.auditGuild(guild);
         total.scanned += tally.scanned;
-        total.granted += tally.granted;
         total.revoked += tally.revoked;
         total.lifted += tally.lifted;
         total.unchanged += tally.unchanged;
