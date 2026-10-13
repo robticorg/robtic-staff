@@ -99,7 +99,6 @@ export class ServerTagService {
 
     const restriction = await staffTagRestrictionService.getActiveRestriction(guild.id, userId);
     if (!restriction) {
-      await serverTagLogService.post(guild.id, { kind: "TAG_ENABLED", userId });
       return "granted";
     }
 
@@ -120,12 +119,10 @@ export class ServerTagService {
     }
 
     if (!(await staffPermissionService.isStaff(member))) {
-      await serverTagLogService.post(guild.id, { kind: "TAG_DISABLED", userId });
       return "removed";
     }
 
     if (staffIdentityRequirementService.isIdentityCompliant(member).compliant) {
-      await serverTagLogService.post(guild.id, { kind: "TAG_DISABLED", userId });
       return "compliant";
     }
 
@@ -177,7 +174,6 @@ export class ServerTagService {
         await staffTagRestrictionService.addSavedRoles(created.restriction, roleIds);
       }
     } else {
-      await serverTagLogService.post(guildId, { kind: "AWAITING_IDENTITY", userId: member.id });
       log.info(
         `accept of ${member.id} in ${guildId} held — ${roleIds.length} role(s) wait for tag/identifier`,
       );
@@ -192,18 +188,12 @@ export class ServerTagService {
 
     if (!roleSnapshotService.botCanManageRoles(member.guild)) {
       log.error(`missing Manage Roles in ${guildId} — cannot apply tag restriction`);
-      await serverTagLogService.post(guildId, {
-        kind: "PROBLEM",
-        userId: member.id,
-        detail: M.log.problems.botMissingPermission,
-      });
       return "blocked";
     }
 
     const snapshot = await roleSnapshotService.captureStaffRoles(member, guildId);
     if (snapshot.length === 0) {
       log.debug(`no managed staff roles on ${member.id} in ${guildId} — nothing to restrict`);
-      await serverTagLogService.post(guildId, { kind: "TAG_DISABLED", userId: member.id });
       return "removed";
     }
 
@@ -226,12 +216,6 @@ export class ServerTagService {
     );
 
     const durationMs = restriction.expiresAt.getTime() - restriction.startedAt.getTime();
-    await serverTagLogService.post(guildId, {
-      kind: "RESTRICTED",
-      userId: member.id,
-      durationMs,
-      expiresAt: restriction.expiresAt,
-    });
 
     await serverTagLogService.dm(
       member.id,
@@ -266,11 +250,6 @@ export class ServerTagService {
       });
       if (cancelled) {
         await staffTagRestrictionService.markRolesRestored(cancelled, false);
-        await serverTagLogService.post(guildId, {
-          kind: "BLOCKED",
-          userId: restriction.staffId,
-          staffStatus: lifecycle.status ?? "UNKNOWN",
-        });
         log.warn(
           `restriction ${restriction.restrictionId} cancelled — staff status ${lifecycle.status}`,
         );
@@ -309,14 +288,6 @@ export class ServerTagService {
     );
 
     const byTag = reason === StaffTagRestorationReason.TAG_REAPPLIED;
-    await serverTagLogService.post(guildId, {
-      kind: "RESTORED",
-      userId: member.id,
-      reason,
-      missingRoleIds: outcome.missing,
-      blockedRoleIds: outcome.blocked,
-      failed: outcome.failed,
-    });
 
     const note = outcome.missing.length > 0 ? `\n\n${M.dm.partialRestoreNote}` : "";
     const restoredDm =
@@ -383,11 +354,6 @@ export class ServerTagService {
         return { reset: false, previousBalance: pointsBefore };
       });
 
-    await serverTagLogService.post(guildId, {
-      kind: "REMOVED",
-      userId: member.id,
-      pointsWiped: wipe.previousBalance,
-    });
     await serverTagLogService.dm(member.id, M.dm.removedByExpiry);
 
     log.info(

@@ -493,16 +493,11 @@ cannot resurrect the staff position.
 
 Points are zeroed through the same `staffPointService.resetToZero` that
 `/points reset` uses: it posts a compensating transaction, so the balance lands
-at 0 while the historical transaction rows survive for audit. The wiped amount
-is reported in the log embed.
+at 0 while the historical transaction rows survive for audit.
 
-**The tag log never lists roles.** Restriction / restore / removal cards report
-the member, the reason, the duration and the outcome — not the saved, stripped,
-restored, missing or blocked role mentions, which turned every card into a wall
-of pings. `restoreStaffRoles` still returns `missing` / `blocked`, but they are
-only used to pick between "تمت بنجاح", "تمت الإعادة مع تجاوز بعض الرتب" and
-"ديسكورد رفض إرجاع الرتب"; `arabic-copy.test.ts` asserts no `<@&…>` ever reaches
-a card.
+**There is no tag log.** Nothing about the server tag is posted to a channel — the
+tag-log channel slot is gone. The member is still told by DM (restricted, restored,
+removed), and everything is written to the process log.
 
 The same rule applies on rejoin: `reconcileMember` finds a restriction that is
 already past due and removes the member rather than restoring them, so being

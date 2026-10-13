@@ -1,25 +1,8 @@
 import { emojis } from "../emojis/index.ts";
 import { branding } from "../config/branding.ts";
 import { formatArabicDuration } from "./duration.ts";
-import type { StaffTagRestorationReason } from "../../modules/server-tag/types/enums.ts";
 
 const E = emojis;
-
-const RESTORATION_REASON_LABELS: Record<StaffTagRestorationReason, string> = {
-  TAG_REAPPLIED: "رجع يستخدم تاق السيرفر",
-  DISPLAY_NAME_COMPLIANT: "صار اسمه في السيرفر فيه معرّف السيرفر",
-  DURATION_EXPIRED: "انتهت مدة التقييد",
-  STAFF_LIFECYCLE: "تغيّرت حالته في نظام الطاقم الاداري",
-  MANUAL: "إجراء يدوي",
-};
-
-function relative(date: Date): string {
-  return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
-}
-
-function absolute(date: Date): string {
-  return `<t:${Math.floor(date.getTime() / 1000)}:F>`;
-}
 
 export const serverTagMessages = {
   serverName: branding.communityName,
@@ -66,55 +49,4 @@ export const serverTagMessages = {
       (dmSent ? "تم إرسال رسالة له بالخاص." : "ما قدرت أرسل له بالخاص (الخاص مقفل) — بلّغوه بأنفسكم."),
   },
 
-  log: {
-    headings: {
-      tagEnabled: `${E.success} **تاق السيرفر — تفعيل**`,
-      tagDisabled: `${E.info} **تاق السيرفر — إزالة**`,
-      restricted: `${E.staff} **تقييد رتب الطاقم الاداري — لا تاق ولا معرّف في الاسم**`,
-      awaitingIdentity: `${E.staff} **قبول في الطاقم الاداري — الرتب معلّقة لين يلبس التاق أو يحط المعرّف**`,
-      restored: `${E.success} **إعادة رتب الطاقم الاداري**`,
-      removed: `${E.error} **شيل من الطاقم الاداري — انتهت مدة التاق**`,
-      blocked: `${E.warning} **تعذّرت إعادة رتب الطاقم الاداري**`,
-      problem: `${E.error} **مشكلة في نظام تاق السيرفر**`,
-    },
-
-    line: (label: string, value: string) => `**${label}:** ${value}`,
-    target: (userId: string) => `<@${userId}> (\`${userId}\`)`,
-    none: "—",
-    relative,
-    absolute,
-
-    labels: {
-      member: "العضو",
-      duration: "المدة",
-      expiresAt: "ينتهي",
-      reason: "السبب",
-      staffStatus: "حالة الطاقم الاداري",
-      detail: "التفاصيل",
-      result: "النتيجة",
-      pointsWiped: "النقاط المصفّرة",
-    },
-
-    reasons: RESTORATION_REASON_LABELS,
-
-    staffStatus: {
-      ACTIVE: "نشط",
-      BREAK: "في بريك",
-      FIRED: "مفصول",
-      BLACKLISTED: "بلاك ليست",
-    } as Record<string, string>,
-
-    results: {
-      restoreFailed: "ديسكورد رفض إرجاع الرتب",
-      partial: "تمت الإعادة مع تجاوز بعض الرتب",
-      done: "تمت بنجاح",
-    },
-
-    problems: {
-      botMissingPermission: "ناقصني صلاحية **Manage Roles** — نظام تاق السيرفر متوقف.",
-      hierarchy: "ما أقدر أدير هذي الرتب — رتبتي لازم تكون فوقها.",
-      memberGone: "العضو مو موجود في السيرفر حالياً — التقييد محفوظ لين يرجع أو تنتهي مدته.",
-      restoreFailed: "فشلت إعادة رتب الطاقم الاداري — راجع صلاحيات البوت وترتيب الرتب.",
-    },
-  },
 } as const;

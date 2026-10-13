@@ -7,8 +7,6 @@ import {
 } from "../../../data/server-tag/duration.ts";
 import { serverTagMessages } from "../../../data/server-tag/messages.ts";
 import { branding } from "../../../data/config/branding.ts";
-import { buildServerTagLog } from "../render/log.ts";
-import { StaffTagRestorationReason } from "../types/enums.ts";
 
 const DAY = 86_400_000;
 const M = serverTagMessages;
@@ -76,118 +74,5 @@ describe("Arabic copy hygiene", () => {
     for (const text of dmStrings) {
       expect(/[☀-➿\u{1F300}-\u{1FAFF}]/u.test(text)).toBe(false);
     }
-  });
-});
-
-describe("log card rendering", () => {
-  const USER = "123456789";
-  const ROLE_A = "role-a";
-  const ROLE_B = "role-b";
-
-  it("renders a restriction card as heading + labelled lines", () => {
-    const expiresAt = new Date("2026-01-04T00:00:00.000Z");
-    const card = buildServerTagLog({
-      kind: "RESTRICTED",
-      userId: USER,
-      durationMs: 3 * DAY,
-      expiresAt,
-    });
-
-    const lines = card.split("\n");
-    expect(lines[0]).toBe(M.log.headings.restricted);
-
-    for (const line of lines.slice(1)) expect(line).toMatch(/^\*\*[^*]+:\*\* /);
-
-    expect(card).toContain(`<@${USER}> (\`${USER}\`)`);
-    expect(card).toContain("3 أيام");
-    expect(card).toContain(`<t:${Math.floor(expiresAt.getTime() / 1000)}:F>`);
-  });
-
-  it("names the restoration reason in Arabic", () => {
-    const card = buildServerTagLog({
-      kind: "RESTORED",
-      userId: USER,
-      reason: StaffTagRestorationReason.TAG_REAPPLIED,
-      missingRoleIds: [],
-      blockedRoleIds: [],
-      failed: false,
-    });
-
-    expect(card).toContain(M.log.reasons.TAG_REAPPLIED);
-    expect(card).toContain(M.log.results.done);
-    expect(card).not.toContain("TAG_REAPPLIED");
-  });
-
-  it("reports a partial restore rather than claiming success", () => {
-    const card = buildServerTagLog({
-      kind: "RESTORED",
-      userId: USER,
-      reason: StaffTagRestorationReason.DURATION_EXPIRED,
-      missingRoleIds: [ROLE_B],
-      blockedRoleIds: [],
-      failed: false,
-    });
-
-    expect(card).toContain(M.log.results.partial);
-  });
-
-  it("never lists individual roles — only the outcome", () => {
-    const cards = [
-      buildServerTagLog({
-        kind: "RESTRICTED",
-        userId: USER,
-        durationMs: 3 * DAY,
-        expiresAt: new Date(),
-      }),
-      buildServerTagLog({
-        kind: "RESTORED",
-        userId: USER,
-        reason: StaffTagRestorationReason.TAG_REAPPLIED,
-        missingRoleIds: [ROLE_A],
-        blockedRoleIds: [ROLE_B],
-        failed: false,
-      }),
-      buildServerTagLog({ kind: "REMOVED", userId: USER, pointsWiped: 12 }),
-    ];
-
-    for (const card of cards) expect(card).not.toMatch(/<@&/);
-  });
-
-  it("translates the staff status on a blocked restore", () => {
-    const card = buildServerTagLog({
-      kind: "BLOCKED",
-      userId: USER,
-      staffStatus: "FIRED",
-    });
-
-    expect(card).toContain("مفصول");
-    expect(card).not.toContain("FIRED");
-  });
-
-  it("falls back to the raw status when it has no Arabic label", () => {
-    const card = buildServerTagLog({
-      kind: "BLOCKED",
-      userId: USER,
-      staffStatus: "UNKNOWN",
-    });
-    expect(card).toContain("UNKNOWN");
-  });
-
-  it("reports a failed restore", () => {
-    const card = buildServerTagLog({
-      kind: "RESTORED",
-      userId: USER,
-      reason: StaffTagRestorationReason.DURATION_EXPIRED,
-      missingRoleIds: [],
-      blockedRoleIds: [],
-      failed: true,
-    });
-    expect(card).toContain(M.log.results.restoreFailed);
-  });
-
-  it("a tag-enabled card names the member and nothing about a role", () => {
-    const card = buildServerTagLog({ kind: "TAG_ENABLED", userId: USER });
-    expect(card.split("\n")).toHaveLength(2);
-    expect(card).toContain(M.log.headings.tagEnabled);
   });
 });

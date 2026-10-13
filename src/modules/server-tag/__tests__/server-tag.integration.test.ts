@@ -198,11 +198,6 @@ async function seedConfig(guildId = GUILD): Promise<void> {
     { guildId, roleId: R_TAG, type: RoleConfigType.TAG },
     { guildId, roleId: R_BLACKLIST, type: RoleConfigType.BLACKLIST },
   ]);
-  await ChannelConfigModel.findOneAndUpdate(
-    { guildId, type: ChannelConfigType.SERVER_TAG_LOG },
-    { $set: { channelId: LOG_CHANNEL } },
-    { upsert: true },
-  );
 }
 
 function activeRestriction(staffId: string, guildId = GUILD) {
@@ -569,7 +564,7 @@ describe.skipIf(!hasDb)("Server Tag enforcement (MongoDB + Discord fakes)", () =
     expect(restriction!.savedRoleIds).toContain(R_MANAGER);
     expect(member.roles.cache.has(R_STAFF)).toBe(false);
     expect(member.roles.cache.has(R_MANAGER)).toBe(true);
-    expect(logLines.join("\n")).toContain("<@&r-staff-manager>");
+    expect(logLines).toEqual([]);
   });
 
   it("aborts cleanly when the bot lacks Manage Roles", async () => {

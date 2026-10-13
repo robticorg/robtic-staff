@@ -1,15 +1,11 @@
 import { logger } from "../../../shared/utils/logger.ts";
 import { serverTagConfig } from "../../../data/server-tag/config.ts";
-import { serverTagMessages } from "../../../data/server-tag/messages.ts";
 import type { StaffTagRestrictionDocument } from "../models/staff-tag-restriction.model.ts";
-import { StaffTagRestorationReason, StaffTagRestrictionStatus } from "../types/enums.ts";
 import { getServerTagClient } from "../runtime.ts";
 import { fetchCurrentMember, serverTagService } from "./server-tag.service.ts";
 import { staffTagRestrictionService } from "./staff-tag-restriction.service.ts";
-import { serverTagLogService } from "./server-tag-log.service.ts";
 
 const log = logger.child("server-tag:expiry");
-const M = serverTagMessages;
 
 export type TagExpiryOutcome =
   | "staff-removed"
@@ -68,11 +64,6 @@ export class ServerTagExpirationService {
       log.debug(
         `restriction ${restriction.restrictionId} due but ${restriction.staffId} is not in the guild`,
       );
-      await serverTagLogService.post(restriction.guildId, {
-        kind: "PROBLEM",
-        userId: restriction.staffId,
-        detail: M.log.problems.memberGone,
-      });
       return "member-absent";
     }
 
