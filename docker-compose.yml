@@ -1,3 +1,7 @@
+# LEGACY — the old self-hosted deployment (project robtic-staff). Production now runs this bot in the
+# Portainer stack robtic-bots: Private System/infra/docker/compose/portainer-robtic-bots.yml.
+# Kept for local builds and the cutover rollback window; nothing deploys it.
+
 services:
   staff-system:
     image: ghcr.io/robticorg/robtic-staff:latest
