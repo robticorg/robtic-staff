@@ -23,6 +23,7 @@ import { ticketClaimCheckService } from "../modules/tickets/services/ticket-clai
 import { registerApplicationLifecycle } from "../modules/applications/services/application-lifecycle.ts";
 import { registerHiddenStaff } from "../modules/staff/hidden/index.ts";
 import { internalApiServer } from "../modules/internal-api/server.ts";
+import { staffPolicyService } from "../modules/configuration/services/staff-policy.service.ts";
 
 export function attachModuleClients(client: Client): void {
   attachModmailClient(client);
@@ -40,6 +41,9 @@ export function attachModuleClients(client: Client): void {
 }
 
 export function startModuleRuntime(): void {
+  // Per-server rules (dashboard): preload now, refresh every few minutes.
+  staffPolicyService.start();
+
   vacationExpirationService.start();
 
   serverTagExpirationService.start();

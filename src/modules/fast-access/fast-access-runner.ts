@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../configuration/services/staff-policy.service.ts";
 import type { GuildMember, Message } from "discord.js";
 import { config } from "../../config/index.ts";
 import { logger } from "../../shared/utils/logger.ts";
@@ -137,7 +138,8 @@ export const fastAccessRunner = new FastAccessRunner();
 export async function runFastAccess(message: Message): Promise<boolean> {
   if (message.author.bot || !message.inGuild()) return false;
 
-  const prefix = config.fastAccessPrefix;
+  // This server's Fast Access prefix (dashboard → General), else the bot-wide one.
+  const prefix = staffPolicyService.peek(message.guild.id).fastAccessPrefix || config.fastAccessPrefix;
   if (!message.content.startsWith(prefix)) return false;
 
   const token = message.content.slice(prefix.length).trimStart().split(/\s+/, 1)[0];

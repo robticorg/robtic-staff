@@ -10,7 +10,16 @@ function toAsciiDigits(value: string): string {
   return value.replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660));
 }
 
-export function parseApplicantIdentity(raw: string): ApplicantIdentityResult {
+/** The age range applicants must fall in; the server's own range comes from its staff policy. */
+export interface AgeRange {
+  minimumAge: number;
+  maximumAge: number;
+}
+
+export function parseApplicantIdentity(
+  raw: string,
+  ages: AgeRange = { minimumAge: staffApplicationConfig.minimumAge, maximumAge: staffApplicationConfig.maximumAge },
+): ApplicantIdentityResult {
   const parts = raw
     .split(/[\n,،]+/)
     .map((part) => part.trim())
@@ -22,7 +31,7 @@ export function parseApplicantIdentity(raw: string): ApplicantIdentityResult {
   if (!WHOLE_NUMBER.test(normalizedAge)) return { ok: false, problem: "AGE" };
 
   const age = Number.parseInt(normalizedAge, 10);
-  if (age < staffApplicationConfig.minimumAge || age > staffApplicationConfig.maximumAge) {
+  if (age < ages.minimumAge || age > ages.maximumAge) {
     return { ok: false, problem: "AGE" };
   }
   return { ok: true, name: name.slice(0, 100), age, city: city.slice(0, 100) };

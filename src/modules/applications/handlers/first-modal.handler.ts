@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import {
   MessageFlags,
   type ModalSubmitInteraction,
@@ -70,7 +71,10 @@ export async function handleFirstModal(interaction: ModalSubmitInteraction): Pro
     return;
   }
 
-  const identity = parseApplicantIdentity(textValue(interaction, ApplicationField.identity));
+  const identity = parseApplicantIdentity(
+    textValue(interaction, ApplicationField.identity),
+    (await staffPolicyService.get(interaction.guildId)).applications,
+  );
   if (!identity.ok) {
     await interaction.reply({
       content: identity.problem === "AGE" ? V.ageInvalid : V.identityInvalid,

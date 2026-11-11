@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import type { Guild, GuildMember } from "discord.js";
 import { hiddenStaffHierarchyService } from "../../staff/hidden/index.ts";
 import { DateTime } from "luxon";
@@ -294,7 +295,7 @@ export class StaffCardService {
       ? new Date(Math.min(...candidates.map((d) => d.getTime())))
       : now;
 
-    const weeks = bucketWeeks(transactions, from, now);
+    const weeks = bucketWeeks(transactions, from, now, staffPolicyService.peek(staff.guildId).timezone);
     const totalPoints = transactions.reduce((sum, tx) => sum + tx.amount, 0);
     return { totalPoints, ...paginateWeeks(weeks, page) };
   }

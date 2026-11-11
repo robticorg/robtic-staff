@@ -60,8 +60,10 @@ export function transferIntroStep(): FlowMessageInput {
   };
 }
 
-export function evidenceStep(belowMinimum: string | null): FlowMessageInput {
-  const rules = staffApplicationConfig.evidence;
+export function evidenceStep(
+  belowMinimum: string | null,
+  rules: { minFiles: number; maxFiles: number } = staffApplicationConfig.evidence,
+): FlowMessageInput {
   const blocks = [...T.evidencePrompt(rules.minFiles, rules.maxFiles)];
   if (belowMinimum) blocks.push(belowMinimum);
   return {
@@ -99,8 +101,9 @@ export function buildTransferInfoModal(): ModalBuilder {
     );
 }
 
-export function buildEvidenceModal(): ModalBuilder {
-  const rules = staffApplicationConfig.evidence;
+export function buildEvidenceModal(
+  rules: { minFiles: number; maxFiles: number } = staffApplicationConfig.evidence,
+): ModalBuilder {
   return new ModalBuilder()
     .setCustomId(ApplicationCustomId.evidenceModal())
     .setTitle(T.evidenceModalTitle)

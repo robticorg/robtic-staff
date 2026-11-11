@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import type { HydratedDocument } from "mongoose";
 import { BaseRepository } from "../../../shared/repository/base.repository.ts";
 import type { GuildId, IdLike, MongoFilter, UserId } from "../../../shared/types/index.ts";
@@ -42,7 +43,8 @@ export class ModmailCaseService extends BaseRepository<ModmailCase> {
 
   async nextCaseId(guildId: GuildId): Promise<string> {
     const seq = await nextSequence(`modmail:${guildId}`);
-    return `${CASE_ID_PREFIX}${seq}`;
+    // This server's case prefix (dashboard → Modmail), else the bot-wide one.
+    return `${(await staffPolicyService.get(guildId)).modmail.casePrefix ?? CASE_ID_PREFIX}${seq}`;
   }
 
   async create(input: CreateCaseInput): Promise<HydratedDocument<ModmailCase>> {

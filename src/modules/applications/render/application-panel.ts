@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import { ticketName, type Ticket } from "../../tickets/models/ticket.model.ts";
 import {
   ActionRowBuilder,
@@ -7,7 +8,6 @@ import {
   type BaseMessageOptions,
 } from "discord.js";
 import { colors } from "../../../data/config/colors.ts";
-import { staffTransferRules } from "../../../data/staff-application/config.ts";
 import {
   APPLICATION_STATUS_LABELS,
   APPLICATION_TYPE_LABELS,
@@ -33,7 +33,10 @@ export type ApplicationPanelInput = Pick<
   | "gender"
   | "evaluation"
   | "applicationStatus"
->;
+> & {
+  /** The server, so the ineligibility note shows its own transfer minimum. */
+  guildId?: StaffApplication["guildId"];
+};
 
 export function proposedLabel(evaluation: StaffApplication["evaluation"]): string {
   if (!evaluation || evaluation.proposedStaffLevel === null) return I.noProposal;
@@ -46,13 +49,13 @@ function toneFor(status: StaffApplication["applicationStatus"]): number {
   return colors.primary;
 }
 
-function ineligibleLines(evaluation: StaffApplication["evaluation"]): string[] {
+function ineligibleLines(evaluation: StaffApplication["evaluation"], guildId: string | undefined): string[] {
   if (!evaluation) return [];
   if (!evaluation.eligible) {
     const lines: string[] = [T.ineligibleHeading];
     for (const reason of evaluation.ineligibleReasons) {
       if (reason === "MEMBER_COUNT") {
-        lines.push(T.ineligible.MEMBER_COUNT(staffTransferRules.minimumSourceMemberCount));
+        lines.push(T.ineligible.MEMBER_COUNT(staffPolicyService.peek(guildId).applications.transfer.minimumSourceMemberCount));
       }
     }
     return lines;
@@ -85,7 +88,7 @@ export function buildApplicationPanel(
   if (isTransfer) {
     lines.push(T.proposed(proposedLabel(application.evaluation)));
     lines.push(T.proposedNote);
-    lines.push(...ineligibleLines(application.evaluation));
+    lines.push(...ineligibleLines(application.evaluation, application.guildId));
   }
   if (managerRoleIds.length > 0) lines.push(T.managers(managerRoleIds));
   for (const line of lines) container.addTextDisplayComponents((t) => t.setContent(line));

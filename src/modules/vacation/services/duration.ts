@@ -14,28 +14,41 @@ const BREAK_UNIT: Record<string, VacationDurationUnit> = {
   M: VacationDurationUnit.MONTHS,
 };
 
-function withinBounds(d: VacationDuration): boolean {
-  if (!Number.isInteger(d.value) || d.value < 1) return false;
-  return d.value <= VACATION_MAX_BY_UNIT[d.unit];
+const DEFAULT_MAX_DAYS = VACATION_MAX_BY_UNIT[VacationDurationUnit.DAYS];
+
+/**
+ * The longest allowed value per unit for a server's longest vacation. With the default (180 days) this gives exactly
+ * the old fixed table: 180 days, 26 weeks, 6 months; minutes stay capped at the old 30 days.
+ */
+function maxFor(unit: VacationDurationUnit, maxDays: number): number {
+  if (unit === VacationDurationUnit.DAYS) return maxDays;
+  if (unit === VacationDurationUnit.WEEKS) return Math.ceil(maxDays / 7);
+  if (unit === VacationDurationUnit.MONTHS) return Math.ceil(maxDays / 30);
+  return Math.min(VACATION_MAX_BY_UNIT[VacationDurationUnit.MINUTES], maxDays * 1440);
 }
 
-export function parseBreakDuration(input: string): VacationDuration | null {
+function withinBounds(d: VacationDuration, maxDays: number): boolean {
+  if (!Number.isInteger(d.value) || d.value < 1) return false;
+  return d.value <= maxFor(d.unit, maxDays);
+}
+
+export function parseBreakDuration(input: string, maxDays: number = DEFAULT_MAX_DAYS): VacationDuration | null {
   const trimmed = input.trim();
   const match = /^(\d{1,7})(m|d|w|M)$/.exec(trimmed);
   if (!match) return null;
   const unit = BREAK_UNIT[match[2] as keyof typeof BREAK_UNIT];
   if (!unit) return null;
   const duration = { value: Number(match[1]), unit };
-  return withinBounds(duration) ? duration : null;
+  return withinBounds(duration, maxDays) ? duration : null;
 }
 
-export function parseApplicationDuration(input: string): VacationDuration | null {
+export function parseApplicationDuration(input: string, maxDays: number = DEFAULT_MAX_DAYS): VacationDuration | null {
   const trimmed = input.trim();
   const match = /^(\d{1,7})(m)?$/.exec(trimmed);
   if (!match) return null;
   const unit = match[2] ? VacationDurationUnit.MONTHS : VacationDurationUnit.DAYS;
   const duration = { value: Number(match[1]), unit };
-  return withinBounds(duration) ? duration : null;
+  return withinBounds(duration, maxDays) ? duration : null;
 }
 
 const LUXON_UNIT: Record<VacationDurationUnit, "minutes" | "days" | "weeks" | "months"> = {

@@ -1,3 +1,5 @@
+// First: settings from the admin console go into process.env before config reads it (see remote-config.ts).
+import "./remote-config.ts";
 import { config } from "./config/index.ts";
 import { bootstrap } from "./bootstrap.ts";
 import { createClient } from "./discord/client.ts";

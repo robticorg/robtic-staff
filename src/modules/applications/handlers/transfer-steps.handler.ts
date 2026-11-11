@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import type { ButtonInteraction, ModalSubmitInteraction } from "discord.js";
 import { staffTransferRules } from "../../../data/staff-application/config.ts";
 import { staffApplicationMessages } from "../../../data/staff-application/messages.ts";
@@ -30,8 +31,7 @@ function text(interaction: ModalSubmitInteraction, id: string): string {
   }
 }
 
-function belowMinimumNotice(memberCount: number): string | null {
-  const min = staffTransferRules.minimumSourceMemberCount;
+function belowMinimumNotice(memberCount: number, min: number = staffTransferRules.minimumSourceMemberCount): string | null {
   return memberCount < min ? M.transfer.belowMinimumNotice(min) : null;
 }
 
@@ -57,7 +57,11 @@ export async function handleTransferInfo(interaction: ModalSubmitInteraction): P
       text(interaction, ApplicationField.invite),
     );
     applicationDraftStore.update(interaction.guildId, interaction.user.id, { transfer: info });
-    await interaction.update(flowUpdate(evidenceStep(belowMinimumNotice(info.memberCount))));
+    const rules = staffPolicyService.peek(interaction.guildId).applications;
+    await interaction.update(flowUpdate(evidenceStep(
+      belowMinimumNotice(info.memberCount, rules.transfer.minimumSourceMemberCount),
+      { minFiles: rules.evidenceMinFiles, maxFiles: rules.evidenceMaxFiles },
+    )));
   } catch (err) {
     await replyWithError(interaction, err);
   }
@@ -69,7 +73,8 @@ export async function handleEvidenceButton(interaction: ButtonInteraction): Prom
     await interaction.update(flowUpdate(statusStep(M.validation.sessionExpired)));
     return;
   }
-  await interaction.showModal(buildEvidenceModal());
+  const rules = staffPolicyService.peek(interaction.guildId).applications;
+  await interaction.showModal(buildEvidenceModal({ minFiles: rules.evidenceMinFiles, maxFiles: rules.evidenceMaxFiles }));
 }
 
 export async function handleEvidenceModal(interaction: ModalSubmitInteraction): Promise<void> {
@@ -104,7 +109,8 @@ export async function handleEvidenceModal(interaction: ModalSubmitInteraction): 
     applicationDraftStore.clear(interaction.guildId, interaction.user.id);
     await interaction.editReply(flowUpdate(statusStep(M.create.created(opened.channelId))));
   } catch (err) {
-    const retry = evidenceStep(null);
+    const policy = staffPolicyService.peek(interaction.guildId).applications;
+    const retry = evidenceStep(null, { minFiles: policy.evidenceMinFiles, maxFiles: policy.evidenceMaxFiles });
     await interaction.editReply(
       flowUpdate({ ...retry, blocks: [...retry.blocks, errorText(err)] }),
     );

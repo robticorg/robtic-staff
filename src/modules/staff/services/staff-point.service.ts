@@ -143,8 +143,9 @@ export class StaffPointService extends BaseRepository<StaffPointTransaction> {
     return row?.total ?? 0;
   }
 
-  getPoints(staffId: IdLike, period: PointsPeriod, now?: Date): Promise<number> {
-    const since = periodStart(period, { zone: config.timezone, now });
+  /** `zone`: the server's time zone (staff policy); the bot-wide one when not given. */
+  getPoints(staffId: IdLike, period: PointsPeriod, now?: Date, zone: string = config.timezone): Promise<number> {
+    const since = periodStart(period, { zone, now });
     return this.sumSince(staffId, since);
   }
 

@@ -1,3 +1,5 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
+import { staffPolicyMessages } from "../../../data/staff-policy/messages.ts";
 import type { GuildMember } from "discord.js";
 import { ConflictError } from "../../../shared/utils/errors.ts";
 import { staffApplicationMessages } from "../../../data/staff-application/messages.ts";
@@ -14,6 +16,9 @@ const V = staffApplicationMessages.validation;
 
 export class ApplicationEligibilityService {
   async assertCanApply(member: GuildMember): Promise<void> {
+    if (!(await staffPolicyService.isOn(member.guild.id, "applications"))) {
+      throw new ApplicationError("APPLICATIONS_DISABLED", staffPolicyMessages.featureOff);
+    }
     if (await isBlacklistedFor(member, staffApplicationPanel)) {
       throw new ApplicationError("APPLICATION_STAFF_BLACKLISTED", V.staffBlacklisted);
     }

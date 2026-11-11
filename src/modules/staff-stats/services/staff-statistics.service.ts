@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import type { Types } from "mongoose";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
 import { roleConfigService } from "../../configuration/index.ts";
@@ -91,7 +92,7 @@ export class StaffStatisticsService {
     }
 
     const staffObjId = staff._id as Types.ObjectId;
-    const range = resolveStatsRange(period);
+    const range = resolveStatsRange(period, undefined, staffPolicyService.peek(input.guildId).timezone);
     const guildStaff = await statsRepository.guildStaff(input.guildId);
     const guildStaffIds = guildStaff.map((s) => s._id);
 
@@ -110,10 +111,10 @@ export class StaffStatisticsService {
       ladder,
       history,
     ] = await Promise.all([
-      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.TODAY)),
-      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.THIS_WEEK)),
-      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.THIS_MONTH)),
-      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.ALL_TIME)),
+      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.TODAY, undefined, staffPolicyService.peek(input.guildId).timezone)),
+      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.THIS_WEEK, undefined, staffPolicyService.peek(input.guildId).timezone)),
+      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.THIS_MONTH, undefined, staffPolicyService.peek(input.guildId).timezone)),
+      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.ALL_TIME, undefined, staffPolicyService.peek(input.guildId).timezone)),
       statsRepository.pointsForStaff(staffObjId, range),
       statsRepository.activityByType(staffObjId, range),
       statsRepository.reportStats(input.guildId, staffObjId, range),
@@ -122,7 +123,7 @@ export class StaffStatisticsService {
       statsRepository.warningStats(input.guildId, staffObjId, input.staffId, guildStaffIds, range),
       statsRepository.recentActivity(staffObjId, 10),
       roleConfigService.getStaffRoleLevels(input.guildId),
-      input.detailed ? statsRepository.pointTransactions(staffObjId, resolveStatsRange(StatsPeriod.ALL_TIME), 15) : Promise.resolve([]),
+      input.detailed ? statsRepository.pointTransactions(staffObjId, resolveStatsRange(StatsPeriod.ALL_TIME, undefined, staffPolicyService.peek(input.guildId).timezone), 15) : Promise.resolve([]),
     ]);
 
     const total = Object.values(byType).reduce((a, b) => a + b, 0);
@@ -182,7 +183,7 @@ export class StaffStatisticsService {
     if (!staff) return { found: false, period, total: 0, byType: {} as Record<string, number> };
     const byType = await statsRepository.activityByType(
       staff._id as Types.ObjectId,
-      resolveStatsRange(period),
+      resolveStatsRange(period, undefined, staffPolicyService.peek(input.guildId).timezone),
     );
     return { found: true, period, total: Object.values(byType).reduce((a, b) => a + b, 0), byType };
   }
@@ -192,7 +193,7 @@ export class StaffStatisticsService {
     const staff = await staffService.get(input.staffId, input.guildId);
     if (!staff) return { found: false, period, total: 0, breakdown: {} as Record<string, number> };
     const staffObjId = staff._id as Types.ObjectId;
-    const range = resolveStatsRange(period);
+    const range = resolveStatsRange(period, undefined, staffPolicyService.peek(input.guildId).timezone);
     const [total, breakdown] = await Promise.all([
       statsRepository.pointsForStaff(staffObjId, range),
       statsRepository.pointBreakdown(staffObjId, range),
@@ -210,9 +211,9 @@ export class StaffStatisticsService {
     if (!staff) return { found: false, allTime: 0, week: 0, weekBreakdown: {} };
     const staffObjId = staff._id as Types.ObjectId;
     const [allTime, week, weekBreakdown] = await Promise.all([
-      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.ALL_TIME)),
-      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.THIS_WEEK)),
-      statsRepository.pointBreakdown(staffObjId, resolveStatsRange(StatsPeriod.THIS_WEEK)),
+      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.ALL_TIME, undefined, staffPolicyService.peek(input.guildId).timezone)),
+      statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.THIS_WEEK, undefined, staffPolicyService.peek(input.guildId).timezone)),
+      statsRepository.pointBreakdown(staffObjId, resolveStatsRange(StatsPeriod.THIS_WEEK, undefined, staffPolicyService.peek(input.guildId).timezone)),
     ]);
     return { found: true, allTime, week, weekBreakdown };
   }
@@ -238,7 +239,7 @@ export class StaffStatisticsService {
   }): Promise<{ period: Period; entries: LeaderboardEntry[]; totalRanked: number }> {
     const period = input.period ?? StatsPeriod.THIS_WEEK;
     const limit = Math.min(Math.max(input.limit ?? 10, 1), 50);
-    const range = resolveStatsRange(period);
+    const range = resolveStatsRange(period, undefined, staffPolicyService.peek(input.guildId).timezone);
 
     const staff = await statsRepository.guildStaff(input.guildId, { excludeInactive: true });
     const staffIds = staff.map((s) => s._id);

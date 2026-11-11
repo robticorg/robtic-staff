@@ -51,9 +51,10 @@ export class StaffTransferEvaluationService {
     return Math.max(0, Math.floor((now.getTime() - joinedAt.getTime()) / DAY_MS));
   }
 
-  evaluate(input: TransferEvaluationInput, hierarchy: EvaluationHierarchy): TransferEvaluation {
+  /** `rules` overrides the built-in transfer rules with the server's own (staff policy). */
+  evaluate(input: TransferEvaluationInput, hierarchy: EvaluationHierarchy, rules: StaffTransferRules = this.rules): TransferEvaluation {
     const reasons: TransferIneligibility[] = [];
-    if (input.sourceMemberCount < this.rules.minimumSourceMemberCount) {
+    if (input.sourceMemberCount < rules.minimumSourceMemberCount) {
       reasons.push(TransferIneligibility.MEMBER_COUNT);
     }
     const base: TransferEvaluation = {
@@ -66,7 +67,7 @@ export class StaffTransferEvaluationService {
     };
     if (reasons.length > 0) return base;
 
-    const proposedTier = this.rules.targetTier;
+    const proposedTier = rules.targetTier;
     if (hierarchy.levels.length === 0) return base;
 
     const tierStart = hierarchy.boundaryLevels[proposedTier];
@@ -75,9 +76,9 @@ export class StaffTransferEvaluationService {
     }
 
     const bonus =
-      bestBonus(input.sourceMemberCount, this.rules.memberCountBonus) +
-      bestBonus(input.sourceOnlineCount, this.rules.onlineCountBonus) +
-      bestBonus(input.membershipDays, this.rules.membershipBonus);
+      bestBonus(input.sourceMemberCount, rules.memberCountBonus) +
+      bestBonus(input.sourceOnlineCount, rules.onlineCountBonus) +
+      bestBonus(input.membershipDays, rules.membershipBonus);
     const level = Math.max(tierStart, Math.min(tierStart + bonus, this.tierEnd(proposedTier, hierarchy)));
 
     return {

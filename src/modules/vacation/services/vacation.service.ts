@@ -1,3 +1,5 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
+import { staffPolicyMessages } from "../../../data/staff-policy/messages.ts";
 import { ChannelType, type Guild, type GuildMember } from "discord.js";
 import type { HydratedDocument } from "mongoose";
 import { BaseRepository } from "../../../shared/repository/base.repository.ts";
@@ -105,7 +107,9 @@ export class VacationService extends BaseRepository<Vacation> {
   async createManualBreak(input: ManualBreakInput): Promise<{ vacation: VacationDocument }> {
     const { guildId, member, actorId } = input;
 
-    const duration = parseBreakDuration(input.durationInput);
+    const policy = await staffPolicyService.get(guildId);
+    if (!policy.features.vacations) throw new VacationError("VACATION_DISABLED", staffPolicyMessages.featureOff);
+    const duration = parseBreakDuration(input.durationInput, policy.vacations.maxDays);
     if (!duration) throw new VacationError("VACATION_BAD_DURATION", M.break.invalidDuration);
 
     const vacationRoleId = await vacationRoleService.getVacationRoleId(guildId);
@@ -219,7 +223,9 @@ export class VacationService extends BaseRepository<Vacation> {
     const reason = input.reasonInput.trim();
     if (!reason) throw new VacationError("VACATION_REASON_REQUIRED", M.application.reasonRequired);
 
-    const duration = parseApplicationDuration(input.durationInput);
+    const policy = await staffPolicyService.get(guildId);
+    if (!policy.features.vacations) throw new VacationError("VACATION_DISABLED", staffPolicyMessages.featureOff);
+    const duration = parseApplicationDuration(input.durationInput, policy.vacations.maxDays);
     if (!duration) throw new VacationError("VACATION_BAD_DURATION", M.application.invalidDuration);
 
     const vacationRoleId = await vacationRoleService.getVacationRoleId(guildId);
@@ -508,7 +514,8 @@ export class VacationService extends BaseRepository<Vacation> {
     const member = await guild.members.fetch(vacation.staffId).catch(() => null);
 
     if (!member) {
-      const overGrace = Date.now() - vacation.endsAt.getTime() > vacationConfig.absentGraceMs;
+      const graceMs = (await staffPolicyService.get(vacation.guildId)).vacations.absentGraceDays * 86_400_000;
+      const overGrace = Date.now() - vacation.endsAt.getTime() > graceMs;
       if (!overGrace) {
         if (!vacation.restoreDeferredAt) {
           await VacationModel.updateOne(

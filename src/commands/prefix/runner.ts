@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../modules/configuration/services/staff-policy.service.ts";
 import type { GuildTextBasedChannel, Message } from "discord.js";
 import { config } from "../../config/index.ts";
 import type { PrefixCommand, PrefixContext } from "../../discord/prefix-command.ts";
@@ -46,7 +47,9 @@ export function prefixCommandNames(): string[] {
 export async function runPrefixCommand(message: Message): Promise<boolean> {
   if (message.author.bot || !message.inGuild()) return false;
 
-  let parsed = parsePrefixMessage(message.content, config.prefix);
+  // This server's prefix (dashboard → General), else the bot-wide one.
+  const prefix = (await staffPolicyService.get(message.guild.id)).prefix || config.prefix;
+  let parsed = parsePrefixMessage(message.content, prefix);
   let command: PrefixCommand | undefined;
 
   if (parsed) {

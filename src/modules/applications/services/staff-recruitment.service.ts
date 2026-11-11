@@ -1,8 +1,8 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import type { Guild, GuildMember } from "discord.js";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
 import { ConflictError } from "../../../shared/utils/errors.ts";
 import { logger } from "../../../shared/utils/logger.ts";
-import { staffRecruitmentRules } from "../../../data/staff-application/config.ts";
 import { staffApplicationMessages } from "../../../data/staff-application/messages.ts";
 import { getHierarchy, highestLevelFromRoleIds } from "../../configuration/utils/staff-levels.ts";
 import { memberIsAdministrator } from "../../tickets/services/ticket-permissions.ts";
@@ -54,7 +54,7 @@ export class StaffRecruitmentService {
     const hierarchy = await getHierarchy(guild.id);
     const eligible = isEligibleRecruiter({
       recruiterLevel: highestLevelFromRoleIds(hierarchy, recruiter.roles.cache.keys()),
-      minimumTierStart: hierarchy.boundaryLevels[staffRecruitmentRules.recruiterMinimumTier],
+      minimumTierStart: hierarchy.boundaryLevels[(await staffPolicyService.get(guild.id)).applications.recruiterMinimumTier],
     });
     if (!eligible) throw new ApplicationError("RECRUITER_NOT_ELIGIBLE", R.notEligible);
   }

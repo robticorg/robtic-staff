@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import type { Guild, GuildMember } from "discord.js";
 import { logger } from "../../../shared/utils/logger.ts";
 import { staffApplicationMessages } from "../../../data/staff-application/messages.ts";
@@ -19,6 +20,7 @@ import {
 } from "../shared/staff-application.model.ts";
 import { staffTransferEvaluationService } from "./staff-transfer-evaluation.service.ts";
 import {
+  evidenceRulesFor,
   transferEvidenceService,
   type UploadedEvidence,
 } from "./transfer-evidence.service.ts";
@@ -84,7 +86,9 @@ export class StaffTransferApplicationService {
       );
     }
     await applicationEligibilityService.assertCanApply(member);
-    transferEvidenceService.assertValid(uploads);
+    const policy = (await staffPolicyService.get(member.guild.id)).applications;
+    const evidenceRules = evidenceRulesFor(policy);
+    transferEvidenceService.assertValid(uploads, evidenceRules);
 
     const now = new Date();
     const recruiter = await staffRecruitmentService.relationshipForNewApplication(
@@ -119,9 +123,10 @@ export class StaffTransferApplicationService {
         membershipDays: staffTransferEvaluationService.membershipDays(fresh.joinedAt, now),
       },
       await getHierarchy(guild.id),
+      policy.transfer,
     );
 
-    const files = await transferEvidenceService.download(uploads);
+    const files = await transferEvidenceService.download(uploads, evidenceRules);
 
     const application = await StaffApplicationModel.create({
       guildId: guild.id,

@@ -1,3 +1,5 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
+import { identityRulesOf } from "../../staff-identity/services/staff-identity-requirement.service.ts";
 import type { Guild, GuildMember } from "discord.js";
 import type { RoleId } from "../../../shared/types/index.ts";
 import { logger } from "../../../shared/utils/logger.ts";
@@ -76,6 +78,8 @@ export class ServerTagAuditService {
     ]);
 
     const members = await guild.members.fetch();
+    // This server's identity rules: with the check off, every name counts as compliant.
+    const identity = identityRulesOf(await staffPolicyService.get(guild.id));
 
     for (const member of members.values()) {
       if (member.user.bot) continue;
@@ -86,7 +90,8 @@ export class ServerTagAuditService {
         isStaff: holdsStaffRole(member, staffRoleIds),
         hasActiveRestriction: restricted.has(member.id),
         displayNameCompliant:
-          staffIdentityRequirementService.containsOfficialIdentifier(member.displayName) !== null,
+          !identity.enabled ||
+          staffIdentityRequirementService.containsOfficialIdentifier(member.displayName, identity.identifiers) !== null,
       });
 
       if (action === TagAuditAction.NONE) {

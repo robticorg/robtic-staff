@@ -8,6 +8,7 @@ import {
   CONFUSABLE_LETTERS,
   ENCLOSED_LETTER_RANGES,
 } from "../../../data/staff-identity/confusables.ts";
+import { staffPolicyService, type StaffPolicy } from "../../configuration/services/staff-policy.service.ts";
 
 export interface PrimaryGuildLike {
   identityEnabled?: boolean | null;
@@ -34,6 +35,8 @@ export interface IdentityMemberLike {
 export const IdentityComplianceReason = {
   SERVER_TAG: "SERVER_TAG",
   DISPLAY_NAME: "DISPLAY_NAME",
+  /** The server turned the identity check off: everyone passes. */
+  CHECK_OFF: "CHECK_OFF",
   NONE: "NONE",
 } as const;
 export type IdentityComplianceReason =
@@ -42,6 +45,7 @@ export type IdentityComplianceReason =
 export type IdentityCompliance =
   | { compliant: true; reason: typeof IdentityComplianceReason.SERVER_TAG }
   | { compliant: true; reason: typeof IdentityComplianceReason.DISPLAY_NAME; identifier: string }
+  | { compliant: true; reason: typeof IdentityComplianceReason.CHECK_OFF }
   | { compliant: false; reason: typeof IdentityComplianceReason.NONE };
 
 const FORMAT_CHARS = /\p{Cf}/gu;
@@ -59,6 +63,20 @@ function foldEnclosedLetter(codePoint: number): string | null {
     }
   }
   return null;
+}
+
+export interface IdentityRules {
+  enabled: boolean;
+  acceptServerTag: boolean;
+  identifiers: readonly AcceptedIdentifier[];
+}
+
+export function identityRulesOf(policy: StaffPolicy): IdentityRules {
+  return {
+    enabled: policy.features.identityCheck,
+    acceptServerTag: policy.identity.acceptServerTag,
+    identifiers: policy.identity.identifiers.map((i) => ({ id: i.text, strictness: i.strictness })),
+  };
 }
 
 export class StaffIdentityRequirementService {
@@ -93,7 +111,10 @@ export class StaffIdentityRequirementService {
     );
   }
 
-  containsOfficialIdentifier(displayName: string | null | undefined): string | null {
+  containsOfficialIdentifier(
+    displayName: string | null | undefined,
+    identifiers: readonly AcceptedIdentifier[] = this.identifiers,
+  ): string | null {
     if (!displayName) return null;
     const words = this.normalizeDisplayName(displayName).split(" ").filter(Boolean);
 
@@ -101,7 +122,7 @@ export class StaffIdentityRequirementService {
       const lower = word.toLowerCase();
       const segments = caseSegments(word).map((s) => s.toLowerCase());
 
-      for (const identifier of this.identifiers) {
+      for (const identifier of identifiers) {
         if (lower === identifier.id) return identifier.id;
         if (identifier.strictness === IdentifierStrictness.LONG && lower.includes(identifier.id)) {
           return identifier.id;
@@ -116,15 +137,25 @@ export class StaffIdentityRequirementService {
     return isUsingGuildTag(member.user, member.guild.id);
   }
 
-  isIdentityCompliant(member: IdentityMemberLike): IdentityCompliance {
-    if (this.hasServerTag(member)) {
+  /**
+   * Without `rules`, the built-in identifiers apply (tests, defaults). Production code calls checkMember(), which
+   * passes the server's own rules from the dashboard.
+   */
+  isIdentityCompliant(member: IdentityMemberLike, rules?: IdentityRules): IdentityCompliance {
+    if (rules && !rules.enabled) return { compliant: true, reason: IdentityComplianceReason.CHECK_OFF };
+    if ((rules?.acceptServerTag ?? true) && this.hasServerTag(member)) {
       return { compliant: true, reason: IdentityComplianceReason.SERVER_TAG };
     }
-    const identifier = this.containsOfficialIdentifier(member.displayName);
+    const identifier = this.containsOfficialIdentifier(member.displayName, rules?.identifiers ?? this.identifiers);
     if (identifier) {
       return { compliant: true, reason: IdentityComplianceReason.DISPLAY_NAME, identifier };
     }
     return { compliant: false, reason: IdentityComplianceReason.NONE };
+  }
+
+  /** The check with this server's rules (identifiers, server tag, on/off) from its staff policy. */
+  async checkMember(member: IdentityMemberLike): Promise<IdentityCompliance> {
+    return this.isIdentityCompliant(member, identityRulesOf(await staffPolicyService.get(member.guild.id)));
   }
 
   getComplianceReason(member: IdentityMemberLike): IdentityComplianceReason {

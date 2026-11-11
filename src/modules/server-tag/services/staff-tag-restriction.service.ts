@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import { BaseRepository } from "../../../shared/repository/base.repository.ts";
 import type { GuildId, RoleId, UserId } from "../../../shared/types/index.ts";
 import { isDuplicateKeyError } from "../../../shared/utils/errors.ts";
@@ -80,7 +81,9 @@ export class StaffTagRestrictionService extends BaseRepository<StaffTagRestricti
 
   async createRestriction(input: CreateRestrictionInput): Promise<CreateRestrictionResult> {
     const now = input.now ?? new Date();
-    const durationMs = input.durationMs ?? serverTagConfig.restrictionDurationMs;
+    // How long the member has to fix it: this server's grace period (dashboard), else the built-in default.
+    const graceDays = (await staffPolicyService.get(input.guildId)).identity.graceDays;
+    const durationMs = input.durationMs ?? (graceDays * 86_400_000 || serverTagConfig.restrictionDurationMs);
     const expiresAt = new Date(now.getTime() + durationMs);
 
     try {

@@ -263,7 +263,7 @@ export class StaffManagementService {
   ): Promise<{ added: number; awaitingIdentity: AcceptResult["awaitingIdentity"] }> {
     const guildId = member.guild.id;
 
-    if (staffIdentityRequirementService.isIdentityCompliant(member).compliant) {
+    if ((await staffIdentityRequirementService.checkMember(member)).compliant) {
       const synced = await syncStaffRoles(member, level, reason, { clearBlacklist: true });
       const typed = staffType ? await staffTypeService.assignType(member, staffType, reason) : null;
       return { added: synced.added.length + (typed?.added ? 1 : 0), awaitingIdentity: null };

@@ -1,3 +1,5 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
+import { staffPolicyMessages } from "../../../data/staff-policy/messages.ts";
 import type { Message } from "discord.js";
 import { logger } from "../../../shared/utils/logger.ts";
 import { DomainError } from "../../../shared/utils/errors.ts";
@@ -34,6 +36,12 @@ export async function handleDirectMessage(message: Message): Promise<void> {
   } catch (err) {
     log.error("no community guild available for DM", err);
     await reply(message, M.dm.notSetUp);
+    return;
+  }
+
+  // Reports turned off for this server (dashboard): say so instead of opening the report wizard.
+  if (!(await staffPolicyService.isOn(guildId, "reports").catch(() => true))) {
+    await reply(message, staffPolicyMessages.featureOff);
     return;
   }
 

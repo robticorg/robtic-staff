@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import type { Guild, GuildMember } from "discord.js";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
 import { logger } from "../../../shared/utils/logger.ts";
@@ -69,9 +70,10 @@ export async function fetchCurrentMember(guild: Guild, userId: UserId): Promise<
 }
 
 function restorationReasonFor(compliance: IdentityCompliance): StaffTagRestorationReason {
-  return compliance.reason === IdentityComplianceReason.DISPLAY_NAME
-    ? StaffTagRestorationReason.DISPLAY_NAME_COMPLIANT
-    : StaffTagRestorationReason.TAG_REAPPLIED;
+  if (compliance.reason === IdentityComplianceReason.DISPLAY_NAME) return StaffTagRestorationReason.DISPLAY_NAME_COMPLIANT;
+  // The server turned the identity check off: the hold is lifted as a manual decision, not a tag change.
+  if (compliance.reason === IdentityComplianceReason.CHECK_OFF) return StaffTagRestorationReason.MANUAL;
+  return StaffTagRestorationReason.TAG_REAPPLIED;
 }
 
 export class ServerTagService {
@@ -122,7 +124,7 @@ export class ServerTagService {
       return "removed";
     }
 
-    if (staffIdentityRequirementService.isIdentityCompliant(member).compliant) {
+    if ((await staffIdentityRequirementService.checkMember(member)).compliant) {
       return "compliant";
     }
 
@@ -133,7 +135,7 @@ export class ServerTagService {
     const member = await fetchCurrentMember(guild, userId);
     if (!member) return "member-gone";
 
-    const compliance = staffIdentityRequirementService.isIdentityCompliant(member);
+    const compliance = (await staffIdentityRequirementService.checkMember(member));
     const restriction = await staffTagRestrictionService.getActiveRestriction(guild.id, userId);
 
     if (compliance.compliant) {
@@ -347,19 +349,22 @@ export class ServerTagService {
       );
     }
 
-    const wipe = await staffPointService
-      .resetToZero(staff._id, BOT_ACTOR)
-      .catch((err) => {
-        log.error(`points wipe failed for ${member.id} in ${guildId}`, err);
-        return { reset: false, previousBalance: pointsBefore };
-      });
+    const resetPoints = (await staffPolicyService.get(guildId)).identity.resetPointsOnRemoval;
+    const wipe = resetPoints
+      ? await staffPointService
+          .resetToZero(staff._id, BOT_ACTOR)
+          .catch((err) => {
+            log.error(`points wipe failed for ${member.id} in ${guildId}`, err);
+            return { reset: false, previousBalance: pointsBefore };
+          })
+      : { reset: false, previousBalance: pointsBefore };
 
     await serverTagLogService.dm(member.id, M.dm.removedByExpiry);
 
     log.info(
       `restriction ${claimed.restrictionId} expired — ${member.id} removed from staff ` +
         `permanently in ${guildId} (${savedRoleIds.length} role(s) lost, ` +
-        `${wipe.previousBalance} point(s) wiped)`,
+        (wipe.reset ? `${wipe.previousBalance} point(s) wiped)` : `points kept: ${wipe.previousBalance})`),
     );
     return "staff-removed";
   }
@@ -378,7 +383,7 @@ export class ServerTagService {
       return this.removeStaffPermanently(member, restriction);
     }
 
-    const compliance = staffIdentityRequirementService.isIdentityCompliant(member);
+    const compliance = (await staffIdentityRequirementService.checkMember(member));
     if (compliance.compliant) {
       return this.restoreRestriction(
         member,

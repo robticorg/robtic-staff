@@ -26,8 +26,21 @@ export interface EvidenceFile {
 
 export type EvidenceProblem = "TOO_FEW" | "NOT_IMAGE" | "TOO_LARGE";
 
-export function checkEvidence(uploads: readonly UploadedEvidence[]): EvidenceProblem | null {
-  const rules = staffApplicationConfig.evidence;
+/** How many proof images a transfer needs; the counts come from the server's staff policy. */
+export interface EvidenceRules {
+  minFiles: number;
+  maxFiles: number;
+  maxFileBytes: number;
+}
+
+export function evidenceRulesFor(policy: { evidenceMinFiles: number; evidenceMaxFiles: number }): EvidenceRules {
+  return { minFiles: policy.evidenceMinFiles, maxFiles: policy.evidenceMaxFiles, maxFileBytes: staffApplicationConfig.evidence.maxFileBytes };
+}
+
+export function checkEvidence(
+  uploads: readonly UploadedEvidence[],
+  rules: EvidenceRules = staffApplicationConfig.evidence,
+): EvidenceProblem | null {
   if (uploads.length < rules.minFiles) return "TOO_FEW";
   if (uploads.some((upload) => !upload.contentType?.startsWith("image/"))) return "NOT_IMAGE";
   if (uploads.some((upload) => upload.size > rules.maxFileBytes)) return "TOO_LARGE";
@@ -35,27 +48,27 @@ export function checkEvidence(uploads: readonly UploadedEvidence[]): EvidencePro
 }
 
 export class TransferEvidenceService {
-  assertValid(uploads: readonly UploadedEvidence[]): void {
-    const problem = checkEvidence(uploads);
+  assertValid(uploads: readonly UploadedEvidence[], rules: EvidenceRules = staffApplicationConfig.evidence): void {
+    const problem = checkEvidence(uploads, rules);
     if (problem === "TOO_FEW") {
       throw new ApplicationError(
         "EVIDENCE_TOO_FEW",
-        T.evidenceTooFew(staffApplicationConfig.evidence.minFiles),
+        T.evidenceTooFew(rules.minFiles),
       );
     }
     if (problem === "NOT_IMAGE") throw new ApplicationError("EVIDENCE_NOT_IMAGE", T.evidenceNotImage);
     if (problem === "TOO_LARGE") throw new ApplicationError("EVIDENCE_TOO_LARGE", T.evidenceTooLarge);
   }
 
-  async download(uploads: readonly UploadedEvidence[]): Promise<EvidenceFile[]> {
+  async download(uploads: readonly UploadedEvidence[], rules: EvidenceRules = staffApplicationConfig.evidence): Promise<EvidenceFile[]> {
     const files: EvidenceFile[] = [];
-    for (const upload of uploads.slice(0, staffApplicationConfig.evidence.maxFiles)) {
+    for (const upload of uploads.slice(0, rules.maxFiles)) {
       const response = await fetch(upload.url).catch(() => null);
       if (!response?.ok) {
         throw new ApplicationError("EVIDENCE_DOWNLOAD_FAILED", T.evidenceDownloadFailed);
       }
       const data = Buffer.from(await response.arrayBuffer());
-      if (data.length > staffApplicationConfig.evidence.maxFileBytes) {
+      if (data.length > rules.maxFileBytes) {
         throw new ApplicationError("EVIDENCE_TOO_LARGE", T.evidenceTooLarge);
       }
       files.push({

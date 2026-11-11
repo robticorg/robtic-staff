@@ -1,3 +1,4 @@
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import type { Guild, GuildMember } from "discord.js";
 import { Types } from "mongoose";
 import { config } from "../../../config/index.ts";
@@ -72,8 +73,8 @@ export class StaffPromotionPointsService {
   }
 
   /** Monday 00:00:00 (guild timezone) up to `now`. */
-  getCurrentWeekRange(now: Date = new Date()): WeekRange {
-    const start = periodStart("week", { zone: config.timezone, now });
+  getCurrentWeekRange(now: Date = new Date(), zone: string = config.timezone): WeekRange {
+    const start = periodStart("week", { zone, now });
     if (!start) throw new Error("week period must always produce a start boundary");
     return { start, end: now };
   }
@@ -107,7 +108,7 @@ export class StaffPromotionPointsService {
     guildId: GuildId,
     now: Date = new Date(),
     belowLevel: number | null = null,
-    range: WeekRange = this.getCurrentWeekRange(now),
+    range: WeekRange = this.getCurrentWeekRange(now, staffPolicyService.peek(guildId).timezone),
   ): Promise<StaffWeeklyPoints[]> {
     const staff = await StaffModel.find(
       { guildId, status: StaffStatus.ACTIVE, ...belowLevelFilter(belowLevel) },
