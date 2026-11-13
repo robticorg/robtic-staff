@@ -1,4 +1,11 @@
 import { StaffType } from "../../modules/staff/types/enums.ts";
+import { bilingual } from "../../shared/utils/lang-context.ts";
+
+/** Labels in the server's language (the slugs stay as typed in commands). */
+const TEXT = bilingual(
+  { max: "Max", maxDescription: "Set the staff type role: Max", dev: "Developer", devDescription: "Set the staff type role: Developer" },
+  { max: "ماكس", maxDescription: "تحديد رتبة نوع الإداري: ماكس", dev: "مبرمج", devDescription: "تحديد رتبة نوع الإداري: مبرمج" },
+);
 
 export interface StaffTypeDefinition {
   id: StaffType;
@@ -16,18 +23,18 @@ export const STAFF_TYPE_DEFINITIONS: readonly StaffTypeDefinition[] = [
   {
     id: StaffType.MAX,
     slug: "ماكس",
-    label: "ماكس",
+    get label() { return TEXT.max; },
     // No keywords on purpose: "max" / "ماكس" in !accept means the END role of the
     // ladder (see MAX_LEVEL_KEYWORDS), not this separate type role.
     keywords: [],
-    description: "تحديد رتبة نوع الطاقم الاداري: ماكس",
+    get description() { return TEXT.maxDescription; },
   },
   {
     id: StaffType.DEV,
     slug: "dev",
-    label: "مبرمج",
+    get label() { return TEXT.dev; },
     keywords: ["dev", "developer", "مبرمج", "ديف"],
-    description: "تحديد رتبة نوع الطاقم الاداري: مبرمج",
+    get description() { return TEXT.devDescription; },
   },
 ];
 

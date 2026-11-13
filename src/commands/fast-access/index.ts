@@ -54,11 +54,11 @@ const data = new SlashCommandBuilder()
           .setDescription(copy.sub.add.options.context)
           .setRequired(true)
           .addChoices(
-            { name: "المودميل / البلاغات", value: FastAccessContext.MODMAIL },
-            { name: "الدعم (التكتات)", value: FastAccessContext.SUPPORT },
-            { name: "التقديم على الطاقم الاداري", value: FastAccessContext.STAFF_APPLICATION },
-            { name: "نقل الطاقم الاداري", value: FastAccessContext.STAFF_TRANSFER },
-            { name: "عام (أي مكان)", value: FastAccessContext.PUBLIC },
+            { name: fastAccessMessages.contexts.MODMAIL, value: FastAccessContext.MODMAIL },
+            { name: fastAccessMessages.contexts.SUPPORT, value: FastAccessContext.SUPPORT },
+            { name: fastAccessMessages.contexts.STAFF_APPLICATION, value: FastAccessContext.STAFF_APPLICATION },
+            { name: fastAccessMessages.contexts.STAFF_TRANSFER, value: FastAccessContext.STAFF_TRANSFER },
+            { name: fastAccessMessages.contexts.PUBLIC, value: FastAccessContext.PUBLIC },
           ),
       ),
   )
