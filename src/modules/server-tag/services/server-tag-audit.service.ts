@@ -1,3 +1,4 @@
+import { inGuildLang } from "../../configuration/services/guild-lang.ts";
 import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
 import { identityRulesOf } from "../../staff-identity/services/staff-identity-requirement.service.ts";
 import type { Guild, GuildMember } from "discord.js";
@@ -157,7 +158,7 @@ export class ServerTagAuditService {
 
     for (const guild of client.guilds.cache.values()) {
       try {
-        const tally = await this.auditGuild(guild);
+        const tally = await inGuildLang(guild.id, () => this.auditGuild(guild));
         total.scanned += tally.scanned;
         total.revoked += tally.revoked;
         total.lifted += tally.lifted;

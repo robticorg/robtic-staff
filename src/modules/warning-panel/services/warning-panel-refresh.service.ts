@@ -1,3 +1,4 @@
+import { inGuildLang } from "../../configuration/services/guild-lang.ts";
 import type { Client } from "discord.js";
 import { logger } from "../../../shared/utils/logger.ts";
 import { warnPanelConfig } from "../../../data/warn-panel/config.ts";
@@ -86,7 +87,7 @@ export class WarningPanelRefreshService {
       .exec();
 
     for (const deployment of deployments) {
-      tally[await this.refreshDeployment(deployment, { client })] += 1;
+      tally[await inGuildLang(deployment.guildId, () => this.refreshDeployment(deployment, { client }))] += 1;
     }
     return tally;
   }

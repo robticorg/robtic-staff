@@ -1,3 +1,4 @@
+import { inGuildLang } from "../../configuration/services/guild-lang.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { punishmentConfig } from "../../../data/config/punishment.ts";
 import { getPunishmentClient } from "../runtime.ts";
@@ -22,7 +23,7 @@ export class JailExpirationService {
       // Not in that guild any more — leave it; nothing to lift from here.
       if (!guild) continue;
       try {
-        if (await moderationActionService.expireJail(guild, punishment)) lifted += 1;
+        if (await inGuildLang(guild.id, () => moderationActionService.expireJail(guild, punishment))) lifted += 1;
       } catch (err) {
         log.error(`expiring jail ${punishment.punishmentId} failed`, err);
       }

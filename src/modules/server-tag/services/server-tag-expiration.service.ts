@@ -1,3 +1,4 @@
+import { inGuildLang } from "../../configuration/services/guild-lang.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { serverTagConfig } from "../../../data/server-tag/config.ts";
 import type { StaffTagRestrictionDocument } from "../models/staff-tag-restriction.model.ts";
@@ -33,7 +34,7 @@ export class ServerTagExpirationService {
     );
     for (const restriction of due) {
       try {
-        tally[await this.expireRestriction(restriction)] += 1;
+        tally[await inGuildLang(restriction.guildId, () => this.expireRestriction(restriction))] += 1;
       } catch (err) {
         log.error(`expireRestriction failed for ${restriction.restrictionId}`, err);
       }
@@ -85,7 +86,7 @@ export class ServerTagExpirationService {
         try {
           const member = await fetchCurrentMember(guild, staffId);
           if (!member) continue;
-          const outcome = await serverTagService.reconcileMember(member, now);
+          const outcome = await inGuildLang(guild.id, () => serverTagService.reconcileMember(member, now));
           if (outcome === "restored" || outcome === "staff-removed") settled += 1;
         } catch (err) {
           log.error(`startup reconcile failed for ${staffId} in ${guild.id}`, err);

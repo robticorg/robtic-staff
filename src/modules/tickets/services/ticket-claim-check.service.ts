@@ -1,3 +1,4 @@
+import { inGuildLang } from "../../configuration/services/guild-lang.ts";
 import type { Guild } from "discord.js";
 import { claimReleaseConfig as C } from "../../../data/tickets/claim-release.ts";
 import { logger } from "../../../shared/utils/logger.ts";
@@ -107,7 +108,7 @@ export class TicketClaimCheckService {
           ).exec();
           continue;
         }
-        const outcome = await this.process(check, guild, now);
+        const outcome = await inGuildLang(guild.id, () => this.process(check, guild, now));
         log.info(`claim check ${check.checkId} for ${check.userId}: ${outcome}`);
         handled += 1;
       } catch (err) {

@@ -1,3 +1,4 @@
+import { inGuildLang } from "../../configuration/services/guild-lang.ts";
 import type { Guild, GuildMember, Message } from "discord.js";
 import type { HydratedDocument } from "mongoose";
 import type { UserId } from "../../../shared/types/index.ts";
@@ -186,7 +187,7 @@ export class TicketSleepService {
 
     for (const ticket of due) {
       try {
-        if (await this.closeExpired(ticket)) closed += 1;
+        if (await inGuildLang(ticket.guildId, () => this.closeExpired(ticket))) closed += 1;
       } catch (err) {
         failed += 1;
         log.error(`auto-close failed for ${ticket.ticketId}`, err);

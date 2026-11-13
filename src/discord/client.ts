@@ -3,22 +3,13 @@ import { isGuildBlocked, onBlockedChange } from "../remote-config.ts";
 import { events } from "../events/index.ts";
 import { commandMap } from "./registry.ts";
 import { logger } from "../shared/utils/logger.ts";
-import { DEFAULT_LANG, guildIdOf, runWithLang, type Lang } from "../shared/utils/lang-context.ts";
-import { staffPolicyService } from "../modules/configuration/services/staff-policy.service.ts";
+import { guildIdOf, runWithLang } from "../shared/utils/lang-context.ts";
+import { inGuildLang, langOf } from "../modules/configuration/services/guild-lang.ts";
 import { discordConfig } from "../config/discord.ts";
 
 const log = logger.child("client");
 
-/** A server's language (cached by the policy service); the default outside a server or if it can't be read. */
-export async function langOf(guildId: string | null): Promise<Lang> {
-  if (!guildId) return DEFAULT_LANG;
-  return (await staffPolicyService.get(guildId).catch(() => null))?.language ?? DEFAULT_LANG;
-}
-
-/** Runs `fn` in a server's language: for timers and queues that act on a server outside any event. */
-export async function inGuildLang<T>(guildId: string, fn: () => T | Promise<T>): Promise<T> {
-  return runWithLang(await langOf(guildId), fn, guildId);
-}
+export { inGuildLang, langOf };
 
 export function createClient(): Client {
   const client = new Client({

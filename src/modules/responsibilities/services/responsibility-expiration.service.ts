@@ -1,3 +1,4 @@
+import { inGuildLang } from "../../configuration/services/guild-lang.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { responsibilityLimits } from "../../../data/responsibilities/config.ts";
 import { responsibilityAssignmentRepository } from "../repositories/responsibility-assignment.repository.ts";
@@ -19,7 +20,7 @@ export class ResponsibilityExpirationService {
       const guild = client.guilds.cache.get(assignment.guildId);
       if (!guild) continue;
       try {
-        if (await responsibilityAssignmentService.expireResponsibility(guild, assignment, now)) expired += 1;
+        if (await inGuildLang(guild.id, () => responsibilityAssignmentService.expireResponsibility(guild, assignment, now))) expired += 1;
       } catch (err) {
         log.error(`expiring responsibility assignment ${assignment.assignmentId} failed`, err);
       }

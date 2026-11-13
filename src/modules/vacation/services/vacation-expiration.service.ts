@@ -1,3 +1,4 @@
+import { inGuildLang } from "../../configuration/services/guild-lang.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { vacationConfig } from "../../../data/vacation/config.ts";
 import { vacationService, type ExpiryOutcome } from "./vacation.service.ts";
@@ -19,7 +20,7 @@ export class VacationExpirationService {
     const due = await vacationService.listExpirable(now, vacationConfig.sweepBatchSize);
     for (const vacation of due) {
       try {
-        const outcome = await vacationService.expireVacation(vacation);
+        const outcome = await inGuildLang(vacation.guildId, () => vacationService.expireVacation(vacation));
         tally[outcome] += 1;
       } catch (err) {
         log.error(`expireVacation failed for ${vacation.vacationId}`, err);
