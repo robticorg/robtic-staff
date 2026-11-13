@@ -1,57 +1,109 @@
 import { emojis } from "../emojis/index.ts";
+import { bilingual } from "../../shared/utils/lang-context.ts";
 
 const E = emojis;
 
-export const responsibilityApplyMessages = {
-  panel: {
-    title: "## التقديم على مسؤولية",
-    description: "تبي تقدّم على مسؤولية في السيرفر؟ اضغط الزر تحت وعبّي النموذج.",
-    button: "قدّم على مسؤولية",
-  },
+export const responsibilityApplyMessages = bilingual(
+  {
+    panel: {
+      title: "## Apply for a responsibility",
+      description: "Want a responsibility in the server? Press the button and fill in the form.",
+      button: "Apply",
+    },
 
-  modal: {
-    title: "تقديم مسؤولية في خادم روبتك",
-    responsibilityLabel: "اسم المسؤولية",
-    responsibilityPlaceholder: "اختر المسؤولية",
-    explainLabel: "شرح المسؤولية",
-    explainPlaceholder: "اشرح المسؤولية بأسلوبك",
-    jobLabel: "وش وظيفة المسؤولية؟",
-    jobPlaceholder: "وش المهام اللي بتسويها؟",
-    situationLabel: "لو طحت ب موقف كيف راح تحله؟",
-    situationDescription: "اشرح مع تفصيل ممل",
-    situationPlaceholder: "اذكر موقف وكيف بتتصرف فيه خطوة بخطوة",
-    commitLabel: "بتكون قد المسؤولية؟",
-    commitDescription: "أتعهد إني أكون قد المسؤولية وأقوم بمهامي كاملة وألتزم بقوانين السيرفر.",
-  },
+    modal: {
+      title: "Responsibility application",
+      responsibilityLabel: "Responsibility",
+      responsibilityPlaceholder: "Choose the responsibility",
+      explainLabel: "Describe the responsibility",
+      explainPlaceholder: "In your own words",
+      jobLabel: "What does it involve?",
+      jobPlaceholder: "The tasks you'd do",
+      situationLabel: "How would you handle a tough situation?",
+      situationDescription: "Explain in detail",
+      situationPlaceholder: "Describe a situation and what you'd do, step by step",
+      commitLabel: "Are you up to it?",
+      commitDescription: "I commit to doing this responsibility fully and following the server rules.",
+    },
 
-  answers: {
-    responsibility: "اسم المسؤولية",
-    explain: "شرح المسؤولية",
-    job: "وش وظيفة المسؤولية؟",
-    situation: "لو طحت ب موقف كيف راح تحله مع تفصيل ممل",
-    commit: "بتكون قد المسؤولية؟",
-    committed: "✅ نعم، أتعهد أكون قد المسؤولية",
-  },
+    answers: {
+      responsibility: "Responsibility",
+      explain: "Description",
+      job: "What it involves",
+      situation: "Handling a tough situation",
+      commit: "Up to it?",
+      committed: "✅ Yes, I commit",
+    },
 
-  decision: {
-    accepted: (userId: string, title: string) =>
-      `${E.success} تم قبول <@${userId}> وإعطاؤه مسؤولية **${title}**.`,
-    refused: (userId: string, title: string, reason: string) =>
-      `${E.error} تم رفض طلب <@${userId}> على مسؤولية **${title}**.\n**السبب:** ${reason}`,
-    dmAccepted: (title: string) => `🎉 تم قبولك في مسؤولية **${title}**. بالتوفيق!`,
-    dmRefused: (title: string, reason: string) => `تم رفض طلبك على مسؤولية **${title}**.\n**السبب:** ${reason}`,
-    notManager: `${E.error} القبول والرفض لمسؤول هذا التكت أو الأدمن بس.`,
-    selfDecision: `${E.error} ما تقدر تقبل أو ترفض طلبك انت.`,
-    alreadyDecided: `${E.warning} تم البت في هذا الطلب من قبل.`,
-    reasonRequired: `${E.warning} الطريقة: \`!refuse <السبب>\``,
-    noResponsibility: `${E.error} ما لقيت المسؤولية اللي انطلبت في هذا التكت.`,
-  },
+    decision: {
+      accepted: (userId: string, title: string) => `${E.success} <@${userId}> accepted and given **${title}**.`,
+      refused: (userId: string, title: string, reason: string) => `${E.error} <@${userId}>'s application for **${title}** refused. **Reason:** ${reason}`,
+      dmAccepted: (title: string) => `🎉 You're accepted for **${title}**. Good luck!`,
+      dmRefused: (title: string, reason: string) => `Your application for **${title}** was refused. Reason: ${reason}`,
+      notManager: `${E.error} Only this ticket's manager or an admin can decide.`,
+      selfDecision: `${E.error} You can't decide your own application.`,
+      alreadyDecided: `${E.warning} Already decided.`,
+      reasonRequired: `${E.warning} Usage: \`!refuse <reason>\``,
+      noResponsibility: `${E.error} Couldn't find the responsibility asked for in this ticket.`,
+    },
 
-  errors: {
-    none: `${E.error} ما فيه مسؤوليات مضافة حالياً.`,
-    notConfigured: `${E.error} تكت التقديم على المسؤولية مو مضبوط. الإدارة لازم تضبطه من \`/ticket setup\`.`,
-    mustCommit: `${E.error} لازم تأشّر على "بتكون قد المسؤولية؟" عشان يوصل طلبك.`,
-    responsibilityGone: `${E.error} المسؤولية اللي اخترتها ما عادت موجودة.`,
-    fieldsRequired: `${E.error} لازم تجاوب على كل الأسئلة.`,
+    errors: {
+      none: `${E.error} No responsibilities have been added.`,
+      notConfigured: `${E.error} The responsibility ticket isn't set up. An admin needs to set it with \`/ticket setup\`.`,
+      mustCommit: `${E.error} Tick "Are you up to it?" to send your application.`,
+      responsibilityGone: `${E.error} That responsibility no longer exists.`,
+      fieldsRequired: `${E.error} Answer every question.`,
+    },
   },
-} as const;
+  {
+    panel: {
+      title: "## التقديم على مسؤولية",
+      description: "تبي مسؤولية في السيرفر؟ اضغط الزر وعبّي النموذج.",
+      button: "قدّم",
+    },
+
+    modal: {
+      title: "التقديم على مسؤولية",
+      responsibilityLabel: "المسؤولية",
+      responsibilityPlaceholder: "اختر المسؤولية",
+      explainLabel: "اشرح المسؤولية",
+      explainPlaceholder: "بأسلوبك",
+      jobLabel: "وش مهامها؟",
+      jobPlaceholder: "المهام اللي بتسويها",
+      situationLabel: "كيف تتصرف في موقف صعب؟",
+      situationDescription: "اشرح بالتفصيل",
+      situationPlaceholder: "اذكر موقف وكيف تتصرف خطوة بخطوة",
+      commitLabel: "بتكون قدها؟",
+      commitDescription: "أتعهد أقوم بالمسؤولية كاملة وألتزم بقوانين السيرفر.",
+    },
+
+    answers: {
+      responsibility: "المسؤولية",
+      explain: "الشرح",
+      job: "المهام",
+      situation: "التصرف في موقف صعب",
+      commit: "بتكون قدها؟",
+      committed: "✅ نعم، أتعهد",
+    },
+
+    decision: {
+      accepted: (userId: string, title: string) => `${E.success} تم قبول <@${userId}> وإعطاؤه **${title}**.`,
+      refused: (userId: string, title: string, reason: string) => `${E.error} تم رفض طلب <@${userId}> على **${title}**. **السبب:** ${reason}`,
+      dmAccepted: (title: string) => `🎉 تم قبولك في **${title}**. بالتوفيق!`,
+      dmRefused: (title: string, reason: string) => `تم رفض طلبك على **${title}**. السبب: ${reason}`,
+      notManager: `${E.error} القرار لمسؤول التكت أو الأدمن بس.`,
+      selfDecision: `${E.error} ما تقرر في طلبك.`,
+      alreadyDecided: `${E.warning} تم البت فيه.`,
+      reasonRequired: `${E.warning} الطريقة: \`!refuse <السبب>\``,
+      noResponsibility: `${E.error} ما لقيت المسؤولية المطلوبة في التكت.`,
+    },
+
+    errors: {
+      none: `${E.error} ما فيه مسؤوليات مضافة.`,
+      notConfigured: `${E.error} تكت المسؤوليات غير مضبوط. لازم الأدمن يضبطه بـ \`/ticket setup\`.`,
+      mustCommit: `${E.error} أشّر على "بتكون قدها؟" عشان يوصل طلبك.`,
+      responsibilityGone: `${E.error} المسؤولية ما عادت موجودة.`,
+      fieldsRequired: `${E.error} جاوب على كل الأسئلة.`,
+    },
+  },
+);

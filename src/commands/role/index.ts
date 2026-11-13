@@ -28,6 +28,7 @@ import { configMessages } from "../../data/messages/config.ts";
 import { CommandError, requireAdministrator, requireGuild } from "../_shared/guards.ts";
 import { replySuccess } from "./responses.ts";
 import { HIDDEN_SET_CHOICES } from "./hidden.ts";
+import { arabicToEnglish, currentLang } from "../../shared/utils/lang-context.ts";
 import { getLevelStart } from "../../modules/configuration/utils/level-start.ts";
 
 const copy = commandCopy.role;
@@ -167,12 +168,19 @@ async function handleCheck(interaction: ChatInputCommandInteraction): Promise<vo
 
 function matchSetSlots(query: string): { name: string; value: string }[] {
   const needle = query.trim().toLowerCase();
-  return [...ROLE_SET_CHOICES.slice(0, 4), ...HIDDEN_SET_CHOICES, ...ROLE_SET_CHOICES.slice(4)].filter(
-    (choice) =>
-      !needle ||
-      choice.name.toLowerCase().includes(needle) ||
-      choice.value.toLowerCase().includes(needle),
-  ).slice(0, 25);
+  // The choices were built in Arabic when the bot loaded; show them in the server's language, and match either.
+  const english = currentLang() === "en";
+  return [...ROLE_SET_CHOICES.slice(0, 4), ...HIDDEN_SET_CHOICES, ...ROLE_SET_CHOICES.slice(4)]
+    .map((choice) => ({ ...choice, en: arabicToEnglish.get(choice.name) ?? choice.name }))
+    .filter(
+      (choice) =>
+        !needle ||
+        choice.name.toLowerCase().includes(needle) ||
+        choice.en.toLowerCase().includes(needle) ||
+        choice.value.toLowerCase().includes(needle),
+    )
+    .slice(0, 25)
+    .map((choice) => ({ name: english ? choice.en : choice.name, value: choice.value }));
 }
 
 export default defineCommand({
