@@ -1,52 +1,52 @@
 import { emojis } from "../emojis/index.ts";
 import { branding } from "../config/branding.ts";
 import { formatArabicDuration } from "./duration.ts";
+import { bilingual } from "../../shared/utils/lang-context.ts";
 
 const E = emojis;
+const S = branding.communityName;
+/** The identifiers that count, as shown to people. */
+const IDS = `\`${S}\` / \`RTC\` / \`RC\``;
 
-export const serverTagMessages = {
-  serverName: branding.communityName,
+export const serverTagMessages = bilingual(
+  {
+    serverName: S,
 
-  dm: {
-    restricted: (durationMs: number, expiresAt: Date) =>
-      [
-        `حسابك ما عليه تاق السيرفر، واسمك في **${branding.communityName}** ما فيه معرّف السيرفر، ولهذا تم سحب رتب الطاقم الاداري منك مؤقتاً لمدة **${formatArabicDuration(durationMs)}**.`,
-        "",
-        `إذا رجعت تستخدم تاق السيرفر، أو حطيت \`${branding.communityName}\` أو \`RTC\` أو \`RC\` في اسمك بالسيرفر خلال هذي المدة، رتب الطاقم الاداري حقك ترجع لك تلقائياً على طول.`,
-        "",
-        "وإذا ما رجعت وحدة منهم قبل ما تنتهي المدة، راح تنشال من الطاقم الاداري نهائياً وتروح نقاطك كلها.",
-      ].join("\n"),
+    dm: {
+      restricted: (durationMs: number, _expiresAt: Date) =>
+        `Your staff roles in **${S}** are on hold: wear the server tag or add ${IDS} to your name within **${formatArabicDuration(durationMs)}** to get them back. After that you're removed from staff and your points are reset.`,
+      restoredByTag: "You're wearing the server tag again. Your staff roles are back.",
+      restoredByDisplayName: "Your name has the server identifier now. Your staff roles are back.",
+      removedByExpiry: `Time's up: no server tag or identifier, so you've been removed from staff in **${S}** and your points were reset. You can apply again anytime.`,
+      awaitingIdentity: `You're accepted to the staff of **${S}**. You'll get your roles once you wear the server tag or add ${IDS} to your name.`,
+      grantedAfterAccept: "Tag or identifier found. You now have your staff roles. Welcome aboard!",
+      partialRestoreNote: "Note: some saved roles no longer exist in the server and were skipped.",
+    },
 
-    restoredByTag: "رجعت تستخدم تاق السيرفر، وتمت إعادة رتب الطاقم الاداري الخاصة بك.",
-
-    restoredByDisplayName: "صار اسمك في السيرفر فيه معرّف السيرفر، وتمت إعادة رتب الطاقم الاداري الخاصة بك.",
-
-    removedByExpiry: [
-      `انتهت مدة التقييد وما رجعت تاق السيرفر لحسابك ولا حطيت معرّف السيرفر في اسمك في **${branding.communityName}**.`,
-      "",
-      "تم شيلك من الطاقم الاداري نهائياً، ورتب الطاقم الاداري حقك ما راح ترجع، ونقاطك تم تصفيرها.",
-      "",
-      "إذا تبي ترجع للطاقم الاداري، لازم تقدّم من جديد.",
-    ].join("\n"),
-
-    awaitingIdentity: [
-      `تم قبولك في الطاقم الاداري في **${branding.communityName}**، وانحفظت بياناتك كاداري.`,
-      "",
-      `بس رتب الطاقم الاداري ما راح تنعطى لك لين تلبس تاق السيرفر، أو تحط \`${branding.communityName}\` أو \`RTC\` أو \`RC\` في اسمك بالسيرفر.`,
-      "",
-      "أول ما تسوي وحدة منهم، رتبك تنعطى لك تلقائياً.",
-    ].join("\n"),
-
-    grantedAfterAccept: "لبست تاق السيرفر أو حطيت معرّف السيرفر في اسمك، وتم إعطاؤك رتب الطاقم الاداري. مبروك!",
-
-    partialRestoreNote:
-      "ملاحظة: فيه رتب محفوظة ما عادت موجودة في السيرفر، فتم تجاوزها.",
+    notice: {
+      awaitingIdentity: (userId: string, dmSent: boolean) =>
+        `${E.warning} <@${userId}> is accepted. They'll get their roles after wearing the tag or adding the identifier.` +
+        (dmSent ? "" : " (Their DMs are closed, please let them know.)"),
+    },
   },
+  {
+    serverName: S,
 
-  notice: {
-    awaitingIdentity: (userId: string, dmSent: boolean) =>
-      `${E.warning} <@${userId}> ما عليه تاق السيرفر ولا معرّف السيرفر في اسمه — انقبل وانحفظ في الطاقم الاداري، بس رتبه معلّقة لين يلبس التاق أو يحط \`${branding.communityName}\` / \`RTC\` / \`RC\` في اسمه. ` +
-      (dmSent ? "تم إرسال رسالة له بالخاص." : "ما قدرت أرسل له بالخاص (الخاص مقفل) — بلّغوه بأنفسكم."),
+    dm: {
+      restricted: (durationMs: number, _expiresAt: Date) =>
+        `رتبك الإدارية في **${S}** موقوفة مؤقتاً: البس الشعار أو حط ${IDS} في اسمك خلال **${formatArabicDuration(durationMs)}** وترجع لك. بعدها تنشال من الطاقم وتتصفّر نقاطك.`,
+      restoredByTag: "رجعت تلبس شعار السيرفر، ورجعت لك رتبك الإدارية.",
+      restoredByDisplayName: "صار اسمك فيه معرّف السيرفر، ورجعت لك رتبك الإدارية.",
+      removedByExpiry: `انتهت المهلة بدون شعار أو معرّف، فتم شيلك من الطاقم في **${S}** وتصفير نقاطك. تقدر تقدّم من جديد متى ما حبيت.`,
+      awaitingIdentity: `تم قبولك في طاقم **${S}**. بتوصلك رتبك بعد ما تلبس الشعار أو تحط ${IDS} في اسمك.`,
+      grantedAfterAccept: "تم التحقق من الشعار أو المعرّف، واستلمت رتبك الإدارية. حياك!",
+      partialRestoreNote: "ملاحظة: بعض الرتب المحفوظة ما عادت موجودة في السيرفر وتم تجاوزها.",
+    },
+
+    notice: {
+      awaitingIdentity: (userId: string, dmSent: boolean) =>
+        `${E.warning} تم قبول <@${userId}>، وبتوصله رتبه بعد ما يلبس الشعار أو يحط المعرّف.` +
+        (dmSent ? "" : " (الخاص مقفل، بلّغوه.)"),
+    },
   },
-
-} as const;
+);

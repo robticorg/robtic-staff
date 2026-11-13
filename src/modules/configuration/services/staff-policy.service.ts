@@ -21,6 +21,7 @@ export interface StaffIdentifierRule {
 
 /** A server's rules, every field filled in. */
 export interface StaffPolicy {
+  language: "en" | "ar";
   features: Record<StaffFeatureKey, boolean>;
   timezone: string;
   identity: {
@@ -51,6 +52,7 @@ export interface StaffPolicy {
 
 /** What the bot did before rules were per server, so a server that never touched the dashboard sees no change. */
 export const STAFF_POLICY_DEFAULTS: StaffPolicy = {
+  language: "ar",
   features: Object.fromEntries(STAFF_FEATURE_KEYS.map((k) => [k, true])) as Record<StaffFeatureKey, boolean>,
   timezone: config.timezone,
   identity: {
@@ -127,6 +129,7 @@ export function resolveStaffPolicy(doc: Partial<StaffPolicyDoc> | null | undefin
   const evidenceMinFiles = int(ap.evidenceMinFiles, 0, 10, d.applications.evidenceMinFiles);
 
   return {
+    language: doc.language === "en" || doc.language === "ar" ? doc.language : d.language,
     features: Object.fromEntries(STAFF_FEATURE_KEYS.map((k) => [k, bool(f[k], d.features[k])])) as Record<StaffFeatureKey, boolean>,
     timezone: typeof doc.timezone === "string" && IANAZone.isValidZone(doc.timezone) ? doc.timezone : d.timezone,
     identity: {

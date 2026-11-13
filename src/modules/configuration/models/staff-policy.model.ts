@@ -14,6 +14,8 @@ export interface StaffPolicyDoc {
   features?: Partial<Record<StaffFeatureKey, boolean>>;
   /** IANA time zone for daily / weekly points and stats. */
   timezone?: string;
+  /** The language the bot answers in here (dashboard → General → Language). Unset: Arabic. */
+  language?: "en" | "ar";
   identity?: Partial<{
     acceptServerTag: boolean;
     identifiers: { text: string; strictness: "LONG" | "SHORT" }[];
@@ -64,6 +66,7 @@ const staffPolicySchema = new Schema<StaffPolicyDoc>(
     guildId: { type: String, required: true },
     features: { type: Schema.Types.Mixed, default: undefined },
     timezone: { type: String },
+    language: { type: String, enum: ["en", "ar"] },
     identity: { type: Schema.Types.Mixed, default: undefined },
     applications: { type: Schema.Types.Mixed, default: undefined },
     vacations: { type: Schema.Types.Mixed, default: undefined },

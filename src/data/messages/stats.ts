@@ -1,298 +1,541 @@
 import { emojis } from "../emojis/index.ts";
+import { bilingual } from "../../shared/utils/lang-context.ts";
 
 const E = emojis;
 
-export const statsMessages = {
-  notStaff: `${E.error} عرض الإحصائيات للطاقم الاداري بس.`,
-  managerOnlyOthers: `${E.error} عرض إحصائيات عضو ثاني لمانجرات الطاقم الاداري بس.`,
-  noStaffRecord: (mention: string) => `${E.error} ${mention} ما له سجل اداري في هذا السيرفر.`,
-  leaderboardEmpty: "ما فيه اداري مصنّف لهذه الفترة.",
+const d = (at: Date, style = "D") => `<t:${Math.floor(at.getTime() / 1000)}:${style}>`;
+type PanelStat = { claimed: number; completed: number; open: number };
 
-  usageStats: `${E.warning} الطريقة: \`!احصائياتي [@عضو]\``,
-  usageLeaderboard: `${E.warning} الطريقة: \`!المتصدرين [daily|weekly|monthly|all]\``,
-  usagePoints: `${E.warning} الطريقة: \`!نقاطي [@عضو]\``,
+export const statsMessages = bilingual(
+  {
+    notStaff: `${E.error} Stats are for staff only.`,
+    managerOnlyOthers: `${E.error} Only staff managers can view someone else's stats.`,
+    noStaffRecord: (mention: string) => `${E.error} ${mention} has no staff record here.`,
+    leaderboardEmpty: "No ranked staff for this period.",
 
-  points: {
-    heading: (userId: string) => `## نقاط <@${userId}>`,
-    allTime: (n: number) => `**إجمالي النقاط:** ${n}`,
-    weekly: (n: number) => `**نقاط الأسبوع:** ${n}`,
-    breakdownRow: (label: string, n: number) => `${label}: **${n}**`,
-    breakdownEmpty: "ما فيه نقاط هذا الأسبوع.",
-  },
+    usageStats: `${E.warning} Usage: \`!stats [@member]\``,
+    usageLeaderboard: `${E.warning} Usage: \`!leaderboard [daily|weekly|monthly|all]\``,
+    usagePoints: `${E.warning} Usage: \`!points [@member]\``,
 
-  pointTypeLabels: {
-    TICKET_CLAIM: "نقاط التكتات",
-    REPORT_CLAIM: "نقاط البلاغات",
-    GIFT_CLAIM: "نقاط الهدايا",
-    USER_WARNING: "نقاط تحذيرات الأعضاء",
-    STAFF_WARNING: "نقاط تحذيرات الطاقم الاداري",
-    MESSAGE: "نقاط الرسائل",
-    JAIL: "نقاط السجن",
-    STAFF_ACCEPT: "نقاط قبول الطاقم الاداري",
-    SPECIAL_POST: "نقاط نشر منشور مميز",
-    PRIVATE_CHANNEL_CREATE: "نقاط إنشاء روم خاص",
-    PRIVATE_CHANNEL_DELETE: "نقاط حذف روم خاص",
-    SELLER_ROLE: "نقاط إعطاء رتبة بائع",
-    APPEAL_SUCCESS_PENALTY: "خصم استئناف مقبول",
-    MANUAL_ADJUSTMENT: "تعديل يدوي",
-    OTHER: "نقاط أخرى",
-  } as Record<string, string>,
-
-  header: "**إحصائيات الطاقم الاداري**",
-  divider: "━━━━━━━━━━━━━━",
-  line: (label: string, value: string | number) => `${label}: ${value}`,
-
-  memberLine: (userId: string) => `<@${userId}>`,
-  roleLine: (roleId: string | null, level: number) =>
-    roleId ? `الرتبة: <@&${roleId}>` : `الرتبة: المستوى ${level}`,
-  statusLine: (status: string) => `الحالة: ${status}`,
-
-  pointsHeading: "__النقاط__",
-  pointRow: (label: string, value: number) => `${label}: **${value}**`,
-
-  activityHeading: (periodLabel: string) => `__النشاط — ${periodLabel}__`,
-  activityRow: (label: string, value: string | number) => `${label}: ${value}`,
-
-  reset: {
-    one: (mention: string, previous: number) =>
-      `تم تصفير عدّادات تكتات ${mention} (كانت ${previous}).`,
-    nothingToDo: (mention: string) => `عدّادات تكتات ${mention} مصفّرة أصلاً.`,
-    all: (resetCount: number, totalStaff: number) =>
-      `تم تصفير عدّادات التكتات لـ ${resetCount} من ${totalStaff} عضو في الطاقم الاداري.`,
-    note: "سجلّ التكتات في قاعدة البيانات ما تغيّر — العدّادات بس رجعت صفر.",
-  },
-
-  ticketsByPanelHeading: "__التكتات حسب القسم__",
-  ticketsByPanelEmpty: "• (ما فيه)",
-  ticketsByPanelRow: (
-    panelName: string,
-    stat: { claimed: number; completed: number; open: number },
-  ) =>
-    `• ${panelName} — استلم **${stat.claimed}** · أكمل **${stat.completed}** · مفتوح **${stat.open}**`,
-
-  recentHeading: "__آخر النشاطات__",
-  recentRow: (rel: string, text: string) => `• ${rel} — ${text}`,
-  recentEmpty: "• (ما فيه)",
-
-  historyHeading: "__حركات النقاط__",
-  historyRow: (rel: string, amount: number, type: string, ref: string) =>
-    `• ${rel} — ${amount >= 0 ? "+" : ""}${amount} ${type}${ref ? ` (${ref})` : ""}`,
-
-  lbHeader: (periodLabel: string) => `## متصدّري النقاط — ${periodLabel}`,
-  lbRow: (rankText: string, userId: string, points: number) =>
-    `${rankText} <@${userId}> — **${points}** نقطة`,
-  lbMedal: (rank: number) => (rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `${rank}.`),
-
-  admin: {
-    notStaff: (mention: string) => `${E.error} ${mention} مو عضو في الطاقم الاداري في هذا السيرفر.`,
-    defaultReason: (adminId: string) => `تعديل يدوي من <@${adminId}>`,
-    added: (mention: string, amount: number, balance: number) =>
-      `${E.success} تمت إضافة **${amount}** نقطة لـ ${mention}. الرصيد الحالي: **${balance}**.`,
-    removed: (mention: string, amount: number, balance: number) =>
-      `${E.success} تم خصم **${amount}** نقطة من ${mention}. الرصيد الحالي: **${balance}**.`,
-    resetOne: (mention: string, previousBalance: number) =>
-      `${E.success} تم تصفير نقاط ${mention} (كان عنده **${previousBalance}** نقطة).`,
-    resetNothingToDo: (mention: string) => `${E.warning} ${mention} أصلاً عنده **0** نقطة.`,
-    resetAll: (resetCount: number, totalStaff: number) =>
-      `${E.success} تم تصفير نقاط **${resetCount}** من أصل **${totalStaff}** عضو في الطاقم الاداري.`,
-  },
-
-  card: {
-    title: (userId: string) => `## احصائيات <@${userId}>`,
-    tier: (label: string) => `**الرتبة:** ${label}`,
-    staffType: (label: string) => `**النوع:** ${label}`,
-    levelRole: (roleId: string | null, level: number) =>
-      roleId
-        ? `**رتبة المستوى:** <@&${roleId}> (المستوى ${level})`
-        : `**رتبة المستوى:** المستوى ${level}`,
-    lastRoleBeforeFire: (roleId: string | null, level: number) =>
-      roleId
-        ? `**آخر رتبة قبل الطرد:** <@&${roleId}> (المستوى ${level})`
-        : `**آخر رتبة قبل الطرد:** المستوى ${level}`,
-    acceptedBy: (userId: string | null) => `**قبله:** ${userId ? `<@${userId}>` : "النظام"}`,
-    acceptedAt: (at: Date) => `**تاريخ القبول:** <t:${Math.floor(at.getTime() / 1000)}:D>`,
-    firedBy: (userId: string | null, at: Date | null) =>
-      `**طرده:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` — <t:${Math.floor(at.getTime() / 1000)}:D>` : ""}`,
-    resignationApprovedBy: (userId: string | null, at: Date | null) =>
-      `**وافق على استقالته:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` — <t:${Math.floor(at.getTime() / 1000)}:D>` : ""}`,
-    resignationReason: (reason: string) => `**سبب الاستقالة:** ${reason}`,
-    lastRoleBeforeLeaving: (roleId: string | null, level: number) =>
-      roleId
-        ? `**آخر رتبة قبل الاستقالة:** <@&${roleId}> (المستوى ${level})`
-        : `**آخر رتبة قبل الاستقالة:** المستوى ${level}`,
-    exitStatuses: {
-      FIRED: "مطرود",
-      DEMISSION: "مستقيل",
-      BLACKLISTED: "مطرود (بلاك ليست)",
-    } as Record<string, string>,
-
-    menu: {
-      placeholder: "اختر اللي تبي تشوفه",
-      options: {
-        home: { label: "الملف الشخصي", description: "الرتبة والحالة ومن قبله وإجمالي النقاط" },
-        weeks: { label: "النقاط الأسبوعية", description: "نقاطه في كل أسبوع من أول ما انضم" },
-        acts: { label: "إحصائيات الأعمال", description: "البلاغات والقبول والطرد والتحذيرات والسجن" },
-        tix: { label: "إحصائيات التكتات", description: "التكتات المستلمة والمكتملة لكل قسم" },
-        recent: { label: "آخر النشاطات", description: "آخر 10 أشياء سواها" },
-        app: { label: "طلب التقديم", description: "بياناته لما قدّم: العمر والمدينة والقسم والنتيجة" },
-      } as Record<string, { label: string; description: string }>,
+    points: {
+      heading: (userId: string) => `## <@${userId}>'s points`,
+      allTime: (n: number) => `**Total:** ${n}`,
+      weekly: (n: number) => `**This week:** ${n}`,
+      breakdownRow: (label: string, n: number) => `${label}: **${n}**`,
+      breakdownEmpty: "No points this week.",
     },
 
-    application: {
-      heading: (userId: string) => `## طلب التقديم — <@${userId}>`,
-      none: "ما لقيت له أي طلب تقديم محفوظ.",
-      more: (n: number) => `-# عنده ${n} طلبات — هذا آخرها.`,
-      type: (label: string) => `**النوع:** ${label}`,
-      status: (label: string) => `**الحالة:** ${label}`,
-      submittedAt: (at: Date) => `**تاريخ التقديم:** <t:${Math.floor(at.getTime() / 1000)}:f>`,
-      name: (v: string) => `**الاسم:** ${v}`,
-      age: (v: number) => `**العمر:** ${v}`,
-      city: (v: string) => `**المدينة:** ${v}`,
-      gender: (v: string) => `**الجنس:** ${v}`,
-      department: (v: string) => `**القسم:** ${v}`,
-      joinedServer: (at: Date) => `**دخل السيرفر:** <t:${Math.floor(at.getTime() / 1000)}:D>`,
-      recruiter: (id: string) => `**جابه:** <@${id}>`,
-      girlVerified: (by: string | null) => `**توثيق البنات:** تم${by ? ` بواسطة <@${by}>` : ""}`,
-      girlPending: "**توثيق البنات:** بانتظار التوثيق",
-      acceptedBy: (by: string, at: Date | null, level: number | null) =>
-        `**قبله:** <@${by}>${at ? ` — <t:${Math.floor(at.getTime() / 1000)}:D>` : ""}${level !== null ? ` (المستوى ${level})` : ""}`,
-      rejectedBy: (by: string, at: Date | null) =>
-        `**رفضه:** <@${by}>${at ? ` — <t:${Math.floor(at.getTime() / 1000)}:D>` : ""}`,
-      rejectionReason: (v: string) => `**سبب الرفض:** ${v}`,
-      transferHeading: "### بيانات النقل",
-      transferServer: (name: string | null, members: number, online: number) =>
-        `**السيرفر:** ${name ?? "—"} · ${members} عضو · ${online} متصل`,
-      transferRole: (order: number, name: string | null) => `**رتبته هناك:** ${name ?? "—"} (ترتيب ${order})`,
-      transferEligible: (eligible: boolean) => `**مؤهل للنقل:** ${eligible ? "نعم" : "لا"}`,
-      transferProposed: (level: number | null) => `**المستوى المقترح:** ${level ?? "—"}`,
-      transferEvidence: (n: number) => `**الإثباتات المرفوعة:** ${n}`,
-      statuses: {
-        PENDING: "بانتظار الاستلام",
-        CLAIMED: "مستلم",
-        UNDER_REVIEW: "قيد المراجعة",
-        ACCEPTED: "مقبول",
-        REJECTED: "مرفوض",
-        CLOSED: "مقفل بدون قرار",
+    pointTypeLabels: {
+      TICKET_CLAIM: "Tickets",
+      REPORT_CLAIM: "Reports",
+      GIFT_CLAIM: "Gifts",
+      USER_WARNING: "Member warnings",
+      STAFF_WARNING: "Staff warnings",
+      MESSAGE: "Messages",
+      JAIL: "Jails",
+      STAFF_ACCEPT: "Staff accepted",
+      SPECIAL_POST: "Featured posts",
+      PRIVATE_CHANNEL_CREATE: "Private channel created",
+      PRIVATE_CHANNEL_DELETE: "Private channel deleted",
+      SELLER_ROLE: "Seller role given",
+      APPEAL_SUCCESS_PENALTY: "Successful appeal deduction",
+      MANUAL_ADJUSTMENT: "Manual adjustment",
+      OTHER: "Other",
+    } as Record<string, string>,
+
+    header: "**Staff stats**",
+    divider: "━━━━━━━━━━━━━━",
+    line: (label: string, value: string | number) => `${label}: ${value}`,
+
+    memberLine: (userId: string) => `<@${userId}>`,
+    roleLine: (roleId: string | null, level: number) => (roleId ? `Role: <@&${roleId}>` : `Role: level ${level}`),
+    statusLine: (status: string) => `Status: ${status}`,
+
+    pointsHeading: "__Points__",
+    pointRow: (label: string, value: number) => `${label}: **${value}**`,
+
+    activityHeading: (periodLabel: string) => `__Activity — ${periodLabel}__`,
+    activityRow: (label: string, value: string | number) => `${label}: ${value}`,
+
+    reset: {
+      one: (mention: string, previous: number) => `${mention}'s ticket counters reset (were ${previous}).`,
+      nothingToDo: (mention: string) => `${mention}'s ticket counters are already zero.`,
+      all: (resetCount: number, totalStaff: number) => `Ticket counters reset for ${resetCount} of ${totalStaff} staff.`,
+      note: "Ticket history is unchanged; only the counters were reset.",
+    },
+
+    ticketsByPanelHeading: "__Tickets by section__",
+    ticketsByPanelEmpty: "• (none)",
+    ticketsByPanelRow: (panelName: string, stat: PanelStat) =>
+      `• ${panelName} — claimed **${stat.claimed}** · done **${stat.completed}** · open **${stat.open}**`,
+
+    recentHeading: "__Recent activity__",
+    recentRow: (rel: string, text: string) => `• ${rel} — ${text}`,
+    recentEmpty: "• (none)",
+
+    historyHeading: "__Point history__",
+    historyRow: (rel: string, amount: number, type: string, ref: string) => `• ${rel} — ${amount >= 0 ? "+" : ""}${amount} ${type}${ref ? ` (${ref})` : ""}`,
+
+    lbHeader: (periodLabel: string) => `## Points leaderboard — ${periodLabel}`,
+    lbRow: (rankText: string, userId: string, points: number) => `${rankText} <@${userId}> — **${points}** pts`,
+    lbMedal: (rank: number) => (rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `${rank}.`),
+
+    admin: {
+      notStaff: (mention: string) => `${E.error} ${mention} isn't staff in this server.`,
+      defaultReason: (adminId: string) => `Manual adjustment by <@${adminId}>`,
+      added: (mention: string, amount: number, balance: number) => `${E.success} +**${amount}** points to ${mention}. Balance: **${balance}**.`,
+      removed: (mention: string, amount: number, balance: number) => `${E.success} −**${amount}** points from ${mention}. Balance: **${balance}**.`,
+      resetOne: (mention: string, previousBalance: number) => `${E.success} ${mention}'s points reset (was **${previousBalance}**).`,
+      resetNothingToDo: (mention: string) => `${E.warning} ${mention} already has **0** points.`,
+      resetAll: (resetCount: number, totalStaff: number) => `${E.success} Points reset for **${resetCount}** of **${totalStaff}** staff.`,
+    },
+
+    card: {
+      title: (userId: string) => `## <@${userId}>'s stats`,
+      tier: (label: string) => `**Rank:** ${label}`,
+      staffType: (label: string) => `**Type:** ${label}`,
+      levelRole: (roleId: string | null, level: number) => (roleId ? `**Level role:** <@&${roleId}> (level ${level})` : `**Level role:** level ${level}`),
+      lastRoleBeforeFire: (roleId: string | null, level: number) => (roleId ? `**Last role before removal:** <@&${roleId}> (level ${level})` : `**Last role before removal:** level ${level}`),
+      acceptedBy: (userId: string | null) => `**Accepted by:** ${userId ? `<@${userId}>` : "System"}`,
+      acceptedAt: (at: Date) => `**Accepted:** ${d(at)}`,
+      firedBy: (userId: string | null, at: Date | null) => `**Removed by:** ${userId ? `<@${userId}>` : "System"}${at ? ` — ${d(at)}` : ""}`,
+      resignationApprovedBy: (userId: string | null, at: Date | null) => `**Resignation approved by:** ${userId ? `<@${userId}>` : "System"}${at ? ` — ${d(at)}` : ""}`,
+      resignationReason: (reason: string) => `**Reason for leaving:** ${reason}`,
+      lastRoleBeforeLeaving: (roleId: string | null, level: number) => (roleId ? `**Last role before leaving:** <@&${roleId}> (level ${level})` : `**Last role before leaving:** level ${level}`),
+      exitStatuses: {
+        FIRED: "Removed",
+        DEMISSION: "Resigned",
+        BLACKLISTED: "Removed (blacklisted)",
       } as Record<string, string>,
-    },
-    status: (label: string) => `**الحالة:** ${label}`,
-    totalPoints: (n: number) => `**إجمالي النقاط:** ${n}`,
-    breakPoints: (n: number) => `**نقاط البريك:** ${n} (ما تنحسب مع الإجمالي)`,
 
-    statuses: {
-      ACTIVE: "اداري",
-      BREAK: "اداري (في بريك)",
-      FIRED: "مطرود",
-      BLACKLISTED: "مطرود (بلاك ليست)",
-      TRANSFERRED: "منقول",
+      menu: {
+        placeholder: "Choose what to view",
+        options: {
+          home: { label: "Profile", description: "Rank, status, who accepted them, total points" },
+          weeks: { label: "Weekly points", description: "Points for every week since joining" },
+          acts: { label: "Actions", description: "Reports, accepts, removals, warnings, jails" },
+          tix: { label: "Tickets", description: "Claimed and completed tickets per section" },
+          recent: { label: "Recent activity", description: "Their last 10 actions" },
+          app: { label: "Application", description: "Age, city, department and result when they applied" },
+        } as Record<string, { label: string; description: string }>,
+      },
+
+      application: {
+        heading: (userId: string) => `## Application — <@${userId}>`,
+        none: "No saved application.",
+        more: (n: number) => `-# ${n} applications; showing the latest.`,
+        type: (label: string) => `**Type:** ${label}`,
+        status: (label: string) => `**Status:** ${label}`,
+        submittedAt: (at: Date) => `**Submitted:** ${d(at, "f")}`,
+        name: (v: string) => `**Name:** ${v}`,
+        age: (v: number) => `**Age:** ${v}`,
+        city: (v: string) => `**City:** ${v}`,
+        gender: (v: string) => `**Gender:** ${v}`,
+        department: (v: string) => `**Department:** ${v}`,
+        joinedServer: (at: Date) => `**Joined the server:** ${d(at)}`,
+        recruiter: (id: string) => `**Recruited by:** <@${id}>`,
+        girlVerified: (by: string | null) => `**Girls' verification:** done${by ? ` by <@${by}>` : ""}`,
+        girlPending: "**Girls' verification:** pending",
+        acceptedBy: (by: string, at: Date | null, level: number | null) => `**Accepted by:** <@${by}>${at ? ` — ${d(at)}` : ""}${level !== null ? ` (level ${level})` : ""}`,
+        rejectedBy: (by: string, at: Date | null) => `**Rejected by:** <@${by}>${at ? ` — ${d(at)}` : ""}`,
+        rejectionReason: (v: string) => `**Rejection reason:** ${v}`,
+        transferHeading: "### Transfer details",
+        transferServer: (name: string | null, members: number, online: number) => `**Server:** ${name ?? "—"} · ${members} members · ${online} online`,
+        transferRole: (order: number, name: string | null) => `**Their role there:** ${name ?? "—"} (position ${order})`,
+        transferEligible: (eligible: boolean) => `**Eligible:** ${eligible ? "Yes" : "No"}`,
+        transferProposed: (level: number | null) => `**Proposed level:** ${level ?? "—"}`,
+        transferEvidence: (n: number) => `**Evidence uploaded:** ${n}`,
+        statuses: {
+          PENDING: "Waiting",
+          CLAIMED: "Claimed",
+          UNDER_REVIEW: "Under review",
+          ACCEPTED: "Accepted",
+          REJECTED: "Rejected",
+          CLOSED: "Closed, no decision",
+        } as Record<string, string>,
+      },
+      status: (label: string) => `**Status:** ${label}`,
+      totalPoints: (n: number) => `**Total points:** ${n}`,
+      breakPoints: (n: number) => `**Break points:** ${n} (not in the total)`,
+
+      statuses: {
+        ACTIVE: "Staff",
+        BREAK: "Staff (on break)",
+        FIRED: "Removed",
+        BLACKLISTED: "Removed (blacklisted)",
+        TRANSFERRED: "Transferred",
+      } as Record<string, string>,
+
+      buttons: {
+        weeks: "Weekly points",
+        actions: "Actions",
+        tickets: "Tickets",
+        recent: "Recent",
+        back: "Back",
+        prev: "Previous",
+        next: "Next",
+      },
+
+      weeks: {
+        heading: (userId: string) => `## Weekly points — <@${userId}>`,
+        page: (page: number, pages: number) => `-# Page ${page} of ${pages}`,
+        week: (index: number, start: Date, end: Date, total: number) => `### Week ${index} — **${total}** pts\n-# ${d(start)} → ${d(end)}`,
+        empty: "No points this week.",
+        none: "No points recorded.",
+      },
+
+      actions: {
+        heading: (userId: string) => `## Actions — <@${userId}>`,
+        reportsGroup: "__Reports__",
+        staffGroup: "__Staff management__",
+        punishGroup: "__Punishments and warnings__",
+        otherGroup: "__Other__",
+        staffAccepted: "Staff accepted",
+        applicationsRefused: "Applications refused",
+        staffFired: "Staff removed",
+        staffPromoted: "Promotions",
+        staffDemoted: "Demotions",
+        girlsVerified: "Girls verified",
+        jails: "Jails",
+        vacationsDecided: "Vacations decided",
+      },
+
+      tickets: {
+        heading: (userId: string) => `## Tickets — <@${userId}>`,
+        totals: (claimed: number, completed: number, open: number) => `Claimed **${claimed}** · done **${completed}** · open now **${open}**`,
+        panel: (name: string) => `### ${name}`,
+        panelRow: (stat: PanelStat) => `Claimed **${stat.claimed}** · done **${stat.completed}** · open **${stat.open}**`,
+        empty: "No tickets claimed.",
+      },
+
+      recent: {
+        heading: (userId: string) => `## Recent activity — <@${userId}>`,
+      },
+
+      notYours: `${E.error} These buttons are for whoever ran the command. Use \`!stats\` yourself.`,
+    },
+
+    labels: {
+      memberFallback: "This member",
+      today: "Today",
+      week: "This week",
+      month: "This month",
+      allTime: "All time",
+      reportsClaimed: "Reports claimed",
+      reportsCompleted: "Reports done",
+      reportsAssignedNow: "Reports assigned now",
+      ticketsClaimed: "Tickets claimed",
+      ticketsCompleted: "Tickets done",
+      ticketsAssignedNow: "Tickets assigned now",
+      giftClaimsHandled: "Gift claims handled",
+      giftClaimsBreakdown: "Gift claims (approved / rejected / delivered / more asked)",
+      userWarningsIssued: "Member warnings given",
+      staffWarningsIssued: "Staff warnings given",
+      warningsRevoked: "Warnings revoked",
+      appealsHandled: "Appeals handled",
+      appealsSuccessful: "Appeals accepted",
+      vacationsDecided: "Vacations (approved / rejected)",
+      totalActivity: "Total activity",
+    },
+  },
+  {
+    notStaff: `${E.error} الإحصائيات للطاقم بس.`,
+    managerOnlyOthers: `${E.error} عرض إحصائيات غيرك لمانجرات الطاقم بس.`,
+    noStaffRecord: (mention: string) => `${E.error} ${mention} ما له سجل إداري هنا.`,
+    leaderboardEmpty: "ما فيه إداري مصنّف لهذه الفترة.",
+
+    usageStats: `${E.warning} الطريقة: \`!احصائياتي [@عضو]\``,
+    usageLeaderboard: `${E.warning} الطريقة: \`!المتصدرين [daily|weekly|monthly|all]\``,
+    usagePoints: `${E.warning} الطريقة: \`!نقاطي [@عضو]\``,
+
+    points: {
+      heading: (userId: string) => `## نقاط <@${userId}>`,
+      allTime: (n: number) => `**الإجمالي:** ${n}`,
+      weekly: (n: number) => `**هذا الأسبوع:** ${n}`,
+      breakdownRow: (label: string, n: number) => `${label}: **${n}**`,
+      breakdownEmpty: "ما فيه نقاط هذا الأسبوع.",
+    },
+
+    pointTypeLabels: {
+      TICKET_CLAIM: "التكتات",
+      REPORT_CLAIM: "البلاغات",
+      GIFT_CLAIM: "الهدايا",
+      USER_WARNING: "تحذيرات الأعضاء",
+      STAFF_WARNING: "تحذيرات الطاقم",
+      MESSAGE: "الرسائل",
+      JAIL: "السجن",
+      STAFF_ACCEPT: "قبول إداريين",
+      SPECIAL_POST: "منشور مميز",
+      PRIVATE_CHANNEL_CREATE: "إنشاء روم خاص",
+      PRIVATE_CHANNEL_DELETE: "حذف روم خاص",
+      SELLER_ROLE: "إعطاء رتبة بائع",
+      APPEAL_SUCCESS_PENALTY: "خصم استئناف مقبول",
+      MANUAL_ADJUSTMENT: "تعديل يدوي",
+      OTHER: "أخرى",
     } as Record<string, string>,
 
-    buttons: {
-      weeks: "النقاط الأسبوعية",
-      actions: "إحصائيات الأعمال",
-      tickets: "إحصائيات التكتات",
-      recent: "آخر النشاطات",
-      back: "رجوع",
-      prev: "السابق",
-      next: "التالي",
+    header: "**إحصائيات الطاقم**",
+    divider: "━━━━━━━━━━━━━━",
+    line: (label: string, value: string | number) => `${label}: ${value}`,
+
+    memberLine: (userId: string) => `<@${userId}>`,
+    roleLine: (roleId: string | null, level: number) => (roleId ? `الرتبة: <@&${roleId}>` : `الرتبة: المستوى ${level}`),
+    statusLine: (status: string) => `الحالة: ${status}`,
+
+    pointsHeading: "__النقاط__",
+    pointRow: (label: string, value: number) => `${label}: **${value}**`,
+
+    activityHeading: (periodLabel: string) => `__النشاط — ${periodLabel}__`,
+    activityRow: (label: string, value: string | number) => `${label}: ${value}`,
+
+    reset: {
+      one: (mention: string, previous: number) => `تم تصفير عدّادات تكتات ${mention} (كانت ${previous}).`,
+      nothingToDo: (mention: string) => `عدّادات تكتات ${mention} مصفّرة أصلاً.`,
+      all: (resetCount: number, totalStaff: number) => `تم تصفير عدّادات التكتات لـ ${resetCount} من ${totalStaff} إداري.`,
+      note: "سجل التكتات ما تغيّر، العدّادات بس.",
     },
 
-    weeks: {
-      heading: (userId: string) => `## النقاط الأسبوعية — <@${userId}>`,
-      page: (page: number, pages: number) => `-# صفحة ${page} من ${pages}`,
-      week: (index: number, start: Date, end: Date, total: number) =>
-        `### الأسبوع ${index} — **${total}** نقطة\n-# <t:${Math.floor(start.getTime() / 1000)}:D> ← <t:${Math.floor(end.getTime() / 1000)}:D>`,
-      empty: "ما فيه نقاط في هذا الأسبوع.",
-      none: "ما عنده أي نقاط مسجّلة.",
+    ticketsByPanelHeading: "__التكتات حسب القسم__",
+    ticketsByPanelEmpty: "• (لا شيء)",
+    ticketsByPanelRow: (panelName: string, stat: PanelStat) =>
+      `• ${panelName} — استلم **${stat.claimed}** · أكمل **${stat.completed}** · مفتوح **${stat.open}**`,
+
+    recentHeading: "__آخر النشاطات__",
+    recentRow: (rel: string, text: string) => `• ${rel} — ${text}`,
+    recentEmpty: "• (لا شيء)",
+
+    historyHeading: "__حركات النقاط__",
+    historyRow: (rel: string, amount: number, type: string, ref: string) => `• ${rel} — ${amount >= 0 ? "+" : ""}${amount} ${type}${ref ? ` (${ref})` : ""}`,
+
+    lbHeader: (periodLabel: string) => `## متصدّري النقاط — ${periodLabel}`,
+    lbRow: (rankText: string, userId: string, points: number) => `${rankText} <@${userId}> — **${points}** نقطة`,
+    lbMedal: (rank: number) => (rank === 1 ? "🥇" : rank === 2 ? "🥈" : rank === 3 ? "🥉" : `${rank}.`),
+
+    admin: {
+      notStaff: (mention: string) => `${E.error} ${mention} مو من الطاقم هنا.`,
+      defaultReason: (adminId: string) => `تعديل يدوي من <@${adminId}>`,
+      added: (mention: string, amount: number, balance: number) => `${E.success} +**${amount}** نقطة لـ ${mention}. الرصيد: **${balance}**.`,
+      removed: (mention: string, amount: number, balance: number) => `${E.success} −**${amount}** نقطة من ${mention}. الرصيد: **${balance}**.`,
+      resetOne: (mention: string, previousBalance: number) => `${E.success} تم تصفير نقاط ${mention} (كانت **${previousBalance}**).`,
+      resetNothingToDo: (mention: string) => `${E.warning} ${mention} نقاطه **0** أصلاً.`,
+      resetAll: (resetCount: number, totalStaff: number) => `${E.success} تم تصفير نقاط **${resetCount}** من **${totalStaff}** إداري.`,
     },
 
-    actions: {
-      heading: (userId: string) => `## إحصائيات الأعمال — <@${userId}>`,
-      reportsGroup: "__البلاغات__",
-      staffGroup: "__إدارة الطاقم الاداري__",
-      punishGroup: "__العقوبات والتحذيرات__",
-      otherGroup: "__أخرى__",
-      staffAccepted: "الطاقم الاداري اللي قبلهم",
-      applicationsRefused: "التقديمات اللي رفضها",
-      staffFired: "الطاقم الاداري اللي طردهم",
-      staffPromoted: "الترقيات",
-      staffDemoted: "التنزيلات",
-      girlsVerified: "البنات اللي وثّقهن",
-      jails: "السجن",
-      vacationsDecided: "الإجازات اللي قرّرها",
+    card: {
+      title: (userId: string) => `## إحصائيات <@${userId}>`,
+      tier: (label: string) => `**الرتبة:** ${label}`,
+      staffType: (label: string) => `**النوع:** ${label}`,
+      levelRole: (roleId: string | null, level: number) => (roleId ? `**رتبة المستوى:** <@&${roleId}> (المستوى ${level})` : `**رتبة المستوى:** المستوى ${level}`),
+      lastRoleBeforeFire: (roleId: string | null, level: number) => (roleId ? `**آخر رتبة قبل الفصل:** <@&${roleId}> (المستوى ${level})` : `**آخر رتبة قبل الفصل:** المستوى ${level}`),
+      acceptedBy: (userId: string | null) => `**قبله:** ${userId ? `<@${userId}>` : "النظام"}`,
+      acceptedAt: (at: Date) => `**تاريخ القبول:** ${d(at)}`,
+      firedBy: (userId: string | null, at: Date | null) => `**فصله:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` — ${d(at)}` : ""}`,
+      resignationApprovedBy: (userId: string | null, at: Date | null) => `**وافق على استقالته:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` — ${d(at)}` : ""}`,
+      resignationReason: (reason: string) => `**سبب الاستقالة:** ${reason}`,
+      lastRoleBeforeLeaving: (roleId: string | null, level: number) => (roleId ? `**آخر رتبة قبل الاستقالة:** <@&${roleId}> (المستوى ${level})` : `**آخر رتبة قبل الاستقالة:** المستوى ${level}`),
+      exitStatuses: {
+        FIRED: "مفصول",
+        DEMISSION: "مستقيل",
+        BLACKLISTED: "مفصول (بلاك ليست)",
+      } as Record<string, string>,
+
+      menu: {
+        placeholder: "اختر اللي تبي تشوفه",
+        options: {
+          home: { label: "الملف", description: "الرتبة والحالة ومن قبله وإجمالي النقاط" },
+          weeks: { label: "النقاط الأسبوعية", description: "نقاطه كل أسبوع من انضمامه" },
+          acts: { label: "الأعمال", description: "البلاغات والقبول والفصل والتحذيرات والسجن" },
+          tix: { label: "التكتات", description: "المستلمة والمكتملة لكل قسم" },
+          recent: { label: "آخر النشاطات", description: "آخر 10 أعمال" },
+          app: { label: "طلب التقديم", description: "العمر والمدينة والقسم والنتيجة" },
+        } as Record<string, { label: string; description: string }>,
+      },
+
+      application: {
+        heading: (userId: string) => `## طلب التقديم — <@${userId}>`,
+        none: "ما فيه طلب تقديم محفوظ.",
+        more: (n: number) => `-# عنده ${n} طلبات، هذا آخرها.`,
+        type: (label: string) => `**النوع:** ${label}`,
+        status: (label: string) => `**الحالة:** ${label}`,
+        submittedAt: (at: Date) => `**تاريخ التقديم:** ${d(at, "f")}`,
+        name: (v: string) => `**الاسم:** ${v}`,
+        age: (v: number) => `**العمر:** ${v}`,
+        city: (v: string) => `**المدينة:** ${v}`,
+        gender: (v: string) => `**الجنس:** ${v}`,
+        department: (v: string) => `**القسم:** ${v}`,
+        joinedServer: (at: Date) => `**دخل السيرفر:** ${d(at)}`,
+        recruiter: (id: string) => `**جابه:** <@${id}>`,
+        girlVerified: (by: string | null) => `**توثيق البنات:** تم${by ? ` بواسطة <@${by}>` : ""}`,
+        girlPending: "**توثيق البنات:** بانتظار التوثيق",
+        acceptedBy: (by: string, at: Date | null, level: number | null) => `**قبله:** <@${by}>${at ? ` — ${d(at)}` : ""}${level !== null ? ` (المستوى ${level})` : ""}`,
+        rejectedBy: (by: string, at: Date | null) => `**رفضه:** <@${by}>${at ? ` — ${d(at)}` : ""}`,
+        rejectionReason: (v: string) => `**سبب الرفض:** ${v}`,
+        transferHeading: "### بيانات النقل",
+        transferServer: (name: string | null, members: number, online: number) => `**السيرفر:** ${name ?? "—"} · ${members} عضو · ${online} متصل`,
+        transferRole: (order: number, name: string | null) => `**رتبته هناك:** ${name ?? "—"} (ترتيب ${order})`,
+        transferEligible: (eligible: boolean) => `**مؤهل:** ${eligible ? "نعم" : "لا"}`,
+        transferProposed: (level: number | null) => `**المستوى المقترح:** ${level ?? "—"}`,
+        transferEvidence: (n: number) => `**الإثباتات:** ${n}`,
+        statuses: {
+          PENDING: "بانتظار الاستلام",
+          CLAIMED: "مستلَم",
+          UNDER_REVIEW: "قيد المراجعة",
+          ACCEPTED: "مقبول",
+          REJECTED: "مرفوض",
+          CLOSED: "مغلق بدون قرار",
+        } as Record<string, string>,
+      },
+      status: (label: string) => `**الحالة:** ${label}`,
+      totalPoints: (n: number) => `**إجمالي النقاط:** ${n}`,
+      breakPoints: (n: number) => `**نقاط البريك:** ${n} (خارج الإجمالي)`,
+
+      statuses: {
+        ACTIVE: "إداري",
+        BREAK: "إداري (في بريك)",
+        FIRED: "مفصول",
+        BLACKLISTED: "مفصول (بلاك ليست)",
+        TRANSFERRED: "منقول",
+      } as Record<string, string>,
+
+      buttons: {
+        weeks: "النقاط الأسبوعية",
+        actions: "الأعمال",
+        tickets: "التكتات",
+        recent: "آخر النشاطات",
+        back: "رجوع",
+        prev: "السابق",
+        next: "التالي",
+      },
+
+      weeks: {
+        heading: (userId: string) => `## النقاط الأسبوعية — <@${userId}>`,
+        page: (page: number, pages: number) => `-# صفحة ${page} من ${pages}`,
+        week: (index: number, start: Date, end: Date, total: number) => `### الأسبوع ${index} — **${total}** نقطة\n-# ${d(start)} ← ${d(end)}`,
+        empty: "ما فيه نقاط هذا الأسبوع.",
+        none: "ما فيه نقاط مسجّلة.",
+      },
+
+      actions: {
+        heading: (userId: string) => `## الأعمال — <@${userId}>`,
+        reportsGroup: "__البلاغات__",
+        staffGroup: "__إدارة الطاقم__",
+        punishGroup: "__العقوبات والتحذيرات__",
+        otherGroup: "__أخرى__",
+        staffAccepted: "الإداريين المقبولين",
+        applicationsRefused: "التقديمات المرفوضة",
+        staffFired: "الإداريين المفصولين",
+        staffPromoted: "الترقيات",
+        staffDemoted: "التنزيلات",
+        girlsVerified: "توثيق البنات",
+        jails: "السجن",
+        vacationsDecided: "الإجازات المقرّرة",
+      },
+
+      tickets: {
+        heading: (userId: string) => `## التكتات — <@${userId}>`,
+        totals: (claimed: number, completed: number, open: number) => `استلم **${claimed}** · أكمل **${completed}** · مفتوح حالياً **${open}**`,
+        panel: (name: string) => `### ${name}`,
+        panelRow: (stat: PanelStat) => `استلم **${stat.claimed}** · أكمل **${stat.completed}** · مفتوح **${stat.open}**`,
+        empty: "ما استلم أي تكت.",
+      },
+
+      recent: {
+        heading: (userId: string) => `## آخر النشاطات — <@${userId}>`,
+      },
+
+      notYours: `${E.error} الأزرار لصاحب الأمر بس. اكتب \`!stats\` بنفسك.`,
     },
 
-    tickets: {
-      heading: (userId: string) => `## إحصائيات التكتات — <@${userId}>`,
-      totals: (claimed: number, completed: number, open: number) =>
-        `استلم **${claimed}** · أكمل **${completed}** · مفتوح حالياً **${open}**`,
-      panel: (name: string) => `### ${name}`,
-      panelRow: (stat: { claimed: number; completed: number; open: number }) =>
-        `استلم **${stat.claimed}** · أكمل **${stat.completed}** · مفتوح **${stat.open}**`,
-      empty: "ما استلم أي تكت.",
+    labels: {
+      memberFallback: "هذا العضو",
+      today: "اليوم",
+      week: "هذا الأسبوع",
+      month: "هذا الشهر",
+      allTime: "الكل",
+      reportsClaimed: "البلاغات المستلمة",
+      reportsCompleted: "البلاغات المكتملة",
+      reportsAssignedNow: "البلاغات المسندة حالياً",
+      ticketsClaimed: "التكتات المستلمة",
+      ticketsCompleted: "التكتات المكتملة",
+      ticketsAssignedNow: "التكتات المسندة حالياً",
+      giftClaimsHandled: "طلبات الهدايا المعالجة",
+      giftClaimsBreakdown: "طلبات الهدايا (موافقة / رفض / تسليم / طلب إضافي)",
+      userWarningsIssued: "تحذيرات الأعضاء",
+      staffWarningsIssued: "تحذيرات الطاقم",
+      warningsRevoked: "التحذيرات الملغاة",
+      appealsHandled: "الاستئنافات المعالجة",
+      appealsSuccessful: "الاستئنافات المقبولة",
+      vacationsDecided: "الإجازات (موافقة / رفض)",
+      totalActivity: "إجمالي النشاط",
     },
-
-    recent: {
-      heading: (userId: string) => `## آخر النشاطات — <@${userId}>`,
-    },
-
-    notYours: `${E.error} هذي الأزرار لصاحب الأمر بس — اكتب \`!stats\` بنفسك.`,
   },
+);
 
-  labels: {
-    memberFallback: "هذا العضو",
-    today: "اليوم",
-    week: "هذا الأسبوع",
-    month: "هذا الشهر",
-    allTime: "الكل",
-    reportsClaimed: "البلاغات المستلمة",
-    reportsCompleted: "البلاغات المكتملة",
-    reportsAssignedNow: "البلاغات المسندة حالياً",
-    ticketsClaimed: "التكتات المستلمة",
-    ticketsCompleted: "التكتات المكتملة",
-    ticketsAssignedNow: "التكتات المسندة حالياً",
-    giftClaimsHandled: "طلبات الهدايا المعالجة",
-    giftClaimsBreakdown: "طلبات الهدايا (موافقة / رفض / تسليم / طلب إضافي)",
-    userWarningsIssued: "تحذيرات الأعضاء الصادرة",
-    staffWarningsIssued: "تحذيرات الطاقم الاداري الصادرة",
-    warningsRevoked: "التحذيرات الملغاة",
-    appealsHandled: "الاستئنافات المعالجة",
-    appealsSuccessful: "الاستئنافات المقبولة",
-    vacationsDecided: "الإجازات (موافقة / رفض)",
-    totalActivity: "إجمالي النشاط",
+export const ACTIVITY_LABELS: Record<string, string> = bilingual<Record<string, string>>(
+  {
+    REPORT_CLAIM: "Claimed a report",
+    REPORT_COMPLETE: "Finished a report",
+    TICKET_CLAIM: "Claimed a ticket",
+    TICKET_COMPLETE: "Finished a ticket",
+    GIFT_CLAIM: "Handled a gift claim",
+    GIFT_CLAIM_APPROVE: "Approved a gift claim",
+    GIFT_CLAIM_REJECT: "Rejected a gift claim",
+    GIFT_CLAIM_RE_REQUEST: "Asked for more gift proof",
+    GIFT_CLAIM_FULFILL: "Delivered a gift claim",
+    GIFT_CLAIM_REVIEW: "Reviewed a gift claim",
+    USER_WARNING: "Warned a member",
+    STAFF_WARNING: "Warned staff",
+    PROMOTE: "Promoted staff",
+    DEMOTE: "Demoted staff",
+    ACCEPT: "Accepted staff",
+    FIRE: "Removed staff",
+    PUNISHMENT_REQUEST: "Requested a punishment",
+    PUNISHMENT_APPROVED: "Approved a punishment",
+    PUNISHMENT_REJECTED: "Rejected a punishment",
+    PUNISHMENT_EXECUTED: "Carried out a punishment",
+    PUNISHMENT_REVOKED: "Revoked a punishment",
+    VACATION_REQUEST: "Requested a vacation",
+    VACATION_APPROVED: "Approved a vacation",
+    VACATION_REJECTED: "Rejected a vacation",
+    BREAK: "Went on break",
+    RETURN_FROM_BREAK: "Back from break",
+    APPEAL_CLAIM: "Claimed an appeal",
+    APPEAL_ACCEPTED: "Accepted an appeal",
+    APPEAL_REJECTED: "Rejected an appeal",
+    GIRL_VERIFY: "Verified a girl",
+    OTHER: "Activity",
   },
-} as const;
-
-export const ACTIVITY_LABELS: Record<string, string> = {
-  REPORT_CLAIM: "استلم بلاغ",
-  REPORT_COMPLETE: "أنهى بلاغ",
-  TICKET_CLAIM: "استلم تكت",
-  TICKET_COMPLETE: "أنهى تكت",
-  GIFT_CLAIM: "عالج طلب هدية",
-  GIFT_CLAIM_APPROVE: "وافق على طلب هدية",
-  GIFT_CLAIM_REJECT: "رفض طلب هدية",
-  GIFT_CLAIM_RE_REQUEST: "طلب إثبات إضافي لهدية",
-  GIFT_CLAIM_FULFILL: "سلّم طلب هدية",
-  GIFT_CLAIM_REVIEW: "راجع طلب هدية",
-  USER_WARNING: "أصدر تحذير لعضو",
-  STAFF_WARNING: "أصدر تحذير اداري",
-  PROMOTE: "رقّى عضو في الطاقم الاداري",
-  DEMOTE: "نزّل عضو في الطاقم الاداري",
-  ACCEPT: "قبل عضو في الطاقم الاداري",
-  FIRE: "فصل عضو في الطاقم الاداري",
-  PUNISHMENT_REQUEST: "طلب عقوبة",
-  PUNISHMENT_APPROVED: "وافق على عقوبة",
-  PUNISHMENT_REJECTED: "رفض عقوبة",
-  PUNISHMENT_EXECUTED: "نفّذ عقوبة",
-  PUNISHMENT_REVOKED: "ألغى عقوبة",
-  VACATION_REQUEST: "طلب إجازة",
-  VACATION_APPROVED: "وافق على إجازة",
-  VACATION_REJECTED: "رفض إجازة",
-  BREAK: "دخل بريك",
-  RETURN_FROM_BREAK: "رجع من البريك",
-  APPEAL_CLAIM: "استلم استئناف",
-  APPEAL_ACCEPTED: "قبل استئناف",
-  APPEAL_REJECTED: "رفض استئناف",
-  GIRL_VERIFY: "وثّق بنت",
-  OTHER: "نشاط",
-};
+  {
+    REPORT_CLAIM: "استلم بلاغ",
+    REPORT_COMPLETE: "أنهى بلاغ",
+    TICKET_CLAIM: "استلم تكت",
+    TICKET_COMPLETE: "أنهى تكت",
+    GIFT_CLAIM: "عالج طلب هدية",
+    GIFT_CLAIM_APPROVE: "وافق على طلب هدية",
+    GIFT_CLAIM_REJECT: "رفض طلب هدية",
+    GIFT_CLAIM_RE_REQUEST: "طلب إثبات إضافي لهدية",
+    GIFT_CLAIM_FULFILL: "سلّم طلب هدية",
+    GIFT_CLAIM_REVIEW: "راجع طلب هدية",
+    USER_WARNING: "حذّر عضو",
+    STAFF_WARNING: "حذّر إداري",
+    PROMOTE: "رقّى إداري",
+    DEMOTE: "نزّل إداري",
+    ACCEPT: "قبل إداري",
+    FIRE: "فصل إداري",
+    PUNISHMENT_REQUEST: "طلب عقوبة",
+    PUNISHMENT_APPROVED: "وافق على عقوبة",
+    PUNISHMENT_REJECTED: "رفض عقوبة",
+    PUNISHMENT_EXECUTED: "نفّذ عقوبة",
+    PUNISHMENT_REVOKED: "ألغى عقوبة",
+    VACATION_REQUEST: "طلب إجازة",
+    VACATION_APPROVED: "وافق على إجازة",
+    VACATION_REJECTED: "رفض إجازة",
+    BREAK: "دخل بريك",
+    RETURN_FROM_BREAK: "رجع من البريك",
+    APPEAL_CLAIM: "استلم استئناف",
+    APPEAL_ACCEPTED: "قبل استئناف",
+    APPEAL_REJECTED: "رفض استئناف",
+    GIRL_VERIFY: "وثّق بنت",
+    OTHER: "نشاط",
+  },
+);
