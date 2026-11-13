@@ -1,227 +1,351 @@
 import { branding } from "../config/branding.ts";
 import { emojis } from "../emojis/index.ts";
+import { bilingual } from "../../shared/utils/lang-context.ts";
 
-const ATTACHMENT_PLACEHOLDER = "*(أرسل مرفق)*";
-const NOT_PROVIDED = "*غير مذكور*";
+const E = emojis;
+const relay = (label: string, placeholder: string) => (content: string) => `${label}\n${content.trim() || placeholder}`;
 
-export const modmailMessages = {
-  menu: {
-    title: `**${branding.moderationTitle}**`,
-    prompt: "كيف أقدر أساعدك؟",
-    reportButton: "بلّغ عن شخص",
-  },
+export const modmailMessages = bilingual(
+  {
+    menu: {
+      title: `**${branding.moderationTitle}**`,
+      prompt: "How can I help?",
+      reportButton: "Report someone",
+    },
 
-  wizard: {
-    formExpired: "نموذج البلاغ انتهت صلاحيته. راسلني بالخاص مرة ثانية عشان تبدأ من جديد.",
-    notReady: "بلاغك لسا مو جاهز. راسلني بالخاص مرة ثانية عشان تبدأ من جديد.",
-    useButton: "استخدم الزر فوق عشان تكمل بلاغك، أو اكتب `الغاء`.",
-    sendAttachments: "أرسل الصور / الملفات كمرفقات، أو اضغط **إرسال البلاغ**.",
-    cancelled: "تم إلغاء البلاغ.",
+    wizard: {
+      formExpired: "The report form expired. DM me again to start over.",
+      notReady: "Your report isn't ready. DM me again to start over.",
+      useButton: "Use the button above to continue, or type `cancel`.",
+      sendAttachments: "Send images or files as attachments, or press **Send report**.",
+      cancelled: "Report cancelled.",
+      targetConfirmUser: (targetMention: string) => `You're reporting ${targetMention}. Continue to add the reason and details.`,
+      targetConfirmStaff: (targetMention: string) => `${E.warning} You're reporting **a staff member**: ${targetMention}. Continue to add the reason and details.`,
+      continueButton: "Add reason and details",
+      cancelButton: "Cancel",
+      submitButton: "Send report",
+      evidenceTitle: "**Evidence**",
+      evidencePrompt: ["**Evidence**", "", "Send any images, videos or files here now. You can send several.", ""],
+      evidenceCollected: (count: number) => `Collected so far: **${count}**`,
+      evidenceFinish: "Press **Send report** when you're done.",
+      evidenceAck: (count: number) => `${E.attachment} Added. Evidence: **${count}**. Press **Send report** when ready.`,
+      submitted: (caseId: string) => `${E.success} Report \`${caseId}\` sent. The reports team will review it; reply here to talk to them.`,
+      submittedShort: (caseId: string) => `${E.success} Sent as \`${caseId}\`.`,
+      targetModalTitle: "Report someone",
+      targetModalLabel: "Their Discord user ID",
+      targetModalPlaceholder: "e.g. 123456789012345678",
+      detailsModalTitle: "Report details",
+      reasonLabel: "Reason (short)",
+      reasonPlaceholder: "e.g. Bullying",
+      descriptionLabel: "Details: what happened?",
+    },
 
-    targetConfirmUser: (targetMention: string) =>
-      `أنت تبلّغ عن ${targetMention}.\n\nكمّل عشان تضيف السبب والتفاصيل.`,
-    targetConfirmStaff: (targetMention: string) =>
-      `${emojis.warning} أنت تبلّغ عن **عضو في الطاقم الاداري**: ${targetMention}.\n\n` +
-      "راح يتعامل معه كـ **بلاغ على اداري**. كمّل عشان تضيف السبب والتفاصيل.",
+    validation: {
+      invalidUserId: `${E.error} That isn't a valid Discord user ID.`,
+      cannotReportSelf: `${E.error} You can't report yourself.`,
+      cannotReportBot: `${E.error} You can't report the bot.`,
+      targetNotInGuild: `${E.error} That person isn't in ${branding.communityName}.`,
+      targetLookupFailed: `${E.error} Couldn't check that person right now. Try again shortly.`,
+      reasonAndDescriptionRequired: `${E.error} Both the reason and details are needed.`,
+    },
 
-    continueButton: "أضف السبب والتفاصيل",
-    cancelButton: "إلغاء",
-    submitButton: "إرسال البلاغ",
+    card: {
+      headingNew: `${E.report} New report`,
+      headingStaff: `${E.report} Report on staff`,
+      rule: (width: number) => "━".repeat(width),
+      reportedLabel: "Reported:",
+      reportedStaffLabel: "Reported staff:",
+      typeUserReport: "Type: member report",
+      caseLine: (caseId: string) => `Case: \`${caseId}\``,
+      reporterLabel: "Reporter:",
+      reporterPrivate: `${E.lock} Hidden`,
+      reasonLabel: "Reason:",
+      descriptionLabel: "Details:",
+      evidenceLabel: "Evidence:",
+      evidenceCount: (n: number) => `${n} file(s)`,
+      statusLabel: "Status:",
+      statusClaimed: (handlerMention?: string) => `Claimed${handlerMention ? ` · ${handlerMention}` : ""}`,
+      reasonFallback: "*Not given*",
+      claimButton: "Claim",
+      claimedButton: "Claimed",
+      transferButton: "Transfer",
+      infoButton: "Reporter info (admin)",
+      closeButton: "Close",
+      handlerLabel: "Handler:",
+      handlerNone: "—",
+      closedLabel: "Closed",
+      replyHint: "_Reply to the reporter in the thread below. Start a line with `//` for an internal note._",
+    },
 
-    evidenceTitle: "**الأدلة**",
-    evidencePrompt: [
-      "**الأدلة**",
-      "",
-      "أرسل أي صور أو فيديوهات أو ملفات كرسائل خاصة عادية الحين. تقدر ترسل كذا وحدة.",
-      "",
-    ],
-    evidenceCollected: (count: number) => `اللي تم جمعه لحد الحين: **${count}**`,
-    evidenceFinish: "اضغط **إرسال البلاغ** لمّا تخلص.",
-    evidenceAck: (count: number) =>
-      `${emojis.attachment} تمت الإضافة. الأدلة المجموعة: **${count}**. اضغط **إرسال البلاغ** لمّا تكون جاهز.`,
+    transfer: {
+      modalTitle: "Transfer report",
+      targetLabel: "Transfer to",
+      reasonLabel: "Reason",
+      reasonPlaceholder: "Why are you transferring it?",
+      notClaimed: `${E.error} The report must be claimed first.`,
+      notAllowed: `${E.error} Only the handler can transfer this report.`,
+      closed: `${E.error} This report is closed.`,
+      targetMissing: `${E.error} Choose one member.`,
+      reasonMissing: `${E.error} A reason is required.`,
+      targetNotInGuild: `${E.error} That member isn't in the server.`,
+      targetIsBot: `${E.error} You can't transfer to a bot.`,
+      targetIsHandler: `${E.error} They already handle this report.`,
+      targetIsReported: `${E.error} You can't transfer it to the reported member.`,
+      targetNotStaff: `${E.error} The member must be staff or an admin.`,
+      raced: `${E.error} The handler just changed. Try again.`,
+      done: (caseId: string, userId: string) => `${E.success} Report \`${caseId}\` transferred to <@${userId}>.`,
+      threadNote: (fromId: string, toId: string, reason: string) => `${E.transfer} Transferred from <@${fromId}> to <@${toId}>. **Reason:** ${reason}`,
+      dmFailed: (userId: string) => `${E.warning} Couldn't DM <@${userId}> (DMs closed).`,
+      dm: {
+        body: (caseId: string, reason: string) => `Report \`${caseId}\` was transferred to you. Please head there now.\nReason: ${reason}`,
+        button: "Go to report",
+      },
+    },
 
-    submitted: (caseId: string) =>
-      [
-        `${emojis.success} تم إرسال بلاغك برقم \`${caseId}\`.`,
-        "",
-        "راح يراجعه مسؤول البلاغات. أي رد ترسله هنا الحين يروح لفريق البلاغات.",
-      ].join("\n"),
-    submittedShort: (caseId: string) => `${emojis.success} تم الإرسال برقم \`${caseId}\`.`,
-
-    targetModalTitle: "بلّغ عن شخص",
-    targetModalLabel: "آيدي حساب ديسكورد للشخص اللي تبي تبلّغ عنه",
-    targetModalPlaceholder: "مثال: 123456789012345678",
-    detailsModalTitle: "تفاصيل البلاغ",
-    reasonLabel: "السبب (باختصار)",
-    reasonPlaceholder: "مثال: تنمّر",
-    descriptionLabel: "التفاصيل — وش اللي صار؟",
-  },
-
-  validation: {
-    invalidUserId: `${emojis.error} هذا ما يشبه آيدي حساب ديسكورد صحيح.`,
-    cannotReportSelf: `${emojis.error} ما تقدر تبلّغ عن نفسك.`,
-    cannotReportBot: `${emojis.error} ما تقدر تبلّغ عن البوت.`,
-    targetNotInGuild: `${emojis.error} هذا الشخص مو عضو حالياً في ${branding.communityName}.`,
-    targetLookupFailed: `${emojis.error} ما قدرت أتأكد من هذا الشخص الحين. جرب بعد شوي.`,
-    reasonAndDescriptionRequired: `${emojis.error} السبب والتفاصيل لازم الاثنين.`,
-  },
-
-  card: {
-    headingNew: `${emojis.report} بلاغ جديد`,
-    headingStaff: `${emojis.report} بلاغ على اداري`,
-    rule: (width: number) => "━".repeat(width),
-    reportedLabel: "المُبلَّغ عنه:",
-    reportedStaffLabel: "عضو الطاقم الاداري المُبلَّغ عنه:",
-    typeUserReport: "النوع: بلاغ على عضو",
-    caseLine: (caseId: string) => `رقم البلاغ: \`${caseId}\``,
-    reporterLabel: "المُبلِّغ:",
-    reporterPrivate: `${emojis.lock} مخفي`,
-    reasonLabel: "السبب:",
-    descriptionLabel: "التفاصيل:",
-    evidenceLabel: "الأدلة:",
-    evidenceCount: (n: number) => `${n} ملف`,
-    statusLabel: "الحالة:",
-    statusClaimed: (handlerMention?: string) =>
-      `مُستلَم${handlerMention ? ` · ${handlerMention}` : ""}`,
-    reasonFallback: NOT_PROVIDED,
-    claimButton: "استلام",
-    claimedButton: "مُستلَم",
-    transferButton: "تحويل",
-    infoButton: "معلومات المُبلِّغ (أدمن)",
-    closeButton: "إغلاق",
-    handlerLabel: "المسؤول:",
-    handlerNone: "—",
-    closedLabel: "مقفل",
-    replyHint:
-      "_الثريد تحت هذي الرسالة هو مكان الرد على المُبلِّغ. ابدأ السطر بـ `//` عشان تخلي ملاحظة داخلية ما تنرسل له._",
-  },
-
-  transfer: {
-    modalTitle: "تحويل البلاغ",
-    targetLabel: "العضو اللي تبي تحوّل له البلاغ",
-    reasonLabel: "سبب التحويل",
-    reasonPlaceholder: "اكتب سبب تحويل البلاغ…",
-
-    notClaimed: `${emojis.error} لازم يكون البلاغ مُستلَم قبل ما ينحوّل.`,
-    notAllowed: `${emojis.error} ما عندك صلاحية تحوّل هذا البلاغ — لازم تكون المستلِم.`,
-    closed: `${emojis.error} هذا البلاغ مقفل.`,
-    targetMissing: `${emojis.error} اختر عضو واحد عشان تحوّل له البلاغ.`,
-    reasonMissing: `${emojis.error} سبب التحويل مطلوب.`,
-    targetNotInGuild: `${emojis.error} هذا العضو مو موجود في السيرفر.`,
-    targetIsBot: `${emojis.error} ما تقدر تحوّل البلاغ لبوت.`,
-    targetIsHandler: `${emojis.error} هذا العضو مستلِم البلاغ أصلاً.`,
-    targetIsReported: `${emojis.error} ما تقدر تحوّل البلاغ للعضو المُبلَّغ عنه.`,
-    targetNotStaff: `${emojis.error} لازم يكون العضو من الطاقم الاداري أو أدمن.`,
-    raced: `${emojis.error} تغيّر مستلِم البلاغ قبل شوي — جرب مرة ثانية.`,
-
-    done: (caseId: string, userId: string) =>
-      `${emojis.success} تم تحويل البلاغ \`${caseId}\` إلى <@${userId}>.`,
-    threadNote: (fromId: string, toId: string, reason: string) =>
-      `${emojis.transfer} تم تحويل البلاغ من <@${fromId}> إلى <@${toId}>.
-**سبب التحويل:** ${reason}`,
-    dmFailed: (userId: string) =>
-      `${emojis.warning} ما قدرت أرسل رسالة خاصة لـ <@${userId}> — خاصه مغلق.`,
+    thread: {
+      closedAfterDecision: `${E.lock} Report closed after the final decision.`,
+      onlyHandlerMayReply: (handlerMention?: string) =>
+        handlerMention ? `${E.lock} ${handlerMention} handles this report; only they can reply.` : `${E.lock} Claim the report to reply.`,
+      systemNote: (text: string) => `${E.system} ${text}`,
+      claimedNote: (handlerMention: string) => `Claimed by ${handlerMention}.`,
+      statusNote: (status: string, actorMention: string) => `Status → **${status}** (by ${actorMention}).`,
+      caseClosedNoDelivery: "This report is closed; the message wasn't delivered.",
+      deliveryFailed: `${E.warning} Couldn't deliver: the reporter's DMs are closed or they left.`,
+      evidenceSubmittedNote: "Evidence sent with the report",
+      reporterLabel: "👤 **Reporter**",
+      reporterRelay: relay("👤 **Reporter**", "*(sent an attachment)*"),
+    },
 
     dm: {
-      body: (caseId: string, reason: string) =>
-        `لقد تم تحويل البلاغ رقم \`${caseId}\` اليك يرجى توجه للبلاغ حالا
-سبب تحويل : ${reason}`,
-      button: "الذهاب للبلاغ",
+      staffRelay: (caseId: string, content: string) => [`**Reports team** · \`${caseId}\``, content.trim() || "*(sent an attachment)*"].join("\n"),
+      chooseCase: "You have more than one open report. Which one is this about?",
+      caseSwitched: (caseId: string) => `Done. Your messages now go to \`${caseId}\`. Send it again.`,
+      caseClosedNotice: (caseId: string) => `\`${caseId}\` is closed. DM me again to open a new report.`,
+      relayFailed: `${E.error} Couldn't reach the reports team. Try again shortly.`,
+      relayError: `${E.error} Something went wrong delivering your message.`,
+      notSetUp: "I'm not fully set up yet. Try again later.",
     },
-  },
 
-  thread: {
-    closedAfterDecision: `${emojis.lock} تم إقفال البلاغ بعد صدور القرار النهائي.`,
-    onlyHandlerMayReply: (handlerMention?: string) =>
-      handlerMention
-        ? `${emojis.lock} هذا البلاغ مُستلَم من ${handlerMention} — هو بس اللي يقدر يرد فيه.`
-        : `${emojis.lock} لازم تستلم البلاغ أول عشان ترد فيه.`,
-    systemNote: (text: string) => `${emojis.system} ${text}`,
-    claimedNote: (handlerMention: string) => `تم الاستلام من ${handlerMention}.`,
-    statusNote: (status: string, actorMention: string) =>
-      `الحالة → **${status}** (بواسطة ${actorMention}).`,
-    caseClosedNoDelivery: "هذا البلاغ مغلق — ما تم توصيل الرسالة.",
-    deliveryFailed:
-      `${emojis.warning} ما قدرت أوصّل الرسالة — خاص المُبلِّغ مقفول أو طلع من السيرفر.`,
-    evidenceSubmittedNote: "الأدلة المرسلة مع البلاغ",
-
-    reporterLabel: "👤 **المُبلِّغ**",
-    reporterRelay: (content: string) => {
-      const body = content.trim();
-      return body
-        ? `👤 **المُبلِّغ**\n${body}`
-        : `👤 **المُبلِّغ**\n${ATTACHMENT_PLACEHOLDER}`;
+    info: {
+      title: `${E.locked} **Reporter info**`,
+      userLine: (mention: string, tag: string) => `Member: ${mention} (${tag})`,
+      idLine: (userId: string) => `ID: \`${userId}\``,
+      createdLine: (epochSeconds: number) => `Reported: <t:${epochSeconds}:F>`,
+      unknownTag: "Unknown",
     },
-  },
 
-  dm: {
-    staffRelay: (caseId: string, content: string) => {
-      const body = content.trim();
-      return [`**مسؤول البلاغات** · \`${caseId}\``, body || ATTACHMENT_PLACEHOLDER].join("\n");
+    claim: {
+      awarded: (caseId: string) => `${E.success} Claimed \`${caseId}\`. **+1 point.**`,
+      alreadyHandler: (caseId: string) => `${E.success} You handle \`${caseId}\`.`,
+      alreadyClaimed: "This report was already claimed.",
     },
-    chooseCase: "عندك أكثر من بلاغ مفتوح. هذي الرسالة عن أي وحد؟",
-    caseSwitched: (caseId: string) =>
-      `تمام — رسائلك الحين تروح لـ \`${caseId}\`. أرسلها مرة ثانية.`,
-    caseClosedNotice: (caseId: string) =>
-      `\`${caseId}\` تم إغلاقه. لو تحتاج مساعدة أكثر، راسلني بالخاص مرة ثانية عشان تفتح بلاغ جديد.`,
-    relayFailed: `${emojis.error} ما قدرت أوصّل هذا لفريق البلاغات. جرب بعد شوي.`,
-    relayError: `${emojis.error} صار خطأ وأنا أوصّل رسالتك.`,
-    notSetUp: "لسا ما تم إعدادي بالكامل. جرب بعدين.",
+
+    permissions: {
+      claimAboutYou: "You can't claim a report about yourself.",
+      claimNotManager: "Only report managers can claim reports.",
+    },
+    status: {
+      changed: (caseId: string, status: string) => `${E.success} \`${caseId}\` → **${status}**.`,
+    },
+
+    errors: {
+      targetMissing: "The reported person is missing.",
+      reasonOrDescriptionMissing: "The report is missing a reason or details.",
+      cannotClaim: "You can't claim this report.",
+      guildUnavailable: "The community server isn't available.",
+      reportsNotConfigured: "The reports channel isn't set. Ask an admin to set it on the dashboard (Channels).",
+      reportsChannelInvalid: "The reports channel doesn't support threads.",
+      notAllowedToManage: "You can't manage this report.",
+      reporterInfoAdminOnly: "Reporter info is for admins only.",
+      stateChangedRetry: "The report just changed. Try again.",
+      caseAlreadyClaimed: "This report was already claimed.",
+      unknownReportType: "Unknown report type",
+      reasonRequired: "A reason is required",
+      descriptionRequired: "Details are required",
+      cannotReportSelf: "You can't report yourself",
+      submitFailed: "Your report wasn't sent.",
+      claimFailed: "Couldn't claim this report.",
+      reporterInfoFailed: "Couldn't load the reporter's info.",
+      statusUpdateFailed: "Couldn't update the report's status.",
+      caseGone: "This report no longer exists.",
+    },
+
+    reactions: {
+      relayed: E.inbound,
+      internalNote: E.note,
+    },
+
+    threadReason: (caseId: string) => `Investigation thread for ${caseId}`,
   },
+  {
+    menu: {
+      title: `**${branding.moderationTitle}**`,
+      prompt: "كيف أقدر أساعدك؟",
+      reportButton: "بلّغ عن شخص",
+    },
 
-  info: {
-    title: `${emojis.locked} **معلومات المُبلِّغ**`,
-    userLine: (mention: string, tag: string) => `العضو: ${mention} (${tag})`,
-    idLine: (userId: string) => `الآيدي: \`${userId}\``,
-    createdLine: (epochSeconds: number) => `تاريخ البلاغ: <t:${epochSeconds}:F>`,
-    unknownTag: "غير معروف",
+    wizard: {
+      formExpired: "انتهت صلاحية النموذج. راسلني من جديد للبدء.",
+      notReady: "بلاغك مو جاهز. راسلني من جديد للبدء.",
+      useButton: "استخدم الزر فوق للمتابعة، أو اكتب `الغاء`.",
+      sendAttachments: "أرسل الصور / الملفات كمرفقات، أو اضغط **إرسال البلاغ**.",
+      cancelled: "تم إلغاء البلاغ.",
+      targetConfirmUser: (targetMention: string) => `أنت تبلّغ عن ${targetMention}. كمّل لإضافة السبب والتفاصيل.`,
+      targetConfirmStaff: (targetMention: string) => `${E.warning} أنت تبلّغ عن **إداري**: ${targetMention}. كمّل لإضافة السبب والتفاصيل.`,
+      continueButton: "أضف السبب والتفاصيل",
+      cancelButton: "إلغاء",
+      submitButton: "إرسال البلاغ",
+      evidenceTitle: "**الأدلة**",
+      evidencePrompt: ["**الأدلة**", "", "أرسل الصور أو الفيديوهات أو الملفات هنا الحين. تقدر ترسل أكثر من وحدة.", ""],
+      evidenceCollected: (count: number) => `المجموع للحين: **${count}**`,
+      evidenceFinish: "اضغط **إرسال البلاغ** إذا خلصت.",
+      evidenceAck: (count: number) => `${E.attachment} تمت الإضافة. الأدلة: **${count}**. اضغط **إرسال البلاغ** إذا جاهز.`,
+      submitted: (caseId: string) => `${E.success} تم إرسال بلاغك \`${caseId}\`. بيراجعه فريق البلاغات، ورد هنا للتواصل معهم.`,
+      submittedShort: (caseId: string) => `${E.success} تم الإرسال برقم \`${caseId}\`.`,
+      targetModalTitle: "بلّغ عن شخص",
+      targetModalLabel: "آيدي حسابه في ديسكورد",
+      targetModalPlaceholder: "مثال: 123456789012345678",
+      detailsModalTitle: "تفاصيل البلاغ",
+      reasonLabel: "السبب (باختصار)",
+      reasonPlaceholder: "مثال: تنمّر",
+      descriptionLabel: "التفاصيل: وش صار؟",
+    },
+
+    validation: {
+      invalidUserId: `${E.error} هذا مو آيدي ديسكورد صحيح.`,
+      cannotReportSelf: `${E.error} ما تقدر تبلّغ عن نفسك.`,
+      cannotReportBot: `${E.error} ما تقدر تبلّغ عن البوت.`,
+      targetNotInGuild: `${E.error} الشخص مو موجود في ${branding.communityName}.`,
+      targetLookupFailed: `${E.error} ما قدرت أتحقق منه الحين. جرّب بعد شوي.`,
+      reasonAndDescriptionRequired: `${E.error} السبب والتفاصيل مطلوبين.`,
+    },
+
+    card: {
+      headingNew: `${E.report} بلاغ جديد`,
+      headingStaff: `${E.report} بلاغ على إداري`,
+      rule: (width: number) => "━".repeat(width),
+      reportedLabel: "المُبلَّغ عنه:",
+      reportedStaffLabel: "الإداري المُبلَّغ عنه:",
+      typeUserReport: "النوع: بلاغ على عضو",
+      caseLine: (caseId: string) => `رقم البلاغ: \`${caseId}\``,
+      reporterLabel: "المُبلِّغ:",
+      reporterPrivate: `${E.lock} مخفي`,
+      reasonLabel: "السبب:",
+      descriptionLabel: "التفاصيل:",
+      evidenceLabel: "الأدلة:",
+      evidenceCount: (n: number) => `${n} ملف`,
+      statusLabel: "الحالة:",
+      statusClaimed: (handlerMention?: string) => `مُستلَم${handlerMention ? ` · ${handlerMention}` : ""}`,
+      reasonFallback: "*غير مذكور*",
+      claimButton: "استلام",
+      claimedButton: "مُستلَم",
+      transferButton: "تحويل",
+      infoButton: "معلومات المُبلِّغ (أدمن)",
+      closeButton: "إغلاق",
+      handlerLabel: "المسؤول:",
+      handlerNone: "—",
+      closedLabel: "مغلق",
+      replyHint: "_رد على المُبلِّغ في الثريد تحت. ابدأ السطر بـ `//` لملاحظة داخلية._",
+    },
+
+    transfer: {
+      modalTitle: "تحويل البلاغ",
+      targetLabel: "التحويل إلى",
+      reasonLabel: "السبب",
+      reasonPlaceholder: "ليش تحوّل البلاغ؟",
+      notClaimed: `${E.error} لازم يكون البلاغ مُستلَم أول.`,
+      notAllowed: `${E.error} التحويل للمستلِم بس.`,
+      closed: `${E.error} البلاغ مغلق.`,
+      targetMissing: `${E.error} اختر عضو واحد.`,
+      reasonMissing: `${E.error} السبب مطلوب.`,
+      targetNotInGuild: `${E.error} العضو مو موجود في السيرفر.`,
+      targetIsBot: `${E.error} ما ينحوّل لبوت.`,
+      targetIsHandler: `${E.error} البلاغ عنده أصلاً.`,
+      targetIsReported: `${E.error} ما ينحوّل للمُبلَّغ عنه.`,
+      targetNotStaff: `${E.error} لازم يكون من الطاقم أو أدمن.`,
+      raced: `${E.error} تغيّر المستلِم قبل شوي. جرّب مرة ثانية.`,
+      done: (caseId: string, userId: string) => `${E.success} تم تحويل البلاغ \`${caseId}\` إلى <@${userId}>.`,
+      threadNote: (fromId: string, toId: string, reason: string) => `${E.transfer} تم التحويل من <@${fromId}> إلى <@${toId}>. **السبب:** ${reason}`,
+      dmFailed: (userId: string) => `${E.warning} ما قدرت أراسل <@${userId}> (الخاص مقفل).`,
+      dm: {
+        body: (caseId: string, reason: string) => `تم تحويل البلاغ \`${caseId}\` لك، توجّه له الحين.\nالسبب: ${reason}`,
+        button: "الذهاب للبلاغ",
+      },
+    },
+
+    thread: {
+      closedAfterDecision: `${E.lock} تم إقفال البلاغ بعد القرار النهائي.`,
+      onlyHandlerMayReply: (handlerMention?: string) =>
+        handlerMention ? `${E.lock} البلاغ عند ${handlerMention}، هو بس اللي يرد.` : `${E.lock} استلم البلاغ عشان ترد.`,
+      systemNote: (text: string) => `${E.system} ${text}`,
+      claimedNote: (handlerMention: string) => `استلمه ${handlerMention}.`,
+      statusNote: (status: string, actorMention: string) => `الحالة ← **${status}** (بواسطة ${actorMention}).`,
+      caseClosedNoDelivery: "البلاغ مغلق، ما توصّلت الرسالة.",
+      deliveryFailed: `${E.warning} ما توصّلت: خاص المُبلِّغ مقفل أو طلع من السيرفر.`,
+      evidenceSubmittedNote: "الأدلة المرسلة مع البلاغ",
+      reporterLabel: "👤 **المُبلِّغ**",
+      reporterRelay: relay("👤 **المُبلِّغ**", "*(أرسل مرفق)*"),
+    },
+
+    dm: {
+      staffRelay: (caseId: string, content: string) => [`**فريق البلاغات** · \`${caseId}\``, content.trim() || "*(أرسل مرفق)*"].join("\n"),
+      chooseCase: "عندك أكثر من بلاغ مفتوح. الرسالة عن أي واحد؟",
+      caseSwitched: (caseId: string) => `تمام، رسائلك الحين تروح لـ \`${caseId}\`. أرسلها مرة ثانية.`,
+      caseClosedNotice: (caseId: string) => `تم إغلاق \`${caseId}\`. راسلني من جديد لفتح بلاغ جديد.`,
+      relayFailed: `${E.error} ما قدرت أوصّلها لفريق البلاغات. جرّب بعد شوي.`,
+      relayError: `${E.error} صار خطأ أثناء توصيل رسالتك.`,
+      notSetUp: "لسا ما انضبطت بالكامل. جرّب بعدين.",
+    },
+
+    info: {
+      title: `${E.locked} **معلومات المُبلِّغ**`,
+      userLine: (mention: string, tag: string) => `العضو: ${mention} (${tag})`,
+      idLine: (userId: string) => `الآيدي: \`${userId}\``,
+      createdLine: (epochSeconds: number) => `تاريخ البلاغ: <t:${epochSeconds}:F>`,
+      unknownTag: "غير معروف",
+    },
+
+    claim: {
+      awarded: (caseId: string) => `${E.success} استلمت \`${caseId}\`. **+1 نقطة.**`,
+      alreadyHandler: (caseId: string) => `${E.success} أنت المسؤول عن \`${caseId}\`.`,
+      alreadyClaimed: "البلاغ مستلَم.",
+    },
+
+    permissions: {
+      claimAboutYou: "ما تقدر تستلم بلاغ عنك.",
+      claimNotManager: "الاستلام لمسؤولي البلاغات بس.",
+    },
+    status: {
+      changed: (caseId: string, status: string) => `${E.success} \`${caseId}\` ← **${status}**.`,
+    },
+
+    errors: {
+      targetMissing: "المُبلَّغ عنه ناقص.",
+      reasonOrDescriptionMissing: "البلاغ ناقص السبب أو التفاصيل.",
+      cannotClaim: "ما تقدر تستلم هذا البلاغ.",
+      guildUnavailable: "سيرفر المجتمع مو متاح.",
+      reportsNotConfigured: "روم البلاغات غير مضبوط. اطلب من الأدمن يضبطه من الداشبورد (الرومات).",
+      reportsChannelInvalid: "روم البلاغات ما يدعم الثريدات.",
+      notAllowedToManage: "ما تقدر تدير هذا البلاغ.",
+      reporterInfoAdminOnly: "معلومات المُبلِّغ للأدمن بس.",
+      stateChangedRetry: "تغيّرت حالة البلاغ. جرّب مرة ثانية.",
+      caseAlreadyClaimed: "البلاغ مستلَم.",
+      unknownReportType: "نوع بلاغ غير معروف",
+      reasonRequired: "السبب مطلوب",
+      descriptionRequired: "التفاصيل مطلوبة",
+      cannotReportSelf: "ما تقدر تبلّغ عن نفسك",
+      submitFailed: "ما انرسل بلاغك.",
+      claimFailed: "ما قدرت أستلم البلاغ.",
+      reporterInfoFailed: "ما قدرت أجيب معلومات المُبلِّغ.",
+      statusUpdateFailed: "ما قدرت أحدّث حالة البلاغ.",
+      caseGone: "البلاغ ما عاد موجود.",
+    },
+
+    reactions: {
+      relayed: E.inbound,
+      internalNote: E.note,
+    },
+
+    threadReason: (caseId: string) => `ثريد تحقيق البلاغ ${caseId}`,
   },
-
-  claim: {
-    awarded: (caseId: string) => `${emojis.success} استلمت \`${caseId}\`. **+1 نقطة.**`,
-    alreadyHandler: (caseId: string) =>
-      `${emojis.success} أنت المسؤول عن \`${caseId}\`.`,
-    alreadyClaimed: "هذا البلاغ تم استلامه من قبل.",
-  },
-
-  permissions: {
-    claimAboutYou: "ما تقدر تستلم بلاغ عنك أنت.",
-    claimNotManager: "استلام البلاغات لمسؤولين البلاغات بس.",
-  },
-  status: {
-    changed: (caseId: string, status: string) =>
-      `${emojis.success} \`${caseId}\` → **${status}**.`,
-  },
-
-  errors: {
-    targetMissing: "الشخص المُبلَّغ عنه ناقص.",
-    reasonOrDescriptionMissing: "البلاغ ناقص سبب أو تفاصيل.",
-    cannotClaim: "ما تقدر تستلم هذا البلاغ.",
-    guildUnavailable: "سيرفر المجتمع مو متاح.",
-    reportsNotConfigured:
-      "روم البلاغات مو مضبوط. اطلب من الأدمن يشغّل `/channels set type:REPORTS`.",
-    reportsChannelInvalid: "روم البلاغات المضبوط ما يدعم الثريدات.",
-    notAllowedToManage: "ما عندك صلاحية تدير هذا البلاغ.",
-    reporterInfoAdminOnly: "معلومات المُبلِّغ للأدمن بس.",
-    stateChangedRetry: "تغيّرت حالة البلاغ — جرب مرة ثانية.",
-    caseAlreadyClaimed: "هذا البلاغ تم استلامه من قبل.",
-
-    unknownReportType: "نوع بلاغ غير معروف",
-    reasonRequired: "لازم تكتب سبب",
-    descriptionRequired: "لازم تكتب تفاصيل",
-    cannotReportSelf: "ما تقدر تبلّغ عن نفسك",
-
-    submitFailed: "ما تم إرسال بلاغك.",
-    claimFailed: "ما قدرت أستلم هذا البلاغ.",
-    reporterInfoFailed: "ما قدرت أجيب معلومات المُبلِّغ.",
-    statusUpdateFailed: "ما قدرت أحدّث حالة البلاغ.",
-    caseGone: "هذا البلاغ ما عاد موجود.",
-  },
-
-  reactions: {
-    relayed: emojis.inbound,
-    internalNote: emojis.note,
-  },
-
-  threadReason: (caseId: string) => `ثريد تحقيق للبلاغ ${caseId}`,
-} as const;
+);

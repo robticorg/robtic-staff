@@ -5,6 +5,7 @@ import { commandMap } from "./registry.ts";
 import { logger } from "../shared/utils/logger.ts";
 import { DEFAULT_LANG, guildIdOf, runWithLang, type Lang } from "../shared/utils/lang-context.ts";
 import { staffPolicyService } from "../modules/configuration/services/staff-policy.service.ts";
+import { discordConfig } from "../config/discord.ts";
 
 const log = logger.child("client");
 
@@ -37,7 +38,8 @@ export function createClient(): Client {
     const listener = async (...args: unknown[]) => {
       const guildId = guildIdOf(args);
       try {
-        const lang = await langOf(guildId);
+        // A DM (reports by modmail) has no server: it speaks the community server's language.
+        const lang = await langOf(guildId ?? discordConfig.primaryGuildId ?? null);
         await runWithLang(lang, () => (event.execute as (...a: unknown[]) => unknown)(...args), guildId);
       } catch (err) {
         log.error(`event "${String(event.name)}" threw`, err);
