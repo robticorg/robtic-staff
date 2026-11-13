@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import type { HydratedDocument } from "mongoose";
 import { BaseRepository } from "../../../shared/repository/base.repository.ts";
 import type { GuildId, IdLike, MongoFilter, UserId } from "../../../shared/types/index.ts";
@@ -25,7 +26,7 @@ const COMMAND_PATTERN = /^[a-z0-9_-]{1,32}$/;
 export function normaliseFastAccessCommand(raw: string): string {
   const command = raw.trim().replace(/^\$/, "").toLowerCase();
   if (!COMMAND_PATTERN.test(command)) {
-    throw new ValidationError("الأمر لازم يكون من 1 إلى 32 حرف من a-z و 0-9 و '-' أو '_'", {
+    throw new ValidationError(L("The name must be 1 to 32 characters: a-z, 0-9, '-' or '_'", "الأمر لازم يكون من 1 إلى 32 حرف من a-z و 0-9 و '-' أو '_'"), {
       command: raw,
     });
   }
@@ -50,7 +51,7 @@ export class FastAccessService extends BaseRepository<FastAccess> {
     if (!FAST_ACCESS_CONTEXT_VALUES.includes(input.contextType)) {
       throw new ValidationError("Unknown fast-access context", { contextType: input.contextType });
     }
-    if (!input.message?.trim()) throw new ValidationError("لازم تكتب رسالة");
+    if (!input.message?.trim()) throw new ValidationError(L("Write a message", "لازم تكتب رسالة"));
     if (!input.createdBy) throw new ValidationError("createdBy is required");
 
     return this.insert({
@@ -104,7 +105,7 @@ export class FastAccessService extends BaseRepository<FastAccess> {
   async update(input: UpdateFastAccessInput): Promise<HydratedDocument<FastAccess>> {
     const patch: Partial<FastAccess> = {};
     if (input.message !== undefined) {
-      if (!input.message.trim()) throw new ValidationError("الرسالة ما تقدر تكون فاضية");
+      if (!input.message.trim()) throw new ValidationError(L("The message can't be empty", "الرسالة ما تقدر تكون فاضية"));
       patch.message = input.message;
     }
     if (input.enabled !== undefined) patch.enabled = input.enabled;

@@ -1,3 +1,4 @@
+import { L } from "../../shared/utils/lang-context.ts";
 import {
   InteractionContextType,
   MessageFlags,
@@ -75,7 +76,7 @@ function panelScopeLabel(panelIds: string[]): string {
   if (panelIds.length === 0) return M.scopeAll;
   return panelIds
     .map((id) => ticketConfigService.getPanel(id, null)?.name ?? id)
-    .join("، ");
+    .join(L(", ", "، "));
 }
 
 async function handleList(interaction: ChatInputCommandInteraction): Promise<void> {

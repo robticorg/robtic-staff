@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import { AttachmentBuilder, type Guild, type GuildTextBasedChannel } from "discord.js";
 import { limits } from "../../../data/config/limits.ts";
 import { buildLogCard } from "../../../libs/discord/index.ts";
@@ -126,15 +127,15 @@ export class TranscriptService {
           title: `### 📄 ${ticketName(payload.ticket)}`,
           tone: "info",
           fields: [
-            { label: "العضو", value: `<@${payload.ticket.ownerId}>` },
+            { label: L("Member", "العضو"), value: `<@${payload.ticket.ownerId}>` },
             ...(payload.ticket.claimedByDiscordId
-              ? [{ label: "استلمه", value: `<@${payload.ticket.claimedByDiscordId}>` }]
+              ? [{ label: L("Claimed by", "استلمه"), value: `<@${payload.ticket.claimedByDiscordId}>` }]
               : []),
             {
-              label: "القسم",
+              label: L("Section", "القسم"),
               value: ticketConfigService.getPanel(payload.ticket.panelId, payload.ticket.guildId)?.name ?? payload.ticket.panelId,
             },
-            { label: "عدد الرسائل", value: String(transcript.messageCount) },
+            { label: L("Messages", "عدد الرسائل"), value: String(transcript.messageCount) },
           ],
           files: [file],
         }),

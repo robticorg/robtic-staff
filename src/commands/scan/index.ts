@@ -1,3 +1,4 @@
+import { L } from "../../shared/utils/lang-context.ts";
 import {
   InteractionContextType,
   MessageFlags,
@@ -44,7 +45,7 @@ function buildSummary(report: ScanReport): (string | undefined)[] {
     const sample = report.invalidMembers
       .slice(0, MAX_INVALID_MENTIONS)
       .map((id) => `<@${id}>`)
-      .join("، ");
+      .join(L(", ", "، "));
     if (sample) lines.push(M.invalidSample(sample));
   }
 

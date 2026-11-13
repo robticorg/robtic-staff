@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import {
   ChannelType,
   type AnyThreadChannel,
@@ -85,7 +86,7 @@ export class ModmailService {
       caseId: kase.caseId,
       senderType: ModmailSenderType.USER,
       senderId: reporter.id,
-      content: `السبب: ${draft.reason}\n\nالتفاصيل: ${draft.description}`,
+      content: `${L("Reason", "السبب")}: ${draft.reason}\n\n${L("Details", "التفاصيل")}: ${draft.description}`,
       attachmentIds: attachmentService.idsOf(attachmentDocs),
     });
     if (attachmentDocs.length > 0) {

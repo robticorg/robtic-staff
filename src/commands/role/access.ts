@@ -1,3 +1,4 @@
+import { L } from "../../shared/utils/lang-context.ts";
 import type { ChatInputCommandInteraction, Role } from "discord.js";
 import { MessageFlags } from "discord.js";
 import { CommandOption } from "../../data/commands/index.ts";
@@ -18,7 +19,7 @@ const MAX_LISTED = 15;
 function mentions(roleIds: readonly string[]): string {
   const shown = roleIds.slice(0, MAX_LISTED).map((id) => `<@&${id}>`);
   const rest = roleIds.length - shown.length;
-  return rest > 0 ? `${shown.join("، ")} ${M.andMore(rest)}` : shown.join("، ");
+  return rest > 0 ? `${shown.join(L(", ", "، "))} ${M.andMore(rest)}` : shown.join(L(", ", "، "));
 }
 
 function describeRejection(rejected: RejectedRole): string {

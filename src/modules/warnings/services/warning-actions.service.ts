@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import type { Guild, GuildMember } from "discord.js";
 import { Types } from "mongoose";
 import { DomainError } from "../../../shared/utils/errors.ts";
@@ -455,7 +456,7 @@ export class WarningActionService {
       staffId: input.staffObjectId,
       category: input.category,
       level,
-      reason: "حصل على 3 تحذيرات شفوية",
+      reason: L("Reached 3 verbal warnings", "حصل على 3 تحذيرات شفوية"),
       issuedBy: "SYSTEM",
       evidence: [],
       source: StaffWarningRealSource.VERBAL_ESCALATION,

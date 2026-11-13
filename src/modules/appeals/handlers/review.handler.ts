@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import {
   MessageFlags,
   type ButtonInteraction,
@@ -116,20 +117,20 @@ export async function handleInfo(
   const label = punishmentMessages.labels[punishment.type] ?? punishment.type;
   const lines = [
     R.infoTitle,
-    R.infoLine("العضو", `<@${appeal.userId}> (\`${appeal.userId}\`)`),
-    R.infoLine("آيدي العقوبة", `\`${punishment.punishmentId}\``),
-    R.infoLine("نوع العقوبة", label),
+    R.infoLine(L("Member", "العضو"), `<@${appeal.userId}> (\`${appeal.userId}\`)`),
+    R.infoLine(L("Punishment ID", "آيدي العقوبة"), `\`${punishment.punishmentId}\``),
+    R.infoLine(L("Punishment", "نوع العقوبة"), label),
     R.infoLine(
-      "تاريخ العقوبة",
+      L("Punished", "تاريخ العقوبة"),
       punishment.executedAt
         ? `<t:${Math.floor(punishment.executedAt.getTime() / 1000)}:f>`
         : "—",
     ),
-    R.infoLine("مُصدِر العقوبة", `<@${punishment.issuedBy}>`),
-    R.infoLine("آيدي البلاغ", punishment.reportId ? `\`${punishment.reportId}\`` : "—"),
-    R.infoLine("المحقق", investigator),
-    R.infoLine("حالة الاستئناف", appeal.status),
-    R.infoLine("تاريخ التقديم", `<t:${Math.floor(appeal.submittedAt.getTime() / 1000)}:f>`),
+    R.infoLine(L("Issued by", "مُصدِر العقوبة"), `<@${punishment.issuedBy}>`),
+    R.infoLine(L("Report ID", "آيدي البلاغ"), punishment.reportId ? `\`${punishment.reportId}\`` : "—"),
+    R.infoLine(L("Investigator", "المحقق"), investigator),
+    R.infoLine(L("Appeal status", "حالة الاستئناف"), appeal.status),
+    R.infoLine(L("Submitted", "تاريخ التقديم"), `<t:${Math.floor(appeal.submittedAt.getTime() / 1000)}:f>`),
   ];
   await interaction.reply({ content: lines.join("\n"), ...EPHEMERAL });
 }

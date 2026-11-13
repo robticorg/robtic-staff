@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import type { HydratedDocument } from "mongoose";
 import { BaseRepository } from "../../../shared/repository/base.repository.ts";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
@@ -21,7 +22,7 @@ export class FaqService extends BaseRepository<Faq> {
 
   add(input: AddFaqInput): Promise<HydratedDocument<Faq>> {
     if (!input.question?.trim() || !input.answer?.trim()) {
-      throw new ValidationError("لازم سؤال وإجابة الاثنين");
+      throw new ValidationError(L("Both a question and an answer are needed", "لازم سؤال وإجابة الاثنين"));
     }
     return this.insert({
       guildId: input.guildId,

@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import {
   MessageFlags,
   type ButtonInteraction,
@@ -113,13 +114,13 @@ export async function handleInfoButton(
 
   const lines = [
     A.infoTitle(punishment.type),
-    A.infoLine("الهدف", `<@${punishment.userId}> (\`${punishment.userId}\`)`),
-    A.infoLine("مقدّم الطلب", `<@${approval.requestedBy}>`),
-    A.infoLine("السبب", punishment.reason),
-    ...(punishment.reportId ? [A.infoLine("البلاغ", `\`${punishment.reportId}\``)] : []),
+    A.infoLine(L("Target", "الهدف"), `<@${punishment.userId}> (\`${punishment.userId}\`)`),
+    A.infoLine(L("Requested by", "مقدّم الطلب"), `<@${approval.requestedBy}>`),
+    A.infoLine(L("Reason", "السبب"), punishment.reason),
+    ...(punishment.reportId ? [A.infoLine(L("Report", "البلاغ"), `\`${punishment.reportId}\``)] : []),
     punishment.evidence.length
-      ? A.infoLine("الأدلة", `\n${punishment.evidence.join("\n")}`)
-      : A.infoLine("الأدلة", "ما فيه شي مرفق"),
+      ? A.infoLine(L("Evidence", "الأدلة"), `\n${punishment.evidence.join("\n")}`)
+      : A.infoLine(L("Evidence", "الأدلة"), L("Nothing attached", "ما فيه شي مرفق")),
   ];
   await interaction.reply({ content: lines.join("\n"), ...EPHEMERAL });
 }

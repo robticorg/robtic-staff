@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import { PermissionFlagsBits, type Guild, type GuildMember, type User } from "discord.js";
 import type { HydratedDocument } from "mongoose";
 import { BaseRepository } from "../../../shared/repository/base.repository.ts";
@@ -184,7 +185,7 @@ export class PunishmentService extends BaseRepository<Punishment> {
       { punishmentId, status: current.status },
       { $set: { status: to, ...extra } },
     );
-    if (!updated) throw new DomainError("PUNISH_RACE", "تغيّرت حالة العقوبة — جرب مرة ثانية.");
+    if (!updated) throw new DomainError("PUNISH_RACE", L("The punishment just changed. Try again.", "تغيّرت حالة العقوبة — جرب مرة ثانية."));
     return updated;
   }
 
@@ -259,7 +260,7 @@ export class PunishmentService extends BaseRepository<Punishment> {
     if (punishment.status !== PunishmentStatus.EXECUTED) {
       throw new DomainError(
         "PUNISH_NOT_REVERSIBLE",
-        "العقوبة اللي تم تنفيذها بس تقدر تتلغى.",
+        L("Only a carried-out punishment can be revoked.", "العقوبة اللي تم تنفيذها بس تقدر تتلغى."),
         { status: punishment.status },
       );
     }
@@ -370,7 +371,7 @@ export class PunishmentService extends BaseRepository<Punishment> {
 
   async executeAction(punishment: PunishmentDoc, ctx: ExecuteContext): Promise<ExecuteResult> {
     if (punishment.status !== PunishmentStatus.PENDING && punishment.status !== PunishmentStatus.APPROVED) {
-      throw new DomainError("PUNISH_BAD_STATE", "هذه العقوبة ما عاد يمكن تنفيذها.");
+      throw new DomainError("PUNISH_BAD_STATE", L("This punishment can't be carried out anymore.", "هذه العقوبة ما عاد يمكن تنفيذها."));
     }
 
     if (punishment.type === PunishmentType.NO_ACTION) {

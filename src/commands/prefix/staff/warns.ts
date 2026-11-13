@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import { definePrefixCommand } from "../../../discord/prefix-command.ts";
 import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { staffService } from "../../../modules/staff/index.ts";
@@ -24,17 +25,17 @@ export default definePrefixCommand({
       const isOwner = w.userId === ctx.member.id;
       if (!isStaff && !isOwner) throw new PrefixAbort(prefixMessages.warn.detailNotAllowed);
       lines.push(
-        `**تحذير عضو** \`${w._id.toString()}\``,
-        `العضو: <@${w.userId}>`,
-        `الحالة: ${w.status}`,
-        `المصدر: ${w.source}`,
-        `أصدره: <@${w.issuedBy}>`,
-        `السبب: ${w.reason}`,
-        `التاريخ: <t:${Math.floor(w.createdAt.getTime() / 1000)}:f>`,
+        `**${L("Member warning", "تحذير عضو")}** \`${w._id.toString()}\``,
+        `${L("Member", "العضو")}: <@${w.userId}>`,
+        `${L("Status", "الحالة")}: ${w.status}`,
+        `${L("Source", "المصدر")}: ${w.source}`,
+        `${L("Issued by", "أصدره")}: <@${w.issuedBy}>`,
+        `${L("Reason", "السبب")}: ${w.reason}`,
+        `${L("Date", "التاريخ")}: <t:${Math.floor(w.createdAt.getTime() / 1000)}:f>`,
       );
-      if (w.evidence.length) lines.push(`الأدلة:\n${w.evidence.join("\n")}`);
+      if (w.evidence.length) lines.push(`${L("Evidence", "الأدلة")}:\n${w.evidence.join("\n")}`);
       if (w.revokedBy) {
-        lines.push(`ألغاه <@${w.revokedBy}>${w.revokeReason ? ` — ${w.revokeReason}` : ""}`);
+        lines.push(`${L("Revoked by", "ألغاه")} <@${w.revokedBy}>${w.revokeReason ? ` — ${w.revokeReason}` : ""}`);
       }
     } else {
       const w = found.doc;
@@ -43,29 +44,29 @@ export default definePrefixCommand({
       if (!isManager && !isOwner) throw new PrefixAbort(prefixMessages.warn.detailNotAllowed);
       const kind = (w.type ?? "REAL") as "VERBAL" | "REAL";
       lines.push(
-        `**تحذير اداري** \`${w._id.toString()}\``,
-        targetStaff ? `عضو الطاقم الاداري: <@${targetStaff.userId}>` : `آيدي الطاقم الاداري: ${w.staffId.toString()}`,
-        `نوع التحذير: ${prefixMessages.warn.typeLabel(kind)}`,
+        `**${L("Staff warning", "تحذير اداري")}** \`${w._id.toString()}\``,
+        targetStaff ? `${L("Staff member", "عضو الطاقم الاداري")}: <@${targetStaff.userId}>` : `${L("Staff ID", "آيدي الطاقم الاداري")}: ${w.staffId.toString()}`,
+        `${L("Type", "نوع التحذير")}: ${prefixMessages.warn.typeLabel(kind)}`,
       );
       if (kind === "REAL" && w.level) {
-        lines.push(`المستوى: ${prefixMessages.warn.levelLabel(w.level)}`);
+        lines.push(`${L("Level", "المستوى")}: ${prefixMessages.warn.levelLabel(w.level)}`);
       }
       if (kind === "VERBAL" && w.status === "CONVERTED") {
-        lines.push(`الحالة: ${prefixMessages.warn.convertedStatusLabel}`);
+        lines.push(`${L("Status", "الحالة")}: ${prefixMessages.warn.convertedStatusLabel}`);
       } else {
-        lines.push(`الحالة: ${w.status}`);
+        lines.push(`${L("Status", "الحالة")}: ${w.status}`);
       }
       if (kind === "REAL" && w.sourceVerbalWarningIds?.length) {
-        lines.push(`التحذيرات الشفوية المحوَّلة: ${w.sourceVerbalWarningIds.length}`);
+        lines.push(`${L("Verbal warnings turned official", "التحذيرات الشفوية المحوَّلة")}: ${w.sourceVerbalWarningIds.length}`);
       }
       lines.push(
-        `أصدره: <@${w.issuedBy}>`,
-        `السبب: ${w.reason}`,
-        `التاريخ: <t:${Math.floor(w.createdAt.getTime() / 1000)}:f>`,
+        `${L("Issued by", "أصدره")}: <@${w.issuedBy}>`,
+        `${L("Reason", "السبب")}: ${w.reason}`,
+        `${L("Date", "التاريخ")}: <t:${Math.floor(w.createdAt.getTime() / 1000)}:f>`,
       );
-      if (w.evidence.length) lines.push(`الأدلة:\n${w.evidence.join("\n")}`);
+      if (w.evidence.length) lines.push(`${L("Evidence", "الأدلة")}:\n${w.evidence.join("\n")}`);
       if (w.removedBy) {
-        lines.push(`حذفه <@${w.removedBy}>${w.removalReason ? ` — ${w.removalReason}` : ""}`);
+        lines.push(`${L("Removed by", "حذفه")} <@${w.removedBy}>${w.removalReason ? ` — ${w.removalReason}` : ""}`);
       }
     }
 

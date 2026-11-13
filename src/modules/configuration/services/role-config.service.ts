@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import type { HydratedDocument } from "mongoose";
 import { CACHE_ENABLED, CONFIG_CACHE_TTL_MS, TtlCache } from "../../../libs/cache/index.ts";
 import { BaseRepository } from "../../../shared/repository/base.repository.ts";
@@ -274,11 +275,11 @@ export class RoleConfigService extends BaseRepository<RoleConfig> {
     orderedRoleIds: readonly RoleId[],
   ): Promise<StaffRoleLevel[]> {
     if (orderedRoleIds.length === 0) {
-      throw new ValidationError("لازم يحتوي السلّم على رتبة البداية على الأقل");
+      throw new ValidationError(L("The ladder needs at least the start role", "لازم يحتوي السلّم على رتبة البداية على الأقل"));
     }
     const unique = new Set(orderedRoleIds);
     if (unique.size !== orderedRoleIds.length) {
-      throw new ValidationError("السلّم فيه رتب مكررة");
+      throw new ValidationError(L("The ladder has duplicate roles", "السلّم فيه رتب مكررة"));
     }
 
     const last = orderedRoleIds.length - 1;

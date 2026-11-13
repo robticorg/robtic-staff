@@ -1,3 +1,4 @@
+import { bilingual } from "../../../shared/utils/lang-context.ts";
 import type { PointsPeriod } from "../../../shared/utils/time.ts";
 
 export const StatsPeriod = {
@@ -46,9 +47,7 @@ export function parseStatsPeriod(input: string | undefined): StatsPeriod {
   }
 }
 
-export const STATS_PERIOD_LABEL: Record<StatsPeriod, string> = {
-  [StatsPeriod.TODAY]: "اليوم",
-  [StatsPeriod.THIS_WEEK]: "هذا الأسبوع",
-  [StatsPeriod.THIS_MONTH]: "هذا الشهر",
-  [StatsPeriod.ALL_TIME]: "الكل",
-};
+export const STATS_PERIOD_LABEL: Record<StatsPeriod, string> = bilingual<Record<StatsPeriod, string>>(
+  { [StatsPeriod.TODAY]: "Today", [StatsPeriod.THIS_WEEK]: "This week", [StatsPeriod.THIS_MONTH]: "This month", [StatsPeriod.ALL_TIME]: "All time" },
+  { [StatsPeriod.TODAY]: "اليوم", [StatsPeriod.THIS_WEEK]: "هذا الأسبوع", [StatsPeriod.THIS_MONTH]: "هذا الشهر", [StatsPeriod.ALL_TIME]: "الكل" },
+);

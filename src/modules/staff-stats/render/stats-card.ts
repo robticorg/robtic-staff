@@ -1,3 +1,4 @@
+import { L as tr } from "../../../shared/utils/lang-context.ts";
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -167,7 +168,7 @@ export function leadLines(leads: CardLeads): string[] {
   const lines = ["", R.heading];
   if (leads.responsibilities.length === 0) lines.push(R.none);
   for (const r of leads.responsibilities) {
-    lines.push(R.row(r.title, r.leads.length ? r.leads.join("، ") : null, r.expiresAt));
+    lines.push(R.row(r.title, r.leads.length ? r.leads.join(tr(", ", "، ")) : null, r.expiresAt));
   }
   if (leads.leadsOf.length) lines.push(L.yourLeads, ...leads.leadsOf.map((l) => L.leadRow(l.name, l.holder)));
   if (leads.leading.length) lines.push(L.leading, ...leads.leading.map((l) => L.leadingRow(l.name, l.target)));

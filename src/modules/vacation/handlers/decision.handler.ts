@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import {
   MessageFlags,
   type ButtonInteraction,
@@ -73,20 +74,20 @@ export async function handleInfoButton(
   }
   const lines = [
     R.infoTitle,
-    R.infoLine("عضو الطاقم الاداري", `<@${vacation.staffId}> (\`${vacation.staffId}\`)`),
+    R.infoLine(L("Staff member", "عضو الطاقم الاداري"), `<@${vacation.staffId}> (\`${vacation.staffId}\`)`),
     R.infoLine(
-      "المدة",
+      L("Duration", "المدة"),
       formatDuration({ value: vacation.duration, unit: vacation.durationUnit }),
     ),
-    R.infoLine("تاريخ الطلب", `<t:${Math.floor(vacation.requestedAt.getTime() / 1000)}:f>`),
+    R.infoLine(L("Requested", "تاريخ الطلب"), `<t:${Math.floor(vacation.requestedAt.getTime() / 1000)}:f>`),
     R.infoLine(
-      "الفترة",
+      L("Period", "الفترة"),
       `<t:${Math.floor(vacation.startsAt.getTime() / 1000)}:f> → <t:${Math.floor(
         vacation.endsAt.getTime() / 1000,
       )}:f>`,
     ),
-    R.infoLine("الحالة", vacation.status),
-    R.infoLine("السبب", vacation.reason),
+    R.infoLine(L("Status", "الحالة"), vacation.status),
+    R.infoLine(L("Reason", "السبب"), vacation.reason),
   ];
   await interaction.reply({ content: lines.join("\n"), ...EPHEMERAL });
 }

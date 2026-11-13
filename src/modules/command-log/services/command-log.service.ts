@@ -1,3 +1,4 @@
+import { L as tr } from "../../../shared/utils/lang-context.ts";
 import type { Guild } from "discord.js";
 import type { ChannelId, UserId } from "../../../shared/types/index.ts";
 import { logger } from "../../../shared/utils/logger.ts";
@@ -63,7 +64,7 @@ export function buildCommandLog(entry: CommandLogEntry): string {
     M.line(L.actor, M.user(entry.actorId)),
     M.line(L.channel, M.channel(entry.channelId)),
   ];
-  if (targets.length > 0) lines.push(M.line(L.targets, targets.map(M.user).join("، ")));
+  if (targets.length > 0) lines.push(M.line(L.targets, targets.map(M.user).join(tr(", ", "، "))));
   if (entry.detail) {
     lines.push(M.line(L.detail, clip(entry.detail, commandLogConfig.detailMaxLength)));
   }

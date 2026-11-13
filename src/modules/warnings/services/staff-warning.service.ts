@@ -1,3 +1,4 @@
+import { L } from "../../../shared/utils/lang-context.ts";
 import type { HydratedDocument, Types } from "mongoose";
 import { BaseRepository } from "../../../shared/repository/base.repository.ts";
 import type { GuildId, IdLike, ListOptions, MongoFilter, UserId } from "../../../shared/types/index.ts";
@@ -55,7 +56,7 @@ export class StaffWarningService extends BaseRepository<StaffWarning> {
   }
 
   issueVerbal(input: IssueVerbalInput): Promise<Doc> {
-    if (!input.reason?.trim()) throw new ValidationError("لازم تكتب سبب للتحذير");
+    if (!input.reason?.trim()) throw new ValidationError(L("Give a reason for the warning", "لازم تكتب سبب للتحذير"));
     if (!input.issuedBy) throw new ValidationError("issuedBy is required");
     return this.insert({
       guildId: input.guildId,
@@ -71,9 +72,9 @@ export class StaffWarningService extends BaseRepository<StaffWarning> {
 
   issueReal(input: IssueRealInput): Promise<Doc> {
     if (!STAFF_WARNING_LEVEL_VALUES.includes(input.level)) {
-      throw new ValidationError("مستوى التحذير الرسمي لازم يكون 1 أو 2 أو 3", { level: input.level });
+      throw new ValidationError(L("An official warning level must be 1, 2 or 3", "مستوى التحذير الرسمي لازم يكون 1 أو 2 أو 3"), { level: input.level });
     }
-    if (!input.reason?.trim()) throw new ValidationError("لازم تكتب سبب للتحذير");
+    if (!input.reason?.trim()) throw new ValidationError(L("Give a reason for the warning", "لازم تكتب سبب للتحذير"));
     return this.insert({
       guildId: input.guildId,
       staffId: toObjectId(input.staffId),
