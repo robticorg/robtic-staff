@@ -1,3 +1,4 @@
+import { L, currentLang } from "../../../shared/utils/lang-context.ts";
 import { colors } from "../../config/colors.ts";
 import { UNSET_ID, type TicketPanelConfig } from "../types.ts";
 
@@ -6,8 +7,8 @@ export const RESPONSIBILITY_APPLY_PANEL_ID = "responsibility-apply";
 export const responsibilityApplyPanel: TicketPanelConfig = {
   id: RESPONSIBILITY_APPLY_PANEL_ID,
   ticketPrefix: "res",
-  name: "التقديم على مسؤولية",
-  description: "قدّم على مسؤولية في السيرفر.",
+  get name() { return L("Apply for a responsibility", "التقديم على مسؤولية"); },
+  get description() { return L("Apply for a responsibility in the server.", "قدّم على مسؤولية في السيرفر."); },
   hidden: true,
   independent: true,
 
@@ -28,6 +29,6 @@ export const responsibilityApplyPanel: TicketPanelConfig = {
 
   ticketMessage: {
     accentColor: colors.primary,
-    text: ["تم فتح طلب تقديم على مسؤولية.\nبانتظار أحد المسؤولين لاستلام الطلب."],
+    get text() { return currentLang() === "en" ? ["New responsibility application. Waiting for a manager to claim it."] : ["طلب تقديم على مسؤولية، بانتظار استلام أحد المسؤولين."]; },
   },
 };

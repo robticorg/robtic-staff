@@ -1,3 +1,4 @@
+import { L, currentLang } from "../../shared/utils/lang-context.ts";
 import { colors } from "../config/colors.ts";
 import { UNSET_ID, type TicketPanelConfig } from "../tickets/types.ts";
 
@@ -11,8 +12,8 @@ export type StaffSupportWorkflow =
 export const staffSupportPanel: TicketPanelConfig = {
   id: StaffSupportWorkflow.STAFF_SUPPORT,
   ticketPrefix: "staff",
-  name: "دعم الادارة",
-  description: "تواصل مع الإدارة",
+  get name() { return L("Staff support", "دعم الادارة"); },
+  get description() { return L("Contact the admins", "تواصل مع الإدارة"); },
   hidden: true,
 
   supportRoleId: UNSET_ID,
@@ -33,6 +34,6 @@ export const staffSupportPanel: TicketPanelConfig = {
 
   ticketMessage: {
     accentColor: colors.primary,
-    text: ["طلب دعم اداري. الإدارة راح ترد عليك هنا."],
+    get text() { return currentLang() === "en" ? ["Staff support request. The admins will reply here."] : ["طلب دعم إداري، والإدارة بترد عليك هنا."]; },
   },
 };

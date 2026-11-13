@@ -1,3 +1,4 @@
+import { L, currentLang } from "../../shared/utils/lang-context.ts";
 import { colors } from "../config/colors.ts";
 import { UNSET_ID, type TicketPanelConfig } from "../tickets/types.ts";
 import {
@@ -24,8 +25,8 @@ const claimer = {
 export const staffApplicationPanel: TicketPanelConfig = {
   id: StaffApplicationWorkflow.STAFF_APPLICATION,
   ticketPrefix: "apply",
-  name: "التقديم او النقل الى طاقم الاداري",
-  description: "قدّم على فريق الاداري أو انقل خبرتك من سيرفر ثاني.",
+  get name() { return L("Apply or transfer to staff", "التقديم او النقل الى طاقم الاداري"); },
+  get description() { return L("Join the staff team, or transfer from another server.", "قدّم على فريق الاداري أو انقل خبرتك من سيرفر ثاني."); },
 
   supportRoleId: UNSET_ID,
   supportRoleOptional: true,
@@ -41,15 +42,15 @@ export const staffApplicationPanel: TicketPanelConfig = {
 
   ticketMessage: {
     accentColor: colors.primary,
-    text: ["تم فتح طلب تقديم جديد.\nبانتظار أحد المسؤولين لاستلام الطلب."],
+    get text() { return currentLang() === "en" ? ["New application. Waiting for a manager to claim it."] : ["طلب تقديم جديد، بانتظار استلام أحد المسؤولين."]; },
   },
 };
 
 export const staffTransferApplicationPanel: TicketPanelConfig = {
   id: StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION,
   ticketPrefix: "transfer",
-  name: "نقل إلى الادارة",
-  description: "طلب نقل من سيرفر ثاني.",
+  get name() { return L("Transfer to staff", "نقل إلى الادارة"); },
+  get description() { return L("Transfer from another server.", "طلب نقل من سيرفر ثاني."); },
   hidden: true,
 
   supportRoleId: UNSET_ID,
@@ -66,6 +67,6 @@ export const staffTransferApplicationPanel: TicketPanelConfig = {
 
   ticketMessage: {
     accentColor: colors.primary,
-    text: ["تم فتح طلب نقل جديد.\nبانتظار أحد مسؤولي النقل لاستلام الطلب."],
+    get text() { return currentLang() === "en" ? ["New transfer request. Waiting for a transfer manager to claim it."] : ["طلب نقل جديد، بانتظار استلام أحد مسؤولي النقل."]; },
   },
 };

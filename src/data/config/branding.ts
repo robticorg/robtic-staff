@@ -1,16 +1,18 @@
+import { L } from "../../shared/utils/lang-context.ts";
+
 export const branding = {
   botName: "Robtic",
 
   communityName: "RobTic",
 
-  moderationTitle: "إدارة Robtic",
+  get moderationTitle() { return L("Robtic Staff", "إدارة Robtic"); },
 
   footers: {
-    default: "إدارة Robtic",
-    reports: "Robtic • نظام البلاغات",
-    support: "Robtic • الدعم",
-    config: "Robtic • الإعدادات",
+    get default() { return L("Robtic Staff", "إدارة Robtic"); },
+    get reports() { return L("Robtic • Reports", "Robtic • نظام البلاغات"); },
+    get support() { return L("Robtic • Support", "Robtic • الدعم"); },
+    get config() { return L("Robtic • Settings", "Robtic • الإعدادات"); },
   },
-} as const;
+};
 
 export type Branding = typeof branding;

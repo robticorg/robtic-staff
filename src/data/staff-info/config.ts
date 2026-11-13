@@ -1,3 +1,4 @@
+import { L, currentLang } from "../../shared/utils/lang-context.ts";
 
 export interface StaffInfoPanelContent {
   image: string;
@@ -8,16 +9,12 @@ export interface StaffInfoPanelContent {
 
 export const staffInfoPanelContent: StaffInfoPanelContent = {
   image: "",
-  text: [
-    "## معلومات الإدارة",
-    "كل المعلومات والموارد التي تحتاجها كعضو في فريق الإدارة موجودة هنا.",
-    "-# اختر القسم الذي تريد معرفة تفاصيله من القائمة بالأسفل، وستظهر المعلومات لك بشكل خاص.",
-    "",
-    "## Staff Information",
-    "All the information and resources you need as a staff member are available here.",
-    "-# Select the category you want to know more about from the menu below, and the information will be displayed to you privately.",
-  ],
-  selectPlaceholder: "اختر المعلومة اللي تحتاجها | Choose the information you need",
+  get text() {
+    return currentLang() === "en"
+      ? ["## Staff information", "Everything you need as a staff member is here.", "-# Pick a topic below; it's shown to you privately."]
+      : ["## معلومات الإدارة", "كل اللي تحتاجه كإداري موجود هنا.", "-# اختر الموضوع من القائمة، ويظهر لك بشكل خاص."];
+  },
+  get selectPlaceholder() { return L("Choose what you need", "اختر المعلومة اللي تحتاجها"); },
 };
 
 export const staffInfoLimits = {

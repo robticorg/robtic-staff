@@ -1,12 +1,14 @@
 import { vacationConfig } from "./config.ts";
+import { L, currentLang } from "../../shared/utils/lang-context.ts";
 
 export const vacationPanel = {
   accentColor: vacationConfig.panelAccentColor,
-  title: "## إجازات الطاقم الاداري",
-  body: [
-    "تبي تاخذ وقت بعيد عن مهام الطاقم الاداري؟ قدّم على إجازة عن طريق الزر تحت.",
-    "مانجر الطاقم الاداري راح يراجع طلبك. وطول ما إجازتك فعّالة رتب الطاقم الاداري حقك محفوظة وترجع لك تلقائياً لمّا تخلص.",
-  ],
-  footer: "Robtic • إجازات الطاقم الاداري",
-  applyButton: "قدّم على إجازة",
-} as const;
+  get title() { return L("## Staff vacations", "## إجازات الطاقم"); },
+  get body() {
+    return currentLang() === "en"
+      ? ["Need time away from staff duties? Request a vacation with the button below.", "A staff manager reviews it; your staff roles are kept and come back when it ends."]
+      : ["تحتاج وقت بعيد عن مهام الطاقم؟ قدّم على إجازة من الزر تحت.", "يراجعها مانجر الطاقم، ورتبك محفوظة وترجع لك إذا خلصت."];
+  },
+  get footer() { return L("Robtic • Staff vacations", "Robtic • إجازات الطاقم"); },
+  get applyButton() { return L("Request vacation", "قدّم على إجازة"); },
+};

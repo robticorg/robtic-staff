@@ -8,7 +8,7 @@ const relay = (label: string, placeholder: string) => (content: string) => `${la
 export const modmailMessages = bilingual(
   {
     menu: {
-      title: `**${branding.moderationTitle}**`,
+      title: "**Robtic Staff**",
       prompt: "How can I help?",
       reportButton: "Report someone",
     },
@@ -179,7 +179,7 @@ export const modmailMessages = bilingual(
   },
   {
     menu: {
-      title: `**${branding.moderationTitle}**`,
+      title: "**إدارة Robtic**",
       prompt: "كيف أقدر أساعدك؟",
       reportButton: "بلّغ عن شخص",
     },
