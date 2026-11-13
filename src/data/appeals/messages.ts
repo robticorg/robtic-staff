@@ -1,106 +1,147 @@
 import { emojis } from "../emojis/index.ts";
 import { branding } from "../config/branding.ts";
+import { bilingual } from "../../shared/utils/lang-context.ts";
 
 const E = emojis;
+const f = (at: Date) => `<t:${Math.floor(at.getTime() / 1000)}:f>`;
 
-export const appealMessages = {
-  serverName: branding.communityName,
+export const appealMessages = bilingual(
+  {
+    serverName: branding.communityName,
 
-  dm: {
-    appealButton: "استئناف",
-    whyButton: "ليش تعاقبت؟",
+    dm: {
+      appealButton: "Appeal",
+      whyButton: "Why?",
+      windowExpired: "The evidence view expired. Open a support ticket if you need help.",
+      notYours: `${E.error} This isn't your punishment.`,
+      punishmentGone: `${E.error} Couldn't find this punishment.`,
+      notEligible: `${E.error} This punishment can't be appealed.`,
+      alreadyAppealedPending: `${E.warning} You already have an appeal under review for this.`,
+      alreadyAppealedDecided: (status: string) => `${E.error} This was already appealed (${status}) and can't be appealed again.`,
+      systemUnavailable: `${E.error} Appeals aren't available right now. Try later or open a support ticket.`,
+      modalTitle: "Appeal a punishment",
+      reasonLabel: "Why appeal?",
+      reasonPlaceholder: "Why should this punishment be removed or changed?",
+      evidenceLabel: "Extra evidence (optional)",
+      evidencePlaceholder: "Links to images or other proof, one per line.",
+      reasonRequired: `${E.error} Give a reason.`,
+      submitted: "Your appeal was sent to staff. You'll get a message here once it's decided.",
+      accepted: (punishment: string, reason: string) => `Your appeal was accepted and the punishment (**${punishment}**) removed.\n**Decision:** ${reason}`,
+      rejected: (punishment: string, reason: string) => `Your appeal was rejected; the punishment (**${punishment}**) stays.\n**Decision:** ${reason}`,
+    },
 
-    windowExpired:
-      "انتهت مدة عرض الأدلة. لو تحتاج مساعدة إضافية تواصل مع الدعم عن طريق تكت.",
-    notYours: `${E.error} هذي مو عقوبتك.`,
-    punishmentGone: `${E.error} سجل العقوبة هذا ما لقيته.`,
+    why: {
+      body: (typeLabel: string, reason: string, issuedAt: Date | undefined, evidence: string[]) =>
+        [
+          `**Punishment:** ${typeLabel}`,
+          `**Reason:** ${reason}`,
+          issuedAt ? `**Issued:** ${f(issuedAt)}` : null,
+          "",
+          evidence.length ? `**Evidence:**\n${evidence.join("\n")}` : "**Evidence:** none",
+        ].filter((l): l is string => l !== null).join("\n"),
+    },
 
-    notEligible: `${E.error} هذه العقوبة ما ينفع تستأنف عليها.`,
-    alreadyAppealedPending: `${E.warning} عندك استئناف قيد المراجعة لهذه العقوبة أصلاً.`,
-    alreadyAppealedDecided: (status: string) =>
-      `${E.error} تم استئناف هذه العقوبة من قبل (${status}). ما ينفع تستأنف عليها مرة ثانية.`,
-    systemUnavailable: `${E.error} نظام الاستئناف مو متاح حالياً. جرب بعدين أو افتح تكت دعم.`,
-
-    modalTitle: "استئناف عقوبة",
-    reasonLabel: "سبب الاستئناف",
-    reasonPlaceholder: "ليش تشوف إن هذه العقوبة لازم تتشال أو تتعدّل؟",
-    evidenceLabel: "أدلة إضافية (اختياري)",
-    evidencePlaceholder: "روابط لصور أو أدلة ثانية، رابط في كل سطر.",
-    reasonRequired: `${E.error} لازم تكتب سبب للاستئناف.`,
-
-    submitted:
-      "تم إرسال استئنافك وراح يراجعه فريق الطاقم الاداري. راح توصلك رسالة هنا لمّا يصير قرار.",
-
-    accepted: (punishment: string, reason: string) =>
-      [
-        "تم قبول استئنافك.",
-        "",
-        `**العقوبة:** ${punishment}`,
-        `**القرار:** ${reason}`,
-        "",
-        "تم إلغاء العقوبة.",
-      ].join("\n"),
-    rejected: (punishment: string, reason: string) =>
-      [
-        "تم رفض استئنافك.",
-        "",
-        `**العقوبة:** ${punishment}`,
-        `**القرار:** ${reason}`,
-      ].join("\n"),
+    review: {
+      heading: `${E.locked} **Appeal**`,
+      user: (userId: string) => `**Member:** <@${userId}> (\`${userId}\`)`,
+      punishment: (typeLabel: string) => `**Punishment:** ${typeLabel}`,
+      punishmentId: (id: string) => `**Punishment ID:** \`${id}\``,
+      reason: (reason: string) => `**Reason:**\n${reason}`,
+      evidence: (items: string[]) => (items.length ? `**Evidence:**\n${items.join("\n")}` : "**Evidence:** none"),
+      statusPending: "**Status:** under review",
+      statusClaimed: (userId: string) => `**Status:** claimed by <@${userId}>`,
+      statusAccepted: (userId: string, reason: string) => `**Status:** accepted by <@${userId}>\n**Decision:** ${reason}`,
+      statusRejected: (userId: string, reason: string) => `**Status:** rejected by <@${userId}>\n**Decision:** ${reason}`,
+      claimButton: "Claim",
+      acceptButton: "Accept",
+      rejectButton: "Reject",
+      infoButton: "Info",
+      notAuthorized: `${E.error} You can't review appeals.`,
+      selfReview: `${E.error} You were part of this punishment, so you can't review it.`,
+      alreadyClaimed: (userId: string) => `${E.warning} Already claimed by <@${userId}>.`,
+      claimedAck: `${E.success} You claimed this appeal.`,
+      alreadyDecided: `${E.error} Already decided.`,
+      gone: `${E.error} This appeal no longer exists.`,
+      punishmentGone: `${E.error} Couldn't find the punishment for this appeal.`,
+      decisionModalTitleAccept: "Accept appeal",
+      decisionModalTitleReject: "Reject appeal",
+      decisionReasonLabel: "Decision",
+      decisionReasonPlaceholder: "Explain the decision (the member sees it).",
+      decisionReasonRequired: `${E.error} Explain the decision.`,
+      acceptedAck: `${E.success} Appeal accepted; punishment removed.`,
+      acceptedAckPartial: `${E.warning} Appeal accepted, but the Discord change didn't fully apply. Check the logs.`,
+      rejectedAck: `${E.success} Appeal rejected; the punishment stays.`,
+      infoTitle: `${E.locked} **Appeal — details**`,
+      infoLine: (label: string, value: string) => `**${label}:** ${value}`,
+    },
   },
+  {
+    serverName: branding.communityName,
 
-  why: {
-    body: (typeLabel: string, reason: string, issuedAt: Date | undefined, evidence: string[]) =>
-      [
-        `**العقوبة:** ${typeLabel}`,
-        `**السبب:** ${reason}`,
-        issuedAt ? `**تاريخ الإصدار:** <t:${Math.floor(issuedAt.getTime() / 1000)}:f>` : null,
-        "",
-        evidence.length ? `**الأدلة:**\n${evidence.join("\n")}` : "**الأدلة:** ما فيه شي",
-      ]
-        .filter((l): l is string => l !== null)
-        .join("\n"),
+    dm: {
+      appealButton: "استئناف",
+      whyButton: "ليش؟",
+      windowExpired: "انتهت مدة عرض الأدلة. افتح تكت دعم إذا تحتاج مساعدة.",
+      notYours: `${E.error} هذي مو عقوبتك.`,
+      punishmentGone: `${E.error} ما لقيت العقوبة.`,
+      notEligible: `${E.error} هذي العقوبة ما يُستأنف عليها.`,
+      alreadyAppealedPending: `${E.warning} عندك استئناف قيد المراجعة لها.`,
+      alreadyAppealedDecided: (status: string) => `${E.error} انستأنفت من قبل (${status})، وما يُستأنف عليها مرة ثانية.`,
+      systemUnavailable: `${E.error} الاستئناف مو متاح حالياً. جرّب بعدين أو افتح تكت دعم.`,
+      modalTitle: "استئناف عقوبة",
+      reasonLabel: "سبب الاستئناف",
+      reasonPlaceholder: "ليش لازم تنشال أو تتعدّل العقوبة؟",
+      evidenceLabel: "أدلة إضافية (اختياري)",
+      evidencePlaceholder: "روابط صور أو أدلة، رابط بكل سطر.",
+      reasonRequired: `${E.error} اكتب السبب.`,
+      submitted: "انرسل استئنافك للطاقم، وبتوصلك رسالة هنا إذا صار قرار.",
+      accepted: (punishment: string, reason: string) => `تم قبول استئنافك وإلغاء العقوبة (**${punishment}**).\n**القرار:** ${reason}`,
+      rejected: (punishment: string, reason: string) => `تم رفض استئنافك، والعقوبة (**${punishment}**) باقية.\n**القرار:** ${reason}`,
+    },
+
+    why: {
+      body: (typeLabel: string, reason: string, issuedAt: Date | undefined, evidence: string[]) =>
+        [
+          `**العقوبة:** ${typeLabel}`,
+          `**السبب:** ${reason}`,
+          issuedAt ? `**تاريخ الإصدار:** ${f(issuedAt)}` : null,
+          "",
+          evidence.length ? `**الأدلة:**\n${evidence.join("\n")}` : "**الأدلة:** لا شيء",
+        ].filter((l): l is string => l !== null).join("\n"),
+    },
+
+    review: {
+      heading: `${E.locked} **طلب استئناف**`,
+      user: (userId: string) => `**العضو:** <@${userId}> (\`${userId}\`)`,
+      punishment: (typeLabel: string) => `**العقوبة:** ${typeLabel}`,
+      punishmentId: (id: string) => `**آيدي العقوبة:** \`${id}\``,
+      reason: (reason: string) => `**السبب:**\n${reason}`,
+      evidence: (items: string[]) => (items.length ? `**الأدلة:**\n${items.join("\n")}` : "**الأدلة:** لا شيء"),
+      statusPending: "**الحالة:** قيد المراجعة",
+      statusClaimed: (userId: string) => `**الحالة:** استلمه <@${userId}>`,
+      statusAccepted: (userId: string, reason: string) => `**الحالة:** قبله <@${userId}>\n**القرار:** ${reason}`,
+      statusRejected: (userId: string, reason: string) => `**الحالة:** رفضه <@${userId}>\n**القرار:** ${reason}`,
+      claimButton: "استلام",
+      acceptButton: "قبول",
+      rejectButton: "رفض",
+      infoButton: "معلومات",
+      notAuthorized: `${E.error} ما تقدر تراجع الاستئنافات.`,
+      selfReview: `${E.error} كنت طرف في العقوبة، فما تقدر تراجعها.`,
+      alreadyClaimed: (userId: string) => `${E.warning} مستلَم من <@${userId}>.`,
+      claimedAck: `${E.success} استلمت الاستئناف.`,
+      alreadyDecided: `${E.error} تم البت فيه.`,
+      gone: `${E.error} الاستئناف ما عاد موجود.`,
+      punishmentGone: `${E.error} ما لقيت عقوبة الاستئناف.`,
+      decisionModalTitleAccept: "قبول الاستئناف",
+      decisionModalTitleReject: "رفض الاستئناف",
+      decisionReasonLabel: "القرار",
+      decisionReasonPlaceholder: "وضّح القرار (العضو بيشوفه).",
+      decisionReasonRequired: `${E.error} وضّح القرار.`,
+      acceptedAck: `${E.success} تم قبول الاستئناف وإلغاء العقوبة.`,
+      acceptedAckPartial: `${E.warning} تم القبول، بس تعديل ديسكورد ما انطبق كامل. راجع اللوقات.`,
+      rejectedAck: `${E.success} تم الرفض، والعقوبة باقية.`,
+      infoTitle: `${E.locked} **الاستئناف — التفاصيل**`,
+      infoLine: (label: string, value: string) => `**${label}:** ${value}`,
+    },
   },
-
-  review: {
-    heading: `${E.locked} **طلب استئناف**`,
-    user: (userId: string) => `**العضو:** <@${userId}> (\`${userId}\`)`,
-    punishment: (typeLabel: string) => `**العقوبة:** ${typeLabel}`,
-    punishmentId: (id: string) => `**آيدي العقوبة:** \`${id}\``,
-    reason: (reason: string) => `**سبب الاستئناف:**\n${reason}`,
-    evidence: (items: string[]) =>
-      items.length ? `**الأدلة:**\n${items.join("\n")}` : "**الأدلة:** ما فيه شي",
-    statusPending: "**الحالة:** قيد المراجعة",
-    statusClaimed: (userId: string) => `**الحالة:** استلمه <@${userId}>`,
-    statusAccepted: (userId: string, reason: string) =>
-      `**الحالة:** مقبول\n**راجعه:** <@${userId}>\n**القرار:**\n${reason}`,
-    statusRejected: (userId: string, reason: string) =>
-      `**الحالة:** مرفوض\n**راجعه:** <@${userId}>\n**القرار:**\n${reason}`,
-
-    claimButton: "استلام",
-    acceptButton: "قبول",
-    rejectButton: "رفض",
-    infoButton: "معلومات",
-
-    notAuthorized: `${E.error} ما عندك صلاحية تراجع الاستئنافات.`,
-    selfReview: `${E.error} ما تقدر تراجع استئناف لعقوبة كنت طرف فيها.`,
-    alreadyClaimed: (userId: string) => `${E.warning} هذا الاستئناف مستلَم أصلاً من <@${userId}>.`,
-    claimedAck: `${E.success} استلمت هذا الاستئناف.`,
-    alreadyDecided: `${E.error} تم البت في هذا الاستئناف من قبل.`,
-    gone: `${E.error} هذا الاستئناف ما عاد موجود.`,
-    punishmentGone: `${E.error} عقوبة هذا الاستئناف ما لقيتها.`,
-
-    decisionModalTitleAccept: "قبول الاستئناف",
-    decisionModalTitleReject: "رفض الاستئناف",
-    decisionReasonLabel: "سبب القرار",
-    decisionReasonPlaceholder: "وضّح القرار (العضو راح يشوفه).",
-    decisionReasonRequired: `${E.error} لازم تكتب سبب للقرار.`,
-
-    acceptedAck: `${E.success} تم قبول الاستئناف — تم إلغاء العقوبة.`,
-    acceptedAckPartial: `${E.warning} تم قبول الاستئناف، بس تعديل ديسكورد ما انطبق بالكامل. راجع اللوقات.`,
-    rejectedAck: `${E.success} تم رفض الاستئناف. العقوبة تظل قائمة.`,
-
-    infoTitle: `${E.locked} **الاستئناف — التفاصيل**`,
-    infoLine: (label: string, value: string) => `**${label}:** ${value}`,
-  },
-} as const;
+);
