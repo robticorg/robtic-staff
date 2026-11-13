@@ -1,180 +1,266 @@
 import { emojis } from "../emojis/index.ts";
+import { bilingual } from "../../shared/utils/lang-context.ts";
 
 const E = emojis;
+const D = (date: Date, style: string) => `<t:${Math.floor(date.getTime() / 1000)}:${style}>`;
+type CaseCounts = { reports: number; tickets: number; appeals: number; giftClaims: number };
 
-/** `!check` only ever reports on staff below the OWNER boundary — say so on the card. */
-const PROMOTION_SCOPE = "النطاق: الطاقم الاداري من العادي إلى الشيب (بدون الأدمن والمخفيين)";
+const scopeEn = "Scope: regular staff up to ship (no admins or hidden staff)";
+const scopeAr = "النطاق: الطاقم من العادي إلى الشيب (بدون الأدمن والمخفيين)";
 
-export const staffMessages = {
-  profile: {
-    usage: `${E.warning} الطريقة: \`!staff-check @user\` أو \`!staff-check <id>\``,
-    notStaff: (userId: string) => `${E.error} <@${userId}> ما له سجل في الطاقم الاداري.`,
-    title: (userId: string) => `## معلومات الطاقم الاداري\n<@${userId}>`,
-    status: (label: string) => `**الحالة:** ${label}`,
-    level: (level: number, top: number) => `**ترتيب الرتبة:** المستوى ${level} من ${top}`,
-    role: (roleId: string) => `**الرتبة:** <@&${roleId}>`,
-    tier: (label: string) => `**التصنيف:** ${label}`,
-    acceptedBy: (userId: string) => `**قبله في الطاقم الاداري:** <@${userId}>`,
-    acceptedBySystem: "**قبله في الطاقم الاداري:** النظام",
-    acceptedAt: (date: Date) => `**تاريخ القبول:** <t:${Math.floor(date.getTime() / 1000)}:D>`,
-    staffFor: (duration: string) => `**مدة وجوده في الطاقم الاداري:** ${duration}`,
-    lastPromotion: (date: Date, userId: string | null) =>
-      `**آخر ترقية:** <t:${Math.floor(date.getTime() / 1000)}:R>${userId ? ` بواسطة <@${userId}>` : " بواسطة النظام"}`,
-    noPromotion: "**آخر ترقية:** ما تمت ترقيته من يوم انقبل",
-    unknown: "غير معروف",
-    statuses: {
-      ACTIVE: "نشط",
-      BREAK: "في بريك",
-      FIRED: "مفصول",
-      BLACKLISTED: "بلاك ليست",
-      TRANSFERRED: "منقول لحساب ثاني",
-    } as Record<string, string>,
-  },
-
-  points: {
-    reportClaimReason: (caseId: string) => `استلام البلاغ ${caseId}`,
-    ticketClaimReason: (ticketName: string) => `استلام التكت ${ticketName}`,
-  },
-
-  promotionPoints: {
-    eligible: "مؤهل للترقية",
-    notEligible: "غير مؤهل للترقية",
-    unknownMember: "عضو غير موجود في السيرفر",
-
-    invalidPoints: `${E.error} لازم يكون عدد النقاط رقم صحيح موجب (1 فأكثر) — بدون كسور ولا أصفار ولا أرقام سالبة.`,
-    configured: (points: number) =>
-      `تم ضبط الحد الأدنى للترقية على **${points}** نقطة في الأسبوع.`,
-    configuredNote:
-      "هذا الحد للفحص بس — ما راح يرقّي أحد تلقائياً ولا يغيّر نقاط أو رتب أي عضو في الطاقم الاداري.",
-
-    notConfigured: `${E.warning} ما تم ضبط نقاط الترقية بعد — استخدم \`/promote-points points:<رقم>\` أول.`,
-    noStaff: `${E.warning} ما فيه أعضاء الطاقم الاداري نشطين يطلعون في الفحص.`,
-    unknownTier: `${E.error} نوع غير معروف. استخدم: \`staff\` · \`high\` · \`owner\` · \`ship\``,
-
-    scope: PROMOTION_SCOPE,
-    header: (points: number) =>
-      `## فحص نقاط الترقية\nالمطلوب: **${points}** نقطة خلال آخر 7 أيام\n${PROMOTION_SCOPE}`,
-    headerPage: (points: number, page: number, pages: number) =>
-      `## فحص نقاط الترقية (${page}/${pages})\nالمطلوب: **${points}** نقطة خلال آخر 7 أيام\n${PROMOTION_SCOPE}`,
-    entry: (displayName: string, userId: string, weeklyPoints: number, decision: string) =>
-      [
-        `**اسم الاداري:** ${displayName}`,
-        `**المنشن:** <@${userId}>`,
-        `**نقاط آخر 7 أيام:** ${weeklyPoints}`,
-        `**القرار:** ${decision}`,
-      ].join("\n"),
-  },
-
-  authorization: {
-    NOT_A_MANAGER: `${E.error} ما عندك صلاحية تستخدم أوامر إدارة الطاقم الاداري.`,
-    NOT_A_MANAGER_DEMOTE: `${E.error} ما عندك صلاحية تستخدم أمر الديموت.`,
-
-    SELF_PROMOTE: `${E.error} ما تقدر ترقي نفسك.`,
-    SELF_DEMOTE: `${E.error} ما تقدر تنزل رتبتك بنفسك.`,
-    SELF_ACCEPT: `${E.error} ما تقدر تقبل نفسك في الطاقم الاداري.`,
-    SELF_FIRE: `${E.error} ما تقدر تفصل نفسك.`,
-
-    TARGET_ABOVE_ACTOR: `${E.error} ما تقدر تتحكم باداري رتبته أعلى من رتبتك.`,
-    TARGET_ABOVE_ACTOR_DEMOTE: `${E.error} ما تقدر تنزل اداري رتبته أعلى من رتبتك.`,
-    LEVEL_ABOVE_ACTOR: `${E.error} ما عندك صلاحية ترقي هذا العضو لهذا المستوى.`,
-    LEVEL_ABOVE_AUTHORITY: `${E.error} ما عندك صلاحية ترقي أحد لهذا المستوى.`,
-
-    TARGET_IN_OWNER: `${E.error} ما عندك صلاحية تنزل اداري من رتبة الأونر أو أعلى.`,
-    TARGET_IN_SHIP: `${E.error} ما عندك صلاحية تنزل اداري من رتبة الشيب.`,
-    TARGET_IN_SHIP_MANAGE: `${E.error} ما عندك صلاحية تتحكم باداري من رتبة الشيب.`,
-    LEVEL_IN_SHIP: `${E.error} ما تقدر ترقي أحد إلى مستويات الشيب.`,
-
-    ACTOR_NOT_STAFF: `${E.error} لازم تكون عضو في الطاقم الاداري عنده رتبة مرقّمة عشان تدير الطاقم الاداري.`,
-    HIERARCHY_INVALID: `${E.error} إعدادات سلّم الطاقم الاداري ناقصة أو غير صحيحة — صحّحها قبل إدارة الطاقم الاداري.`,
-    BELOW_MIN_LEVEL: `${E.error} ما تقدر تنزل هذا الطاقم الاداري أكثر. إذا تبي تفصله استخدم \`!fire\`.`,
-
-    SELF_WARN: `${E.error} ما تقدر تحذّر نفسك.`,
-    NOT_A_DEMISSION_MANAGER: `${E.error} ما عندك صلاحية تتعامل مع طلبات الاستقالة.`,
-    DEMISSION_TARGET_IN_OWNER: `${E.error} استقالة اداري من رتبة الأونر يتعامل معها مانجر الأونر بس.`,
-    DEMISSION_TARGET_IN_SHIP: `${E.error} استقالة اداري الشيب تتعامل معها الإدارة بس.`,
-    DEMISSION_TARGET_BELOW_OWNER: `${E.error} هذا العضو تحت رتبة الأونر.`,
-    DEMISSION_TARGET_NOT_STAFF: `${E.error} هذا العضو ما عنده رتبة ادارية مرقّمة.`,
-    NOT_A_WARN_MANAGER: `${E.error} ما عندك صلاحية تحذّر الطاقم الاداري.`,
-    WARN_TARGET_IN_OWNER: `${E.error} تحذير اداري من رتبة الأونر لمانجر الأونر بس.`,
-    WARN_TARGET_IN_SHIP: `${E.error} اداري الشيب ما يحذّرهم إلا الأدمن.`,
-    WARN_TARGET_BELOW_OWNER: `${E.error} مانجر الأونر يحذّر اداري الأونر بس — هذا العضو تحت رتبة الأونر.`,
-    WARN_TARGET_NOT_STAFF: `${E.error} هذا العضو ما عنده رتبة ادارية مرقّمة.`,
-
-    NOT_A_TRANSFER_MANAGER: `${E.error} أمر التحويل للأدمن ومانجر التحويل بس.`,
-    TRANSFER_SAME_MEMBER: `${E.error} ما تقدر تحوّل عضوية الطاقم الاداري لنفس العضو.`,
-  },
-
-  come: {
-    usage: `${E.warning} الطريقة: \`!come @العضو السبب\``,
-    reasonRequired: `${E.error} لازم تكتب سبب النداء.`,
-    self: `${E.error} ما تقدر تنادي نفسك.`,
-    bot: `${E.error} ما تقدر تنادي بوت.`,
-    sent: (userMention: string) => `${E.success} تم إرسال النداء لـ ${userMention} في الخاص.`,
-    dmFailed: (userMention: string) =>
-      `${E.error} ما قدرت أرسل لـ ${userMention} — خاصه مغلق.`,
-
-    dm: {
-      body: (callerId: string, reason: string) =>
-        `لقد تم ندائك بواسطة <@${callerId}> للحضور بسبب : ${reason}`,
-      button: "الذهاب للرسالة",
-    },
-  },
-
-  transfer: {
-    usage: `${E.warning} الطريقة: \`!transfer @من @إلى\``,
-    roleWriteFailed: `${E.error} فشلت عملية الرتب — تم التراجع عن التحويل وما تغيّر شيء في قاعدة البيانات.`,
-
-    activeCases: (
-      sourceMention: string,
-      counts: { reports: number; tickets: number; appeals: number; giftClaims: number },
-    ) =>
-      [
-        `${E.error} ${sourceMention} عنده شغل مفتوح لازم ينتهي أو ينتقل لغيره قبل التحويل:`,
-        counts.tickets > 0 ? `• تكتات: ${counts.tickets}` : null,
-        counts.reports > 0 ? `• بلاغات: ${counts.reports}` : null,
-        counts.appeals > 0 ? `• استئنافات: ${counts.appeals}` : null,
-        counts.giftClaims > 0 ? `• هدايا بانتظار التسليم: ${counts.giftClaims}` : null,
-      ]
-        .filter(Boolean)
-        .join("\n"),
-
-    problem: {
-      NOT_AUTHORIZED: () => `${E.error} أمر التحويل للأدمن ومانجر التحويل بس.`,
-      SAME_MEMBER: () => `${E.error} ما تقدر تحوّل عضوية الطاقم الاداري لنفس العضو.`,
-      TARGET_IS_BOT: () => `${E.error} ما تقدر تحوّل عضوية الطاقم الاداري لبوت.`,
-
-      SOURCE_NOT_STAFF: (source: string) => `${E.error} ${source} مو عضو في الطاقم الاداري.`,
-      SOURCE_FIRED: (source: string) => `${E.error} ${source} مفصول من الطاقم الاداري.`,
-      SOURCE_BLACKLISTED: (source: string) =>
-        `${E.error} ${source} في البلاك ليست — ما ينحوّل، وما ينشال منه البلاك ليست بهذا الأمر.`,
-      SOURCE_ON_BREAK: (source: string) =>
-        `${E.error} ${source} على إجازة الآن. رجّعه من الإجازة أول (\`!unbreak\`) عشان ما تبقى نسخة رتبه محفوظة لشخص غلط.`,
-      SOURCE_TRANSFERRED: (source: string) =>
-        `${E.error} ${source} محوّل عضويته أصلاً لعضو ثاني.`,
-      SOURCE_HAS_ACTIVE_CASES: (source: string) =>
-        `${E.error} ${source} عنده شغل مفتوح لازم ينتهي قبل التحويل.`,
-
-      TARGET_ALREADY_STAFF: (_source: string, target: string) =>
-        `${E.error} ${target} عضو في الطاقم الاداري أصلاً — افصله أول أو اختر عضو ثاني. ما ندمج سجلّين اداري.`,
-      TARGET_BLACKLISTED: (_source: string, target: string) =>
-        `${E.error} ${target} في البلاك ليست.`,
-
-      HIERARCHY_INVALID: () =>
-        `${E.error} إعدادات سلّم الطاقم الاداري ناقصة أو غير صحيحة — صحّحها قبل التحويل.`,
-      LADDER_NOT_CONFIGURED: () =>
-        `${E.error} رتب الطاقم الاداري المرقّمة مو مضبوطة. شغّل \`/role set type:رتبة بداية الطاقم الاداري\` و \`/role set type:رتبة نهاية الطاقم الاداري\` أول.`,
-      LEVEL_UNKNOWN: (source: string) =>
-        `${E.error} ما قدرت أحدد مستوى ${source} في سلّم الطاقم الاداري.`,
+export const staffMessages = bilingual(
+  {
+    profile: {
+      usage: `${E.warning} Usage: \`!staff-check @user\` or \`!staff-check <id>\``,
+      notStaff: (userId: string) => `${E.error} <@${userId}> has no staff record.`,
+      title: (userId: string) => `## Staff info\n<@${userId}>`,
+      status: (label: string) => `**Status:** ${label}`,
+      level: (level: number, top: number) => `**Rank:** level ${level} of ${top}`,
+      role: (roleId: string) => `**Role:** <@&${roleId}>`,
+      tier: (label: string) => `**Tier:** ${label}`,
+      acceptedBy: (userId: string) => `**Accepted by:** <@${userId}>`,
+      acceptedBySystem: "**Accepted by:** System",
+      acceptedAt: (date: Date) => `**Accepted:** ${D(date, "D")}`,
+      staffFor: (duration: string) => `**Staff for:** ${duration}`,
+      lastPromotion: (date: Date, userId: string | null) => `**Last promotion:** ${D(date, "R")} by ${userId ? `<@${userId}>` : "System"}`,
+      noPromotion: "**Last promotion:** none since joining",
+      unknown: "Unknown",
+      statuses: {
+        ACTIVE: "Active",
+        BREAK: "On break",
+        FIRED: "Removed",
+        BLACKLISTED: "Blacklisted",
+        TRANSFERRED: "Moved to another account",
+      } as Record<string, string>,
     },
 
-    success: (source: string, target: string, level: number) =>
-      `${E.success} تم تحويل عضوية الطاقم الاداري من ${source} إلى ${target} — المستوى **${level}**.`,
-    successWithType: (source: string, target: string, level: number, type: string) =>
-      `${E.success} تم تحويل عضوية الطاقم الاداري من ${source} إلى ${target} — المستوى **${level}** ونوع **${type}**.`,
-    rolesLine: (granted: number, removed: number) =>
-      `تم إعطاء ${granted} رتبة وسحب ${removed} رتبة.`,
-    skippedLine: (count: number) =>
-      `${E.warning} ${count} رتبة ما انعطت — إما محذوفة أو فوق رتبة البوت.`,
-    statsNote: "نقاط وإحصائيات العضو القديم تبقى في سجلّه ولا تنتقل.",
+    points: {
+      reportClaimReason: (caseId: string) => `Claimed report ${caseId}`,
+      ticketClaimReason: (ticketName: string) => `Claimed ticket ${ticketName}`,
+    },
+
+    promotionPoints: {
+      eligible: "Eligible for promotion",
+      notEligible: "Not eligible",
+      unknownMember: "Not in the server",
+      invalidPoints: `${E.error} Points must be a whole number of 1 or more.`,
+      configured: (points: number) => `Promotion threshold set to **${points}** points a week.`,
+      configuredNote: "It's only for the check; nobody is promoted automatically.",
+      notConfigured: `${E.warning} No promotion threshold yet. Set it with \`/promote-points points:<number>\`.`,
+      noStaff: `${E.warning} No active staff to check.`,
+      unknownTier: `${E.error} Unknown type. Use: \`staff\` · \`high\` · \`owner\` · \`ship\``,
+      scope: scopeEn,
+      header: (points: number) => `## Promotion check\nNeeded: **${points}** points in the last 7 days\n${scopeEn}`,
+      headerPage: (points: number, page: number, pages: number) => `## Promotion check (${page}/${pages})\nNeeded: **${points}** points in the last 7 days\n${scopeEn}`,
+      entry: (displayName: string, userId: string, weeklyPoints: number, decision: string) =>
+        [`**Staff:** ${displayName}`, `**Mention:** <@${userId}>`, `**Last 7 days:** ${weeklyPoints}`, `**Result:** ${decision}`].join("\n"),
+    },
+
+    authorization: {
+      NOT_A_MANAGER: `${E.error} You can't use staff management commands.`,
+      NOT_A_MANAGER_DEMOTE: `${E.error} You can't use demote.`,
+      SELF_PROMOTE: `${E.error} You can't promote yourself.`,
+      SELF_DEMOTE: `${E.error} You can't demote yourself.`,
+      SELF_ACCEPT: `${E.error} You can't accept yourself.`,
+      SELF_FIRE: `${E.error} You can't remove yourself.`,
+      TARGET_ABOVE_ACTOR: `${E.error} They outrank you.`,
+      TARGET_ABOVE_ACTOR_DEMOTE: `${E.error} You can't demote someone who outranks you.`,
+      LEVEL_ABOVE_ACTOR: `${E.error} You can't promote them to that level.`,
+      LEVEL_ABOVE_AUTHORITY: `${E.error} You can't promote anyone to that level.`,
+      TARGET_IN_OWNER: `${E.error} You can't demote owner rank or above.`,
+      TARGET_IN_SHIP: `${E.error} You can't demote ship staff.`,
+      TARGET_IN_SHIP_MANAGE: `${E.error} You can't manage ship staff.`,
+      LEVEL_IN_SHIP: `${E.error} You can't promote anyone into ship levels.`,
+      ACTOR_NOT_STAFF: `${E.error} You need a ranked staff role to manage staff.`,
+      HIERARCHY_INVALID: `${E.error} The staff ladder is incomplete or wrong. Fix it on the dashboard first.`,
+      BELOW_MIN_LEVEL: `${E.error} They can't go lower. Use \`!fire\` to remove them.`,
+      SELF_WARN: `${E.error} You can't warn yourself.`,
+      NOT_A_DEMISSION_MANAGER: `${E.error} You can't handle resignations.`,
+      DEMISSION_TARGET_IN_OWNER: `${E.error} Owner-rank resignations are for the owner manager.`,
+      DEMISSION_TARGET_IN_SHIP: `${E.error} Ship resignations are for the admins.`,
+      DEMISSION_TARGET_BELOW_OWNER: `${E.error} They're below owner rank.`,
+      DEMISSION_TARGET_NOT_STAFF: `${E.error} They have no ranked staff role.`,
+      NOT_A_WARN_MANAGER: `${E.error} You can't warn staff.`,
+      WARN_TARGET_IN_OWNER: `${E.error} Owner-rank warnings are for the owner manager.`,
+      WARN_TARGET_IN_SHIP: `${E.error} Only admins can warn ship staff.`,
+      WARN_TARGET_BELOW_OWNER: `${E.error} The owner manager warns owner rank only; they're below it.`,
+      WARN_TARGET_NOT_STAFF: `${E.error} They have no ranked staff role.`,
+      NOT_A_TRANSFER_MANAGER: `${E.error} Transfers are for admins and the transfer manager.`,
+      TRANSFER_SAME_MEMBER: `${E.error} You can't transfer to the same member.`,
+    },
+
+    come: {
+      usage: `${E.warning} Usage: \`!come @member reason\``,
+      reasonRequired: `${E.error} Give a reason.`,
+      self: `${E.error} You can't call yourself.`,
+      bot: `${E.error} You can't call a bot.`,
+      sent: (userMention: string) => `${E.success} ${userMention} was called by DM.`,
+      dmFailed: (userMention: string) => `${E.error} Couldn't DM ${userMention} (DMs closed).`,
+      dm: {
+        body: (callerId: string, reason: string) => `<@${callerId}> is asking for you. Reason: ${reason}`,
+        button: "Go to message",
+      },
+    },
+
+    transfer: {
+      usage: `${E.warning} Usage: \`!transfer @from @to\``,
+      roleWriteFailed: `${E.error} Role changes failed; the transfer was rolled back.`,
+      activeCases: (sourceMention: string, counts: CaseCounts) =>
+        [
+          `${E.error} ${sourceMention} has open work to finish or hand over first:`,
+          counts.tickets > 0 ? `• Tickets: ${counts.tickets}` : null,
+          counts.reports > 0 ? `• Reports: ${counts.reports}` : null,
+          counts.appeals > 0 ? `• Appeals: ${counts.appeals}` : null,
+          counts.giftClaims > 0 ? `• Gifts to deliver: ${counts.giftClaims}` : null,
+        ].filter(Boolean).join("\n"),
+      problem: {
+        NOT_AUTHORIZED: () => `${E.error} Transfers are for admins and the transfer manager.`,
+        SAME_MEMBER: () => `${E.error} You can't transfer to the same member.`,
+        TARGET_IS_BOT: () => `${E.error} You can't transfer to a bot.`,
+        SOURCE_NOT_STAFF: (source: string) => `${E.error} ${source} isn't staff.`,
+        SOURCE_FIRED: (source: string) => `${E.error} ${source} was removed from staff.`,
+        SOURCE_BLACKLISTED: (source: string) => `${E.error} ${source} is blacklisted.`,
+        SOURCE_ON_BREAK: (source: string) => `${E.error} ${source} is on a break. Bring them back first (\`!unbreak\`).`,
+        SOURCE_TRANSFERRED: (source: string) => `${E.error} ${source} was already transferred.`,
+        SOURCE_HAS_ACTIVE_CASES: (source: string) => `${E.error} ${source} has open work to finish first.`,
+        TARGET_ALREADY_STAFF: (_source: string, target: string) => `${E.error} ${target} is already staff. Remove them first or pick someone else.`,
+        TARGET_BLACKLISTED: (_source: string, target: string) => `${E.error} ${target} is blacklisted.`,
+        HIERARCHY_INVALID: () => `${E.error} The staff ladder is incomplete or wrong. Fix it first.`,
+        LADDER_NOT_CONFIGURED: () => `${E.error} The staff ladder isn't set up. Set the start and end roles on the dashboard.`,
+        LEVEL_UNKNOWN: (source: string) => `${E.error} Couldn't find ${source}'s level on the ladder.`,
+      },
+      success: (source: string, target: string, level: number) => `${E.success} Staff membership moved from ${source} to ${target}, level **${level}**.`,
+      successWithType: (source: string, target: string, level: number, type: string) => `${E.success} Staff membership moved from ${source} to ${target}, level **${level}** (${type}).`,
+      rolesLine: (granted: number, removed: number) => `${granted} role(s) given, ${removed} removed.`,
+      skippedLine: (count: number) => `${E.warning} ${count} role(s) skipped (deleted or above my role).`,
+      statsNote: "The old account keeps its points and stats.",
+    },
   },
-} as const;
+  {
+    profile: {
+      usage: `${E.warning} الطريقة: \`!staff-check @user\` أو \`!staff-check <id>\``,
+      notStaff: (userId: string) => `${E.error} <@${userId}> ما له سجل إداري.`,
+      title: (userId: string) => `## معلومات الإداري\n<@${userId}>`,
+      status: (label: string) => `**الحالة:** ${label}`,
+      level: (level: number, top: number) => `**الترتيب:** المستوى ${level} من ${top}`,
+      role: (roleId: string) => `**الرتبة:** <@&${roleId}>`,
+      tier: (label: string) => `**التصنيف:** ${label}`,
+      acceptedBy: (userId: string) => `**قبله:** <@${userId}>`,
+      acceptedBySystem: "**قبله:** النظام",
+      acceptedAt: (date: Date) => `**تاريخ القبول:** ${D(date, "D")}`,
+      staffFor: (duration: string) => `**مدته في الطاقم:** ${duration}`,
+      lastPromotion: (date: Date, userId: string | null) => `**آخر ترقية:** ${D(date, "R")} بواسطة ${userId ? `<@${userId}>` : "النظام"}`,
+      noPromotion: "**آخر ترقية:** ما ترقّى من يوم انقبل",
+      unknown: "غير معروف",
+      statuses: {
+        ACTIVE: "نشط",
+        BREAK: "في بريك",
+        FIRED: "مفصول",
+        BLACKLISTED: "بلاك ليست",
+        TRANSFERRED: "منقول لحساب ثاني",
+      } as Record<string, string>,
+    },
+
+    points: {
+      reportClaimReason: (caseId: string) => `استلام البلاغ ${caseId}`,
+      ticketClaimReason: (ticketName: string) => `استلام التكت ${ticketName}`,
+    },
+
+    promotionPoints: {
+      eligible: "مؤهل للترقية",
+      notEligible: "غير مؤهل",
+      unknownMember: "مو موجود في السيرفر",
+      invalidPoints: `${E.error} النقاط لازم رقم صحيح 1 فأكثر.`,
+      configured: (points: number) => `تم ضبط حد الترقية على **${points}** نقطة أسبوعياً.`,
+      configuredNote: "الحد للفحص بس، ما فيه ترقية تلقائية.",
+      notConfigured: `${E.warning} ما انضبط حد الترقية. اضبطه بـ \`/promote-points points:<رقم>\`.`,
+      noStaff: `${E.warning} ما فيه إداريين نشطين للفحص.`,
+      unknownTier: `${E.error} نوع غير معروف. استخدم: \`staff\` · \`high\` · \`owner\` · \`ship\``,
+      scope: scopeAr,
+      header: (points: number) => `## فحص نقاط الترقية\nالمطلوب: **${points}** نقطة خلال 7 أيام\n${scopeAr}`,
+      headerPage: (points: number, page: number, pages: number) => `## فحص نقاط الترقية (${page}/${pages})\nالمطلوب: **${points}** نقطة خلال 7 أيام\n${scopeAr}`,
+      entry: (displayName: string, userId: string, weeklyPoints: number, decision: string) =>
+        [`**الإداري:** ${displayName}`, `**المنشن:** <@${userId}>`, `**آخر 7 أيام:** ${weeklyPoints}`, `**النتيجة:** ${decision}`].join("\n"),
+    },
+
+    authorization: {
+      NOT_A_MANAGER: `${E.error} ما تقدر تستخدم أوامر إدارة الطاقم.`,
+      NOT_A_MANAGER_DEMOTE: `${E.error} ما تقدر تستخدم التنزيل.`,
+      SELF_PROMOTE: `${E.error} ما تقدر ترقّي نفسك.`,
+      SELF_DEMOTE: `${E.error} ما تقدر تنزّل نفسك.`,
+      SELF_ACCEPT: `${E.error} ما تقدر تقبل نفسك.`,
+      SELF_FIRE: `${E.error} ما تقدر تفصل نفسك.`,
+      TARGET_ABOVE_ACTOR: `${E.error} رتبته أعلى منك.`,
+      TARGET_ABOVE_ACTOR_DEMOTE: `${E.error} ما تقدر تنزّل رتبة أعلى منك.`,
+      LEVEL_ABOVE_ACTOR: `${E.error} ما تقدر ترقّيه لهذا المستوى.`,
+      LEVEL_ABOVE_AUTHORITY: `${E.error} ما تقدر ترقّي أحد لهذا المستوى.`,
+      TARGET_IN_OWNER: `${E.error} ما تقدر تنزّل رتبة الأونر أو أعلى.`,
+      TARGET_IN_SHIP: `${E.error} ما تقدر تنزّل إداري الشيب.`,
+      TARGET_IN_SHIP_MANAGE: `${E.error} ما تقدر تدير إداري الشيب.`,
+      LEVEL_IN_SHIP: `${E.error} ما تقدر ترقّي أحد لمستويات الشيب.`,
+      ACTOR_NOT_STAFF: `${E.error} تحتاج رتبة إدارية مرقّمة عشان تدير الطاقم.`,
+      HIERARCHY_INVALID: `${E.error} سلّم الطاقم ناقص أو غلط. صحّحه من الداشبورد أول.`,
+      BELOW_MIN_LEVEL: `${E.error} ما ينزل أكثر. استخدم \`!fire\` لفصله.`,
+      SELF_WARN: `${E.error} ما تقدر تحذّر نفسك.`,
+      NOT_A_DEMISSION_MANAGER: `${E.error} ما تقدر تتعامل مع الاستقالات.`,
+      DEMISSION_TARGET_IN_OWNER: `${E.error} استقالة الأونر لمانجر الأونر بس.`,
+      DEMISSION_TARGET_IN_SHIP: `${E.error} استقالة الشيب للإدارة بس.`,
+      DEMISSION_TARGET_BELOW_OWNER: `${E.error} العضو تحت رتبة الأونر.`,
+      DEMISSION_TARGET_NOT_STAFF: `${E.error} ما عنده رتبة إدارية مرقّمة.`,
+      NOT_A_WARN_MANAGER: `${E.error} ما تقدر تحذّر الطاقم.`,
+      WARN_TARGET_IN_OWNER: `${E.error} تحذير الأونر لمانجر الأونر بس.`,
+      WARN_TARGET_IN_SHIP: `${E.error} الشيب ما يحذّرهم إلا الأدمن.`,
+      WARN_TARGET_BELOW_OWNER: `${E.error} مانجر الأونر يحذّر الأونر بس، وهذا تحتهم.`,
+      WARN_TARGET_NOT_STAFF: `${E.error} ما عنده رتبة إدارية مرقّمة.`,
+      NOT_A_TRANSFER_MANAGER: `${E.error} التحويل للأدمن ومانجر التحويل بس.`,
+      TRANSFER_SAME_MEMBER: `${E.error} ما تقدر تحوّل لنفس العضو.`,
+    },
+
+    come: {
+      usage: `${E.warning} الطريقة: \`!come @العضو السبب\``,
+      reasonRequired: `${E.error} اكتب السبب.`,
+      self: `${E.error} ما تقدر تنادي نفسك.`,
+      bot: `${E.error} ما تقدر تنادي بوت.`,
+      sent: (userMention: string) => `${E.success} تم نداء ${userMention} بالخاص.`,
+      dmFailed: (userMention: string) => `${E.error} ما قدرت أراسل ${userMention} (الخاص مقفل).`,
+      dm: {
+        body: (callerId: string, reason: string) => `<@${callerId}> يطلب حضورك. السبب: ${reason}`,
+        button: "الذهاب للرسالة",
+      },
+    },
+
+    transfer: {
+      usage: `${E.warning} الطريقة: \`!transfer @من @إلى\``,
+      roleWriteFailed: `${E.error} فشل تعديل الرتب، وتم التراجع عن التحويل.`,
+      activeCases: (sourceMention: string, counts: CaseCounts) =>
+        [
+          `${E.error} ${sourceMention} عنده شغل مفتوح لازم ينتهي أو يتحوّل أول:`,
+          counts.tickets > 0 ? `• تكتات: ${counts.tickets}` : null,
+          counts.reports > 0 ? `• بلاغات: ${counts.reports}` : null,
+          counts.appeals > 0 ? `• استئنافات: ${counts.appeals}` : null,
+          counts.giftClaims > 0 ? `• هدايا بانتظار التسليم: ${counts.giftClaims}` : null,
+        ].filter(Boolean).join("\n"),
+      problem: {
+        NOT_AUTHORIZED: () => `${E.error} التحويل للأدمن ومانجر التحويل بس.`,
+        SAME_MEMBER: () => `${E.error} ما تقدر تحوّل لنفس العضو.`,
+        TARGET_IS_BOT: () => `${E.error} ما تقدر تحوّل لبوت.`,
+        SOURCE_NOT_STAFF: (source: string) => `${E.error} ${source} مو من الطاقم.`,
+        SOURCE_FIRED: (source: string) => `${E.error} ${source} مفصول من الطاقم.`,
+        SOURCE_BLACKLISTED: (source: string) => `${E.error} ${source} في البلاك ليست.`,
+        SOURCE_ON_BREAK: (source: string) => `${E.error} ${source} في بريك. رجّعه أول (\`!unbreak\`).`,
+        SOURCE_TRANSFERRED: (source: string) => `${E.error} ${source} محوّل أصلاً.`,
+        SOURCE_HAS_ACTIVE_CASES: (source: string) => `${E.error} ${source} عنده شغل مفتوح لازم ينتهي أول.`,
+        TARGET_ALREADY_STAFF: (_source: string, target: string) => `${E.error} ${target} من الطاقم أصلاً. افصله أول أو اختر غيره.`,
+        TARGET_BLACKLISTED: (_source: string, target: string) => `${E.error} ${target} في البلاك ليست.`,
+        HIERARCHY_INVALID: () => `${E.error} سلّم الطاقم ناقص أو غلط. صحّحه أول.`,
+        LADDER_NOT_CONFIGURED: () => `${E.error} سلّم الطاقم غير مضبوط. حدّد رتبة البداية والنهاية من الداشبورد.`,
+        LEVEL_UNKNOWN: (source: string) => `${E.error} ما قدرت أحدد مستوى ${source} في السلّم.`,
+      },
+      success: (source: string, target: string, level: number) => `${E.success} انتقلت العضوية الإدارية من ${source} إلى ${target}، المستوى **${level}**.`,
+      successWithType: (source: string, target: string, level: number, type: string) => `${E.success} انتقلت العضوية الإدارية من ${source} إلى ${target}، المستوى **${level}** (${type}).`,
+      rolesLine: (granted: number, removed: number) => `انعطت ${granted} رتبة وانسحبت ${removed}.`,
+      skippedLine: (count: number) => `${E.warning} ${count} رتبة ما انعطت (محذوفة أو فوق رتبتي).`,
+      statsNote: "الحساب القديم يحتفظ بنقاطه وإحصائياته.",
+    },
+  },
+);

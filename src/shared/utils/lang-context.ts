@@ -40,6 +40,7 @@ export const L = (en: string, ar: string): string => (currentLang() === "ar" ? a
  * so each message is still picked in the language of the moment it's read.
  */
 export function bilingual<T extends object>(en: T, ar: NoInfer<T>): T {
+  pairStrings(en, ar);
   const views = new Map<string, object>();
   const at = (root: object, path: readonly PropertyKey[]) => path.reduce<unknown>((o, k) => (o as Record<PropertyKey, unknown> | undefined)?.[k], root) as object;
   const view = (path: readonly PropertyKey[]): object => {
@@ -63,6 +64,22 @@ export function bilingual<T extends object>(en: T, ar: NoInfer<T>): T {
     return proxy;
   };
   return view([]) as T;
+}
+
+/**
+ * Every fixed Arabic string next to its English one, from all the bilingual lists. Slash commands are built when the
+ * bot loads (so in the default language, Arabic); registration uses this to send English as the base text with the
+ * Arabic as Discord's `ar` localization (discord/register-commands.ts).
+ */
+export const arabicToEnglish = new Map<string, string>();
+
+function pairStrings(en: unknown, ar: unknown): void {
+  if (typeof en === "string" && typeof ar === "string") {
+    if (en !== ar) arabicToEnglish.set(ar, en);
+    return;
+  }
+  if (!en || !ar || typeof en !== "object" || typeof ar !== "object") return;
+  for (const key of Object.keys(en)) pairStrings((en as Record<string, unknown>)[key], (ar as Record<string, unknown>)[key]);
 }
 
 /** The server an event is about, from its arguments: an interaction, message, member, channel, role, guild… */

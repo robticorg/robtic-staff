@@ -1,3 +1,4 @@
+import { bilingual } from "../../shared/utils/lang-context.ts";
 import { branding } from "../config/branding.ts";
 
 export const CommandName = {
@@ -148,183 +149,179 @@ export const CommandOption = {
   REPLACE: "replace",
 } as const;
 
-export const commandCopy = {
-  role: {
-    description: `ضبط رتب ديسكورد اللي يستخدمها نظام الطاقم الاداري ${branding.botName}`,
-    sub: {
-      set: {
-        description: "ضبط رتبة لخانة وحدة في نظام الطاقم الاداري",
-        options: {
-          type: "الخانة اللي تبي تضبطها",
-          role: "الرتبة المطلوبة",
+const bot = branding.botName;
+
+export const commandCopy = bilingual(
+  {
+    role: {
+      description: `Set the Discord roles ${bot}'s staff system uses`,
+      sub: {
+        set: { description: "Set the role for one staff-system slot", options: { type: "The slot to set", role: "The role" } },
+        range: {
+          description: "Set a role given automatically to certain staff levels (or an access range)",
+          options: { type: "Link type", role: "The role", from: "First ranked role in the range (optional)", to: "Last ranked role in the range (optional)" },
         },
-      },
-      range: {
-        description: "ضبط رتبة تنعطى تلقائياً لمستويات ادارية معيّنة (أو نطاق رتب وصول)",
-        options: {
-          type: "نوع الربط",
-          role: "الرتبة المطلوبة",
-          from: "أول رتبة ادارية مرقّمة في النطاق (اختياري)",
-          to: "آخر رتبة ادارية مرقّمة في النطاق (اختياري)",
-        },
-      },
-      boundary: {
-        description: "تحديد أول رتبة في تصنيف (ادارة عليا / أونر / شيب)",
-        options: {
-          tier: "التصنيف",
-          role: "أول رتبة في هذا التصنيف",
-        },
-      },
-      stafftype: {
-        description: "ضبط رتبة نوع الطاقم الاداري (ماكس / مبرمج …)",
-        options: {
-          type: "نوع الطاقم الاداري",
-          role: "الرتبة اللي تنعطى لهذا النوع",
-        },
-      },
-      check: {
-        description: "عرض مستوى الرتبة وتصنيفها في سلّم الطاقم الاداري",
-        option: "الرتبة اللي تبي تفحصها",
-      },
-      list: {
-        description: "عرض كل الرتب المضبوطة في نظام الطاقم الاداري",
+        boundary: { description: "Set the first role of a tier (high staff / owner / ship)", options: { tier: "The tier", role: "The tier's first role" } },
+        stafftype: { description: "Set a staff type's role (max, developer…)", options: { type: "The staff type", role: "The role for this type" } },
+        check: { description: "Show a role's level and tier on the staff ladder", option: "The role to check" },
+        list: { description: "Show every role set in the staff system" },
       },
     },
-  },
-  autoclaim: {
-    description: "تشغيل أو إيقاف التحويل التلقائي للكريدتس في الهدايا",
-    options: {
-      state: "الحالة",
+    autoclaim: {
+      description: "Turn automatic credits for gifts on or off",
+      options: { state: "State" },
+      choices: { on: "On", off: "Off", status: "Show status" },
     },
-    choices: {
-      on: "تشغيل",
-      off: "إيقاف",
-      status: "عرض الحالة",
+    promotePoints: {
+      description: "Set the weekly points staff need to be eligible for promotion",
+      options: { points: "Minimum points per week (whole number)" },
     },
-  },
-  promotePoints: {
-    description: "ضبط الحد الأدنى من النقاط الأسبوعية اللي تأهّل الطاقم الاداري للترقية",
-    options: {
-      points: "الحد الأدنى من النقاط في الأسبوع (رقم صحيح موجب)",
+    scan: { description: "Scan the server, import existing staff and sync their levels" },
+    ticketStats: {
+      description: "Manage staff ticket counters",
+      sub: { reset: { description: "Reset ticket counters (admins only)", options: { member: "Staff member (empty resets everyone)" } } },
     },
-  },
-  scan: {
-    description: "فحص السيرفر واستيراد أعضاء الطاقم الاداري الموجودين ومزامنة مستوياتهم",
-  },
-  ticketStats: {
-    description: "إدارة عدّادات تكتات الطاقم الاداري",
-    sub: {
-      reset: {
-        description: "تصفير عدّادات التكتات — للإداريين بس",
-        options: {
-          member: "عضو الطاقم الاداري (اتركه فاضي عشان تصفّر الكل)",
-        },
+    sleep: {
+      description: "Warn the ticket owner it closes automatically if they don't reply",
+      options: { time: "Time before closing, like 6h or 30m (default 6 hours)" },
+    },
+    points: {
+      description: "Manage staff points by hand (add / remove / reset), admins only",
+      sub: {
+        add: { description: "Add points to a staff member", options: { member: "Staff member", amount: "Points to add", reason: "Reason (optional)" } },
+        remove: { description: "Remove points from a staff member", options: { member: "Staff member", amount: "Points to remove", reason: "Reason (optional)" } },
+        reset: { description: "Reset one staff member's points, or everyone's if nobody is chosen", options: { member: "Staff member (empty resets everyone)" } },
+        values: { description: "Set how many points each action gives (ticket claim, warning, jail…)" },
       },
     },
-  },
-  sleep: {
-    description: "تنبيه صاحب التكت إنه بينقفل تلقائياً إذا ما رد",
-    options: {
-      time: "المدة قبل الإقفال — مثل 6h أو 30m (الافتراضي 6 ساعات)",
+    profile: {
+      description: "The bot's profile in this server",
+      subcommands: { config: "Edit the bot's avatar, banner, name and bio in this server" },
     },
-  },
-  points: {
-    description: "إدارة نقاط الطاقم الاداري يدويًا (إضافة / خصم / تصفير) — للإداريين بس",
-    sub: {
-      add: {
-        description: "إضافة نقاط لعضو في الطاقم الاداري",
-        options: {
-          member: "عضو الطاقم الاداري",
-          amount: "عدد النقاط المراد إضافتها",
-          reason: "سبب الإضافة (اختياري)",
-        },
-      },
-      remove: {
-        description: "خصم نقاط من عضو في الطاقم الاداري",
-        options: {
-          member: "عضو الطاقم الاداري",
-          amount: "عدد النقاط المراد خصمها",
-          reason: "سبب الخصم (اختياري)",
-        },
-      },
-      reset: {
-        description: "تصفير نقاط عضو في الطاقم الاداري واحد، أو كل الطاقم الاداري إذا ما حددت أحد",
-        options: {
-          member: "عضو الطاقم الاداري (اتركه فاضي عشان تصفّر نقاط كل الطاقم الاداري)",
-        },
-      },
-      values: {
-        description: "تحديد كم نقطة ياخذ الاداري على كل عمل (استلام تكت، تحذير، سجن...)",
+    startCount: {
+      description: "Set the ladder's first level number: 0 (default) or 1",
+      options: { start: "The number counting starts from" },
+    },
+    channels: {
+      description: `Set the channels ${bot}'s staff system uses`,
+      sub: {
+        set: { description: "Set the channel for a staff-system slot", options: { type: "Which channel slot to set", channel: "The channel" } },
+        list: { description: "Show the current channel setup" },
       },
     },
-  },
-  profile: {
-    description: "بروفايل البوت في هذا السيرفر",
-    subcommands: {
-      config: "تعديل لوقو وبنر واسم وبايو البوت في هذا السيرفر",
-    },
-  },
-  startCount: {
-    description: "تحديد رقم أول مستوى في سلّم الرتب — 0 (الافتراضي) أو 1",
-    options: {
-      start: "الرقم اللي يبدأ منه العد",
-    },
-  },
-  channels: {
-    description: `ضبط الرومات اللي يستخدمها نظام الطاقم الاداري ${branding.botName}`,
-    sub: {
-      set: {
-        description: "تعيين روم لخانة في نظام الطاقم الاداري",
-        options: {
-          type: "أي خانة روم في نظام الطاقم الاداري تبي تضبط",
-          channel: "الروم المطلوب",
-        },
-      },
-      list: {
-        description: "عرض إعدادات الرومات الحالية",
-      },
-    },
-  },
-  warnSetup: {
-    description: "نشر أو تحديث لوحة إدارة العقوبات والتحذيرات في الروم المضبوط",
-  },
-  faq: {
-    description: "إدارة الأسئلة الشائعة (FAQ) اللي تستخدمها التكتات",
-    sub: {
-      add: {
-        description: "إضافة عنصر FAQ (يفتح نموذج)",
-        option: "القسم اللي يظهر فيه (اتركه فاضي عشان يظهر بكل الأقسام)",
-      },
-      remove: {
-        description: "حذف عنصر FAQ",
-        option: "الـ FAQ اللي تبي تحذفه",
-      },
-      list: { description: "عرض عناصر الـ FAQ المضافة" },
-      assign: {
-        description: "تخصيص عنصر FAQ بقسم تكت معيّن (أو رجّعه لكل الأقسام)",
-        options: {
-          faq: "الـ FAQ اللي تبي تخصّصه",
-          panel: "القسم اللي تبي تربطه فيه (اتركه فاضي عشان يرجع لكل الأقسام)",
+    warnSetup: { description: "Post or update the punishments and warnings panel in its channel" },
+    faq: {
+      description: "Manage the FAQs tickets use",
+      sub: {
+        add: { description: "Add an FAQ (opens a form)", option: "Section it shows in (empty for all)" },
+        remove: { description: "Delete an FAQ", option: "The FAQ to delete" },
+        list: { description: "Show the FAQs" },
+        assign: {
+          description: "Tie an FAQ to one ticket section (or back to all)",
+          options: { faq: "The FAQ", panel: "The section (empty for all)" },
         },
       },
     },
-  },
-  fastAccess: {
-    description: "إدارة ماكروهات رسائل الطاقم الاداري السريعة Fast Access ($commands)",
-    sub: {
-      add: {
-        description: "إنشاء ماكرو Fast Access",
-        options: {
-          cmd: "اسم الماكرو (يُستخدم كـ $name)، مثال: rules",
-          message: "الرسالة اللي يرسلها الماكرو — حط [args] مكان الكلام اللي يُكتب بعد الأمر",
-          context: "وين ينفع تستخدم الماكرو",
+    fastAccess: {
+      description: "Manage Fast Access staff message macros ($commands)",
+      sub: {
+        add: {
+          description: "Create a Fast Access macro",
+          options: {
+            cmd: "Macro name (used as $name), e.g. rules",
+            message: "What it sends; put [args] where the text typed after it goes",
+            context: "Where it can be used",
+          },
         },
+        remove: { description: "Delete a Fast Access macro", option: "Macro name (without $)" },
+        list: { description: "Show this server's Fast Access macros" },
       },
-      remove: {
-        description: "حذف ماكرو Fast Access",
-        option: "اسم الماكرو (بدون $)",
-      },
-      list: { description: "عرض ماكروهات Fast Access حق هذا السيرفر" },
     },
   },
-} as const;
+  {
+    role: {
+      description: `ضبط رتب ديسكورد اللي يستخدمها نظام طاقم ${bot}`,
+      sub: {
+        set: { description: "ضبط رتبة لخانة في نظام الطاقم", options: { type: "الخانة", role: "الرتبة" } },
+        range: {
+          description: "ضبط رتبة تنعطى تلقائياً لمستويات معيّنة (أو نطاق رتب وصول)",
+          options: { type: "نوع الربط", role: "الرتبة", from: "أول رتبة مرقّمة في النطاق (اختياري)", to: "آخر رتبة مرقّمة في النطاق (اختياري)" },
+        },
+        boundary: { description: "تحديد أول رتبة في تصنيف (إدارة عليا / أونر / شيب)", options: { tier: "التصنيف", role: "أول رتبة في التصنيف" } },
+        stafftype: { description: "ضبط رتبة نوع إداري (ماكس / مبرمج …)", options: { type: "النوع", role: "رتبة هذا النوع" } },
+        check: { description: "عرض مستوى الرتبة وتصنيفها في السلّم", option: "الرتبة" },
+        list: { description: "عرض كل الرتب المضبوطة في نظام الطاقم" },
+      },
+    },
+    autoclaim: {
+      description: "تشغيل أو إيقاف التحويل التلقائي للكريدتس في الهدايا",
+      options: { state: "الحالة" },
+      choices: { on: "تشغيل", off: "إيقاف", status: "عرض الحالة" },
+    },
+    promotePoints: {
+      description: "ضبط النقاط الأسبوعية المطلوبة للتأهل للترقية",
+      options: { points: "أقل عدد نقاط بالأسبوع (رقم صحيح)" },
+    },
+    scan: { description: "فحص السيرفر واستيراد الإداريين ومزامنة مستوياتهم" },
+    ticketStats: {
+      description: "إدارة عدّادات تكتات الطاقم",
+      sub: { reset: { description: "تصفير عدّادات التكتات (للإداريين)", options: { member: "الإداري (فاضي = الكل)" } } },
+    },
+    sleep: {
+      description: "تنبيه صاحب التكت إنه يقفل تلقائياً إذا ما رد",
+      options: { time: "المدة قبل الإقفال مثل 6h أو 30m (الافتراضي 6 ساعات)" },
+    },
+    points: {
+      description: "إدارة نقاط الطاقم يدوياً (إضافة / خصم / تصفير)، للإداريين",
+      sub: {
+        add: { description: "إضافة نقاط لإداري", options: { member: "الإداري", amount: "عدد النقاط", reason: "السبب (اختياري)" } },
+        remove: { description: "خصم نقاط من إداري", options: { member: "الإداري", amount: "عدد النقاط", reason: "السبب (اختياري)" } },
+        reset: { description: "تصفير نقاط إداري، أو الكل إذا ما حددت أحد", options: { member: "الإداري (فاضي = الكل)" } },
+        values: { description: "تحديد نقاط كل عمل (استلام تكت، تحذير، سجن…)" },
+      },
+    },
+    profile: {
+      description: "بروفايل البوت في هذا السيرفر",
+      subcommands: { config: "تعديل صورة وبنر واسم وبايو البوت في هذا السيرفر" },
+    },
+    startCount: {
+      description: "تحديد رقم أول مستوى في السلّم: 0 (الافتراضي) أو 1",
+      options: { start: "رقم بداية العد" },
+    },
+    channels: {
+      description: `ضبط الرومات اللي يستخدمها نظام طاقم ${bot}`,
+      sub: {
+        set: { description: "تعيين روم لخانة في نظام الطاقم", options: { type: "خانة الروم", channel: "الروم" } },
+        list: { description: "عرض إعدادات الرومات" },
+      },
+    },
+    warnSetup: { description: "نشر أو تحديث لوحة العقوبات والتحذيرات في رومها" },
+    faq: {
+      description: "إدارة الأسئلة الشائعة للتكتات",
+      sub: {
+        add: { description: "إضافة FAQ (يفتح نموذج)", option: "القسم اللي يظهر فيه (فاضي = الكل)" },
+        remove: { description: "حذف FAQ", option: "الـ FAQ" },
+        list: { description: "عرض الـ FAQ" },
+        assign: {
+          description: "ربط FAQ بقسم تكت (أو رجّعه للكل)",
+          options: { faq: "الـ FAQ", panel: "القسم (فاضي = الكل)" },
+        },
+      },
+    },
+    fastAccess: {
+      description: "إدارة ماكروهات رسائل الطاقم السريعة Fast Access ($commands)",
+      sub: {
+        add: {
+          description: "إنشاء ماكرو Fast Access",
+          options: {
+            cmd: "اسم الماكرو (يُستخدم كـ $name)، مثال: rules",
+            message: "اللي يرسله؛ حط [args] مكان الكلام بعد الأمر",
+            context: "وين ينفع يُستخدم",
+          },
+        },
+        remove: { description: "حذف ماكرو Fast Access", option: "اسم الماكرو (بدون $)" },
+        list: { description: "عرض ماكروهات Fast Access في السيرفر" },
+      },
+    },
+  },
+);
