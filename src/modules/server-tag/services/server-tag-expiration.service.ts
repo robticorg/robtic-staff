@@ -1,4 +1,6 @@
 import { inGuildLang } from "../../configuration/services/guild-lang.ts";
+import { staffPolicyService } from "../../configuration/services/staff-policy.service.ts";
+import { staffIdentityRequirementService } from "../../staff-identity/index.ts";
 import { logger } from "../../../shared/utils/logger.ts";
 import { serverTagConfig } from "../../../data/server-tag/config.ts";
 import type { StaffTagRestrictionDocument } from "../models/staff-tag-restriction.model.ts";
@@ -8,8 +10,12 @@ import { staffTagRestrictionService } from "./staff-tag-restriction.service.ts";
 
 const log = logger.child("server-tag:expiry");
 
+/** How often (in sweeps) held members are released in servers with the identity check off. */
+const RELEASE_EVERY_TICKS = 5;
+
 export type TagExpiryOutcome =
   | "staff-removed"
+  | "restored"
   | "blocked"
   | "already"
   | "member-absent"
@@ -18,10 +24,12 @@ export type TagExpiryOutcome =
 export class ServerTagExpirationService {
   private timer: ReturnType<typeof setInterval> | null = null;
   private running = false;
+  private ticks = 0;
 
   async sweep(now: Date = new Date()): Promise<Record<TagExpiryOutcome, number>> {
     const tally: Record<TagExpiryOutcome, number> = {
       "staff-removed": 0,
+      restored: 0,
       blocked: 0,
       already: 0,
       "member-absent": 0,
@@ -42,7 +50,7 @@ export class ServerTagExpirationService {
 
     if (due.length > 0) {
       log.info(
-        `sweep: ${tally["staff-removed"]} removed from staff, ${tally.blocked} blocked, ` +
+        `sweep: ${tally["staff-removed"]} removed from staff, ${tally.restored} restored, ${tally.blocked} blocked, ` +
           `${tally["member-absent"]} absent, ${tally["guild-absent"]} no-guild, ${tally.already} already`,
       );
     }
@@ -66,6 +74,11 @@ export class ServerTagExpirationService {
         `restriction ${restriction.restrictionId} due but ${restriction.staffId} is not in the guild`,
       );
       return "member-absent";
+    }
+
+    // Fixed it at the last minute, or the server turned the identity check off: give the roles back instead.
+    if ((await staffIdentityRequirementService.checkMember(member)).compliant) {
+      return (await serverTagService.reconcileMember(member)) === "restored" ? "restored" : "already";
     }
 
     const outcome = await serverTagService.removeStaffPermanently(member, restriction);
@@ -97,6 +110,33 @@ export class ServerTagExpirationService {
     return settled;
   }
 
+  /**
+   * Servers that turned the identity check off on the dashboard: everyone still held (waiting for the tag after an
+   * accept, or paused for losing it) gets their roles back. Runs every few sweeps.
+   */
+  async releaseWhereCheckOff(): Promise<number> {
+    const client = getServerTagClient();
+    if (!client) return 0;
+
+    let released = 0;
+    for (const guild of client.guilds.cache.values()) {
+      const policy = await staffPolicyService.get(guild.id).catch(() => null);
+      if (!policy || policy.features.identityCheck) continue;
+      const staffIds = await staffTagRestrictionService.listActiveStaffIds(guild.id);
+      for (const staffId of staffIds) {
+        try {
+          const member = await fetchCurrentMember(guild, staffId);
+          if (!member) continue;
+          if ((await inGuildLang(guild.id, () => serverTagService.reconcileMember(member))) === "restored") released += 1;
+        } catch (err) {
+          log.error(`release (check off) failed for ${staffId} in ${guild.id}`, err);
+        }
+      }
+    }
+    if (released > 0) log.info(`identity check off: released ${released} held staff member(s)`);
+    return released;
+  }
+
   start(): void {
     if (this.timer) return;
     void this.tick();
@@ -117,6 +157,7 @@ export class ServerTagExpirationService {
     this.running = true;
     try {
       await this.sweep();
+      if (this.ticks++ % RELEASE_EVERY_TICKS === 0) await this.releaseWhereCheckOff();
     } catch (err) {
       log.error("server tag sweep tick failed", err);
     } finally {

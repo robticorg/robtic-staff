@@ -31,11 +31,12 @@ export default definePrefixCommand({
       case "nothing-to-do":
         throw new PrefixAbort(M.backNothingToDo(mention));
       case "reinstated": {
-        const lines = [M.backDone(mention, shownLevel(result.level, await getLevelStart(ctx.guild.id)))];
-        if (result.awaitingIdentity) {
-          lines.push(serverTagMessages.notice.awaitingIdentity(target.id, result.awaitingIdentity.dmSent));
-        }
-        await ctx.reply(lines.join("\n"));
+        // Waiting for the tag or identifier: the one-line notice says it all.
+        await ctx.reply(
+          result.awaitingIdentity
+            ? serverTagMessages.notice.awaitingIdentity(target.id, result.awaitingIdentity.dmSent)
+            : M.backDone(mention, shownLevel(result.level, await getLevelStart(ctx.guild.id))),
+        );
       }
     }
   },

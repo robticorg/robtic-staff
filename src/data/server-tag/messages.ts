@@ -18,15 +18,15 @@ export const serverTagMessages = bilingual(
       restoredByTag: "You're wearing the server tag again. Your staff roles are back.",
       restoredByDisplayName: "Your name has the server identifier now. Your staff roles are back.",
       removedByExpiry: `Time's up: no server tag or identifier, so you've been removed from staff in **${S}** and your points were reset. You can apply again anytime.`,
-      awaitingIdentity: `You're accepted to the staff of **${S}**. You'll get your roles once you wear the server tag or add ${IDS} to your name.`,
+      awaitingIdentity: `You have been accepted to the staff of **${S}**. Your roles will be given once you add the server tag or ${IDS} to your name.`,
       grantedAfterAccept: "Tag or identifier found. You now have your staff roles. Welcome aboard!",
       partialRestoreNote: "Note: some saved roles no longer exist in the server and were skipped.",
     },
 
     notice: {
       awaitingIdentity: (userId: string, dmSent: boolean) =>
-        `${E.warning} <@${userId}> is accepted. They'll get their roles after wearing the tag or adding the identifier.` +
-        (dmSent ? "" : " (Their DMs are closed, please let them know.)"),
+        `${E.success} <@${userId}> has been accepted to the staff. Roles will be given once they add the server tag or identifier.` +
+        (dmSent ? "" : " (DMs closed, please inform them.)"),
     },
   },
   {
@@ -34,19 +34,19 @@ export const serverTagMessages = bilingual(
 
     dm: {
       restricted: (durationMs: number, _expiresAt: Date) =>
-        `رتبك الإدارية في **${S}** موقوفة مؤقتاً: البس الشعار أو حط ${IDS} في اسمك خلال **${formatArabicDuration(durationMs)}** وترجع لك. بعدها تنشال من الطاقم وتتصفّر نقاطك.`,
-      restoredByTag: "رجعت تلبس شعار السيرفر، ورجعت لك رتبك الإدارية.",
-      restoredByDisplayName: "صار اسمك فيه معرّف السيرفر، ورجعت لك رتبك الإدارية.",
-      removedByExpiry: `انتهت المهلة بدون شعار أو معرّف، فتم شيلك من الطاقم في **${S}** وتصفير نقاطك. تقدر تقدّم من جديد متى ما حبيت.`,
-      awaitingIdentity: `تم قبولك في طاقم **${S}**. بتوصلك رتبك بعد ما تلبس الشعار أو تحط ${IDS} في اسمك.`,
-      grantedAfterAccept: "تم التحقق من الشعار أو المعرّف، واستلمت رتبك الإدارية. حياك!",
-      partialRestoreNote: "ملاحظة: بعض الرتب المحفوظة ما عادت موجودة في السيرفر وتم تجاوزها.",
+        `تم إيقاف رتبك الإدارية في **${S}** مؤقتاً. يرجى وضع الشعار أو التاق ${IDS} في اسمك خلال **${formatArabicDuration(durationMs)}** لاستعادتها، وإلا سيتم فصلك من الطاقم وتصفير نقاطك.`,
+      restoredByTag: "تم التحقق من شعار السيرفر، وأُعيدت إليك رتبك الإدارية.",
+      restoredByDisplayName: "تم التحقق من التاق في اسمك، وأُعيدت إليك رتبك الإدارية.",
+      removedByExpiry: `انتهت المهلة دون وضع الشعار أو التاق، لذا تم فصلك من طاقم **${S}** وتصفير نقاطك. يمكنك التقديم مجدداً في أي وقت.`,
+      awaitingIdentity: `تم قبولك في إدارة **${S}**، وستُمنح لك الرتب بعد وضع الشعار أو التاق ${IDS} في اسمك.`,
+      grantedAfterAccept: "تم التحقق من الشعار أو التاق، ومُنحت لك رتبك الإدارية. أهلاً بك في الطاقم.",
+      partialRestoreNote: "ملاحظة: بعض الرتب المحفوظة لم تعد موجودة في السيرفر وتم تجاوزها.",
     },
 
     notice: {
       awaitingIdentity: (userId: string, dmSent: boolean) =>
-        `${E.warning} تم قبول <@${userId}>، وبتوصله رتبه بعد ما يلبس الشعار أو يحط المعرّف.` +
-        (dmSent ? "" : " (الخاص مقفل، بلّغوه.)"),
+        `${E.success} تم قبول <@${userId}> في الإدارة، وستُمنح له الرتب بعد وضع الشعار أو التاق.` +
+        (dmSent ? "" : " (رسائله الخاصة مغلقة، يرجى إبلاغه.)"),
     },
   },
 );

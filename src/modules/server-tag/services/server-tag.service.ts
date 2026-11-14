@@ -376,13 +376,8 @@ export class ServerTagService {
     const restriction = await staffTagRestrictionService.getActiveRestriction(guildId, member.id);
     if (!restriction) return usingTag ? "granted" : "noop";
 
-    if (
-      restriction.kind !== StaffTagRestrictionKind.AWAITING_IDENTITY &&
-      restriction.expiresAt.getTime() <= now.getTime()
-    ) {
-      return this.removeStaffPermanently(member, restriction);
-    }
-
+    // Compliance first: someone who fixed it, or a server that turned the identity check off, gets their roles back
+    // even when the deadline has passed.
     const compliance = (await staffIdentityRequirementService.checkMember(member));
     if (compliance.compliant) {
       return this.restoreRestriction(
@@ -391,6 +386,13 @@ export class ServerTagService {
         StaffTagRestrictionStatus.RESTORED,
         restorationReasonFor(compliance),
       );
+    }
+
+    if (
+      restriction.kind !== StaffTagRestrictionKind.AWAITING_IDENTITY &&
+      restriction.expiresAt.getTime() <= now.getTime()
+    ) {
+      return this.removeStaffPermanently(member, restriction);
     }
 
     return "noop";

@@ -37,9 +37,9 @@ import { getLevelStart, shownLevel } from "../../../modules/configuration/utils/
 const M = prefixMessages.staff;
 
 function acceptedReply(targetId: string, result: AcceptResult, tier: StaffTier | null, start: number): string {
-  const line = acceptedLine(targetId, result, tier, start);
-  if (!result.awaitingIdentity) return line;
-  return `${line}\n${serverTagMessages.notice.awaitingIdentity(targetId, result.awaitingIdentity.dmSent)}`;
+  // Waiting for the tag or identifier: one short line that says both (accepted, roles come after the tag).
+  if (result.awaitingIdentity) return serverTagMessages.notice.awaitingIdentity(targetId, result.awaitingIdentity.dmSent);
+  return acceptedLine(targetId, result, tier, start);
 }
 
 function acceptedLine(targetId: string, result: AcceptResult, tier: StaffTier | null, start: number): string {

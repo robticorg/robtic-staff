@@ -18,9 +18,11 @@ describe("staff messages follow the server language", () => {
   test("waiting for the tag is one short line in each language", () => {
     const en = runWithLang("en", () => serverTagMessages.notice.awaitingIdentity("1", true));
     const ar = runWithLang("ar", () => serverTagMessages.notice.awaitingIdentity("1", true));
-    expect(en).toContain("They'll get their roles after wearing the tag or adding the identifier.");
+    expect(en).toContain("has been accepted to the staff. Roles will be given once they add the server tag or identifier.");
+    expect(en).not.toContain("\n");
+    expect(ar).not.toContain("\n");
     expect(ARABIC.test(en)).toBe(false);
-    expect(ar).toContain("الشعار أو يحط المعرّف");
+    expect(ar).toContain("تم قبول <@1> في الإدارة، وستُمنح له الرتب بعد وضع الشعار أو التاق.");
     expect(en.length).toBeLessThan(140);
     expect(ar.length).toBeLessThan(140);
   });
