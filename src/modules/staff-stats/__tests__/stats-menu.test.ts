@@ -80,10 +80,10 @@ describe("fired vs resigned", () => {
     reason,
   });
 
-  it("says مطرود for a firing", () => {
+  it("says مفصول for a firing", () => {
     const lines = overviewLines(overview(exit(StaffExitKind.FIRED))).join("\n");
-    expect(lines).toContain("مطرود");
-    expect(lines).toContain("طرده");
+    expect(lines).toContain("مفصول");
+    expect(lines).toContain("فصله");
   });
 
   it("says مستقيل with the approver and reason for a resignation", () => {
@@ -91,7 +91,7 @@ describe("fired vs resigned", () => {
     expect(lines).toContain("مستقيل");
     expect(lines).toContain("وافق على استقالته");
     expect(lines).toContain("دراسة");
-    expect(lines).not.toContain("طرده");
+    expect(lines).not.toContain("فصله");
   });
 });
 
@@ -150,8 +150,8 @@ describe("!stats responsibilities and leads", () => {
 describe("!stats hidden staff", () => {
   it("shows the hidden status and level only when the card carries them", () => {
     const withHidden = overviewLines({ ...overview(null), hidden: { level: 3, name: "III" } }).join("\n");
-    expect(withHidden).toContain("موظف مخفي");
+    expect(withHidden).toContain("إداري مخفي");
     expect(withHidden).toContain("**المستوى المخفي:** III");
-    expect(overviewLines(overview(null)).join("\n")).not.toContain("موظف مخفي");
+    expect(overviewLines(overview(null)).join("\n")).not.toContain("إداري مخفي");
   });
 });

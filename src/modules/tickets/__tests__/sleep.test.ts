@@ -42,9 +42,9 @@ describe("resolveSleepDuration", () => {
 describe("sleep DM", () => {
   const dm = buildSleepDm({ guildId: "g1", channelId: "c1", duration: "6 ساعات" });
 
-  it("is a plain message with the exact two-line wording", () => {
+  it("is a plain message with the exact short wording", () => {
     expect(dm.content).toBe(
-      "سيتم اقفال التكت الخاص بك خلال 6 ساعات اذا لم ترد\nالرجاء الذهاب الى التكت و الرد حالا",
+      "تكتك يقفل خلال 6 ساعات إذا ما رديت. رد عليه الحين.",
     );
     expect(dm.embeds ?? []).toHaveLength(0);
   });

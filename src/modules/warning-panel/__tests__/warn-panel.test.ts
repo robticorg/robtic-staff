@@ -54,9 +54,9 @@ describe("warning panel", () => {
     ]);
   });
 
-  it('labels the timeout action "تايم اوت", not "توقيت"', () => {
+  it('labels the timeout action "تايم أوت", not "توقيت"', () => {
     const panel = JSON.stringify(buildWarningPanel());
-    expect(panel).toContain("تايم اوت");
+    expect(panel).toContain("تايم أوت");
     expect(panel).not.toContain("توقيت");
   });
 });

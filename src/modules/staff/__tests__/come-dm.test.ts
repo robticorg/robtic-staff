@@ -12,7 +12,7 @@ const dm = buildComeDm({
 
 describe("come DM", () => {
   it("uses the exact wording with the caller mention and the reason", () => {
-    expect(dm.content).toBe("لقد تم ندائك بواسطة <@caller> للحضور بسبب : اجتماع الطاقم الاداري");
+    expect(dm.content).toBe("<@caller> يطلب حضورك. السبب: اجتماع الطاقم الاداري");
   });
 
   it("is plain text, not an embed", () => {

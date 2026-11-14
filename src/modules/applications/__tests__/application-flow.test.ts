@@ -194,7 +194,7 @@ describe("application ticket panel and information", () => {
     expect(text).toContain("tk:options:ticket-9");
     expect(text).toContain("ap:info:app1");
     expect(text).toContain("<@&222> <@&333>");
-    expect(text).toContain("بانتظار أحد المسؤولين لاستلام الطلب");
+    expect(text).toContain("بانتظار استلام أحد المسؤولين");
   });
 
   it("shows a normal application's details with the recruiter", () => {
@@ -215,8 +215,8 @@ describe("application ticket panel and information", () => {
     });
     expect(lines).toContain("**الاسم:** سارة");
     expect(lines).toContain("**المجال:** مصمم");
-    expect(lines).toContain("**حالة التحقق:** بانتظار التوثيق");
-    expect(lines).toContain("**مين عرفه على الفريق:** <@444444444444444444>");
+    expect(lines).toContain("**التوثيق:** بانتظار التوثيق");
+    expect(lines).toContain("**معرّفه:** <@444444444444444444>");
   });
 
   it("shows a transfer's source numbers, membership, proposal and evidence count", () => {
@@ -255,11 +255,11 @@ describe("application ticket panel and information", () => {
       },
       now,
     );
-    expect(lines).toContain("**عدد أعضاء السيرفر:** 12,000");
+    expect(lines).toContain("**الأعضاء:** 12,000");
     expect(lines).toContain("**ترتيب الرتبة:** 4");
-    expect(lines).toContain(`**مدة وجوده في RobTic:** ${formatMembershipDuration(243)}`);
+    expect(lines).toContain(`**مدته في RobTic:** ${formatMembershipDuration(243)}`);
     expect(lines).toContain("**الرتبة المتوقعة:** <@&555> (المستوى 3)");
-    expect(lines).toContain("**عدد الإثباتات:** 5");
-    expect(lines).toContain("**مين عرفه على الفريق:** ما فيه");
+    expect(lines).toContain("**الإثباتات:** 5");
+    expect(lines).toContain("**معرّفه:** ما فيه");
   });
 });

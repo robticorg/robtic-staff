@@ -138,9 +138,9 @@ describe("giveaway result text", () => {
       ],
       1,
     ).join("\n");
-    expect(text).toContain(`<@${USER_A}> أثبت إنه نفّذ الشرط`);
+    expect(text).toContain(`<@${USER_A}> نفّذ الشرط`);
     expect(text).toContain("<@staff1>");
-    expect(text).toContain(`<@${USER_B}> ما أثبت إنه نفّذ الشرط`);
+    expect(text).toContain(`<@${USER_B}> ما أثبت تنفيذ الشرط`);
   });
 });
 
@@ -245,8 +245,8 @@ describe.skipIf(!hasDb)("giveaway flow (MongoDB)", () => {
     expect(ended!.status).toBe(GiveawayStatus.ENDED);
     expect(ended!.winners).toEqual([USER_A, USER_B]);
     const text = JSON.stringify(replies[0]);
-    expect(text).toContain("أثبت إنه نفّذ الشرط");
-    expect(text).toContain("ما أثبت إنه نفّذ الشرط");
+    expect(text).toContain("نفّذ الشرط");
+    expect(text).toContain("ما أثبت تنفيذ الشرط");
 
     expect(await giveawayService.target(GUILD, null)).toBeNull();
   });

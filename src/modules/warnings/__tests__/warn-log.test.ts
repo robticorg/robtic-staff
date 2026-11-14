@@ -34,7 +34,7 @@ describe("warning log", () => {
     });
 
     expect(log.title).toContain(warningMessages.log.titleVerbal);
-    expect(log.fields.find((f) => f.label === warningMessages.log.warnType)?.value).toBe("تحذير شفوي");
+    expect(log.fields.find((f) => f.label === warningMessages.log.warnType)?.value).toBe("شفوي");
   });
 
   it("renders a real staff warning with level + converted count", () => {
@@ -51,7 +51,7 @@ describe("warning log", () => {
 
     expect(log.title).toContain(warningMessages.log.titleReal);
     expect(log.tone).toBe("error");
-    expect(log.fields.find((f) => f.label === warningMessages.log.warnType)?.value).toBe("تحذير رسمي");
+    expect(log.fields.find((f) => f.label === warningMessages.log.warnType)?.value).toBe("رسمي");
     expect(log.fields.find((f) => f.label === warningMessages.log.level)?.value).toBe("التحذير الثاني");
     expect(log.fields.find((f) => f.label === warningMessages.log.convertedFrom)?.value).toBe("3");
   });

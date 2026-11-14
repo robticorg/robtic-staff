@@ -31,18 +31,18 @@ describe("staff profile card", () => {
   it("shows order, acceptor, time on staff and the last promotion with who did it", () => {
     const lines = staffProfileLines(base, now);
     expect(lines).toContain("**الحالة:** نشط");
-    expect(lines).toContain("**ترتيب الرتبة:** المستوى 12 من 40");
+    expect(lines).toContain("**الترتيب:** المستوى 12 من 40");
     expect(lines).toContain("**الرتبة:** <@&444>");
-    expect(lines).toContain("**التصنيف:** ادارة عليا");
-    expect(lines).toContain(`**قبله في الطاقم الاداري:** <@${ACCEPTER}>`);
-    expect(lines).toContain("**مدة وجوده في الطاقم الاداري:** 8 أشهر");
+    expect(lines).toContain("**التصنيف:** إدارة عليا");
+    expect(lines).toContain(`**قبله:** <@${ACCEPTER}>`);
+    expect(lines).toContain("**مدته في الطاقم:** 8 أشهر");
     expect(lines.some((l) => l.startsWith("**آخر ترقية:**") && l.includes(`<@${PROMOTER}>`))).toBe(true);
   });
 
   it("says when there was never a promotion or the acceptor was the system", () => {
     const lines = staffProfileLines({ ...base, acceptedBy: null, lastPromotion: null }, now);
-    expect(lines).toContain("**قبله في الطاقم الاداري:** النظام");
-    expect(lines).toContain("**آخر ترقية:** ما تمت ترقيته من يوم انقبل");
+    expect(lines).toContain("**قبله:** النظام");
+    expect(lines).toContain("**آخر ترقية:** ما ترقّى من يوم انقبل");
   });
 });
 

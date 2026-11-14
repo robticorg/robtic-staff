@@ -72,7 +72,7 @@ describe("reporter privacy in staff-facing output", () => {
 
   it("a relayed staff message shows the report-manager label only", () => {
     const rendered = renderStaffMessageForDm("RPT-1829", "Can you provide more evidence?");
-    expect(rendered).toContain("مسؤول البلاغات");
+    expect(rendered).toContain("فريق البلاغات");
     expect(rendered).toContain("RPT-1829");
     expect(rendered).toContain("Can you provide more evidence?");
   });
