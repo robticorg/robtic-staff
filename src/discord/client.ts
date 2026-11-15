@@ -1,5 +1,5 @@
 import { Client, Events, GatewayIntentBits, Partials, type Guild } from "discord.js";
-import { isGuildBlocked, onBlockedChange } from "../remote-config.ts";
+import { isGuildAllowed, isGuildBlocked, onAccessChange, onBlockedChange } from "../remote-config.ts";
 import { events } from "../events/index.ts";
 import { commandMap } from "./registry.ts";
 import { logger } from "../shared/utils/logger.ts";
@@ -40,14 +40,18 @@ export function createClient(): Client {
     else client.on(event.name, listener);
   }
 
-  // Servers blocked in the admin console: leave on join, on start, and when the list changes.
+  // Servers this bot may not be in: blocked in the admin console, or not on its shared allowlist (unless the bot is open
+  // to everyone). Leave on join, on start, and when either list changes. No list yet: only blocked servers are left.
   const leave = (guild: Guild) => {
-    log.warn(`leaving blocked server ${guild.name} (${guild.id})`);
+    log.warn(`leaving server it may not be in: ${guild.name} (${guild.id})`);
     void guild.leave().catch((err) => log.error(`could not leave ${guild.id}`, err));
   };
-  client.on(Events.GuildCreate, (guild) => { if (isGuildBlocked(guild.id)) leave(guild); });
-  client.once(Events.ClientReady, (c) => { for (const g of c.guilds.cache.values()) if (isGuildBlocked(g.id)) leave(g); });
+  const notAllowed = (id: string) => isGuildBlocked(id) || isGuildAllowed(id) === false;
+  const sweep = () => { for (const g of client.guilds.cache.values()) if (notAllowed(g.id)) leave(g); };
+  client.on(Events.GuildCreate, (guild) => { if (notAllowed(guild.id)) leave(guild); });
+  client.once(Events.ClientReady, sweep);
   onBlockedChange((ids) => { for (const id of ids) { const g = client.guilds.cache.get(id); if (g) leave(g); } });
+  onAccessChange(sweep);
 
   log.info(`registered ${events.length} event(s), ${commandMap.size} command(s)`);
   return client;
