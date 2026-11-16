@@ -4,43 +4,23 @@ import { logger } from "../../../shared/utils/logger.ts";
 const log = logger.child("staff:active-cases");
 
 export interface ActiveCaseCounts {
-  reports: number;
   tickets: number;
-  appeals: number;
   giftClaims: number;
   total: number;
 }
 
 export function totalActiveCases(counts: Omit<ActiveCaseCounts, "total">): number {
-  return counts.reports + counts.tickets + counts.appeals + counts.giftClaims;
+  return counts.tickets + counts.giftClaims;
 }
 
 export class StaffActiveCasesService {
   async countForMember(guildId: GuildId, userId: UserId): Promise<ActiveCaseCounts> {
-    const [reports, tickets, appeals, giftClaims] = await Promise.all([
-      this.countReports(guildId, userId),
+    const [tickets, giftClaims] = await Promise.all([
       this.countTickets(guildId, userId),
-      this.countAppeals(guildId, userId),
       this.countGiftClaims(guildId, userId),
     ]);
-    const counts = { reports, tickets, appeals, giftClaims };
+    const counts = { tickets, giftClaims };
     return { ...counts, total: totalActiveCases(counts) };
-  }
-
-  private async countReports(guildId: GuildId, userId: UserId): Promise<number> {
-    try {
-      const [{ ModmailCaseModel }, { OPEN_CASE_STATUSES }] = await Promise.all([
-        import("../../modmail/models/modmail-case.model.ts"),
-        import("../../modmail/types/enums.ts"),
-      ]);
-      return await ModmailCaseModel.countDocuments({
-        guildId,
-        claimedByDiscordId: userId,
-        status: { $in: [...OPEN_CASE_STATUSES] },
-      }).exec();
-    } catch (err) {
-      return this.unavailable("reports", err);
-    }
   }
 
   private async countTickets(guildId: GuildId, userId: UserId): Promise<number> {
@@ -56,22 +36,6 @@ export class StaffActiveCasesService {
       }).exec();
     } catch (err) {
       return this.unavailable("tickets", err);
-    }
-  }
-
-  private async countAppeals(guildId: GuildId, userId: UserId): Promise<number> {
-    try {
-      const [{ AppealModel }, { OPEN_APPEAL_STATUSES }] = await Promise.all([
-        import("../../appeals/models/appeal.model.ts"),
-        import("../../appeals/types/enums.ts"),
-      ]);
-      return await AppealModel.countDocuments({
-        guildId,
-        claimedBy: userId,
-        status: { $in: [...OPEN_APPEAL_STATUSES] },
-      }).exec();
-    } catch (err) {
-      return this.unavailable("appeals", err);
     }
   }
 

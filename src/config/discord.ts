@@ -6,7 +6,6 @@ export interface DiscordConfig {
   primaryGuildId?: string;
   prefix: string;
   fastAccessPrefix: string;
-  modmailCasePrefix: string;
 }
 
 export const discordConfig: DiscordConfig = {
@@ -15,5 +14,4 @@ export const discordConfig: DiscordConfig = {
   primaryGuildId: rawEnv.discordGuildId ?? rawEnv.discordDevGuildId,
   prefix: rawEnv.prefix,
   fastAccessPrefix: rawEnv.fastAccessPrefix,
-  modmailCasePrefix: rawEnv.modmailCasePrefix,
 };

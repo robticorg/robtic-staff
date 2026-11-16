@@ -17,8 +17,6 @@ export type StaffType = (typeof StaffType)[keyof typeof StaffType];
 export const STAFF_TYPE_VALUES = Object.values(StaffType);
 
 export const StaffActivityType = {
-  REPORT_CLAIM: "REPORT_CLAIM",
-  REPORT_COMPLETE: "REPORT_COMPLETE",
   TICKET_CLAIM: "TICKET_CLAIM",
   TICKET_COMPLETE: "TICKET_COMPLETE",
   GIFT_CLAIM: "GIFT_CLAIM",
@@ -55,7 +53,6 @@ export type StaffActivityType = (typeof StaffActivityType)[keyof typeof StaffAct
 export const STAFF_ACTIVITY_TYPE_VALUES = Object.values(StaffActivityType);
 
 export const StaffPointTransactionType = {
-  REPORT_CLAIM: "REPORT_CLAIM",
   TICKET_CLAIM: "TICKET_CLAIM",
   GIFT_CLAIM: "GIFT_CLAIM",
   USER_WARNING: "USER_WARNING",
@@ -74,7 +71,6 @@ export const StaffPointTransactionType = {
   PRIVATE_CHANNEL_DELETE: "PRIVATE_CHANNEL_DELETE",
   /** Giving the seller role (points API type "role"). */
   SELLER_ROLE: "SELLER_ROLE",
-  APPEAL_SUCCESS_PENALTY: "APPEAL_SUCCESS_PENALTY",
   MANUAL_ADJUSTMENT: "MANUAL_ADJUSTMENT",
   OTHER: "OTHER",
 } as const;

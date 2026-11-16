@@ -42,7 +42,6 @@ export function buildPunishmentLog(punishment: Punishment): string {
         ? `<t:${Math.floor(punishment.executedAt.getTime() / 1000)}:f>`
         : L.none,
     ),
-    L.line(tr("Report ID", "آيدي البلاغ"), punishment.reportId ? `\`${punishment.reportId}\`` : L.none),
     L.line(tr("Status", "الحالة"), punishment.status),
   );
 

@@ -1,6 +1,5 @@
 import { IANAZone } from "luxon";
 import { config } from "../../../config/index.ts";
-import { appData } from "../../../data/config/index.ts";
 import { ACCEPTED_IDENTIFIERS, IdentifierStrictness } from "../../../data/staff-identity/config.ts";
 import { staffApplicationConfig, staffRecruitmentRules, staffTransferRules, type CountBonus } from "../../../data/staff-application/config.ts";
 import { serverTagConfig } from "../../../data/server-tag/config.ts";
@@ -47,7 +46,6 @@ export interface StaffPolicy {
   vacations: { maxDays: number; absentGraceDays: number };
   prefix: string;
   fastAccessPrefix: string;
-  modmail: { casePrefix: string };
 }
 
 /** What the bot did before rules were per server, so a server that never touched the dashboard sees no change. */
@@ -78,7 +76,6 @@ export const STAFF_POLICY_DEFAULTS: StaffPolicy = {
   vacations: { maxDays: 180, absentGraceDays: Math.round(vacationConfig.absentGraceMs / DAY_MS) },
   prefix: config.prefix,
   fastAccessPrefix: config.fastAccessPrefix,
-  modmail: { casePrefix: process.env.MODMAIL_CASE_PREFIX ?? appData.caseIdPrefix },
 };
 
 /* ------------------------------------------------------------------ reading a stored document safely */
@@ -96,7 +93,6 @@ const bands = (v: unknown, fallback: CountBonus[]): CountBonus[] =>
     : fallback;
 const IDENTIFIER = /^[\p{L}\p{N}]{1,20}$/u;
 const PREFIX = /^\S{1,5}$/;
-const CASE_PREFIX = /^[A-Za-z0-9_-]{0,10}$/;
 
 /** A server's two prefixes; they must differ (a message can't be both a command and a macro), else the defaults. */
 function prefixes(prefix: unknown, fast: unknown): { prefix: string; fastAccessPrefix: string } {
@@ -157,7 +153,6 @@ export function resolveStaffPolicy(doc: Partial<StaffPolicyDoc> | null | undefin
       absentGraceDays: int(va.absentGraceDays, 1, 90, d.vacations.absentGraceDays),
     },
     ...prefixes(doc.prefix, doc.fastAccessPrefix),
-    modmail: { casePrefix: typeof doc.modmail?.casePrefix === "string" && CASE_PREFIX.test(doc.modmail.casePrefix) ? doc.modmail.casePrefix : d.modmail.casePrefix },
   };
 }
 

@@ -1,7 +1,6 @@
 import type { TicketPanelConfig } from "../../data/tickets/index.ts";
 import type { GuildId } from "../../shared/types/index.ts";
 import { FastAccessContext } from "../configuration/types/enums.ts";
-import { modmailCaseService } from "../modmail/services/modmail-case.service.ts";
 import type { TicketDocument } from "../tickets/models/ticket.model.ts";
 import { ticketConfigService } from "../tickets/services/ticket-config.service.ts";
 import { ticketService } from "../tickets/services/ticket.service.ts";
@@ -32,11 +31,6 @@ export async function detectFastAccessContext(
       ticket,
       ...(panel ? { panel } : {}),
     };
-  }
-
-  const kase = await modmailCaseService.getByThreadId(channelId);
-  if (kase && kase.guildId === guildId && modmailCaseService.isOpen(kase.status)) {
-    return { context: FastAccessContext.MODMAIL, referenceId: kase.caseId };
   }
 
   return null;

@@ -46,6 +46,7 @@ const userWarningSchema = new Schema<UserWarning>(
       required: true,
       index: true,
     },
+    /** Older warnings only (reports were removed). */
     reportId: { type: String, index: true },
     createdAt: { type: Date, default: () => new Date(), immutable: true, index: true },
     revokedAt: { type: Date },

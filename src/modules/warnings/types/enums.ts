@@ -10,7 +10,7 @@ export const WARNING_STATUS_VALUES = Object.values(WarningStatus);
 
 export const WarningSource = {
   DIRECT: "DIRECT",
-
+  /** Older warnings only: reports were removed (2026-11-17); kept so those records still load and save. */
   REPORT: "REPORT",
 } as const;
 export type WarningSource = (typeof WarningSource)[keyof typeof WarningSource];

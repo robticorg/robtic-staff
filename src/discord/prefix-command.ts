@@ -8,7 +8,7 @@ import type {
   User,
 } from "discord.js";
 
-export type PrefixCategory = "ticket" | "modmail" | "staff";
+export type PrefixCategory = "ticket" | "staff";
 
 export interface PrefixContext {
   message: Message<true>;

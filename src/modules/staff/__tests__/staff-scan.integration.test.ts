@@ -219,7 +219,6 @@ describe.skipIf(!hasDb)("Staff scan (MongoDB + Discord fakes)", () => {
       status: StaffStatus.ACTIVE,
       currentRoleLevel: 0,
       points: 120,
-      reportsClaimed: 7,
       ticketsCompleted: 4,
       giftClaimsHandled: 2,
       warningsIssued: 3,
@@ -234,7 +233,6 @@ describe.skipIf(!hasDb)("Staff scan (MongoDB + Discord fakes)", () => {
     expect(after!.currentRoleLevel).toBe(3);
 
     expect(after!.points).toBe(120);
-    expect(after!.reportsClaimed).toBe(7);
     expect(after!.ticketsCompleted).toBe(4);
     expect(after!.giftClaimsHandled).toBe(2);
     expect(after!.warningsIssued).toBe(3);

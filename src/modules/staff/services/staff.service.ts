@@ -15,8 +15,6 @@ export interface CreateStaffInput {
 }
 
 export type StaffCounter =
-  | "reportsClaimed"
-  | "reportsCompleted"
   | "ticketsClaimed"
   | "ticketsCompleted"
   | "giftClaimsHandled"
@@ -25,8 +23,6 @@ export type StaffCounter =
 
 export interface StaffStats {
   points: number;
-  reportsClaimed: number;
-  reportsCompleted: number;
   ticketsClaimed: number;
   ticketsCompleted: number;
   giftClaimsHandled: number;
@@ -150,8 +146,6 @@ export class StaffService extends BaseRepository<Staff> {
     const staff = await this.getByIdOrThrow(id);
     return {
       points: staff.points,
-      reportsClaimed: staff.reportsClaimed,
-      reportsCompleted: staff.reportsCompleted,
       ticketsClaimed: staff.ticketsClaimed,
       ticketsCompleted: staff.ticketsCompleted,
       giftClaimsHandled: staff.giftClaimsHandled,

@@ -10,7 +10,6 @@ import { statsMessages as S } from "../../../data/messages/stats.ts";
 
 const BREAKDOWN_ORDER = [
   "TICKET_CLAIM",
-  "REPORT_CLAIM",
   "GIFT_CLAIM",
   "MESSAGE",
   "USER_WARNING",
@@ -21,7 +20,6 @@ const BREAKDOWN_ORDER = [
   "PRIVATE_CHANNEL_DELETE",
   "SELLER_ROLE",
   "STAFF_WARNING",
-  "APPEAL_SUCCESS_PENALTY",
   "MANUAL_ADJUSTMENT",
   "OTHER",
 ];

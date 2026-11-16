@@ -27,6 +27,7 @@ export const RoleConfigType = {
   JAIL: "JAIL",
   CHAT_MANAGER: "CHAT_MANAGER",
   VACATION: "VACATION",
+  /** Retired with appeals (2026-11-17): no longer offered anywhere; kept so a role still saved as it stays out of the ladder. */
   APPEAL_MANAGER: "APPEAL_MANAGER",
   GIFT_MANAGER: "GIFT_MANAGER",
   APPLY_MANAGER: "APPLY_MANAGER",
@@ -41,6 +42,9 @@ export const RoleConfigType = {
   TAG: "TAG",
 } as const;
 export type RoleConfigType = (typeof RoleConfigType)[keyof typeof RoleConfigType];
+/** Slots no longer offered anywhere (their feature was removed); kept only so saved data stays harmless. */
+export const RETIRED_ROLE_TYPES: readonly RoleConfigType[] = [RoleConfigType.APPEAL_MANAGER];
+
 export const ROLE_CONFIG_TYPE_VALUES = Object.values(RoleConfigType);
 
 export const NUMBERED_ROLE_TYPES: readonly RoleConfigType[] = [
@@ -105,12 +109,7 @@ export const ChannelConfigType = {
   STAFF_WARN_ANNOUNCE: "STAFF_WARN_ANNOUNCE",
 
   WARN_PANEL: "WARN_PANEL",
-  REPORTS: "REPORTS",
-  REPORT_LOG: "REPORT_LOG",
   PUNISHMENT_LOG: "PUNISHMENT_LOG",
-  APPEALS: "APPEALS",
-  BAN_APPROVAL: "BAN_APPROVAL",
-  KICK_APPROVAL: "KICK_APPROVAL",
   VACATION_REQUESTS: "VACATION_REQUESTS",
   GIFT_CLAIMS: "GIFT_CLAIMS",
   SUPPORT: "SUPPORT",
@@ -139,7 +138,6 @@ export const CATEGORY_CHANNEL_CONFIG_TYPES: readonly ChannelConfigType[] = [
 ];
 
 export const FastAccessContext = {
-  MODMAIL: "MODMAIL",
   SUPPORT: "SUPPORT",
 
   STAFF_APPLICATION: "STAFF_APPLICATION",

@@ -1,9 +1,7 @@
 import type { Client } from "discord.js";
-import { attachModmailClient } from "../modules/modmail/index.ts";
 import { attachTicketClient } from "../modules/tickets/index.ts";
 import { attachPunishmentClient } from "../modules/punishment/index.ts";
 import { attachVacationClient } from "../modules/vacation/index.ts";
-import { attachAppealClient } from "../modules/appeals/index.ts";
 import { attachGiftClaimClient } from "../modules/gift-claims/index.ts";
 import { attachServerTagClient } from "../modules/server-tag/index.ts";
 import { attachWarningPanelClient } from "../modules/warning-panel/runtime.ts";
@@ -26,11 +24,9 @@ import { internalApiServer } from "../modules/internal-api/server.ts";
 import { staffPolicyService } from "../modules/configuration/services/staff-policy.service.ts";
 
 export function attachModuleClients(client: Client): void {
-  attachModmailClient(client);
   attachTicketClient(client);
   attachPunishmentClient(client);
   attachVacationClient(client);
-  attachAppealClient(client);
   attachGiftClaimClient(client);
   attachServerTagClient(client);
   attachWarningPanelClient(client);

@@ -19,8 +19,6 @@ export interface Staff extends Timestamps {
 
   points: number;
 
-  reportsClaimed: number;
-  reportsCompleted: number;
   ticketsClaimed: number;
   ticketsCompleted: number;
   giftClaimsHandled: number;
@@ -55,8 +53,6 @@ const staffSchema = new Schema<Staff>(
     staffType: { type: String, enum: [...STAFF_TYPE_VALUES, null], default: null },
     points: { type: Number, default: 0, required: true },
 
-    reportsClaimed: { type: Number, default: 0, min: 0, required: true },
-    reportsCompleted: { type: Number, default: 0, min: 0, required: true },
     ticketsClaimed: { type: Number, default: 0, min: 0, required: true },
     ticketsCompleted: { type: Number, default: 0, min: 0, required: true },
     giftClaimsHandled: { type: Number, default: 0, min: 0, required: true },

@@ -11,7 +11,6 @@ export const prefixCommandAliases: Record<string, readonly string[]> = {
   handover: ["تسليم", "سلم", "تحويل"],
   ticket: ["تكت", "معلومات-التكت"],
 
-  end: ["انهاء", "إنهاء", "انهاء-التحقيق"],
 
   come: ["تعال", "حضور", "نداء"],
 

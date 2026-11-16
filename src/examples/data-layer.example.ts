@@ -22,8 +22,6 @@ import {
   channelConfigService,
   roleConfigService,
 } from "../modules/configuration/index.ts";
-import { reportService } from "../modules/reports/index.ts";
-import { ReportType } from "../modules/reports/types/enums.ts";
 import { WarningCategory } from "../modules/warnings/types/enums.ts";
 
 const log = logger.child("example");
@@ -40,7 +38,6 @@ async function main(): Promise<void> {
   await roleConfigService.rebuildLadder(GUILD, ["role-new-staff", "role-helper", "role-mod", "role-admin"]);
   await roleConfigService.setRole({ guildId: GUILD, roleId: "role-staff", type: RoleConfigType.STAFF });
   await roleConfigService.setRole({ guildId: GUILD, roleId: "role-booster", type: RoleConfigType.IGNORE });
-  await channelConfigService.set({ guildId: GUILD, type: ChannelConfigType.REPORTS, channelId: "chan-reports" });
 
   const ladder = await roleConfigService.getStaffRoleLevels(GUILD);
   log.info("ladder", ladder);
@@ -54,31 +51,25 @@ async function main(): Promise<void> {
     newRoleLevel: 0,
   });
 
-  const report = await reportService.create({
-    guildId: GUILD,
-    type: ReportType.USER_REPORT,
-    reporterId: USER,
-    reportedUserId: OFFENDER,
-  });
-  await reportService.claim(report.reportId, staff.id);
-  await staffService.incrementCounters(staff.id, { reportsClaimed: 1 });
+  const ticketRef = "TCK-demo";
+  await staffService.incrementCounters(staff.id, { ticketsClaimed: 1 });
   await staffActivityService.create({
     staffId: staff.id,
-    type: StaffActivityType.REPORT_CLAIM,
-    referenceId: report.reportId,
+    type: StaffActivityType.TICKET_CLAIM,
+    referenceId: ticketRef,
   });
   const first = await staffPointService.add({
     staffId: staff.id,
     amount: 1,
-    type: StaffPointTransactionType.REPORT_CLAIM,
-    referenceId: report.reportId,
-    reason: `Claimed report ${report.reportId}`,
+    type: StaffPointTransactionType.TICKET_CLAIM,
+    referenceId: ticketRef,
+    reason: `Claimed ticket ${ticketRef}`,
   });
   const dup = await staffPointService.add({
     staffId: staff.id,
     amount: 1,
-    type: StaffPointTransactionType.REPORT_CLAIM,
-    referenceId: report.reportId,
+    type: StaffPointTransactionType.TICKET_CLAIM,
+    referenceId: ticketRef,
     reason: "Accidental double award",
   });
   log.info("first award", { balance: first.balance, duplicate: first.duplicate });
@@ -97,8 +88,7 @@ async function main(): Promise<void> {
     guildId: GUILD,
     reason: "Spam",
     issuedBy: USER,
-    source: WarningSource.REPORT,
-    reportId: report.reportId,
+    source: WarningSource.DIRECT,
   });
 
   const summary = await staffPointService.getSummary(staff.id);
@@ -111,7 +101,7 @@ async function main(): Promise<void> {
         $or: [
           { guildId: GUILD },
           { staffId: staff._id },
-          { appellantId: { $in: [USER, OFFENDER] } },
+          { userId: { $in: [USER, OFFENDER] } },
         ],
       })),
     );

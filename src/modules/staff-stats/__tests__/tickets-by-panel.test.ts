@@ -23,9 +23,6 @@ function statsWith(
     activity: {
       total: 0,
       byType: {},
-      reportsClaimed: 0,
-      reportsCompleted: 0,
-      reportsAssignedNow: 0,
       ticketsClaimed: 0,
       ticketsCompleted: 0,
       ticketsAssignedNow: 0,
@@ -38,8 +35,6 @@ function statsWith(
       userWarningsIssued: 0,
       staffWarningsIssued: 0,
       warningsRevoked: 0,
-      appealsSuccessful: 0,
-      appealsHandled: 0,
       vacationsApproved: 0,
       vacationsRejected: 0,
     },

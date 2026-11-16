@@ -58,7 +58,6 @@ export const punishmentMessages = bilingual(
       target: (userId: string) => `**Target:** <@${userId}> (\`${userId}\`)`,
       requestedBy: (userId: string) => `**Requested by:** <@${userId}>`,
       reason: (reason: string) => `**Reason:** ${reason}`,
-      report: (reportId: string) => `**Report:** \`${reportId}\``,
       evidence: (count: number) => `**Evidence:** ${count} item(s)`,
       noEvidence: "**Evidence:** none",
       statusPending: "**Status:** under review",
@@ -91,15 +90,6 @@ export const punishmentMessages = bilingual(
       none: "—",
     },
 
-    dm: {
-      body: (serverName: string, typeLabel: string, reason: string) =>
-        `You received a punishment in **${serverName}**: **${typeLabel}**. Reason: ${reason}\nIf you think it's wrong, you can appeal through the bot.`,
-      whyButton: "Why?",
-      whyInfo: why({ punishment: "Punishment", reason: "Reason", issued: "Issued", evidence: "Evidence", none: "none" }),
-      windowExpired: "The evidence view for this punishment expired. Open a support ticket if you need help.",
-      notYours: `${E.error} This isn't your punishment.`,
-      gone: `${E.error} Couldn't find this punishment.`,
-    },
 
     labels: {
       NO_ACTION: "No action",
@@ -156,7 +146,6 @@ export const punishmentMessages = bilingual(
       target: (userId: string) => `**الهدف:** <@${userId}> (\`${userId}\`)`,
       requestedBy: (userId: string) => `**مقدّم الطلب:** <@${userId}>`,
       reason: (reason: string) => `**السبب:** ${reason}`,
-      report: (reportId: string) => `**البلاغ:** \`${reportId}\``,
       evidence: (count: number) => `**الأدلة:** ${count}`,
       noEvidence: "**الأدلة:** لا شيء",
       statusPending: "**الحالة:** قيد المراجعة",
@@ -189,15 +178,6 @@ export const punishmentMessages = bilingual(
       none: "—",
     },
 
-    dm: {
-      body: (serverName: string, typeLabel: string, reason: string) =>
-        `استلمت عقوبة في **${serverName}**: **${typeLabel}**. السبب: ${reason}\nإذا تشوفها غلط، تقدر تقدّم استئناف عن طريق البوت.`,
-      whyButton: "ليش؟",
-      whyInfo: why({ punishment: "العقوبة", reason: "السبب", issued: "تاريخ الإصدار", evidence: "الأدلة", none: "لا شيء" }),
-      windowExpired: "انتهت مدة عرض الأدلة. افتح تكت دعم إذا تحتاج مساعدة.",
-      notYours: `${E.error} هذي مو عقوبتك.`,
-      gone: `${E.error} ما لقيت العقوبة.`,
-    },
 
     labels: {
       NO_ACTION: "بدون إجراء",

@@ -10,16 +10,6 @@ export {
 } from "../../modules/configuration/types/enums.ts";
 
 export {
-  ModmailCaseType,
-  ModmailCaseStatus,
-  ModmailSenderType,
-  ModmailAuditAction,
-  ModmailActorType,
-  AttachmentStorageKind,
-  OPEN_CASE_STATUSES,
-} from "../../modules/modmail/types/enums.ts";
-
-export {
   StaffStatus,
   StaffActivityType,
   StaffPointTransactionType,
@@ -31,17 +21,6 @@ export {
   WarningSource,
   StaffWarningLevel,
 } from "../../modules/warnings/types/enums.ts";
-
-export {
-  ReportType,
-  ReportStatus,
-} from "../../modules/reports/types/enums.ts";
-
-export {
-  AppealStatus,
-  AppealTargetType,
-  AppealDecision,
-} from "../../modules/appeals/types/enums.ts";
 
 export {
   PunishmentAction,

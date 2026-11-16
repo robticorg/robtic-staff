@@ -41,7 +41,7 @@ async function addPoints(
   staffId: Types.ObjectId,
   amount: number,
   when: Date,
-  type: StaffPointTransactionType = StaffPointTransactionType.REPORT_CLAIM,
+  type: StaffPointTransactionType = StaffPointTransactionType.GIFT_CLAIM,
   ref?: string,
 ) {
   await StaffPointTransactionModel.create({
@@ -96,7 +96,7 @@ describe.skipIf(!hasDb)("Staff statistics (aggregation over existing data)", () 
     const inMonth = monthStart.getTime() <= eightDaysAgo.getTime();
 
     await addPoints(staff, 5, now);
-    await addPoints(staff, -2, now, StaffPointTransactionType.APPEAL_SUCCESS_PENALTY);
+    await addPoints(staff, -2, now, StaffPointTransactionType.MANUAL_ADJUSTMENT);
     await addPoints(staff, 10, eightDaysAgo);
     await addPoints(staff, 3, new Date(now.getTime() - 100 * 86_400_000));
 
@@ -114,9 +114,9 @@ describe.skipIf(!hasDb)("Staff statistics (aggregation over existing data)", () 
   it("getPointStats returns a per-type breakdown for the period", async () => {
     const staff = await makeStaff("pts-2");
     const now = new Date();
-    await addPoints(staff, 1, now, StaffPointTransactionType.REPORT_CLAIM);
+    await addPoints(staff, 1, now, StaffPointTransactionType.GIFT_CLAIM);
     await addPoints(staff, 1, now, StaffPointTransactionType.TICKET_CLAIM);
-    await addPoints(staff, -2, now, StaffPointTransactionType.APPEAL_SUCCESS_PENALTY);
+    await addPoints(staff, -2, now, StaffPointTransactionType.MANUAL_ADJUSTMENT);
 
     const r = await staffStatisticsService.getPointStats({
       guildId: GUILD,
@@ -124,8 +124,8 @@ describe.skipIf(!hasDb)("Staff statistics (aggregation over existing data)", () 
       period: StatsPeriod.TODAY,
     });
     expect(r.total).toBe(0);
-    expect(r.breakdown.REPORT_CLAIM).toBe(1);
-    expect(r.breakdown.APPEAL_SUCCESS_PENALTY).toBe(-2);
+    expect(r.breakdown.GIFT_CLAIM).toBe(1);
+    expect(r.breakdown.MANUAL_ADJUSTMENT).toBe(-2);
   });
 
   it("ranks by points DESC → activity DESC → staffId ASC; excludes fired/blacklisted; keeps break", async () => {

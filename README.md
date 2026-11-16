@@ -2,10 +2,10 @@
 
 Backend for the Robtic staff system: the **data layer**, the **slash-command
 config phase** (`/role`, `/channels`, `/ticket-setup`, `/faq`, `/fast-access`),
-the **Modmail + Report system**, the **Ticket + FAQ system** (Components V2), a
+the **Ticket + FAQ system** (Components V2), a
 centralized **static data layer** (`src/data/`), the **prefix-command system**
-(`!` ticket / modmail / staff commands) and **Fast Access** (`$macros`).
-Punishments, gift claims and appeals execution are **not** built yet.
+(`!` ticket / staff commands) and **Fast Access** (`$macros`).
+Modmail, reports and appeals were removed on 2026-11-17.
 
 ```
 Tech: TypeScript · discord.js v14 · Mongoose 9 · MongoDB · Bun
@@ -69,8 +69,6 @@ src/
   modules/
     staff/           Staff, StaffActivity, StaffPointTransaction, StaffHistory
     warnings/        StaffWarning, UserWarning
-    reports/         Report (prep) + Ticket interface (prep only)
-    appeals/         Appeal (prep)
     configuration/   RoleConfig, ChannelConfig, FastAccess
   discord/           gateway client, command + event loaders, registration,
                      register-runtime.ts (attach/start/stop module clients)
@@ -125,7 +123,7 @@ global       process + client handlers log and keep the bot alive
 `TtlCache` (5-minute safety TTL). Any mutation (`setRole`, `unsetRole`,
 `unsetType`, `rebuildLadder`, `set`, `unset`) invalidates the affected guild
 key immediately, so MongoDB stays the source of truth. Authoritative mutable
-state (punishments, appeals, tickets, point transactions) is never cached.
+state (punishments, tickets, point transactions) is never cached.
 
 Every module is self-contained:
 
@@ -188,15 +186,13 @@ live on each `definePrefixCommand({ name })`; Arabic aliases are a central map i
 | `staff_history`            | lifecycle/audit trail (accept, promote, fire, …)    | append-only|
 | `staff_warnings`           | staff-only warnings (levels 1–3)                    | soft-delete|
 | `user_warnings`            | community-user warnings (no Discord roles)          | soft-delete|
-| `reports`                  | report prep — referenced by activity/points        | mutable    |
-| `appeals`                  | appeal prep — references a warning/punishment       | mutable    |
 | `role_configs`             | Discord role → staff-system slot mapping            | mutable    |
 | `channel_configs`          | staff-system channel slot → Discord channel         | mutable    |
 | `staff_configs`            | guild-wide numeric staff settings (promotion points)| mutable    |
 | `warning_panel_deployments`| where the warning panel message lives, per guild    | mutable    |
 | `fast_access`              | `$command` shortcuts per guild + context            | mutable    |
 
-**The `staff` document never embeds reports, tickets, warnings, activities or
+**The `staff` document never embeds tickets, warnings, activities or
 transactions.** Those live in their own collections and reference `staff._id`.
 `staff.points` and the `*Claimed` / `*Completed` counters are denormalised caches;
 the history collections are authoritative.
@@ -211,12 +207,10 @@ the history collections are authoritative.
 2. `$inc` the cached `staff.points` to match
 
 ```
-Report claimed     +1
 Ticket claimed     +1
 Gift claim handled +1
 Valid user warning +1
 Valid staff warning+1
-Successful appeal   -2   (penalty vs the staff member who issued the warning)
 ```
 
 ### Time-based totals — no duplicated period fields
@@ -239,7 +233,7 @@ cached balance from the ledger if it ever drifts.
 ### Idempotency
 
 A partial unique index on `staff_point_transactions (staffId, type, referenceId)`
-prevents the same event (e.g. one report claim) from awarding points twice.
+prevents the same event (e.g. one ticket claim) from awarding points twice.
 `StaffPointService.add()` catches the duplicate-key error and returns
 `{ duplicate: true }` instead of throwing.
 
@@ -266,9 +260,7 @@ by not holding a Staff role.
 | `!close · !delete · !rename · !add · !remove`, ticket Options | the claimer |
 | `!claim` | the panel's support role / ticket manager, per `panel.claimer` |
 | `!accept` | Apply Manager · `!fire` Owner Manager · `!prompt`/`!demote` Staff Manager |
-| Report claim / manage | staff; manage also needs claimer or Staff Manager |
 | Gift claim review | Gift Manager or the gift panel's support role |
-| Appeal review | Appeal Manager or Staff Manager |
 | Punishment approval | KICK: Chat Manager · BAN: Administrator only |
 
 ### The one distinction that matters
@@ -329,7 +321,7 @@ Discord allows a command **25 subcommands, hard**, and `/role` had grown into al
 
 | Before | Now |
 |---|---|
-| `/role start · end · staff · ignore · blacklist · staffmanager · ownermanager · transfermanager · applymanager · appealmanager · giftmanager · chatmanager · mute · jail · vacation · tag` | `/role set type:<slot> role:@role` |
+| `/role start · end · staff · ignore · blacklist · staffmanager · ownermanager · transfermanager · applymanager · giftmanager · chatmanager · mute · jail · vacation · tag` | `/role set type:<slot> role:@role` |
 | `/role warn warn1: warn2: warn3:` · `/role ownerwarns warn1: warn2: warn3:` | `/role set type:<warn slot> role:@role` (one slot per call) |
 | `/role accepted · assign · access` | `/role range type:<slot> role: from: to:` |
 | `/role highstaff · owner · ship` | `/role boundary tier:<…> role:@role` |
@@ -412,7 +404,7 @@ Vacation, Blacklist, or any unrelated Discord role — on either member.
 target · source not Staff / fired / already transferred · source or target
 blacklisted (status *or* role) · source on break (status *or* an open vacation
 row — a snapshot must never point at the wrong user) · source still owns active
-cases (tickets, reports, appeals, gift claims awaiting fulfilment) · target
+cases (tickets, gift claims awaiting fulfilment) · target
 already Staff (`ACTIVE`/`BREAK` → rejected, never merged; a `FIRED`/`TRANSFERRED`
 record is reused) · ladder unconfigured or hierarchy invalid. A case count that
 *fails* is treated as blocking, not as zero.
@@ -512,7 +504,7 @@ offline past the deadline is not an escape.
 | Subject | staff members | community users |
 | Discord roles | `WARN_1/2/3` roles (set via `/role set type:WARN_1|2|3`) | **none** |
 | Levels | 1, 2, 3 (3 → auto-demote, see below) | n/a |
-| Origin | staff manager action | `source: DIRECT` or `source: REPORT` (+ `reportId`) |
+| Origin | staff manager action | `source: DIRECT` (`REPORT` only on warnings from before reports were removed) |
 | Removal | `status: REMOVED` + `removedBy/removedAt/removalReason` | `status: REVOKED` + `revokedBy/revokedAt/revokeReason` |
 
 Both keep evidence as `string[]` (multiple attachments) and are **soft-deleted** —
@@ -630,7 +622,7 @@ matches a missing field), so no historical warning is reinterpreted or lost.
 
 `src/modules/warning-panel/` is an **interaction layer, not a second warning
 system.** Every rule — authorization, warning progression, category selection,
-points, appeals, role reconciliation — stays in the services it already lived in.
+points, role reconciliation — stays in the services it already lived in.
 The panel resolves inputs, calls those services, and reports what they returned.
 
 ```
@@ -836,47 +828,6 @@ no timer.
 
 ---
 
-## Reports — handler-owned, transferable, closed on decision
-
-The `#reports` card is a **Components V2 container** (accent follows state:
-amber pending → green claimed → neutral closed) and is the **only** place the
-report body is rendered: case id, reported user, masked reporter, reason,
-description, evidence count, status, handler. Its action row carries **استلام**
-and, once claimed, **تحويل**, plus **معلومات المُبلِّغ** and **إغلاق**. A closed
-report keeps its card as a record with the close button disabled. The reporter is
-still never named on it — `privacy.test.ts` walks the nested TextDisplay
-components to prove that.
-
-**The investigation thread has no opener message.** It used to be posted a
-plain-text copy of everything already on the card, so the same report was written
-twice, once as a component and once as loose text. That message is gone; the
-thread now holds only the relay (reporter ↔ handler) and the system notes.
-
-**Only the handler may reply.** A message in the thread from anyone who is not
-the claimer (or an administrator) is **deleted** and answered with a system note
-naming who owns the report. Previously the relay simply returned, so the message
-stayed visible in the thread and looked delivered when it was not.
-
-**Transfer** (`canTransferReport` → `decideTransferEligibility`): handler or
-administrator, report open and claimed, target must be staff/admin and not a
-bot, the current handler, or the reported user. The write is atomic on
-`{ claimedByDiscordId: <current>, status: { $ne: CLOSED } }`, so two simultaneous
-transfers cannot both land. The new handler gets a DM with a link button to the
-thread, the thread gets a note, and the card refreshes.
-
-**Closing.** `!end` (the decision prompt) and the thread's **إغلاق** button both
-end at `CLOSED` now: once the final decision is recorded, `finaliseReport` calls
-`closeAfterDecision`, which transitions to CLOSED, refreshes the card, posts a
-closing note and archives the thread. `!close` also works inside a report thread
-— it closes the report and leaves ticket behaviour untouched everywhere else.
-
-**معلومات المُبلِّغ** and **إغلاق** now live on the `#reports` card itself (they
-used to sit on the thread opener that no longer exists); the intermediate status
-buttons (قيد التحقيق / بانتظار العضو / إنهاء) are gone, since the lifecycle is
-now claim → work → decide → closed.
-
----
-
 ## Staff Support (`/staff-setup`)
 
 One panel, three workflows, **built on the existing ticket system** — there is no
@@ -1055,15 +1006,6 @@ missing; tag changes (`userUpdate`) and display-name changes (`guildMemberUpdate
 global name via `userUpdate`) re-check the live member. Active restrictions are
 re-settled on startup.
 
-## Appeals
-
-Fully implemented — see **[Appeal System](#appeal-system)**. A user appeals a
-punishment through the bot's DM; authorised staff accept/reject in the `APPEALS`
-channel; accepting reverses the punishment and, for warning appeals, applies the
-`-2` `APPEAL_SUCCESS_PENALTY` to the issuer (idempotently).
-
----
-
 ## Enums / types
 
 All fixed value sets are `as const` objects + matching union types (usable as
@@ -1074,9 +1016,8 @@ StaffStatus · StaffActivityType · StaffPointTransactionType · StaffHistoryAct
 WarningStatus · WarningSource · StaffWarningLevel
 ReportType · ReportStatus
 RoleConfigType · ChannelConfigType · FastAccessContext
-PunishmentType · PunishmentStatus · PunishmentApprovalStatus · PunishmentAuditAction
+PunishmentType · PunishmentStatus · PunishmentAuditAction
 VacationType · VacationStatus · VacationSource · VacationDurationUnit
-AppealStatus (PENDING·CLAIMED·UNDER_REVIEW·ACCEPTED·REJECTED·CANCELLED)
 GiftClaimStatus (PENDING·RE_REQUESTED·APPROVED·REJECTED·FULFILLED) · GiftClaimAuditAction
 ```
 
@@ -1094,8 +1035,6 @@ Built with `syncAllIndexes()` (also drops removed indexes).
 | `staff_history` | `{staffId, createdAt}` · `action` |
 | `staff_warnings` | `{staffId, status, createdAt}` · `staffId` · `status` |
 | `user_warnings` | `{guildId, userId, createdAt}` · `{guildId, userId, status}` · `source` |
-| `reports` | `{guildId, status, createdAt}` · `{guildId, reportedUserId, createdAt}` · `reportId` unique · `claimedBy` · `type` |
-| `appeals` | `{warningId, warningType, appellantId}` partial-unique (pending) · `appellantId` · `status` |
 | `role_configs` | `{guildId, roleId}` unique · `{guildId, type}` · `{guildId, level}` |
 | `channel_configs` | `{guildId, type}` unique |
 | `fast_access` | `{guildId, contextType, command}` unique |
@@ -1153,138 +1092,9 @@ appear in Discord.
 `src/events/interactionCreate.ts` handles **slash commands only** — it returns
 immediately for anything else. Buttons + modal submits are handled by
 `src/events/componentInteractionCreate.ts` (which fans out to per-module routers
-such as `routeModmailComponent`); select menus and autocomplete are still
+such as `routeTicketComponent`); select menus and autocomplete are still
 unhandled. The command lookup, the loader and `register-commands` all read one
 static list (`src/commands/index.ts`).
-
----
-
-## Modmail + Report system
-
-The reporter's UI is a **DM with the bot**; the staff UI is a **thread off the
-configured `REPORTS` channel**. The reporter is never in the thread.
-
-```
-reporter DM ─▶ bot ─▶ MongoDB ─▶ #reports message ─▶ investigation thread ─▶ staff
-      ▲                                                                        │
-      └──────────────── bot relays staff replies back to the DM ◀─────────────┘
-```
-
-### Module layout (`src/modules/modmail/`)
-
-```
-types/       enums + the case state machine (transitions.ts)
-models/      ModmailCase · ModmailMessage · ModmailAttachment · ModmailAudit · Counter
-services/
-  modmail-case.service      id minting, CRUD, atomic claim, guarded transitions (DB only)
-  modmail-message.service   append-only message log (idempotent on source message id)
-  attachment.service        AttachmentStore abstraction — evidence bytes are pluggable
-  modmail-audit.service     per-case audit timeline
-  report-permissions.service canClaim / canManage / canViewReporterInfo (+ pure cores)
-  target-classifier         USER vs STAFF vs NOT_IN_GUILD (+ pure core)
-  claim-credit              "+1 point + REPORT_CLAIM activity", idempotent
-  modmail.service           THE routing service — the only Discord+DB seam
-render/      report-message (the whole card) · thread-messages (relay + system
-             notes only) · dm-messages        (privacy-safe strings)
-session/     dm-session-store  (in-memory wizard draft + activeCaseId, per user)
-flow/        dm-routing  (pure: where does a DM go?)
-handlers/    component-ids · modals · button/modal/dm-message/thread-message handlers
-runtime.ts   holds the gateway client + resolvePrimaryGuild()
-```
-
-### Events
-
-`interactionCreate.ts` stays **slash-only**. Two new sibling event modules:
-
-| file | handles |
-|---|---|
-| `events/componentInteractionCreate.ts` | buttons + modal submits → `routeModmailComponent` |
-| `events/messageCreate.ts` | DM → `handleDirectMessage`, guild thread → `handleThreadMessage` |
-
-Relay logic lives in `ModmailService`, never in the event files.
-
-### Report flow
-
-1. User DMs the bot → **menu** with `[Report Someone]`.
-2. Button → modal asks for the **target user id** (bot decides USER vs STAFF report;
-   the user never picks). Not-in-guild → refused.
-3. `[Add reason & description]` → modal (reason + description).
-4. Bot asks for **evidence**: the user sends any number of attachments as DMs;
-   they're held in the wizard draft. `[Submit report]` finalises.
-5. On submit: `ModmailCase` created (`RPT-N` via an atomic counter), evidence
-   persisted, a masked card posted to `REPORTS`, an (empty) thread started from
-   it, `threadId` stored, `CASE_CREATED` audited, reporter DMed. Evidence files
-   are the only thing posted into the thread up front.
-
-### Claim — atomic & idempotent
-
-`claimAtomic` is a single `findOneAndUpdate({ status: PENDING, claimedBy: {$exists:false} })`
-— only the first concurrent click wins; everyone else gets *“already claimed.”*
-The winner gets **exactly +1** via `StaffPointService.add` (unique
-`staffId+type+referenceId` → a repeat claim of the same case awards nothing),
-plus one `REPORT_CLAIM` `StaffActivity` and a `reportsClaimed` bump. On `RESOLVED`
-the handler gets a `REPORT_COMPLETE` activity + `reportsCompleted` bump.
-
-### Privacy
-
-- The `REPORTS` card shows `🔒 Private` and relayed thread messages are labelled
-  `👤 Reporter` — the render functions are not even given the reporter's id.
-- `[Reporter Info (Admin)]` on the card is **Administrator-only** (enforced in
-  `ModmailService.reporterInfo`, not just by hiding the button) and replies
-  ephemerally; each use is audited `REPORTER_INFO_VIEWED`.
-- **STAFF_REPORT**: `decideManageAccess` hard-blocks `member.id === reportedUserId`
-  from claiming, relaying, viewing or transitioning — checked in the service, not
-  only the UI.
-- Logs never include the reporter id, DM content or evidence.
-
-### State machine (`types/transitions.ts`)
-
-```
-PENDING → CLAIMED → INVESTIGATING ⇄ WAITING_USER
-                         │  └────────────┐
-                         ▼               ▼
-                     RESOLVED ───────▶ CLOSED   (CLOSED is terminal)
-```
-
-Invalid transitions (e.g. `CLOSED → CLAIMED`) throw. A `CLOSED` case rejects new
-DM/thread messages and its thread is locked + archived.
-
-### Evidence storage abstraction
-
-`AttachmentStore.persist(incoming) → StoredAttachmentRef`. The default
-`DiscordCdnAttachmentStore` keeps the CDN URL. To move evidence to object
-storage later, add an implementation returning an `EXTERNAL` ref and call
-`attachmentService.useStore(new S3AttachmentStore())` at boot — no report code
-changes. Every `ModmailAttachment` row references its `caseId` (and `messageId`).
-
-### Session state
-
-The DM wizard draft + `activeCaseId` live in an in-memory `DmSessionStore`
-(per-process, 30-min TTL). Losing it only restarts a wizard or re-prompts case
-selection — submitted cases, messages and evidence are all in MongoDB. Swap for
-Redis/Mongo when running multi-process.
-
-### Tests (`bun test`)
-
-Pure logic is covered without Discord/Mongo: state machine, DM routing (incl.
-closed-case), claim eligibility / manage access / reporter-info access, target
-classification, reporter-privacy rendering, and `applyClaimCredit` (+1 once,
-duplicate → nothing). `claim-atomic.integration.test.ts` covers the real
-atomic-claim race and point idempotency against MongoDB and **auto-skips** when
-none is reachable.
-
-### New collections
-
-| Collection | Purpose |
-|---|---|
-| `modmail_cases` | one report/case; `caseId` unique; `{guildId,userId,status}` + `{guildId,status,createdAt}` |
-| `modmail_messages` | every relayed / internal message; unique partial index on `sourceMessageId` (relay idempotency) |
-| `modmail_attachments` | evidence references; `{caseId,createdAt}` |
-| `modmail_audit` | per-case timeline (`CASE_CREATED`, `CASE_CLAIMED`, `MESSAGE_FROM_*`, `EVIDENCE_ADDED`, `CASE_RESOLVED/CLOSED`, `REPORTER_INFO_VIEWED`) |
-| `counters` | atomic `RPT-N` sequences |
-
-> The earlier `reports` module (`Report` model) was scaffolding; the live report
-> workflow is `modmail`. `Report` is left untouched for now.
 
 ---
 
@@ -1525,7 +1335,7 @@ ticket message is not edited).
 |---|---|
 | slash commands | `interactionCreate.ts` → command `execute` |
 | **autocomplete** | `interactionCreate.ts` → command `autocomplete` |
-| buttons / string selects / modal submits | `componentInteractionCreate.ts` → `[routeModmailComponent, routeTicketComponent, routeFaqComponent]` |
+| buttons / string selects / modal submits | `componentInteractionCreate.ts` → `[routeTicketComponent, routeFaqComponent, …]` |
 
 Ticket handlers are one-file-per-concern under `modules/tickets/handlers/`; the
 `tk:` custom-id router only dispatches, never contains business logic.
@@ -1556,11 +1366,9 @@ modal / autocomplete handling. `interactionCreate.ts` is untouched.
 
 ```
 messageCreate
-  ├─ DM                     → modmail DM handler        (unchanged)
-  └─ guild message
+  └─ guild message (DMs are ignored)
        ├─ starts with `$`   → runFastAccess()           → consumed (silent on fail)
-       ├─ starts with `!`   → runPrefixCommand()        → consumed (silent on unknown)
-       └─ otherwise         → modmail thread relay      (unchanged)
+       └─ starts with `!`   → runPrefixCommand()        → consumed (silent on unknown)
 ```
 
 Prefix (`PREFIX`, default `!`) and Fast Access sigil (`FAST_ACCESS_PREFIX`,
@@ -1570,7 +1378,6 @@ default `$`) are env-configurable. `src/commands/prefix/`:
 runner.ts            parse → resolve → execute; DomainError → reply, else silent
 _shared/             parse (mentions/ids/counts), guards, target resolution
 ticket/  claim close delete rename transcript add remove   → TicketService
-modmail/ end                                               → resolutionService.openResolution
 staff/   accept fire prompt demote warn unwarn warnings warns break unbreak jail unjail
          stats leaderboard check                          → StaffStatisticsService (read-only)
 ```
@@ -1605,18 +1412,14 @@ reusing `ticket-permissions` (`canClaimTicket` / `canManageTicket`) and
 ## Fast Access (`$macros`)
 
 - **`/fast-access add|remove|list`** — Staff-Manager gated. `add`: `cmd` +
-  `message` + `context` (`MODMAIL` | `SUPPORT`). Command names are normalised
+  `message` + `context` (`SUPPORT` | `STAFF_APPLICATION` | `STAFF_TRANSFER` | `PUBLIC`). Command names are normalised
   (`RULES`, `$rules`, ` Rules ` → `rules`); **`{guildId, command}` is unique**
   (index changed from `+contextType`).
 - **`$rules`** — `runFastAccess` (messageCreate): unknown / disabled / non-staff
   / wrong-context / no-permission all **silently no-op**. Context is detected
-  live via the Ticket / Modmail services (multi-panel safe, no hardcoded
-  channels): a `SUPPORT` macro only fires in an active ticket, a `MODMAIL` macro
-  only in an open report thread and only for someone who `canManageReport`.
+  live via the Ticket service (multi-panel safe, no hardcoded channels): a
+  `SUPPORT` macro only fires in an active ticket of that kind.
   - `SUPPORT` → plain message in the ticket channel.
-  - `MODMAIL` → relayed staff→reporter through `modmailService.relayStaffToUser`
-    (stored as a `ModmailMessage`, DMed to the reporter) — the existing relay
-    architecture, not a copy.
 
 ### Tests
 
@@ -1627,110 +1430,6 @@ DB-gated integration (auto-skips without Mongo): `!accept/!prompt/!demote/!fire`
 role + status changes, `!warn` user/staff (persistence + issuer +1 once),
 `!unwarn` (never deletes, role re-point), Fast Access `{guildId,command}`
 uniqueness + duplicate rejection.
-
----
-
-## Punishment & Resolution system
-
-`src/modules/punishment/` — resolves a report into a concrete moderation
-action. The **`Punishment` document is the source of truth**; Discord messages
-are never consulted for history.
-
-### Flow
-
-1. **`!end`** in a report investigation thread → `resolutionService.openResolution`
-   posts a 7-option select (`No Action`, `Warn`, `Timeout`, `Mute`, `Jail`,
-   `Kick`, `Ban`). It no longer closes the case directly.
-2. Picking an option shows a **reason modal** (`Timeout` also carries a duration
-   select built from `TIMEOUT_PRESETS`). Reason is required for every type
-   except `No Action`, is stored on the punishment, and is **separate from the
-   report reason**.
-3. `resolutionService.resolve` creates the `Punishment` and routes it:
-   - **Warn** → `warningActionService.issueUserWarning` (points + `StaffActivity`
-     stay inside the warning system — **no duplicate points**), plus a linked
-     `Punishment(WARN, EXECUTED)` record via `metadata.warningId`.
-   - **Timeout / Mute / Jail / No Action** → executed immediately by the bot.
-     Mute/Jail apply the **configured** `MUTE` / `JAIL` role (`/role set type:MUTE|JAIL`,
-     no hardcoded IDs).
-   - **Kick / Ban** → an approval request card is posted to the configured
-     `KICK_APPROVAL` / `BAN_APPROVAL` channel; nothing executes yet.
-4. On finalisation the report is closed through the existing
-   `modmailService.endInvestigation` and linked with
-   `modmailCaseService.attachResolution({ resolutionType, punishmentId,
-   resolvedBy })`.
-
-### Approvals (`PunishmentApproval`)
-
-- Card has **Approve / Reject / Info** buttons; every click is
-  **authorized server-side** (`canDecideApproval`): `Ban` → Administrator only,
-  `Kick` → Administrator **or** the configured `CHAT_MANAGER` role.
-- **Self-approval blocked** — `requestedBy !== decidedBy`
-  ("You cannot approve your own punishment request.").
-- **Atomic decision** — `findOneAndUpdate({ approvalId, status: PENDING })`;
-  the loser gets "This punishment has already been decided." A partial-unique
-  index on `{ punishmentId }` where `status: PENDING` forbids two live
-  approvals for one punishment.
-- Approve → `resolutionService.executeApproved` → `PunishmentService` →
-  Discord API → `status: EXECUTED` (the bot is the executor,
-  `executedBy = bot`). If Discord throws → `status: FAILED` with the error
-  saved to `PunishmentAudit`. **`EXECUTED` is never set before Discord
-  succeeds.**
-
-### State machine (`types/enums.ts`)
-
-`PENDING → APPROVAL | EXECUTED | FAILED | REJECTED` ·
-`APPROVAL → APPROVED | REJECTED | EXPIRED` · `APPROVED → EXECUTED | FAILED` ·
-`FAILED → APPROVAL | EXECUTED` · `EXECUTED → REVOKED | EXPIRED` ·
-`REJECTED` / `REVOKED` terminal. `assertPunishmentTransition` throws on an
-illegal hop; all flips go through `PunishmentService.setStatus` (atomic,
-concurrency-safe).
-
-### After execution
-
-- **Punishment log** → the `PUNISHMENT_LOG` channel after every final decision
-  (approved, rejected, executed, failed). All copy from `src/data/messages/
-  punishment.ts`.
-- **DM to the punished user** — punishment type + reason + appeal hint; the
-  **reporter is never named**. A "Why was I punished?" button
-  (`resolutionService.getWhyInfo`) works for **3 days**
-  (`evidenceAvailableUntil = executedAt + EVIDENCE_WINDOW_MS`); after that it
-  returns the "evidence window has expired" message. The record is **never
-  deleted**.
-- **Staff activity** — `PUNISHMENT_REQUEST` / `PUNISHMENT_APPROVED` /
-  `PUNISHMENT_REJECTED` recorded; **no points** unless a rule is defined.
-
-### Duration parsing
-
-One parser only — `src/modules/punishment/services/duration.service.ts`:
-`parseDuration` (`"5m"`, `"1h30m"`, `"90"` = minutes), `clampTimeout`
-(1 min – Discord's 28-day cap), `formatDuration`, `TIMEOUT_PRESETS`.
-
-### Appeals prep
-
-`punishmentId` is a stable `shortId(10)` so `Appeal.punishmentId` can reference
-it. The appeal workflow itself is **not** implemented; `revokePunishment` is the
-hook for a future accepted appeal.
-
-### New collections
-
-`punishments` · `punishment_approvals` · `punishment_audits`.
-
-### Config
-
-`/role set type:MUTE|JAIL|CHAT_MANAGER` (`RoleConfigType.MUTE` / `JAIL` / `CHAT_MANAGER`,
-singleton) and `/channels set` slots `PUNISHMENT_LOG`, `BAN_APPROVAL`,
-`KICK_APPROVAL`. A missing approval channel → the punishment is marked `FAILED`,
-logged, and staff are told; **nothing is executed**.
-
-### Tests
-
-Pure: `parseDuration` / `clampTimeout` / `formatDuration` / presets, punishment
-state-machine transitions (never execute a rejected/executed punishment),
-`decideApprovalAuthorization` / `isSelfApproval` / `requiredBotPermission`.
-DB-gated integration (auto-skips without Mongo): `createPunishment` persistence
-+ audit, self-target rejection, losing the status-flip race, atomic approval
-decision, partial-unique live-approval index, `attachResolution` report link,
-`getUserRecentPunishment`.
 
 ---
 
@@ -1838,112 +1537,12 @@ expiry completes once + restores once (idempotent) + member-absent defer + sweep
 
 ---
 
-## Appeal System
-
-`src/modules/appeals/` — a punished user appeals **through the bot's DM** (no
-server channel access needed, §29); authorised staff decide in the `APPEALS`
-channel; accepting reverses the punishment.
-
-```
-Punishment executed → DM (Why was I punished? · Appeal)
-  → Appeal form (reason + evidence links)   → Appeal PENDING
-  → review card in APPEALS channel          (Claim · Accept · Reject · Info)
-  → authorised staff decide                 → ACCEPTED reverses · REJECTED upholds
-  → user DM'd the decision
-```
-
-### `Appeal` model (`appeals`, never deleted §28)
-
-`appealId` (`shortId(10)`) · `guildId` · `userId` (appellant) · `punishmentId`
-(→ `Punishment.punishmentId`) · `reason` · `evidence[]` · `status`
-PENDING→CLAIMED→(UNDER_REVIEW)→ACCEPTED|REJECTED (CANCELLED reserved) ·
-`submittedAt` · `claimedBy/At` · `reviewedBy/At` · `decisionReason` ·
-`channelId/messageId` · `penaltyAppliedAt`/`penaltyTransactionId` (−2 idempotency)
-· `reversalError`. **`unique` index on `punishmentId`** ⇒ one appeal per
-punishment (§3) — a decided or pending appeal blocks a new one.
-
-### Config
-
-- **`/channels set type:APPEALS #chan`** — review channel. Unset ⇒ appeal
-  creation is refused and the user is told the system is unavailable (§5).
-- **`/role set type:APPEAL_MANAGER role:@role`** — extra reviewer role. Staff Managers can
-  always review (`AppealPermissionService.canReview`, extensible §16).
-
-### Eligibility (`AppealService.canAppeal`, §6/§7/§33)
-
-Punishment must exist, be `EXECUTED`, not `NO_ACTION`, `userId` must match, and
-`guildId` must match when supplied — a client-supplied punishment id is never
-trusted. The **3-day evidence window gates "Why was I punished?" only** — it does
-**not** block appealing (the project defines no appeal deadline).
-
-### Reversal — `PunishmentService.reversePunishment()` (§18/§19)
-
-All undo logic is centralised in `PunishmentService`; `AppealService` only calls
-it. Idempotent (early-returns if already `REVOKED`), atomic `EXECUTED → REVOKED`:
-
-| Type | Action |
-|---|---|
-| WARN | `userWarningService.revoke` — marked `REVOKED`, never deleted |
-| TIMEOUT | `member.timeout(null)` |
-| MUTE / JAIL | remove the configured role |
-| KICK | nothing to undo — just `REVOKED` |
-| BAN | `guild.bans.remove` if the bot has Ban Members |
-| NO_ACTION | nothing |
-
-Stores `revokedBy` / `revokedAt` / `revocationReason` / `appealId`; a Discord
-failure is saved to `metadata.reversalError` + audited, the decision still
-stands.
-
-### Concurrency & idempotency (§21/§32)
-
-- **Claim** — atomic `PENDING → CLAIMED`; the loser gets *"already claimed"*.
-- **Decide** — atomic `findOneAndUpdate({status: {$in: [PENDING,CLAIMED,UNDER_REVIEW]}}, …)`;
-  accept-vs-reject and double-accept resolve to exactly one winner, the rest get
-  *"already been decided"*. `ACCEPTED ⇄ REJECTED` is impossible.
-- **Warning −2** — `staffPointService.add({ type: APPEAL_SUCCESS_PENALTY,
-  amount: -2, referenceId: appealId })` + the `{staffId,type,referenceId}` unique
-  index ⇒ reprocessing never stacks to −4. `Appeal.penaltyAppliedAt` guards too.
-
-### Reviewer restrictions (§15/§33, server-side)
-
-`isReviewerConflicted` blocks the punishment's **issuer**, **approver** and — when
-`punishment.reportId` resolves — the **original investigator** (`ModmailCase.claimedByDiscordId`)
-from claiming or deciding. Reporter identity is **never** surfaced (§27); the Info
-button shows Punishment ID / type / date / issuer / Report ID / investigator only.
-
-### Logging (§34)
-
-`StaffActivity`: `APPEAL_CLAIM`, `APPEAL_ACCEPTED`, `APPEAL_REJECTED`,
-`PUNISHMENT_REVOKED`. `StaffHistory`: `APPEAL_PENALTY` (against the issuer).
-`PunishmentAudit`: `APPEAL_SUBMITTED`, `APPEAL_CLAIMED`, `APPEAL_ACCEPTED`,
-`APPEAL_REJECTED`, `REVOKED`, `REVERSAL_FAILED` — every entry carries
-`appealId` + `punishmentId`. No points for claiming (no rule defined).
-
-### DM notifications (§24)
-
-Accepted / rejected DMs include the punishment label + decision reason, never
-staff-only data. A DM failure is logged and **does not roll back** the decision.
-
-### Tests
-
-Pure: `isReviewerConflicted`, appeal state machine (terminals terminal, no
-`APPROVED⇄REJECTED`). DB-gated integration (auto-skips without Mongo, minimal
-Discord fakes): eligibility (own / other / wrong-guild / missing / expired
-evidence still allowed), creation (new / duplicate / empty reason / no channel),
-claim race, self-review block, unauthorised reviewer, reject leaves punishment
-`EXECUTED`, reversal per type (timeout / mute / jail / kick / ban), warning
-accept → warning `REVOKED` + issuer `-2` once, accept-vs-reject race, double
-accept → one `REVOKED` audit, DM-failure doesn't roll back.
-
----
-
 ## Gift Claim System
 
 `src/modules/gift-claims/` — Gift Claim **is a ticket panel**. It shows up as a
 "Gift Claim" option in the main ticket select menu and runs the exact same
 `runCreateTicket` pipeline as every other panel; only the in-ticket business
-logic (proof, approve/reject/re-request/fulfil) is gift-claim specific. It never
-touches Modmail and there is **no gift-claim command / button / separate panel**.
+logic (proof, approve/reject/re-request/fulfil) is gift-claim specific. There is **no gift-claim command / button / separate panel**.
 
 ```
 main ticket panel → select "Gift Claim"
@@ -1990,11 +1589,8 @@ remove / reconfigure Gift Claim purely through this file (§13/§14).
 ### Proof (§4)
 
 The claimant drops an image into their Gift Claim ticket channel → a
-`messageCreate` hook (`handleGiftClaimTicketProof`, after prefix, before the
-modmail relay) saves it to `proof[]` while PENDING, or to
-`reRequests[last].responseAttachments` while RE_REQUESTED. Re-request responses
-sent by **DM** are handled by `handleGiftClaimDmProof` (before modmail) — both
-paths are scoped to the claimant's own claim so proof can never attach to
+`messageCreate` hook saves it to `proof[]` while PENDING, or to
+`reRequests[last].responseAttachments` while RE_REQUESTED. Proof is scoped to the claimant's own claim so proof can never attach to
 someone else's (§17), and both forward the image into the ticket channel.
 
 ### Manager buttons (atomic — §17)
@@ -2053,12 +1649,11 @@ guilds. All aggregation is MongoDB `$group` (`$sum: "$amount"` for points,
 
 | Section | Source |
 |---|---|
-| Points today / week / month / all | `StaffPointTransaction` `$sum` per range (negatives reduce; the warning-appeal `-2` is already a txn — never re-subtracted, §11) |
+| Points today / week / month / all | `StaffPointTransaction` `$sum` per range (negatives reduce) |
 | Activity counters (per period) | `StaffActivity` `$group` by `type` — extensible, no hardcoded type list (§7) |
-| Reports claimed / completed / assigned-now | `StaffActivity` `REPORT_CLAIM`/`REPORT_COMPLETE` + `ModmailCase` open+`claimedBy` (§8, the live report flow is Modmail) |
 | Tickets claimed / completed / assigned / by-panel | `Ticket` by `claimedBy` + `claimedAt`/`closedAt`/`status`/`panelId` — gift-claim tickets stay identifiable by `panelId: "gift-claim"`, counted once as a ticket (§9) |
 | Gift Claims approved / rejected / fulfilled / re-req / handled | `GiftClaimAudit` by `guildId` + `actorId` + `action` (its own data, not inferred from tickets — §10). `guildId` added to the audit for this. |
-| Warnings issued / revoked, appeals handled / successful | `UserWarning` / `StaffWarning` / `Appeal` by issuer / reviewer (§11) |
+| Warnings issued / revoked | `UserWarning` / `StaffWarning` by issuer (§11) |
 
 ### Leaderboard ranking (§5)
 
@@ -2108,7 +1703,7 @@ zero-activity & unknown staff, detailed-vs-summary gating.
 
 **`/points values`** sets how many points each action the bot awards by itself
 is worth in this guild: ticket claim, report claim, staff accept (first modal)
-and user warning, staff warning, jail, accepted-appeal penalty (second modal).
+and user warning, staff warning, jail (second modal).
 Each field is a whole number from -1000 to 1000, and `0` turns that award off.
 Values are stored as `pointValues` on `staff_configs`. A type that was never set
 uses `DEFAULT_POINT_VALUES` (`modules/staff/config/points.ts`), which stays the
@@ -2159,7 +1754,7 @@ in exactly one place.
 `_id` set, then runs a single `$match` + `$group` (`$sum: "$amount"`) inside
 MongoDB; no transaction document is ever loaded into Node. Positive and negative
 transactions both count (`TICKET_CLAIM`, `REPORT_CLAIM`, `USER_WARNING`,
-`APPEAL_SUCCESS_PENALTY`, …) — weekly points are the **net** sum. Served by the
+…) — weekly points are the **net** sum. Served by the
 existing `StaffPointTransaction {staffId, createdAt:-1}` index.
 
 ### Who appears in the report

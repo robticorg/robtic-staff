@@ -13,7 +13,6 @@ export interface IssueUserWarningInput {
   evidence?: string[];
 
   source?: WarningSource;
-  reportId?: string;
 }
 
 export interface RevokeUserWarningInput {
@@ -35,9 +34,6 @@ export class UserWarningService extends BaseRepository<UserWarning> {
     if (!input.issuedBy) throw new ValidationError("issuedBy is required");
 
     const source = input.source ?? WarningSource.DIRECT;
-    if (source === WarningSource.REPORT && !input.reportId) {
-      throw new ValidationError("reportId is required when source is REPORT");
-    }
 
     return this.insert({
       userId: input.userId,
@@ -46,7 +42,6 @@ export class UserWarningService extends BaseRepository<UserWarning> {
       issuedBy: input.issuedBy,
       evidence: input.evidence ?? [],
       source,
-      reportId: source === WarningSource.REPORT ? input.reportId : undefined,
       status: WarningStatus.ACTIVE,
     });
   }
@@ -70,9 +65,6 @@ export class UserWarningService extends BaseRepository<UserWarning> {
     return this.count({ guildId, userId, status: WarningStatus.ACTIVE });
   }
 
-  listFromReport(reportId: string): Promise<HydratedDocument<UserWarning>[]> {
-    return this.find({ reportId, source: WarningSource.REPORT });
-  }
 
   async revoke(input: RevokeUserWarningInput): Promise<HydratedDocument<UserWarning>> {
     const updated = await this.updateById(input.warningId, {

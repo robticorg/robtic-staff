@@ -7,9 +7,6 @@ import {
   tryNormaliseFastAccessCommand,
 } from "../configuration/services/fast-access.service.ts";
 import { FastAccessContext } from "../configuration/types/enums.ts";
-import { modmailCaseService } from "../modmail/services/modmail-case.service.ts";
-import { modmailService } from "../modmail/services/modmail.service.ts";
-import { reportPermissionService } from "../modmail/services/report-permissions.service.ts";
 import { staffPermissionService } from "../staff/services/staff-permissions.service.ts";
 import { memberIsAdministrator } from "../tickets/services/ticket-permissions.ts";
 import { detectFastAccessContext, type DetectedContext } from "./context-detect.ts";
@@ -68,30 +65,12 @@ class FastAccessRunner {
       return { delivered: true, context: FastAccessContext.PUBLIC };
     }
 
-    if (detected.ticket) {
-      if ("send" in channel) {
-        await channel
-          .send({ content, allowedMentions: { parse: [] }, ...reply })
-          .catch((err) => log.warn("fast-access support send failed", err));
-      }
-      return { delivered: true, context: isPublic ? FastAccessContext.PUBLIC : detected.context };
+    // A ticket: posted in it.
+    if ("send" in channel) {
+      await channel
+        .send({ content, allowedMentions: { parse: [] }, ...reply })
+        .catch((err) => log.warn("fast-access support send failed", err));
     }
-
-    const kase = await modmailCaseService.getByCaseId(detected.referenceId);
-    if (!kase) return { delivered: false, reason: "WRONG_CONTEXT" };
-    if (!(await reportPermissionService.canManageReport(input.member, kase))) {
-      return { delivered: false, reason: "NO_PERMISSION" };
-    }
-    if (!channel.isThread()) return { delivered: false, reason: "WRONG_CONTEXT" };
-
-    await modmailService.relayStaffToUser({
-      caseId: kase.caseId,
-      member: input.member,
-      content,
-      attachments: [],
-      sourceMessageId: input.sourceMessageId,
-      thread: channel,
-    });
     return { delivered: true, context: isPublic ? FastAccessContext.PUBLIC : detected.context };
   }
 

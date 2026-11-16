@@ -41,15 +41,11 @@ export interface StaffPolicyDoc {
   prefix?: string;
   /** Fast Access macros start with this here (was the FAST_ACCESS_PREFIX env). */
   fastAccessPrefix?: string;
-  modmail?: Partial<{ casePrefix: string }>;
   createdAt: Date;
   updatedAt: Date;
 }
 
 export const STAFF_FEATURE_KEYS = [
-  "reports",
-  "punishments",
-  "appeals",
   "giftClaims",
   "vacations",
   "applications",
@@ -72,7 +68,6 @@ const staffPolicySchema = new Schema<StaffPolicyDoc>(
     vacations: { type: Schema.Types.Mixed, default: undefined },
     prefix: { type: String },
     fastAccessPrefix: { type: String },
-    modmail: { type: Schema.Types.Mixed, default: undefined },
   },
   { timestamps: true, collection: "staff_policies", minimize: false },
 );

@@ -3,7 +3,7 @@ import { bilingual } from "../../shared/utils/lang-context.ts";
 
 const E = emojis;
 const D = (date: Date, style: string) => `<t:${Math.floor(date.getTime() / 1000)}:${style}>`;
-type CaseCounts = { reports: number; tickets: number; appeals: number; giftClaims: number };
+type CaseCounts = { tickets: number; giftClaims: number };
 
 const scopeEn = "Scope: regular staff up to ship (no admins or hidden staff)";
 const scopeAr = "النطاق: الطاقم من العادي إلى الشيب (بدون الأدمن والمخفيين)";
@@ -35,7 +35,6 @@ export const staffMessages = bilingual(
     },
 
     points: {
-      reportClaimReason: (caseId: string) => `Claimed report ${caseId}`,
       ticketClaimReason: (ticketName: string) => `Claimed ticket ${ticketName}`,
     },
 
@@ -109,8 +108,6 @@ export const staffMessages = bilingual(
         [
           `${E.error} ${sourceMention} has open work to finish or hand over first:`,
           counts.tickets > 0 ? `• Tickets: ${counts.tickets}` : null,
-          counts.reports > 0 ? `• Reports: ${counts.reports}` : null,
-          counts.appeals > 0 ? `• Appeals: ${counts.appeals}` : null,
           counts.giftClaims > 0 ? `• Gifts to deliver: ${counts.giftClaims}` : null,
         ].filter(Boolean).join("\n"),
       problem: {
@@ -162,7 +159,6 @@ export const staffMessages = bilingual(
     },
 
     points: {
-      reportClaimReason: (caseId: string) => `استلام البلاغ ${caseId}`,
       ticketClaimReason: (ticketName: string) => `استلام التكت ${ticketName}`,
     },
 
@@ -236,8 +232,6 @@ export const staffMessages = bilingual(
         [
           `${E.error} ${sourceMention} عنده شغل مفتوح لازم ينتهي أو يتحوّل أول:`,
           counts.tickets > 0 ? `• تكتات: ${counts.tickets}` : null,
-          counts.reports > 0 ? `• بلاغات: ${counts.reports}` : null,
-          counts.appeals > 0 ? `• استئنافات: ${counts.appeals}` : null,
           counts.giftClaims > 0 ? `• هدايا بانتظار التسليم: ${counts.giftClaims}` : null,
         ].filter(Boolean).join("\n"),
       problem: {

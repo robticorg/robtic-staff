@@ -34,7 +34,6 @@ export const PREFIX_COMMAND_LOG_SLOTS: Readonly<Record<string, ChannelConfigType
 
 export const PREFIX_CATEGORY_LOG_SLOTS: Readonly<Record<string, ChannelConfigType>> = {
   ticket: ChannelConfigType.TICKET_LOG,
-  modmail: ChannelConfigType.TICKET_LOG,
 };
 
 export const commandLogConfig = {

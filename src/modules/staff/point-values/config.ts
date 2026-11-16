@@ -2,8 +2,8 @@ import { StaffPointTransactionType as T } from "../types/enums.ts";
 
 /** The point types the bot awards by itself — the ones /points values can change. */
 export const POINT_VALUE_GROUPS = {
-  claims: [T.TICKET_CLAIM, T.REPORT_CLAIM, T.STAFF_ACCEPT],
-  moderation: [T.USER_WARNING, T.STAFF_WARNING, T.JAIL, T.APPEAL_SUCCESS_PENALTY],
+  claims: [T.TICKET_CLAIM, T.STAFF_ACCEPT],
+  moderation: [T.USER_WARNING, T.STAFF_WARNING, T.JAIL],
 } as const;
 export type PointValueGroup = keyof typeof POINT_VALUE_GROUPS;
 export const POINT_VALUE_GROUP_KEYS = Object.keys(POINT_VALUE_GROUPS) as PointValueGroup[];

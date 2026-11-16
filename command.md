@@ -122,14 +122,6 @@ Gift orders (from the gift ticket or from `!gift` by staff) are approved or reje
 
 ---
 
-## Reports
-
-| Command | Aliases | Description | Usage | Who can use it |
-|---|---|---|---|---|
-| `!end` | انهاء · إنهاء · انهاء-التحقيق | Open the resolution menu to close a report | `!end` — inside a report thread | Staff who can manage the report (after it is claimed), Administrators |
-
----
-
 ## Responsibilities & leads
 
 | Command | Description | Usage | Who can use it |
@@ -174,6 +166,6 @@ Gift orders (from the gift ticket or from `!gift` by staff) are approved or reje
 
 ## Fast Access macros
 
-Staff type `$<cmd>` (prefix set by `FAST_ACCESS_PREFIX`) to send a saved message in the matching context. A macro with context `PUBLIC` ("عام (أي مكان)") works in any channel: in a ticket it is posted in the ticket, in a modmail thread it is relayed to the user, anywhere else it is posted in the channel.
+Staff type `$<cmd>` (prefix set by `FAST_ACCESS_PREFIX`) to send a saved message in the matching context. A macro with context `PUBLIC` ("عام (أي مكان)") works in any channel: in a ticket it is posted in the ticket, anywhere else it is posted in the channel.
 
 Put `[args]` in a macro message to insert what is typed after the command: with `message: Welcome [args]!`, typing `$hi Ahmed` sends `Welcome Ahmed!`. When `$cmd` is sent as a reply with nothing after it, `[args]` becomes the content of the replied message, and the bot answers as a reply to that same message. With no text and no reply, `[args]` is left empty. Macros are managed with `/fast-access`.

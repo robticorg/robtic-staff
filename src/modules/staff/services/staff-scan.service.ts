@@ -208,8 +208,6 @@ export class StaffScanService {
             $setOnInsert: {
               status: StaffStatus.ACTIVE,
               points: 0,
-              reportsClaimed: 0,
-              reportsCompleted: 0,
               ticketsClaimed: 0,
               ticketsCompleted: 0,
               giftClaimsHandled: 0,

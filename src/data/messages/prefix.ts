@@ -51,14 +51,6 @@ export const prefixMessages = bilingual(
       notAllowed: `${E.error} You can't manage this ticket.`,
     },
 
-    modmail: {
-      notAThread: `${E.error} \`!end\` works inside a report thread only.`,
-      notAllowed: `${E.error} This report isn't yours.`,
-      alreadyClosed: `${E.error} This report is already closed.`,
-      claimFirst: `${E.warning} Claim the report first.`,
-      closed: (caseId: string) => `${E.success} Report \`${caseId}\` closed.`,
-      ended: (caseId: string) => `${E.success} Investigation \`${caseId}\` ended and marked **RESOLVED**.`,
-    },
 
     staff: {
       rolesNotConfigured: `${E.error} The staff ladder isn't set up. Set the start and end roles on the dashboard (Ranks & roles).`,
@@ -214,14 +206,6 @@ export const prefixMessages = bilingual(
       notAllowed: `${E.error} لا تملك صلاحية إدارة هذه التذكرة.`,
     },
 
-    modmail: {
-      notAThread: `${E.error} يُستخدم \`!انهاء\` داخل ثريد البلاغ فقط.`,
-      notAllowed: `${E.error} هذا البلاغ ليس من مسؤوليتك.`,
-      alreadyClosed: `${E.error} هذا البلاغ مغلق مسبقاً.`,
-      claimFirst: `${E.warning} يرجى استلام البلاغ أولاً.`,
-      closed: (caseId: string) => `${E.success} تم إغلاق البلاغ \`${caseId}\`.`,
-      ended: (caseId: string) => `${E.success} تم إنهاء التحقيق \`${caseId}\` وتسجيله كمحلول.`,
-    },
 
     staff: {
       rolesNotConfigured: `${E.error} سلّم الطاقم غير مُعدّ. يرجى تحديد رتبة البداية والنهاية من لوحة التحكم (الرتب).`,

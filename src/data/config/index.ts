@@ -17,15 +17,11 @@ export const appData = {
   configuration: configurationConfig,
   punishment: punishmentConfig,
 
-  caseIdPrefix: "RPT-",
-
   timezoneFallback: "UTC",
 
   features: {
     ticketSystem: false,
     giftClaims: false,
-    punishments: false,
-    appeals: false,
   },
 } as const;
 

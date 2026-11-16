@@ -12,7 +12,7 @@ export const pointValuesMessages = bilingual(
       groupHeading: (title: string) => `### ${title}`,
     },
     groups: {
-      claims: "Tickets and reports",
+      claims: "Tickets and accepts",
       moderation: "Warnings and punishments",
     },
     modalTitle: (group: string) => `Point values — ${group}`,
@@ -30,7 +30,7 @@ export const pointValuesMessages = bilingual(
       groupHeading: (title: string) => `### ${title}`,
     },
     groups: {
-      claims: "التكتات والبلاغات",
+      claims: "التكتات والقبول",
       moderation: "التحذيرات والعقوبات",
     },
     modalTitle: (group: string) => `قيم النقاط — ${group}`,

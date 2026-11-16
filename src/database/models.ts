@@ -5,23 +5,16 @@ import { StaffPointTransactionModel } from "../modules/staff/models/staff-point-
 import { StaffHistoryModel } from "../modules/staff/models/staff-history.model.ts";
 import { StaffWarningModel } from "../modules/warnings/models/staff-warning.model.ts";
 import { UserWarningModel } from "../modules/warnings/models/user-warning.model.ts";
-import { ReportModel } from "../modules/reports/models/report.model.ts";
-import { AppealModel } from "../modules/appeals/models/appeal.model.ts";
 import { RoleConfigModel } from "../modules/configuration/models/role-config.model.ts";
 import { ChannelConfigModel } from "../modules/configuration/models/channel-config.model.ts";
 import { FastAccessModel } from "../modules/configuration/models/fast-access.model.ts";
 import { StaffConfigModel } from "../modules/configuration/models/staff-config.model.ts";
 import { StaffPolicyModel } from "../modules/configuration/models/staff-policy.model.ts";
-import { ModmailCaseModel } from "../modules/modmail/models/modmail-case.model.ts";
-import { ModmailMessageModel } from "../modules/modmail/models/modmail-message.model.ts";
-import { ModmailAttachmentModel } from "../modules/modmail/models/modmail-attachment.model.ts";
-import { ModmailAuditModel } from "../modules/modmail/models/modmail-audit.model.ts";
 import { TicketModel } from "../modules/tickets/models/ticket.model.ts";
 import { FaqModel } from "../modules/tickets/models/faq.model.ts";
 import { TicketTranscriptModel } from "../modules/tickets/models/ticket-transcript.model.ts";
 import { TicketPanelDeploymentModel } from "../modules/tickets/models/ticket-panel-deployment.model.ts";
 import { PunishmentModel } from "../modules/punishment/models/punishment.model.ts";
-import { PunishmentApprovalModel } from "../modules/punishment/models/punishment-approval.model.ts";
 import { PunishmentAuditModel } from "../modules/punishment/models/punishment-audit.model.ts";
 import { VacationModel } from "../modules/vacation/models/vacation.model.ts";
 import { VacationPanelDeploymentModel } from "../modules/vacation/models/vacation-panel-deployment.model.ts";
@@ -45,23 +38,16 @@ export const ALL_MODELS: Model<any>[] = [
   StaffHistoryModel,
   StaffWarningModel,
   UserWarningModel,
-  ReportModel,
-  AppealModel,
   RoleConfigModel,
   ChannelConfigModel,
   FastAccessModel,
   StaffConfigModel,
   StaffPolicyModel,
-  ModmailCaseModel,
-  ModmailMessageModel,
-  ModmailAttachmentModel,
-  ModmailAuditModel,
   TicketModel,
   FaqModel,
   TicketTranscriptModel,
   TicketPanelDeploymentModel,
   PunishmentModel,
-  PunishmentApprovalModel,
   PunishmentAuditModel,
   VacationModel,
   VacationPanelDeploymentModel,

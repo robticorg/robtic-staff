@@ -34,7 +34,6 @@ export interface RawEnv {
 
   prefix: string;
   fastAccessPrefix: string;
-  modmailCasePrefix: string;
 
   internalApiToken?: string;
   internalApiHost: string;
@@ -79,7 +78,6 @@ export const rawEnv: RawEnv = {
 
   prefix: process.env.PREFIX ?? "!",
   fastAccessPrefix: process.env.FAST_ACCESS_PREFIX ?? "$",
-  modmailCasePrefix: process.env.MODMAIL_CASE_PREFIX ?? "RPT-",
 
   internalApiToken: process.env.INTERNAL_API_TOKEN || undefined,
   internalApiHost: process.env.INTERNAL_API_HOST || "0.0.0.0",

@@ -6,7 +6,6 @@ import { StaffPointTransactionType } from "../types/enums.ts";
  * PRIVATE_CHANNEL_*, SELLER_ROLE — use the amount whoever sends them chooses.)
  */
 export const DEFAULT_POINT_VALUES: Record<StaffPointTransactionType, number> = {
-  [StaffPointTransactionType.REPORT_CLAIM]: 1,
   [StaffPointTransactionType.TICKET_CLAIM]: 2,
   [StaffPointTransactionType.GIFT_CLAIM]: 1,
   [StaffPointTransactionType.USER_WARNING]: 2,
@@ -18,11 +17,6 @@ export const DEFAULT_POINT_VALUES: Record<StaffPointTransactionType, number> = {
   [StaffPointTransactionType.PRIVATE_CHANNEL_CREATE]: 1,
   [StaffPointTransactionType.PRIVATE_CHANNEL_DELETE]: 1,
   [StaffPointTransactionType.SELLER_ROLE]: 1,
-  [StaffPointTransactionType.APPEAL_SUCCESS_PENALTY]: -2,
   [StaffPointTransactionType.MANUAL_ADJUSTMENT]: 0,
   [StaffPointTransactionType.OTHER]: 0,
 };
-
-export const APPEAL_SUCCESS_PENALTY = DEFAULT_POINT_VALUES[
-  StaffPointTransactionType.APPEAL_SUCCESS_PENALTY
-];

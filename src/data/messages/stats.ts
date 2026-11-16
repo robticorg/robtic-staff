@@ -27,7 +27,6 @@ export const statsMessages = bilingual(
 
     pointTypeLabels: {
       TICKET_CLAIM: "Tickets",
-      REPORT_CLAIM: "Reports",
       GIFT_CLAIM: "Gifts",
       USER_WARNING: "Member warnings",
       STAFF_WARNING: "Staff warnings",
@@ -38,7 +37,6 @@ export const statsMessages = bilingual(
       PRIVATE_CHANNEL_CREATE: "Private channel created",
       PRIVATE_CHANNEL_DELETE: "Private channel deleted",
       SELLER_ROLE: "Seller role given",
-      APPEAL_SUCCESS_PENALTY: "Successful appeal deduction",
       MANUAL_ADJUSTMENT: "Manual adjustment",
       OTHER: "Other",
     } as Record<string, string>,
@@ -113,7 +111,7 @@ export const statsMessages = bilingual(
         options: {
           home: { label: "Profile", description: "Rank, status, who accepted them, total points" },
           weeks: { label: "Weekly points", description: "Points for every week since joining" },
-          acts: { label: "Actions", description: "Reports, accepts, removals, warnings, jails" },
+          acts: { label: "Actions", description: "Accepts, removals, warnings, jails" },
           tix: { label: "Tickets", description: "Claimed and completed tickets per section" },
           recent: { label: "Recent activity", description: "Their last 10 actions" },
           app: { label: "Application", description: "Age, city, department and result when they applied" },
@@ -186,7 +184,6 @@ export const statsMessages = bilingual(
 
       actions: {
         heading: (userId: string) => `## Actions — <@${userId}>`,
-        reportsGroup: "__Reports__",
         staffGroup: "__Staff management__",
         punishGroup: "__Punishments and warnings__",
         otherGroup: "__Other__",
@@ -221,9 +218,6 @@ export const statsMessages = bilingual(
       week: "This week",
       month: "This month",
       allTime: "All time",
-      reportsClaimed: "Reports claimed",
-      reportsCompleted: "Reports done",
-      reportsAssignedNow: "Reports assigned now",
       ticketsClaimed: "Tickets claimed",
       ticketsCompleted: "Tickets done",
       ticketsAssignedNow: "Tickets assigned now",
@@ -232,8 +226,6 @@ export const statsMessages = bilingual(
       userWarningsIssued: "Member warnings given",
       staffWarningsIssued: "Staff warnings given",
       warningsRevoked: "Warnings revoked",
-      appealsHandled: "Appeals handled",
-      appealsSuccessful: "Appeals accepted",
       vacationsDecided: "Vacations (approved / rejected)",
       totalActivity: "Total activity",
     },
@@ -258,7 +250,6 @@ export const statsMessages = bilingual(
 
     pointTypeLabels: {
       TICKET_CLAIM: "التكتات",
-      REPORT_CLAIM: "البلاغات",
       GIFT_CLAIM: "الهدايا",
       USER_WARNING: "تحذيرات الأعضاء",
       STAFF_WARNING: "تحذيرات الطاقم",
@@ -269,7 +260,6 @@ export const statsMessages = bilingual(
       PRIVATE_CHANNEL_CREATE: "إنشاء روم خاص",
       PRIVATE_CHANNEL_DELETE: "حذف روم خاص",
       SELLER_ROLE: "إعطاء رتبة بائع",
-      APPEAL_SUCCESS_PENALTY: "خصم استئناف مقبول",
       MANUAL_ADJUSTMENT: "تعديل يدوي",
       OTHER: "أخرى",
     } as Record<string, string>,
@@ -344,7 +334,7 @@ export const statsMessages = bilingual(
         options: {
           home: { label: "الملف", description: "الرتبة والحالة ومن قبله وإجمالي النقاط" },
           weeks: { label: "النقاط الأسبوعية", description: "نقاطه كل أسبوع من انضمامه" },
-          acts: { label: "الأعمال", description: "البلاغات والقبول والفصل والتحذيرات والسجن" },
+          acts: { label: "الأعمال", description: "القبول والفصل والتحذيرات والسجن" },
           tix: { label: "التكتات", description: "المستلمة والمكتملة لكل قسم" },
           recent: { label: "آخر النشاطات", description: "آخر 10 أعمال" },
           app: { label: "طلب التقديم", description: "العمر والمدينة والقسم والنتيجة" },
@@ -417,7 +407,6 @@ export const statsMessages = bilingual(
 
       actions: {
         heading: (userId: string) => `## الأعمال — <@${userId}>`,
-        reportsGroup: "__البلاغات__",
         staffGroup: "__إدارة الطاقم__",
         punishGroup: "__العقوبات والتحذيرات__",
         otherGroup: "__أخرى__",
@@ -452,9 +441,6 @@ export const statsMessages = bilingual(
       week: "هذا الأسبوع",
       month: "هذا الشهر",
       allTime: "الكل",
-      reportsClaimed: "البلاغات المستلمة",
-      reportsCompleted: "البلاغات المكتملة",
-      reportsAssignedNow: "البلاغات المسندة حالياً",
       ticketsClaimed: "التكتات المستلمة",
       ticketsCompleted: "التكتات المكتملة",
       ticketsAssignedNow: "التكتات المسندة حالياً",
@@ -463,8 +449,6 @@ export const statsMessages = bilingual(
       userWarningsIssued: "تحذيرات الأعضاء",
       staffWarningsIssued: "تحذيرات الطاقم",
       warningsRevoked: "التحذيرات الملغاة",
-      appealsHandled: "الاستئنافات المعالجة",
-      appealsSuccessful: "الاستئنافات المقبولة",
       vacationsDecided: "الإجازات (موافقة / رفض)",
       totalActivity: "إجمالي النشاط",
     },
@@ -473,8 +457,6 @@ export const statsMessages = bilingual(
 
 export const ACTIVITY_LABELS: Record<string, string> = bilingual<Record<string, string>>(
   {
-    REPORT_CLAIM: "Claimed a report",
-    REPORT_COMPLETE: "Finished a report",
     TICKET_CLAIM: "Claimed a ticket",
     TICKET_COMPLETE: "Finished a ticket",
     GIFT_CLAIM: "Handled a gift claim",
@@ -506,8 +488,6 @@ export const ACTIVITY_LABELS: Record<string, string> = bilingual<Record<string, 
     OTHER: "Activity",
   },
   {
-    REPORT_CLAIM: "استلم بلاغ",
-    REPORT_COMPLETE: "أنهى بلاغ",
     TICKET_CLAIM: "استلم تكت",
     TICKET_COMPLETE: "أنهى تكت",
     GIFT_CLAIM: "عالج طلب هدية",

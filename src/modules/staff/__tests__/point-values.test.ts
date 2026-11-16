@@ -13,13 +13,11 @@ describe("point values", () => {
     expect(DEFAULT_POINT_VALUES[T.JAIL]).toBe(1);
     expect(DEFAULT_POINT_VALUES[T.STAFF_ACCEPT]).toBe(1);
     expect(DEFAULT_POINT_VALUES[T.STAFF_WARNING]).toBe(1);
-    expect(DEFAULT_POINT_VALUES[T.REPORT_CLAIM]).toBe(1);
   });
 
   it("reads every automatic award from the config instead of a typed-in number", () => {
     for (const file of [
       "modules/tickets/services/ticket-claim-credit.ts",
-      "modules/modmail/services/claim-credit.ts",
       "modules/warnings/services/warning-actions.service.ts",
     ]) {
       expect(src(file)).not.toMatch(/amount:\s*\d/);

@@ -3,28 +3,6 @@ import type { GuildId } from "../../../shared/types/index.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { PunishmentType } from "../types/enums.ts";
-import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
-import { hasAdminAccess } from "../../access/index.ts";
-
-export interface ApprovalDecisionInput {
-  type: "KICK" | "BAN";
-  isAdministrator: boolean;
-  hasChatManagerRole: boolean;
-}
-
-export function decideApprovalAuthorization(input: ApprovalDecisionInput): boolean {
-  if (input.type === "BAN") return input.isAdministrator;
-  return input.isAdministrator || input.hasChatManagerRole;
-}
-
-export interface SelfApprovalInput {
-  requestedBy: string;
-  deciderId: string;
-}
-
-export function isSelfApproval(input: SelfApprovalInput): boolean {
-  return input.requestedBy === input.deciderId;
-}
 
 export function requiredBotPermission(type: PunishmentType): bigint | null {
   switch (type) {
@@ -40,21 +18,6 @@ export function requiredBotPermission(type: PunishmentType): bigint | null {
     default:
       return null;
   }
-}
-
-export function memberHasChatManagerRole(member: GuildMember): Promise<boolean> {
-  return responsibilityPermissionService.holds(member, RoleConfigType.CHAT_MANAGER);
-}
-
-export async function canDecideApproval(
-  member: GuildMember,
-  type: "KICK" | "BAN",
-): Promise<boolean> {
-  return decideApprovalAuthorization({
-    type,
-    isAdministrator: hasAdminAccess(member),
-    hasChatManagerRole: type === "KICK" ? await memberHasChatManagerRole(member) : false,
-  });
 }
 
 export function botHasPermission(guild: Guild, perm: bigint): boolean {

@@ -1,11 +1,7 @@
 import { Types } from "mongoose";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
-import { AppealModel } from "../../appeals/models/appeal.model.ts";
-import { AppealStatus } from "../../appeals/types/enums.ts";
 import { GiftClaimAuditModel } from "../../gift-claims/models/gift-claim-audit.model.ts";
 import { GiftClaimAuditAction } from "../../gift-claims/types/enums.ts";
-import { ModmailCaseModel } from "../../modmail/models/modmail-case.model.ts";
-import { ModmailCaseStatus } from "../../modmail/types/enums.ts";
 import { StaffActivityModel } from "../../staff/models/staff-activity.model.ts";
 import { StaffPointTransactionModel } from "../../staff/models/staff-point-transaction.model.ts";
 import { StaffModel, type Staff } from "../../staff/models/staff.model.ts";
@@ -23,12 +19,6 @@ export interface GuildStaffRow {
   userId: UserId;
   status: Staff["status"];
   currentRoleLevel: number;
-}
-
-export interface ReportStatRow {
-  claimed: number;
-  completed: number;
-  assignedNow: number;
 }
 
 export interface TicketPanelStat {
@@ -56,8 +46,6 @@ export interface WarningStatRow {
   userWarningsIssued: number;
   staffWarningsIssued: number;
   warningsRevoked: number;
-  appealsSuccessful: number;
-  appealsHandled: number;
 }
 
 export class StatsRepository {
@@ -141,37 +129,6 @@ export class StatsRepository {
       .limit(limit)
       .lean()
       .exec();
-  }
-
-  async reportStats(
-    guildId: GuildId,
-    staffId: Types.ObjectId,
-    range: StatsRange,
-  ): Promise<ReportStatRow> {
-    const [claimed, completed, assignedNow] = await Promise.all([
-      StaffActivityModel.countDocuments({
-        staffId,
-        type: StaffActivityType.REPORT_CLAIM,
-        ...rangeFilter(range),
-      }),
-      StaffActivityModel.countDocuments({
-        staffId,
-        type: StaffActivityType.REPORT_COMPLETE,
-        ...rangeFilter(range),
-      }),
-      ModmailCaseModel.countDocuments({
-        guildId,
-        claimedBy: staffId,
-        status: {
-          $in: [
-            ModmailCaseStatus.CLAIMED,
-            ModmailCaseStatus.INVESTIGATING,
-            ModmailCaseStatus.WAITING_USER,
-          ],
-        },
-      }),
-    ]);
-    return { claimed, completed, assignedNow };
   }
 
   async ticketStats(
@@ -261,8 +218,6 @@ export class StatsRepository {
       staffWarningsIssued,
       userWarnRevoked,
       staffWarnRemoved,
-      appealsSuccessful,
-      appealsHandled,
     ] = await Promise.all([
       UserWarningModel.countDocuments({ guildId, issuedBy: actorId, ...rangeFilter(range) }),
       StaffWarningModel.countDocuments({
@@ -282,26 +237,12 @@ export class StatsRepository {
         status: WarningStatus.REMOVED,
         ...rangeFilter(range, "removedAt"),
       }),
-      AppealModel.countDocuments({
-        guildId,
-        reviewedBy: actorId,
-        status: AppealStatus.ACCEPTED,
-        ...rangeFilter(range, "reviewedAt"),
-      }),
-      AppealModel.countDocuments({
-        guildId,
-        reviewedBy: actorId,
-        status: { $in: [AppealStatus.ACCEPTED, AppealStatus.REJECTED] },
-        ...rangeFilter(range, "reviewedAt"),
-      }),
     ]);
     void staffId;
     return {
       userWarningsIssued,
       staffWarningsIssued,
       warningsRevoked: userWarnRevoked + staffWarnRemoved,
-      appealsSuccessful,
-      appealsHandled,
     };
   }
 }

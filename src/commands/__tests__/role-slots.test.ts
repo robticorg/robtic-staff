@@ -7,6 +7,7 @@ import {
   ROLE_SLOT_LABELS,
 } from "../../data/roles/index.ts";
 import {
+  RETIRED_ROLE_TYPES,
   ROLE_CONFIG_TYPE_VALUES,
   RoleConfigType,
 } from "../../modules/configuration/types/enums.ts";
@@ -23,6 +24,7 @@ describe("/role slot tables", () => {
       ...ROLE_SET_SLOTS,
       ...ROLE_RANGE_SLOTS,
       ...OWN_SUBCOMMAND,
+      ...RETIRED_ROLE_TYPES,
     ]);
     const orphans = ROLE_CONFIG_TYPE_VALUES.filter((type) => !reachable.has(type));
     expect(orphans).toEqual([]);

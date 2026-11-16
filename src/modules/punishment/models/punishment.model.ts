@@ -68,6 +68,7 @@ const punishmentSchema = new Schema<Punishment>(
     },
     evidence: { type: [String], default: [] },
 
+    /** Older punishments only (reports were removed). */
     reportId: { type: String, index: true },
 
     issuedBy: { type: String, required: true },

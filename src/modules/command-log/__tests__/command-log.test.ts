@@ -14,7 +14,6 @@ describe("command log routing", () => {
     expect(prefixLogSlot("accept", "staff")).toBe(ChannelConfigType.STAFF_LOG);
     expect(prefixLogSlot("warn", "staff")).toBe(ChannelConfigType.WARN_COMMAND_LOG);
     expect(prefixLogSlot("close", "ticket")).toBe(ChannelConfigType.TICKET_LOG);
-    expect(prefixLogSlot("end", "modmail")).toBe(ChannelConfigType.TICKET_LOG);
   });
 
   it("falls back to the general command log", () => {

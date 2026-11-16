@@ -29,7 +29,7 @@ export function createClient(): Client {
     const listener = async (...args: unknown[]) => {
       const guildId = guildIdOf(args);
       try {
-        // A DM (reports by modmail) has no server: it speaks the community server's language.
+        // A DM has no server: it speaks the community server's language.
         const lang = await langOf(guildId ?? discordConfig.primaryGuildId ?? null);
         await runWithLang(lang, () => (event.execute as (...a: unknown[]) => unknown)(...args), guildId);
       } catch (err) {

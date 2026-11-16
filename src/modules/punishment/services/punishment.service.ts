@@ -43,7 +43,6 @@ export interface CreatePunishmentInput {
   type: PunishmentType;
   reason: string;
   evidence?: string[];
-  reportId?: string;
   issuedBy: UserId;
   durationMs?: number;
   metadata?: Record<string, unknown>;
@@ -159,7 +158,6 @@ export class PunishmentService extends BaseRepository<Punishment> {
       status: PunishmentStatus.PENDING,
       reason: (input.reason ?? "").trim(),
       evidence: input.evidence ?? [],
-      reportId: input.reportId,
       issuedBy: input.issuedBy,
       duration: input.durationMs,
       metadata: input.metadata,

@@ -39,7 +39,6 @@ const B = C.buttons;
 
 const POINT_TYPE_ORDER = [
   "TICKET_CLAIM",
-  "REPORT_CLAIM",
   "GIFT_CLAIM",
   "MESSAGE",
   "USER_WARNING",
@@ -50,7 +49,6 @@ const POINT_TYPE_ORDER = [
   "PRIVATE_CHANNEL_DELETE",
   "SELLER_ROLE",
   "STAFF_WARNING",
-  "APPEAL_SUCCESS_PENALTY",
   "MANUAL_ADJUSTMENT",
   "OTHER",
 ];
@@ -246,10 +244,6 @@ export function buildActionStatsView(ids: StatsCardIds, a: StaffActionStats): Ba
   if (a.girlsVerified !== null) staffLines.push(row(A.girlsVerified, a.girlsVerified));
 
   const body = [
-    A.reportsGroup,
-    row(L.reportsClaimed, a.reportsClaimed),
-    row(L.reportsCompleted, a.reportsCompleted),
-    "",
     A.staffGroup,
     ...staffLines,
     "",
@@ -258,7 +252,6 @@ export function buildActionStatsView(ids: StatsCardIds, a: StaffActionStats): Ba
     row(L.userWarningsIssued, a.userWarningsIssued),
     row(L.staffWarningsIssued, a.staffWarningsIssued),
     row(L.warningsRevoked, a.warningsRevoked),
-    row(L.appealsHandled, a.appealsHandled),
     "",
     A.otherGroup,
     row(L.giftClaimsHandled, a.giftClaimsHandled),

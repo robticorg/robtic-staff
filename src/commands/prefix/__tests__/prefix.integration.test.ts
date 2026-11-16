@@ -441,7 +441,7 @@ describe.skipIf(!hasDb)("prefix commands — services (MongoDB)", () => {
       guildId: GUILD,
       command: "rules",
       message: "read the rules",
-      contextType: FastAccessContext.MODMAIL,
+      contextType: FastAccessContext.STAFF_APPLICATION,
       createdBy: "m",
     });
     expect(await fastAccessService.existsForCommand(GUILD, "$RULES")).toBe(true);

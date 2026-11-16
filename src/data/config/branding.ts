@@ -9,7 +9,6 @@ export const branding = {
 
   footers: {
     get default() { return L("Robtic Staff", "إدارة Robtic"); },
-    get reports() { return L("Robtic • Reports", "Robtic • نظام البلاغات"); },
     get support() { return L("Robtic • Support", "Robtic • الدعم"); },
     get config() { return L("Robtic • Settings", "Robtic • الإعدادات"); },
   },

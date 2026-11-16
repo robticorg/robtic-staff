@@ -11,7 +11,6 @@ import ticketSleep from "./ticket/sleep.ts";
 import ticketHandover from "./ticket/handover.ts";
 import ticketInfo from "./ticket/info.ts";
 
-import modmailEnd from "./modmail/end.ts";
 
 import staffAccept from "./staff/accept.ts";
 import staffFrom from "./staff/from.ts";
@@ -57,7 +56,6 @@ export const prefixCommands: PrefixCommand[] = [
   ticketHandover,
   ticketInfo,
 
-  modmailEnd,
 
   staffCome,
   staffAccept,

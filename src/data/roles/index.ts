@@ -106,7 +106,6 @@ export const ROLE_SET_SLOTS: readonly RoleConfigType[] = [
   RoleConfigType.GIRL_VERIFIED,
   RoleConfigType.TICKET_BLACKLIST,
   RoleConfigType.GIFT_BLACKLIST,
-  RoleConfigType.APPEAL_MANAGER,
   RoleConfigType.GIFT_MANAGER,
   RoleConfigType.CHAT_MANAGER,
   RoleConfigType.MUTE,

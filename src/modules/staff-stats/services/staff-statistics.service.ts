@@ -47,9 +47,6 @@ export interface StaffStatsResult {
   activity: {
     total: number;
     byType: Record<string, number>;
-    reportsClaimed: number;
-    reportsCompleted: number;
-    reportsAssignedNow: number;
     ticketsClaimed: number;
     ticketsCompleted: number;
     ticketsAssignedNow: number;
@@ -62,8 +59,6 @@ export interface StaffStatsResult {
     userWarningsIssued: number;
     staffWarningsIssued: number;
     warningsRevoked: number;
-    appealsSuccessful: number;
-    appealsHandled: number;
     vacationsApproved: number;
     vacationsRejected: number;
   };
@@ -103,7 +98,6 @@ export class StaffStatisticsService {
       pAll,
       pPeriod,
       byType,
-      reports,
       tickets,
       gift,
       warnings,
@@ -117,7 +111,6 @@ export class StaffStatisticsService {
       statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.ALL_TIME, undefined, staffPolicyService.peek(input.guildId).timezone)),
       statsRepository.pointsForStaff(staffObjId, range),
       statsRepository.activityByType(staffObjId, range),
-      statsRepository.reportStats(input.guildId, staffObjId, range),
       statsRepository.ticketStats(input.guildId, staffObjId, range),
       statsRepository.giftClaimStats(input.guildId, input.staffId, range),
       statsRepository.warningStats(input.guildId, staffObjId, input.staffId, guildStaffIds, range),
@@ -144,9 +137,6 @@ export class StaffStatisticsService {
       activity: {
         total,
         byType,
-        reportsClaimed: reports.claimed,
-        reportsCompleted: reports.completed,
-        reportsAssignedNow: reports.assignedNow,
         ticketsClaimed: tickets.claimed,
         ticketsCompleted: tickets.completed,
         ticketsAssignedNow: tickets.assignedNow,
@@ -159,8 +149,6 @@ export class StaffStatisticsService {
         userWarningsIssued: warnings.userWarningsIssued,
         staffWarningsIssued: warnings.staffWarningsIssued,
         warningsRevoked: warnings.warningsRevoked,
-        appealsSuccessful: warnings.appealsSuccessful,
-        appealsHandled: warnings.appealsHandled,
         vacationsApproved: byType.VACATION_APPROVED ?? 0,
         vacationsRejected: byType.VACATION_REJECTED ?? 0,
       },
@@ -276,9 +264,6 @@ function zeroActivity(): StaffStatsResult["activity"] {
   return {
     total: 0,
     byType: {},
-    reportsClaimed: 0,
-    reportsCompleted: 0,
-    reportsAssignedNow: 0,
     ticketsClaimed: 0,
     ticketsCompleted: 0,
     ticketsAssignedNow: 0,
@@ -291,8 +276,6 @@ function zeroActivity(): StaffStatsResult["activity"] {
     userWarningsIssued: 0,
     staffWarningsIssued: 0,
     warningsRevoked: 0,
-    appealsSuccessful: 0,
-    appealsHandled: 0,
     vacationsApproved: 0,
     vacationsRejected: 0,
   };

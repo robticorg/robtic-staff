@@ -1,13 +1,10 @@
 import { Events, MessageFlags, type Interaction } from "discord.js";
 import { defineEvent } from "../discord/event.ts";
-import { routeModmailComponent } from "../modules/modmail/handlers/index.ts";
 import { routeTicketComponent } from "../modules/tickets/handlers/index.ts";
 import { routeFaqComponent } from "../modules/tickets/handlers/faq-add.handler.ts";
-import { routePunishmentComponent } from "../modules/punishment/handlers/index.ts";
 import { routeVacationComponent } from "../modules/vacation/handlers/index.ts";
 import { routeStaffSupportComponent } from "../modules/staff-support/handlers/component-router.ts";
 import { routeApplicationComponent } from "../modules/applications/handlers/component-router.ts";
-import { routeAppealComponent } from "../modules/appeals/handlers/index.ts";
 import { routeGiftClaimComponent } from "../modules/gift-claims/handlers/index.ts";
 import { routeWarningPanelComponent } from "../modules/warning-panel/handlers/component-router.ts";
 import { routeStaffStatsComponent } from "../modules/staff-stats/handlers/component-router.ts";
@@ -21,7 +18,7 @@ import { routePointValuesComponent } from "../modules/staff/point-values/compone
 import { routeBotProfileComponent } from "../modules/bot-profile/component-router.ts";
 import { staffPolicyService } from "../modules/configuration/services/staff-policy.service.ts";
 import type { StaffFeatureKey } from "../modules/configuration/models/staff-policy.model.ts";
-import { resolvePrimaryGuild } from "../modules/modmail/runtime.ts";
+import { discordConfig } from "../config/discord.ts";
 import { staffPolicyMessages } from "../data/staff-policy/messages.ts";
 import { logger } from "../shared/utils/logger.ts";
 
@@ -31,27 +28,18 @@ const log = logger.child("feature-gate");
 const FEATURE_BY_NAMESPACE: Record<string, StaffFeatureKey> = {
   vac: "vacations",
   ap: "applications",
-  apl: "appeals",
   gc: "giftClaims",
-  pun: "punishments",
-  mm: "reports",
 };
 
 /**
- * A system the server turned off (dashboard) ignores its components: the member is told so instead. DMs (reports,
- * appeals) have no server, so they use the community server the bot serves.
+ * A system the server turned off (dashboard) ignores its components: the member is told so instead. DMs have no
+ * server, so they use the community server the bot serves.
  */
 async function blockedByFeature(interaction: Interaction & { customId: string }): Promise<boolean> {
   const feature = FEATURE_BY_NAMESPACE[interaction.customId.split(":")[0] ?? ""];
   if (!feature) return false;
-  let guildId = interaction.guildId;
-  if (!guildId) {
-    try {
-      guildId = resolvePrimaryGuild().id;
-    } catch {
-      return false;
-    }
-  }
+  const guildId = interaction.guildId ?? discordConfig.primaryGuildId ?? null;
+  if (!guildId) return false;
   if (await staffPolicyService.isOn(guildId, feature).catch(() => true)) return false;
   if (interaction.isRepliable()) {
     await interaction.reply({ content: staffPolicyMessages.featureOff, flags: MessageFlags.Ephemeral }).catch((err) => log.debug("feature-off reply failed", err));
@@ -60,14 +48,11 @@ async function blockedByFeature(interaction: Interaction & { customId: string })
 }
 
 const routers = [
-  routeModmailComponent,
   routeTicketComponent,
   routeFaqComponent,
-  routePunishmentComponent,
   routeVacationComponent,
   routeStaffSupportComponent,
   routeApplicationComponent,
-  routeAppealComponent,
   routeGiftClaimComponent,
   routeWarningPanelComponent,
   routeStaffStatsComponent,

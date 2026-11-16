@@ -27,9 +27,6 @@ export function buildStatsText(stats: StaffStatsResult): string {
     S.pointRow(L.allTime, stats.points.allTime),
     "",
     S.activityHeading(periodLabel),
-    S.activityRow(L.reportsClaimed, a.reportsClaimed),
-    S.activityRow(L.reportsCompleted, a.reportsCompleted),
-    S.activityRow(L.reportsAssignedNow, a.reportsAssignedNow),
     S.activityRow(L.ticketsClaimed, a.ticketsClaimed),
     S.activityRow(L.ticketsCompleted, a.ticketsCompleted),
     S.activityRow(L.ticketsAssignedNow, a.ticketsAssignedNow),
@@ -42,8 +39,6 @@ export function buildStatsText(stats: StaffStatsResult): string {
     S.activityRow(L.userWarningsIssued, a.userWarningsIssued),
     S.activityRow(L.staffWarningsIssued, a.staffWarningsIssued),
     S.activityRow(L.warningsRevoked, a.warningsRevoked),
-    S.activityRow(L.appealsHandled, a.appealsHandled),
-    S.activityRow(L.appealsSuccessful, a.appealsSuccessful),
     S.activityRow(
       L.vacationsDecided,
       `${a.vacationsApproved} / ${a.vacationsRejected}`,

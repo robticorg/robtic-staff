@@ -103,8 +103,6 @@ export interface WeeklyPointsPage {
 }
 
 export interface StaffActionStats {
-  reportsClaimed: number;
-  reportsCompleted: number;
   staffAccepted: number;
   applicationsRefused: number;
   staffFired: number;
@@ -116,7 +114,6 @@ export interface StaffActionStats {
   userWarningsIssued: number;
   staffWarningsIssued: number;
   warningsRevoked: number;
-  appealsHandled: number;
   giftClaimsHandled: number;
   vacationsDecided: number;
 }
@@ -336,8 +333,6 @@ export class StaffCardService {
     const a = stats.activity;
 
     return {
-      reportsClaimed: a.reportsClaimed,
-      reportsCompleted: a.reportsCompleted,
       staffAccepted: byAction[StaffHistoryAction.ACCEPT] ?? 0,
       applicationsRefused: refused,
       staffFired:
@@ -349,7 +344,6 @@ export class StaffCardService {
       userWarningsIssued: a.userWarningsIssued,
       staffWarningsIssued: a.staffWarningsIssued,
       warningsRevoked: a.warningsRevoked,
-      appealsHandled: a.appealsHandled,
       giftClaimsHandled: a.giftClaimsHandled,
       vacationsDecided: a.vacationsApproved + a.vacationsRejected,
     };
