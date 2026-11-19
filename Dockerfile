@@ -18,4 +18,6 @@ USER bun
 # Internal points API (POST /internal/staff/points) — 0.0.0.0:8788 by default.
 EXPOSE 8788
 
-CMD ["bun", "src/index.ts"]
+# remote-config as a preload: it awaits the admin console settings before any module reads process.env.
+# (A plain `import "./remote-config.ts"` is not enough: sibling imports run while its top-level await waits.)
+CMD ["bun", "--preload", "./src/remote-config.ts", "src/index.ts"]

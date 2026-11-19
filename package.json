@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "bun --watch src/index.ts",
+    "dev": "bun --watch --preload ./src/remote-config.ts src/index.ts",
     "build": "bun build src/index.ts --outdir dist --target bun --minify",
     "start": "bun dist/index.js",
     "typecheck": "tsc --noEmit",

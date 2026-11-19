@@ -1,4 +1,5 @@
-// First: settings from the admin console go into process.env before config reads it (see remote-config.ts).
+// First: settings from the admin console go into process.env before config reads it (see remote-config.ts). The
+// Dockerfile also preloads it — this import alone does not hold back sibling imports during its top-level await.
 import "./remote-config.ts";
 import { config } from "./config/index.ts";
 import { bootstrap } from "./bootstrap.ts";
