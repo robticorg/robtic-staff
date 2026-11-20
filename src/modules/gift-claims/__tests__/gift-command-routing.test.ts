@@ -1,6 +1,5 @@
 import { describe, expect, it } from "bun:test";
 import type { ContainerBuilder } from "discord.js";
-import { isStaffTicket } from "../../../commands/prefix/_shared/staff-ticket.ts";
 import { buildGiftClaimCaseCard } from "../render/case-card.ts";
 import { routeGiftCommand } from "../services/delivery/gift-command.service.ts";
 import { extractCreditAmount, parseCreditAmount } from "../services/delivery/gift-delivery-input.ts";
@@ -80,19 +79,6 @@ describe("!gift routing", () => {
 
   it("outside a ticket, needs a mention", () => {
     expect(() => routeGiftCommand({ ticket: null, isAdministrator: true }, null)).toThrow();
-  });
-});
-
-describe("!transfer staff tickets", () => {
-  const base = { guildId: "g", status: "OPEN" };
-
-  it("accepts open staff application and transfer tickets only", () => {
-    expect(isStaffTicket({ ...base, panelId: "staff-application" }, "g")).toBe(true);
-    expect(isStaffTicket({ ...base, panelId: "staff-transfer-application" }, "g")).toBe(true);
-    expect(isStaffTicket({ ...base, panelId: "support" }, "g")).toBe(false);
-    expect(isStaffTicket({ ...base, panelId: "staff-application", status: "CLOSED" }, "g")).toBe(false);
-    expect(isStaffTicket({ ...base, panelId: "staff-application" }, "other")).toBe(false);
-    expect(isStaffTicket(null, "g")).toBe(false);
   });
 });
 

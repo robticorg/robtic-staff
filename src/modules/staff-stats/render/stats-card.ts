@@ -10,11 +10,6 @@ import {
   StringSelectMenuOptionBuilder,
   type BaseMessageOptions,
 } from "discord.js";
-import {
-  APPLICATION_TYPE_LABELS,
-  DEPARTMENT_LABELS,
-  GENDER_LABELS,
-} from "../../../data/staff-application/messages.ts";
 import { colors } from "../../../data/config/colors.ts";
 import { STAFF_TIER_LABELS } from "../../../data/messages/hierarchy.ts";
 import { ACTIVITY_LABELS, statsMessages as S } from "../../../data/messages/stats.ts";
@@ -236,12 +231,10 @@ export function buildActionStatsView(ids: StatsCardIds, a: StaffActionStats): Ba
 
   const staffLines = [
     row(A.staffAccepted, a.staffAccepted),
-    row(A.applicationsRefused, a.applicationsRefused),
     row(A.staffFired, a.staffFired),
     row(A.staffPromoted, a.staffPromoted),
     row(A.staffDemoted, a.staffDemoted),
   ];
-  if (a.girlsVerified !== null) staffLines.push(row(A.girlsVerified, a.girlsVerified));
 
   const body = [
     A.staffGroup,
@@ -282,83 +275,3 @@ export function buildRecentActivityView(
   return subView(ids, StatsView.RECENT, C.recent.heading(ids.targetId), body);
 }
 
-export interface ApplicationViewData {
-  type: string;
-  applicationStatus: string;
-  createdAt?: Date;
-  name: string;
-  age: number;
-  city: string;
-  gender?: string | null;
-  department?: string | null;
-  robticJoinedAt?: Date | null;
-  recruiterStaffId?: string | null;
-  girlVerification?: string | null;
-  girlVerifiedBy?: string | null;
-  acceptedBy?: string | null;
-  acceptedAt?: Date | null;
-  acceptedLevel?: number | null;
-  rejectedBy?: string | null;
-  rejectedAt?: Date | null;
-  rejectionReason?: string | null;
-  transfer?: {
-    sourceServerName?: string | null;
-    sourceServerMemberCount: number;
-    sourceServerOnlineCount: number;
-    sourceRoleOrder?: number | null;
-    sourceRoleName?: string | null;
-  } | null;
-  evaluation?: { eligible: boolean; proposedStaffLevel?: number | null } | null;
-  evidenceCount?: number;
-}
-
-/** The member's latest staff application, as they filled it in, plus how it ended. */
-export function buildApplicationView(
-  ids: StatsCardIds,
-  applications: readonly ApplicationViewData[],
-): BaseMessageOptions {
-  const A = C.application;
-  const app = applications[0];
-  if (!app) return subView(ids, StatsView.APPLICATION, A.heading(ids.targetId), A.none);
-
-  const lines = [
-    applications.length > 1 ? A.more(applications.length) : null,
-    A.type(APPLICATION_TYPE_LABELS[app.type] ?? app.type),
-    A.status(A.statuses[app.applicationStatus] ?? app.applicationStatus),
-    app.createdAt ? A.submittedAt(app.createdAt) : null,
-    "",
-    A.name(app.name),
-    A.age(app.age),
-    A.city(app.city),
-    app.gender ? A.gender(GENDER_LABELS[app.gender] ?? app.gender) : null,
-    app.department ? A.department(DEPARTMENT_LABELS[app.department] ?? app.department) : null,
-    app.robticJoinedAt ? A.joinedServer(app.robticJoinedAt) : null,
-    app.recruiterStaffId ? A.recruiter(app.recruiterStaffId) : null,
-    app.girlVerification === "VERIFIED" ? A.girlVerified(app.girlVerifiedBy ?? null) : null,
-    app.girlVerification === "PENDING" ? A.girlPending : null,
-    app.acceptedBy ? A.acceptedBy(app.acceptedBy, app.acceptedAt ?? null, app.acceptedLevel ?? null) : null,
-    app.rejectedBy ? A.rejectedBy(app.rejectedBy, app.rejectedAt ?? null) : null,
-    app.rejectionReason ? A.rejectionReason(app.rejectionReason) : null,
-  ];
-
-  if (app.transfer) {
-    lines.push(
-      "",
-      A.transferHeading,
-      A.transferServer(
-        app.transfer.sourceServerName ?? null,
-        app.transfer.sourceServerMemberCount,
-        app.transfer.sourceServerOnlineCount,
-      ),
-      app.transfer.sourceRoleOrder
-        ? A.transferRole(app.transfer.sourceRoleOrder, app.transfer.sourceRoleName ?? null)
-        : null,
-      app.evaluation ? A.transferEligible(app.evaluation.eligible) : null,
-      app.evaluation ? A.transferProposed(app.evaluation.proposedStaffLevel ?? null) : null,
-      A.transferEvidence(app.evidenceCount ?? 0),
-    );
-  }
-
-  const body = lines.filter((l): l is string => l !== null).join("\n").slice(0, 3900);
-  return subView(ids, StatsView.APPLICATION, A.heading(ids.targetId), body);
-}

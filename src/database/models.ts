@@ -24,8 +24,6 @@ import { GiftDeliveryModel } from "../modules/gift-claims/models/gift-delivery.m
 import { GiftDeliveryProofModel } from "../modules/gift-claims/models/gift-delivery-proof.model.ts";
 import { StaffTagRestrictionModel } from "../modules/server-tag/models/staff-tag-restriction.model.ts";
 import { StaffSupportRequestModel } from "../modules/staff-support/models/staff-support-request.model.ts";
-import { StaffApplicationModel } from "../modules/applications/shared/staff-application.model.ts";
-import { ApplicationEvidenceModel } from "../modules/applications/shared/application-evidence.model.ts";
 import { PersistentMemberRoleModel } from "../modules/member-persistence/models/persistent-member-role.model.ts";
 import { WarningPanelDeploymentModel } from "../modules/warning-panel/models/warning-panel-deployment.model.ts";
 import { CounterModel } from "../shared/sequence.ts";
@@ -57,8 +55,6 @@ export const ALL_MODELS: Model<any>[] = [
   GiftDeliveryProofModel,
   StaffTagRestrictionModel,
   StaffSupportRequestModel,
-  StaffApplicationModel,
-  ApplicationEvidenceModel,
   PersistentMemberRoleModel,
   WarningPanelDeploymentModel,
   CounterModel,

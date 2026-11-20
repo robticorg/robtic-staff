@@ -3,8 +3,6 @@ import { logger } from "../../../shared/utils/logger.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
 import { GIFT_CLAIM_PANEL_ID } from "../../../data/gift-claim/config.ts";
 import { giftClaimService } from "../../gift-claims/services/gift-claim.service.ts";
-import { StaffApplicationWorkflow } from "../../../data/staff-application/panels.ts";
-import { openApplicationEntry } from "../../applications/handlers/first-modal.handler.ts";
 import { isBlacklistedFor } from "../services/ticket-blacklist.ts";
 import { buildGiftClaimSubmitModal } from "../../gift-claims/render/modals.ts";
 import { runCreateTicket } from "../flow/create-ticket.flow.ts";
@@ -53,11 +51,6 @@ export async function handlePanelSelect(interaction: StringSelectMenuInteraction
     } catch (err) {
       if (!(err instanceof IntakeClosedError)) throw err;
       await interaction.reply({ content: err.message, flags: MessageFlags.Ephemeral });
-      return;
-    }
-
-    if (panel.id === StaffApplicationWorkflow.STAFF_APPLICATION) {
-      await openApplicationEntry(interaction);
       return;
     }
 

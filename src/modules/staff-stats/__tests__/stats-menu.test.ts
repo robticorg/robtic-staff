@@ -4,7 +4,6 @@ import { StaffTier } from "../../configuration/types/enums.ts";
 import { StaffStatus } from "../../staff/types/enums.ts";
 import { MENU_VIEWS, StatsView, parseStatsCustomId } from "../handlers/component-ids.ts";
 import {
-  buildApplicationView,
   buildStatsOverviewCard,
   buildWeeklyPointsView,
   leadLines,
@@ -92,37 +91,6 @@ describe("fired vs resigned", () => {
     expect(lines).toContain("وافق على استقالته");
     expect(lines).toContain("دراسة");
     expect(lines).not.toContain("فصله");
-  });
-});
-
-describe("application view", () => {
-  it("shows what they filled in when applying", () => {
-    const text = JSON.stringify(
-      nodes(
-        buildApplicationView(ids, [
-          {
-            type: "NORMAL_APPLICATION",
-            applicationStatus: "ACCEPTED",
-            createdAt: new Date(0),
-            name: "Ahmed",
-            age: 19,
-            city: "Riyadh",
-            gender: "MALE",
-            department: "STAFF",
-            acceptedBy: "9",
-            acceptedLevel: 0,
-          },
-        ]),
-      ),
-    );
-    expect(text).toContain("Ahmed");
-    expect(text).toContain("19");
-    expect(text).toContain("Riyadh");
-    expect(text).toContain("<@9>");
-  });
-
-  it("says so when there's no application", () => {
-    expect(() => nodes(buildApplicationView(ids, []))).not.toThrow();
   });
 });
 

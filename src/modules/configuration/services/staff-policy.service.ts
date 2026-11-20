@@ -1,7 +1,6 @@
 import { IANAZone } from "luxon";
 import { config } from "../../../config/index.ts";
 import { ACCEPTED_IDENTIFIERS, IdentifierStrictness } from "../../../data/staff-identity/config.ts";
-import { staffApplicationConfig, staffRecruitmentRules, staffTransferRules, type CountBonus } from "../../../data/staff-application/config.ts";
 import { serverTagConfig } from "../../../data/server-tag/config.ts";
 import { vacationConfig } from "../../../data/vacation/config.ts";
 import { CACHE_ENABLED, CONFIG_CACHE_TTL_MS, TtlCache } from "../../../libs/cache/index.ts";
@@ -29,20 +28,6 @@ export interface StaffPolicy {
     graceDays: number;
     resetPointsOnRemoval: boolean;
   };
-  applications: {
-    minimumAge: number;
-    maximumAge: number;
-    evidenceMinFiles: number;
-    evidenceMaxFiles: number;
-    recruiterMinimumTier: StaffTier;
-    transfer: {
-      minimumSourceMemberCount: number;
-      targetTier: StaffTier;
-      memberCountBonus: CountBonus[];
-      onlineCountBonus: CountBonus[];
-      membershipBonus: CountBonus[];
-    };
-  };
   vacations: { maxDays: number; absentGraceDays: number };
   prefix: string;
   fastAccessPrefix: string;
@@ -59,20 +44,6 @@ export const STAFF_POLICY_DEFAULTS: StaffPolicy = {
     graceDays: Math.round(serverTagConfig.restrictionDurationMs / DAY_MS),
     resetPointsOnRemoval: true,
   },
-  applications: {
-    minimumAge: staffApplicationConfig.minimumAge,
-    maximumAge: staffApplicationConfig.maximumAge,
-    evidenceMinFiles: staffApplicationConfig.evidence.minFiles,
-    evidenceMaxFiles: staffApplicationConfig.evidence.maxFiles,
-    recruiterMinimumTier: staffRecruitmentRules.recruiterMinimumTier,
-    transfer: {
-      minimumSourceMemberCount: staffTransferRules.minimumSourceMemberCount,
-      targetTier: staffTransferRules.targetTier,
-      memberCountBonus: [...staffTransferRules.memberCountBonus],
-      onlineCountBonus: [...staffTransferRules.onlineCountBonus],
-      membershipBonus: [...staffTransferRules.membershipBonus],
-    },
-  },
   vacations: { maxDays: 180, absentGraceDays: Math.round(vacationConfig.absentGraceMs / DAY_MS) },
   prefix: config.prefix,
   fastAccessPrefix: config.fastAccessPrefix,
@@ -84,13 +55,6 @@ const TIERS = new Set<string>(Object.values(StaffTier));
 const int = (v: unknown, min: number, max: number, fallback: number) =>
   typeof v === "number" && Number.isInteger(v) && v >= min && v <= max ? v : fallback;
 const bool = (v: unknown, fallback: boolean) => (typeof v === "boolean" ? v : fallback);
-const tier = (v: unknown, fallback: StaffTier) => (typeof v === "string" && TIERS.has(v) ? (v as StaffTier) : fallback);
-const bands = (v: unknown, fallback: CountBonus[]): CountBonus[] =>
-  Array.isArray(v)
-    ? v
-        .filter((b): b is CountBonus => !!b && Number.isInteger(b.min) && b.min >= 0 && Number.isInteger(b.levels) && b.levels >= 0)
-        .map((b) => ({ min: b.min, levels: b.levels }))
-    : fallback;
 const IDENTIFIER = /^[\p{L}\p{N}]{1,20}$/u;
 const PREFIX = /^\S{1,5}$/;
 
@@ -108,8 +72,6 @@ export function resolveStaffPolicy(doc: Partial<StaffPolicyDoc> | null | undefin
   if (!doc) return d;
   const f = doc.features ?? {};
   const id = doc.identity ?? {};
-  const ap = doc.applications ?? {};
-  const tr = ap.transfer ?? {};
   const va = doc.vacations ?? {};
 
   const identifiers = Array.isArray(id.identifiers)
@@ -121,8 +83,6 @@ export function resolveStaffPolicy(doc: Partial<StaffPolicyDoc> | null | undefin
         }))
     : d.identity.identifiers;
 
-  const minimumAge = int(ap.minimumAge, 13, 120, d.applications.minimumAge);
-  const evidenceMinFiles = int(ap.evidenceMinFiles, 0, 10, d.applications.evidenceMinFiles);
 
   return {
     language: doc.language === "en" || doc.language === "ar" ? doc.language : d.language,
@@ -133,20 +93,6 @@ export function resolveStaffPolicy(doc: Partial<StaffPolicyDoc> | null | undefin
       identifiers,
       graceDays: int(id.graceDays, 1, 30, d.identity.graceDays),
       resetPointsOnRemoval: bool(id.resetPointsOnRemoval, d.identity.resetPointsOnRemoval),
-    },
-    applications: {
-      minimumAge,
-      maximumAge: Math.max(minimumAge, int(ap.maximumAge, 13, 120, d.applications.maximumAge)),
-      evidenceMinFiles,
-      evidenceMaxFiles: Math.max(evidenceMinFiles, 1, int(ap.evidenceMaxFiles, 1, 10, d.applications.evidenceMaxFiles)),
-      recruiterMinimumTier: tier(ap.recruiterMinimumTier, d.applications.recruiterMinimumTier),
-      transfer: {
-        minimumSourceMemberCount: int(tr.minimumSourceMemberCount, 0, 10_000_000, d.applications.transfer.minimumSourceMemberCount),
-        targetTier: tier(tr.targetTier, d.applications.transfer.targetTier),
-        memberCountBonus: bands(tr.memberCountBonus, d.applications.transfer.memberCountBonus),
-        onlineCountBonus: bands(tr.onlineCountBonus, d.applications.transfer.onlineCountBonus),
-        membershipBonus: bands(tr.membershipBonus, d.applications.transfer.membershipBonus),
-      },
     },
     vacations: {
       maxDays: int(va.maxDays, 1, 365, d.vacations.maxDays),

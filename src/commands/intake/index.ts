@@ -69,17 +69,13 @@ async function handleList(interaction: ChatInputCommandInteraction, guild: Guild
   const line = (r: (typeof rows)[number]) =>
     r.closure
       ? M.closedRow(r.label, r.closure.closedBy, r.closure.closedAt, r.closure.reason ?? null)
-      : r.group === "TICKET" && notSetUp.has(r.target)
+      : notSetUp.has(r.target)
         ? M.notSetUpRow(r.label)
         : M.openRow(r.label);
   const body = [
     M.listTitle,
     "",
-    M.applicationsGroup,
-    ...rows.filter((r) => r.group === "APPLICATION").map(line),
-    "",
-    M.ticketsGroup,
-    ...rows.filter((r) => r.group === "TICKET").map(line),
+    ...rows.map(line),
   ].join("\n");
   await interaction.reply({ content: body, flags: MessageFlags.Ephemeral, allowedMentions: { parse: [] } });
 }

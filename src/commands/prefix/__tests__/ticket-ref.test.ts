@@ -28,7 +28,6 @@ describe("!ticket <number>", () => {
 
 describe("!ticket per-type numbers", () => {
   it("reads each ticket type's own prefix", () => {
-    expect(parseTicketRef("apply-3")).toEqual({ ticketId: "apply-3" });
     expect(parseTicketRef("RES-07")).toEqual({ ticketId: "res-7" });
     expect(parseTicketRef("minecraft-12")).toEqual({ ticketId: "minecraft-12" });
   });

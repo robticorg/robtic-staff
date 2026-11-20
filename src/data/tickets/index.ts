@@ -6,10 +6,6 @@ import { giftClaimPanel } from "./panels/gift-claim.ts";
 import { minecraftPanel } from "./panels/minecraft.ts";
 import { responsibilityApplyPanel } from "./panels/responsibility-apply.ts";
 import { staffSupportPanel } from "../staff-support/panels.ts";
-import {
-  staffApplicationPanel,
-  staffTransferApplicationPanel,
-} from "../staff-application/panels.ts";
 
 import { applyPanelOverride } from "./overrides.ts";
 
@@ -26,8 +22,6 @@ export const tickets: TicketConfig = {
     giftClaimPanel,
 
     staffSupportPanel,
-    staffApplicationPanel,
-    staffTransferApplicationPanel,
     responsibilityApplyPanel,
   ],
 };

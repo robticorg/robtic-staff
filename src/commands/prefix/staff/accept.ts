@@ -2,14 +2,8 @@ import { definePrefixCommand, type PrefixContext } from "../../../discord/prefix
 import { prefixMessages } from "../../../data/messages/prefix.ts";
 import { STAFF_TIER_LABELS } from "../../../data/messages/hierarchy.ts";
 import { serverTagMessages } from "../../../data/server-tag/messages.ts";
-import { staffApplicationMessages } from "../../../data/staff-application/messages.ts";
 import { staffTypeLabel } from "../../../data/staff-types/index.ts";
 import type { StaffTier } from "../../../modules/configuration/types/enums.ts";
-import {
-  applicationContextService,
-  type ApplicationContext,
-} from "../../../modules/applications/services/application-context.service.ts";
-import { applicationDecisionService } from "../../../modules/applications/services/application-decision.service.ts";
 import {
   acceptRequestFromArgs,
   isEmptyAcceptRequest,
@@ -62,36 +56,6 @@ function acceptedLine(targetId: string, result: AcceptResult, tier: StaffTier | 
   return M.accepted(mention, level);
 }
 
-async function acceptInApplication(
-  ctx: PrefixContext,
-  application: ApplicationContext,
-  args: readonly string[],
-  hidden: boolean,
-) {
-  const applicantId = application.application.userId;
-  const named = [...ctx.mentionedUsers.map((u) => u.id), ...extractUserIds(args)];
-  if (named.some((id) => id !== applicantId)) {
-    throw new PrefixAbort(staffApplicationMessages.decision.wrongTarget(applicantId));
-  }
-
-  const applicant = hidden ? await ctx.guild.members.fetch(applicantId).catch(() => null) : null;
-  if (hidden) {
-    if (!applicant) throw new PrefixAbort(M.memberNotFound);
-    await hiddenStaffService.assertCanAccept(ctx.member, applicant);
-  }
-
-  const request = acceptRequestFromArgs(args, applicantId);
-  const outcome = await applicationDecisionService.accept(
-    ctx.member,
-    application,
-    isEmptyAcceptRequest(request) ? null : request,
-  );
-  const line = acceptedReply(outcome.applicantId, outcome.result, request.tier, await getLevelStart(ctx.guild.id));
-  if (!applicant) return void (await ctx.reply(line));
-  const first = await hiddenStaffService.grantFirstLevel(applicant, ctx.member.id);
-  await ctx.reply(`${line}\n${hiddenStaffMessages.accept.acceptedHidden(applicant.id, first.roleId)}`);
-}
-
 export default definePrefixCommand({
   name: "accept",
   category: "staff",
@@ -110,9 +74,6 @@ export default definePrefixCommand({
     }
 
     const { hidden, args } = splitHiddenMode(ctx.args);
-    const application = await applicationContextService.forChannel(ctx.guild.id, ctx.channel.id);
-    if (application) return acceptInApplication(ctx, application, args, hidden);
-
     await requireAcceptManager(ctx);
     const target = await requireTargetMember(ctx, "!accept @user [level|tier|max] [type] [hidden]");
     if (hidden) await hiddenStaffService.assertCanAccept(ctx.member, target);

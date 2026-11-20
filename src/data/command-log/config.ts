@@ -7,8 +7,6 @@ export const PREFIX_COMMAND_LOG_SLOTS: Readonly<Record<string, ChannelConfigType
 
   accept: ChannelConfigType.STAFF_LOG,
   refuse: ChannelConfigType.STAFF_LOG,
-  from: ChannelConfigType.STAFF_LOG,
-  verify: ChannelConfigType.STAFF_LOG,
   come: ChannelConfigType.STAFF_LOG,
   transfer: ChannelConfigType.STAFF_LOG,
   fire: ChannelConfigType.STAFF_LOG,
@@ -20,7 +18,6 @@ export const PREFIX_COMMAND_LOG_SLOTS: Readonly<Record<string, ChannelConfigType
   send: ChannelConfigType.STAFF_LOG,
   giveaway: ChannelConfigType.STAFF_LOG,
   done: ChannelConfigType.STAFF_LOG,
-  server: ChannelConfigType.STAFF_LOG,
   bots: ChannelConfigType.STAFF_LOG,
   hidden: ChannelConfigType.STAFF_LOG,
   back: ChannelConfigType.STAFF_LOG,

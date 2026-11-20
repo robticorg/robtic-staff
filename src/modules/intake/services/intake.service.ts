@@ -2,28 +2,19 @@ import type { GuildId, UserId } from "../../../shared/types/index.ts";
 import { DomainError, isDuplicateKeyError } from "../../../shared/utils/errors.ts";
 import { CACHE_ENABLED, CONFIG_CACHE_TTL_MS, TtlCache } from "../../../libs/cache/index.ts";
 import { intakeMessages as M } from "../../../data/intake/messages.ts";
-import { DEPARTMENT_LABELS } from "../../../data/staff-application/messages.ts";
-import { StaffApplicationWorkflow } from "../../../data/staff-application/panels.ts";
 import { listPanels, getPanel } from "../../../data/tickets/index.ts";
-import {
-  APPLICATION_DEPARTMENT_VALUES,
-  ApplicationType,
-  type ApplicationDepartment,
-} from "../../applications/shared/enums.ts";
 import { IntakeClosureModel, type IntakeClosure } from "../models/intake-closure.model.ts";
 
 const PANEL_PREFIX = "panel:";
-const DEPT_PREFIX = "dept:";
 
 export const intakeTarget = {
   panel: (panelId: string) => `${PANEL_PREFIX}${panelId}`,
-  department: (department: ApplicationDepartment) => `${DEPT_PREFIX}${department}`,
 };
 
 export interface IntakeTargetInfo {
   target: string;
   label: string;
-  group: "APPLICATION" | "TICKET";
+  group: "TICKET";
 }
 
 export class IntakeClosedError extends DomainError {
@@ -32,29 +23,17 @@ export class IntakeClosedError extends DomainError {
   }
 }
 
-const APPLICATION_PANEL_IDS = new Set<string>([
-  StaffApplicationWorkflow.STAFF_APPLICATION,
-  StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION,
-]);
-
 type Closure = Pick<IntakeClosure, "closedBy" | "closedAt" | "reason">;
 const cache = new TtlCache<Closure | false>({ defaultTtlMs: CONFIG_CACHE_TTL_MS });
 
 export class IntakeService {
-  /** Everything that can be closed: every ticket panel (hidden ones too) + each department. */
+  /** Everything that can be closed: every ticket panel (hidden ones too). */
   targets(): IntakeTargetInfo[] {
-    const panels = listPanels(null).map((panel) => ({
+    return listPanels(null).map((panel) => ({
       target: intakeTarget.panel(panel.id),
-      label:
-        panel.id === StaffApplicationWorkflow.STAFF_APPLICATION ? M.allApplicationsLabel : panel.name,
-      group: APPLICATION_PANEL_IDS.has(panel.id) ? ("APPLICATION" as const) : ("TICKET" as const),
+      label: panel.name,
+      group: "TICKET" as const,
     }));
-    const departments = APPLICATION_DEPARTMENT_VALUES.map((dept) => ({
-      target: intakeTarget.department(dept),
-      label: M.departmentLabel(DEPARTMENT_LABELS[dept] ?? dept),
-      group: "APPLICATION" as const,
-    }));
-    return [...panels, ...departments];
   }
 
   describe(target: string): IntakeTargetInfo | null {
@@ -80,32 +59,6 @@ export class IntakeService {
 
   assertPanelOpen(guildId: GuildId, panelId: string): Promise<void> {
     return this.assertOpen(guildId, intakeTarget.panel(panelId));
-  }
-
-  assertDepartmentOpen(guildId: GuildId, department: ApplicationDepartment): Promise<void> {
-    return this.assertOpen(guildId, intakeTarget.department(department));
-  }
-
-  /**
-   * Closing the application panel closes both kinds; transfer has its own switch;
-   * a normal application needs at least one department still open.
-   */
-  async assertApplicationOpen(guildId: GuildId, type: ApplicationType): Promise<void> {
-    await this.assertPanelOpen(guildId, StaffApplicationWorkflow.STAFF_APPLICATION);
-    if (type === ApplicationType.TRANSFER_APPLICATION) {
-      await this.assertPanelOpen(guildId, StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION);
-      return;
-    }
-    if ((await this.openDepartments(guildId)).length === 0) {
-      throw new IntakeClosedError(M.allDepartmentsClosed);
-    }
-  }
-
-  async openDepartments(guildId: GuildId): Promise<ApplicationDepartment[]> {
-    const states = await Promise.all(
-      APPLICATION_DEPARTMENT_VALUES.map(async (d) => [d, await this.closure(guildId, intakeTarget.department(d))] as const),
-    );
-    return states.filter(([, closed]) => !closed).map(([d]) => d);
   }
 
   /** @returns false when it was already closed. */

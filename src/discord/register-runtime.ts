@@ -18,7 +18,6 @@ import { ladderSyncService } from "../modules/configuration/services/ladder-sync
 import { ticketSleepService } from "../modules/tickets/services/ticket-sleep.service.ts";
 import { ticketClaimerReleaseService } from "../modules/tickets/services/ticket-claimer-release.service.ts";
 import { ticketClaimCheckService } from "../modules/tickets/services/ticket-claim-check.service.ts";
-import { registerApplicationLifecycle } from "../modules/applications/services/application-lifecycle.ts";
 import { registerHiddenStaff } from "../modules/staff/hidden/index.ts";
 import { internalApiServer } from "../modules/internal-api/server.ts";
 import { staffPolicyService } from "../modules/configuration/services/staff-policy.service.ts";
@@ -31,7 +30,6 @@ export function attachModuleClients(client: Client): void {
   attachServerTagClient(client);
   attachWarningPanelClient(client);
   attachResponsibilityClient(client);
-  registerApplicationLifecycle();
   ticketClaimerReleaseService.register();
   registerHiddenStaff();
 }

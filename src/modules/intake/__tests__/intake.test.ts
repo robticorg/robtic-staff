@@ -1,30 +1,16 @@
 import { describe, expect, it } from "bun:test";
-import { StaffApplicationWorkflow } from "../../../data/staff-application/panels.ts";
 import { listPanels } from "../../../data/tickets/index.ts";
-import { APPLICATION_DEPARTMENT_VALUES } from "../../applications/shared/enums.ts";
 import { heldIgnoredRoles } from "../../staff/services/staff-role-snapshot.ts";
 import { intakeService, intakeTarget } from "../services/intake.service.ts";
 
 describe("intake targets", () => {
   const targets = intakeService.targets();
 
-  it("offers every ticket panel, hidden ones included, plus each department", () => {
+  it("offers every ticket panel, hidden ones included", () => {
     for (const panel of listPanels(null)) {
       expect(intakeService.describe(intakeTarget.panel(panel.id))).not.toBeNull();
     }
-    for (const dept of APPLICATION_DEPARTMENT_VALUES) {
-      expect(intakeService.describe(intakeTarget.department(dept))?.group).toBe("APPLICATION");
-    }
-    expect(targets).toHaveLength(listPanels(null).length + APPLICATION_DEPARTMENT_VALUES.length);
-  });
-
-  it("groups the application and transfer panels under applications", () => {
-    for (const id of [
-      StaffApplicationWorkflow.STAFF_APPLICATION,
-      StaffApplicationWorkflow.STAFF_TRANSFER_APPLICATION,
-    ]) {
-      expect(intakeService.describe(intakeTarget.panel(id))?.group).toBe("APPLICATION");
-    }
+    expect(targets).toHaveLength(listPanels(null).length);
   });
 
   it("fits in one autocomplete list", () => {

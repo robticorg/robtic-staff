@@ -3,8 +3,7 @@ import type { HydratedDocument } from "mongoose";
 import type { GuildId } from "../../../shared/types/index.ts";
 
 /**
- * The per-server rules that used to be one hardcoded set for every server (data/staff-identity, data/staff-application,
- * data/vacation, the STAFF_TIMEZONE env). Written by the Robtic Discord dashboard. Every part is optional: whatever a
+ * The per-server rules that used to be one hardcoded set for every server (data/staff-identity, data/vacation, the STAFF_TIMEZONE env). Written by the Robtic Discord dashboard. Every part is optional: whatever a
  * server hasn't set reads as the default in STAFF_POLICY_DEFAULTS (staff-policy.service.ts), which is exactly what the
  * bot did before this collection existed.
  */
@@ -22,20 +21,6 @@ export interface StaffPolicyDoc {
     graceDays: number;
     resetPointsOnRemoval: boolean;
   }>;
-  applications?: Partial<{
-    minimumAge: number;
-    maximumAge: number;
-    evidenceMinFiles: number;
-    evidenceMaxFiles: number;
-    recruiterMinimumTier: string;
-    transfer: Partial<{
-      minimumSourceMemberCount: number;
-      targetTier: string;
-      memberCountBonus: { min: number; levels: number }[];
-      onlineCountBonus: { min: number; levels: number }[];
-      membershipBonus: { min: number; levels: number }[];
-    }>;
-  }>;
   vacations?: Partial<{ maxDays: number; absentGraceDays: number }>;
   /** Text commands start with this here (was the PREFIX env). */
   prefix?: string;
@@ -48,7 +33,6 @@ export interface StaffPolicyDoc {
 export const STAFF_FEATURE_KEYS = [
   "giftClaims",
   "vacations",
-  "applications",
   "identityCheck",
 ] as const;
 export type StaffFeatureKey = (typeof STAFF_FEATURE_KEYS)[number];
@@ -64,7 +48,6 @@ const staffPolicySchema = new Schema<StaffPolicyDoc>(
     timezone: { type: String },
     language: { type: String, enum: ["en", "ar"] },
     identity: { type: Schema.Types.Mixed, default: undefined },
-    applications: { type: Schema.Types.Mixed, default: undefined },
     vacations: { type: Schema.Types.Mixed, default: undefined },
     prefix: { type: String },
     fastAccessPrefix: { type: String },

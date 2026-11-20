@@ -2,7 +2,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "bun:test"
 import mongoose from "mongoose";
 import { config } from "../../../config/index.ts";
 import { clearPanelOverrides, getPanel, setPanelOverride } from "../../../data/tickets/index.ts";
-import { addMember, makeGuild } from "../../applications/__tests__/fake-guild.ts";
+import { addMember, makeGuild } from "../../../test/fake-guild.ts";
 import { TicketModel, ticketName } from "../models/ticket.model.ts";
 import { ticketService } from "../services/ticket.service.ts";
 import { TicketStatus } from "../types/enums.ts";

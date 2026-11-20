@@ -5,7 +5,6 @@ import { DateTime } from "luxon";
 import type { Types } from "mongoose";
 import type { GuildId, RoleId, UserId } from "../../../shared/types/index.ts";
 import { config } from "../../../config/index.ts";
-import { StaffApplicationModel } from "../../applications/shared/staff-application.model.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType, StaffTier } from "../../configuration/types/enums.ts";
 import { getHierarchy, getRoleForLevel } from "../../configuration/utils/staff-levels.ts";
@@ -104,12 +103,9 @@ export interface WeeklyPointsPage {
 
 export interface StaffActionStats {
   staffAccepted: number;
-  applicationsRefused: number;
   staffFired: number;
   staffPromoted: number;
   staffDemoted: number;
-  /** null when they never verified anyone and don't manage girls — the line is hidden. */
-  girlsVerified: number | null;
   jails: number;
   userWarningsIssued: number;
   staffWarningsIssued: number;
@@ -270,11 +266,6 @@ export class StaffCardService {
     return { kind: StaffExitKind.FIRED, reason: null };
   }
 
-  /** Every staff application this member sent here, newest first. */
-  applications(guildId: GuildId, userId: UserId) {
-    return StaffApplicationModel.find({ guildId, userId }).sort({ createdAt: -1 }).lean().exec();
-  }
-
   async weeklyPoints(staff: StaffDocument, page: number, now = new Date()): Promise<WeeklyPointsPage> {
     const staffObjId = staff._id as Types.ObjectId;
     const transactions = await StaffPointTransactionModel.find(
@@ -302,7 +293,7 @@ export class StaffCardService {
     const userId = staff.userId;
     const guildStaffIds = (await statsRepository.guildStaff(guildId)).map((s) => s._id);
 
-    const [stats, history, refused, verifiedByApps, verifiedByActivity, jails, girlsManager, member] =
+    const [stats, history, jails] =
       await Promise.all([
         staffStatisticsService.getStaffStats({
           guildId,
@@ -313,33 +304,18 @@ export class StaffCardService {
           { $match: { performedBy: userId, staffId: { $in: guildStaffIds } } },
           { $group: { _id: "$action", count: { $sum: 1 } } },
         ]),
-        StaffApplicationModel.countDocuments({ guildId, rejectedBy: userId }),
-        StaffApplicationModel.distinct("userId", { guildId, girlVerifiedBy: userId }),
-        StaffActivityModel.distinct("referenceId", {
-          staffId: staff._id,
-          type: StaffActivityType.GIRL_VERIFY,
-        }),
         PunishmentModel.countDocuments({ guildId, issuedBy: userId, type: PunishmentType.JAIL }),
-        roleConfigService.getByType(guildId, RoleConfigType.GIRLS_MANAGER),
-        guild.members.fetch(userId).catch(() => null),
       ]);
 
     const byAction = Object.fromEntries(history.map((r) => [r._id, r.count]));
-    const girls = new Set<string>([
-      ...(verifiedByApps as string[]),
-      ...(verifiedByActivity as (string | null)[]).filter((id): id is string => !!id),
-    ]).size;
-    const managesGirls = !!girlsManager && !!member?.roles.cache.has(girlsManager.roleId);
     const a = stats.activity;
 
     return {
       staffAccepted: byAction[StaffHistoryAction.ACCEPT] ?? 0,
-      applicationsRefused: refused,
       staffFired:
         (byAction[StaffHistoryAction.FIRE] ?? 0) + (byAction[StaffHistoryAction.BLACKLIST] ?? 0),
       staffPromoted: byAction[StaffHistoryAction.PROMOTE] ?? 0,
       staffDemoted: byAction[StaffHistoryAction.DEMOTE] ?? 0,
-      girlsVerified: girls > 0 || managesGirls ? girls : null,
       jails,
       userWarningsIssued: a.userWarningsIssued,
       staffWarningsIssued: a.staffWarningsIssued,

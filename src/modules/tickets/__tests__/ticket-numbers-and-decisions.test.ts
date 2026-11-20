@@ -9,9 +9,8 @@ describe("ticket numbering per type", () => {
   });
 
   it("gives every other ticket type its own counter and prefix", () => {
-    expect(ticketPrefixOf(getPanel("staff-application", null)!)).toBe("apply");
     expect(ticketPrefixOf(getPanel("responsibility-apply", null)!)).toBe("res");
-    expect(ticketCounterKey("g1", "apply")).toBe("ticket:g1:apply");
+    expect(ticketCounterKey("g1", "res")).toBe("ticket:g1:res");
   });
 
   it("never shares a prefix between two ticket types", () => {

@@ -13,14 +13,11 @@ import ticketInfo from "./ticket/info.ts";
 
 
 import staffAccept from "./staff/accept.ts";
-import staffFrom from "./staff/from.ts";
 import staffRefuse from "./staff/refuse.ts";
-import staffVerify from "./staff/verify.ts";
 import staffGift from "./staff/gift.ts";
 import staffSend from "./staff/send.ts";
 import staffGiveaway from "./staff/giveaway.ts";
 import staffDone from "./staff/done.ts";
-import staffServer from "./staff/server.ts";
 import staffBots from "./staff/bots.ts";
 import staffHidden from "./staff/hidden.ts";
 import staffCome from "./staff/come.ts";
@@ -59,13 +56,10 @@ export const prefixCommands: PrefixCommand[] = [
 
   staffCome,
   staffAccept,
-  staffFrom,
   staffRefuse,
-  staffVerify,
   staffSend,
   staffGiveaway,
   staffDone,
-  staffServer,
   staffBots,
   staffHidden,
   staffGift,
