@@ -38,13 +38,10 @@ import {
 } from "../types/enums.ts";
 import {
   OTHER_CATEGORY,
-  decideWarningCategory,
   warnRoleTypes,
   warningCategoryOf,
 } from "./warning-category.ts";
 import { WarningOutcome, decideWarningOutcome } from "./warning-outcome.ts";
-import { getHierarchy, highestLevelFromRoleIds } from "../../configuration/utils/staff-levels.ts";
-import { StaffTier } from "../../configuration/types/enums.ts";
 
 const log = logger.child("warn-actions");
 
@@ -87,13 +84,11 @@ async function reconcileStaffWarnRoles(
   }
 }
 
+/** One warning ladder for everyone: the separate owner warnings were removed, owners are warned like any staff. */
 export async function resolveWarningCategory(
-  member: GuildMember,
+  _member: GuildMember,
 ): Promise<WarningCategory> {
-  const hierarchy = await getHierarchy(member.guild.id);
-  const level = highestLevelFromRoleIds(hierarchy, member.roles.cache.keys());
-  if (level === null) return WarningCategory.STAFF;
-  return decideWarningCategory(level, hierarchy.boundaryLevels[StaffTier.OWNER]);
+  return WarningCategory.STAFF;
 }
 
 export interface IssueUserWarnResult {

@@ -4,40 +4,16 @@ import { WarningCategory } from "../types/enums.ts";
 import {
   OTHER_CATEGORY,
   categoryFilter,
-  decideWarningCategory,
   warnRoleTypes,
   warningCategoryOf,
 } from "../services/warning-category.ts";
 import { formatStaffWarningMessage } from "../render/staff-warn-message.ts";
 
-describe("decideWarningCategory", () => {
-  it("puts everyone below the Owner boundary on the normal ladder", () => {
-    expect(decideWarningCategory(0, 6)).toBe(WarningCategory.STAFF);
-    expect(decideWarningCategory(5, 6)).toBe(WarningCategory.STAFF);
-  });
-
-  it("puts Owner tier and above on the owner ladder", () => {
-    expect(decideWarningCategory(6, 6)).toBe(WarningCategory.OWNER);
-    expect(decideWarningCategory(9, 6)).toBe(WarningCategory.OWNER);
-  });
-
-  it("falls back to the normal ladder when no Owner boundary is configured", () => {
-    expect(decideWarningCategory(99, null)).toBe(WarningCategory.STAFF);
-  });
-});
-
 describe("warnRoleTypes", () => {
-  it("maps each category to its own three slots — never shared", () => {
-    expect(warnRoleTypes(WarningCategory.STAFF)).toEqual({
-      1: RoleConfigType.WARN_1,
-      2: RoleConfigType.WARN_2,
-      3: RoleConfigType.WARN_3,
-    });
-    expect(warnRoleTypes(WarningCategory.OWNER)).toEqual({
-      1: RoleConfigType.OWNER_WARN_1,
-      2: RoleConfigType.OWNER_WARN_2,
-      3: RoleConfigType.OWNER_WARN_3,
-    });
+  it("uses the staff warning roles for every category (owner warnings were removed)", () => {
+    const staff = { 1: RoleConfigType.WARN_1, 2: RoleConfigType.WARN_2, 3: RoleConfigType.WARN_3 };
+    expect(warnRoleTypes(WarningCategory.STAFF)).toEqual(staff);
+    expect(warnRoleTypes(WarningCategory.OWNER)).toEqual(staff);
   });
 });
 

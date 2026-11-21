@@ -25,9 +25,6 @@ export const ROLE_SLOT_LABELS: Record<RoleConfigType, string> = bilingual<Record
     [RoleConfigType.WARN_1]: "Staff warning 1 role",
     [RoleConfigType.WARN_2]: "Staff warning 2 role",
     [RoleConfigType.WARN_3]: "Staff warning 3 role",
-    [RoleConfigType.OWNER_WARN_1]: "Owner warning 1 role",
-    [RoleConfigType.OWNER_WARN_2]: "Owner warning 2 role",
-    [RoleConfigType.OWNER_WARN_3]: "Owner warning 3 role",
     [RoleConfigType.MUTE]: "Mute role",
     [RoleConfigType.JAIL]: "Jail role",
     [RoleConfigType.CHAT_MANAGER]: "Chat manager role",
@@ -59,9 +56,6 @@ export const ROLE_SLOT_LABELS: Record<RoleConfigType, string> = bilingual<Record
     [RoleConfigType.WARN_1]: "رتبة تحذير الطاقم 1",
     [RoleConfigType.WARN_2]: "رتبة تحذير الطاقم 2",
     [RoleConfigType.WARN_3]: "رتبة تحذير الطاقم 3",
-    [RoleConfigType.OWNER_WARN_1]: "رتبة تحذير الأونر 1",
-    [RoleConfigType.OWNER_WARN_2]: "رتبة تحذير الأونر 2",
-    [RoleConfigType.OWNER_WARN_3]: "رتبة تحذير الأونر 3",
     [RoleConfigType.MUTE]: "رتبة الميوت",
     [RoleConfigType.JAIL]: "رتبة السجن",
     [RoleConfigType.CHAT_MANAGER]: "رتبة مانجر الشات",
@@ -109,9 +103,6 @@ export const ROLE_SET_SLOTS: readonly RoleConfigType[] = [
   RoleConfigType.WARN_1,
   RoleConfigType.WARN_2,
   RoleConfigType.WARN_3,
-  RoleConfigType.OWNER_WARN_1,
-  RoleConfigType.OWNER_WARN_2,
-  RoleConfigType.OWNER_WARN_3,
 ];
 
 /** Slots that take a level range rather than a single role — `/role range`. */
@@ -119,12 +110,6 @@ export const ROLE_RANGE_SLOTS: readonly RoleConfigType[] = [
   RoleConfigType.ACCEPTED,
   RoleConfigType.ASSIGN,
   RoleConfigType.ACCESS,
-];
-
-export const OWNER_WARN_SLOTS: readonly RoleConfigType[] = [
-  RoleConfigType.OWNER_WARN_1,
-  RoleConfigType.OWNER_WARN_2,
-  RoleConfigType.OWNER_WARN_3,
 ];
 
 const toChoices = (slots: readonly RoleConfigType[]) =>

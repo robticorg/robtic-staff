@@ -10,7 +10,6 @@ import {
 import { CommandError, requireGuild } from "../_shared/guards.ts";
 import { handleHiddenSlot, isHiddenSlot } from "./hidden.ts";
 import { buildStaffLadder } from "./ladder.ts";
-import { handleOwnerWarnSlot } from "./owner-warns.ts";
 import { replayLadder, replySuccess } from "./responses.ts";
 import { getLevelStart } from "../../modules/configuration/utils/level-start.ts";
 
@@ -35,10 +34,6 @@ export async function handleSet(interaction: ChatInputCommandInteraction): Promi
       return handleEnd(interaction);
     case RoleConfigType.IGNORE:
       return handleIgnore(interaction);
-    case RoleConfigType.OWNER_WARN_1:
-    case RoleConfigType.OWNER_WARN_2:
-    case RoleConfigType.OWNER_WARN_3:
-      return handleOwnerWarnSlot(interaction, type);
     default:
       return handleSingleton(interaction, type);
   }

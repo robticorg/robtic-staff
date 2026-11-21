@@ -1,30 +1,17 @@
 import { RoleConfigType } from "../../configuration/types/enums.ts";
 import { WarningCategory } from "../types/enums.ts";
 
-export function decideWarningCategory(
-  targetLevel: number,
-  ownerStartLevel: number | null,
-): WarningCategory {
-  if (ownerStartLevel === null) return WarningCategory.STAFF;
-  return targetLevel >= ownerStartLevel ? WarningCategory.OWNER : WarningCategory.STAFF;
-}
-
 const STAFF_WARN_ROLE_TYPES = {
   1: RoleConfigType.WARN_1,
   2: RoleConfigType.WARN_2,
   3: RoleConfigType.WARN_3,
 } as const;
 
-const OWNER_WARN_ROLE_TYPES = {
-  1: RoleConfigType.OWNER_WARN_1,
-  2: RoleConfigType.OWNER_WARN_2,
-  3: RoleConfigType.OWNER_WARN_3,
-} as const;
-
+/** The warning roles. Owner warnings (and their roles) were removed: every category uses the staff roles. */
 export function warnRoleTypes(
-  category: WarningCategory,
+  _category: WarningCategory,
 ): Record<1 | 2 | 3, RoleConfigType> {
-  return category === WarningCategory.OWNER ? OWNER_WARN_ROLE_TYPES : STAFF_WARN_ROLE_TYPES;
+  return STAFF_WARN_ROLE_TYPES;
 }
 
 export function warningCategoryOf(

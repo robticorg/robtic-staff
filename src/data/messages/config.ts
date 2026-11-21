@@ -47,18 +47,6 @@ export const configMessages = bilingual(
       missingRole: (roleId: string) => `<@&${roleId}> ⚠️ (deleted)`,
     },
 
-    ownerWarns: {
-      configured: "Owner warning roles set.",
-      note: "These are for **owner** staff warnings only, separate from regular staff warnings.",
-      line: (index: number, roleId: string) => `Owner warning ${index}: <@&${roleId}>`,
-      lineUnset: (index: number) => `Owner warning ${index}: *not set*`,
-      duplicate: "The three roles must all be different.",
-      everyone: "@everyone can't be a warning role.",
-      managed: (roleId: string) => `<@&${roleId}> belongs to an app or bot and can't be given by hand.`,
-      unmanageable: (roleId: string) => `<@&${roleId}> is above my role. Move my role above it.`,
-      onLadder: (roleId: string) => `<@&${roleId}> is on the staff ladder and can't be a warning role.`,
-      reserved: (roleId: string, label: string) => `<@&${roleId}> is already used as "${label}". Pick another role.`,
-    },
 
     channels: {
       configured: "Channel set.",
@@ -120,18 +108,6 @@ export const configMessages = bilingual(
       missingRole: (roleId: string) => `<@&${roleId}> ⚠️ (محذوفة)`,
     },
 
-    ownerWarns: {
-      configured: "تم ضبط رتب تحذيرات الأونر.",
-      note: "هذي لتحذيرات **الأونر** بس، منفصلة عن تحذيرات الطاقم العادية.",
-      line: (index: number, roleId: string) => `تحذير أونر ${index}: <@&${roleId}>`,
-      lineUnset: (index: number) => `تحذير أونر ${index}: *غير مضبوط*`,
-      duplicate: "لازم الرتب الثلاث تكون مختلفة.",
-      everyone: "@everyone ما تنفع رتبة تحذير.",
-      managed: (roleId: string) => `<@&${roleId}> تابعة لتطبيق/بوت وما تنعطى يدوياً.`,
-      unmanageable: (roleId: string) => `<@&${roleId}> فوق رتبتي. ارفع رتبتي فوقها.`,
-      onLadder: (roleId: string) => `<@&${roleId}> ضمن سلّم الطاقم وما تنفع رتبة تحذير.`,
-      reserved: (roleId: string, label: string) => `<@&${roleId}> مستخدمة كـ "${label}". اختر رتبة ثانية.`,
-    },
 
     channels: {
       configured: "تم ضبط الروم.",
