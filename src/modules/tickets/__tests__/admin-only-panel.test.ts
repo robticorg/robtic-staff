@@ -9,7 +9,6 @@ import {
   listPanels,
   type TicketClaimerConfig,
 } from "../../../data/tickets/index.ts";
-import { GIFT_CLAIM_PANEL_ID } from "../../../data/gift-claim/config.ts";
 import { TicketStatus } from "../types/enums.ts";
 import {
   decideClaimEligibility,
@@ -111,29 +110,7 @@ describe("configured panel is unaffected", () => {
   });
 });
 
-describe("gift-claim panel needs no category", () => {
-  it("is declared as not opening a ticket channel", () => {
-    const panel = getPanel(GIFT_CLAIM_PANEL_ID, "g1");
-    expect(panel).toBeDefined();
-    expect(panelCreatesChannel(panel!)).toBe(false);
-  });
-
-  it("carries no category or per-panel log channel", () => {
-    const panel = getPanel(GIFT_CLAIM_PANEL_ID, "g1")!;
-    expect(panel.categoryId).toBeUndefined();
-    expect(panel.logChannelId).toBeUndefined();
-  });
-
-  it("is admin-only by default; gift managers come from the gift manager role", () => {
-    expect(panelIsAdminOnly(getPanel(GIFT_CLAIM_PANEL_ID, "g1")!)).toBe(true);
-    setPanelOverride("g1", GIFT_CLAIM_PANEL_ID, { supportRoleId: "gift-support" });
-    try {
-      expect(panelIsAdminOnly(getPanel(GIFT_CLAIM_PANEL_ID, "g1")!)).toBe(false);
-    } finally {
-      clearPanelOverrides();
-    }
-  });
-
+describe("panels", () => {
   it("keeps no hardcoded roles, categories or log channels in any panel", () => {
     for (const panel of listPanels(null)) {
       expect(isUnsetId(panel.supportRoleId)).toBe(true);

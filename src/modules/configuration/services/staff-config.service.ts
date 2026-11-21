@@ -54,23 +54,6 @@ export class StaffConfigService extends BaseRepository<StaffConfig> {
     return doc?.promotionPointsRequired ?? null;
   }
 
-  async setAutoclaimEnabled(guildId: GuildId, enabled: boolean): Promise<boolean> {
-    if (!guildId) throw new ValidationError("guildId is required");
-    const doc = await this.model
-      .findOneAndUpdate(
-        { guildId },
-        { $set: { autoclaimEnabled: enabled } },
-        { returnDocument: "after", upsert: true, setDefaultsOnInsert: true },
-      )
-      .exec();
-    return doc?.autoclaimEnabled === true;
-  }
-
-  async isAutoclaimEnabled(guildId: GuildId): Promise<boolean> {
-    const doc = await this.model.findOne({ guildId }).select({ autoclaimEnabled: 1 }).exec();
-    return doc?.autoclaimEnabled === true;
-  }
-
   /** Only the overridden types — callers fall back to DEFAULT_POINT_VALUES for the rest. */
   async getPointValueOverrides(guildId: GuildId): Promise<Record<string, number>> {
     const load = async () => {

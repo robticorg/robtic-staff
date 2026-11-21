@@ -8,4 +8,3 @@ export * from "./commands/index.ts";
 export * from "./enums/index.ts";
 export * from "./tickets/index.ts";
 export * from "./vacation/index.ts";
-export * from "./gift-claim/index.ts";

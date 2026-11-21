@@ -20,9 +20,4 @@ describe("/ticket setup rules", () => {
     expect(ticketSetupProblem(panel("staff-support"), { supportRoleId: null, categoryId: null })).toBe("CATEGORY_REQUIRED");
   });
 
-  it("leaves the gift claim out of /ticket setup, it is configured with /channels", () => {
-    expect(isSetupConfigurable(panel("gift-claim"))).toBe(false);
-    expect(ticketSetupProblem(panel("gift-claim"), { supportRoleId: "role", categoryId: "cat" })).toBe("NOT_CONFIGURABLE");
-    expect(isSetupConfigurable(panel("support"))).toBe(true);
-  });
 });

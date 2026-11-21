@@ -21,7 +21,6 @@ export const appData = {
 
   features: {
     ticketSystem: false,
-    giftClaims: false,
   },
 } as const;
 

@@ -31,7 +31,6 @@ export interface StaffPolicyDoc {
 }
 
 export const STAFF_FEATURE_KEYS = [
-  "giftClaims",
   "vacations",
   "identityCheck",
 ] as const;

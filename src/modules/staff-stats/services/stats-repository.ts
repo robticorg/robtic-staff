@@ -1,7 +1,5 @@
 import { Types } from "mongoose";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
-import { GiftClaimAuditModel } from "../../gift-claims/models/gift-claim-audit.model.ts";
-import { GiftClaimAuditAction } from "../../gift-claims/types/enums.ts";
 import { StaffActivityModel } from "../../staff/models/staff-activity.model.ts";
 import { StaffPointTransactionModel } from "../../staff/models/staff-point-transaction.model.ts";
 import { StaffModel, type Staff } from "../../staff/models/staff.model.ts";
@@ -32,14 +30,6 @@ export interface TicketStatRow {
   completed: number;
   assignedNow: number;
   byPanel: Record<string, TicketPanelStat>;
-}
-
-export interface GiftClaimStatRow {
-  approved: number;
-  rejected: number;
-  fulfilled: number;
-  reRequested: number;
-  handled: number;
 }
 
 export interface WarningStatRow {
@@ -187,23 +177,6 @@ export class StatsRepository {
         ]),
       ),
     };
-  }
-
-  async giftClaimStats(
-    guildId: GuildId,
-    actorId: UserId,
-    range: StatsRange,
-  ): Promise<GiftClaimStatRow> {
-    const rows = await GiftClaimAuditModel.aggregate<{ _id: string; count: number }>([
-      { $match: { guildId, actorId, ...rangeFilter(range) } },
-      { $group: { _id: "$action", count: { $sum: 1 } } },
-    ]);
-    const by = Object.fromEntries(rows.map((r) => [r._id, r.count]));
-    const approved = by[GiftClaimAuditAction.APPROVED] ?? 0;
-    const rejected = by[GiftClaimAuditAction.REJECTED] ?? 0;
-    const fulfilled = by[GiftClaimAuditAction.FULFILLED] ?? 0;
-    const reRequested = by[GiftClaimAuditAction.RE_REQUESTED] ?? 0;
-    return { approved, rejected, fulfilled, reRequested, handled: fulfilled + rejected };
   }
 
   async warningStats(

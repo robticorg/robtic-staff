@@ -2,7 +2,6 @@ import { appConfig } from "./app.ts";
 import { databaseConfig } from "./database.ts";
 import { discordConfig } from "./discord.ts";
 import { internalApiConfig } from "./internal-api.ts";
-import { giftDeliveryRuntimeConfig } from "./gift-delivery.ts";
 import { assertRuntimeEnv } from "./env.ts";
 
 export interface AppConfig {
@@ -34,7 +33,6 @@ export {
   databaseConfig,
   discordConfig,
   internalApiConfig,
-  giftDeliveryRuntimeConfig,
   assertRuntimeEnv,
 };
 export { rawEnv, type AppEnv } from "./env.ts";

@@ -31,11 +31,6 @@ export function buildStatsText(stats: StaffStatsResult): string {
     S.activityRow(L.ticketsCompleted, a.ticketsCompleted),
     S.activityRow(L.ticketsAssignedNow, a.ticketsAssignedNow),
     ...ticketsByPanelLines(a.ticketsByPanel),
-    S.activityRow(L.giftClaimsHandled, a.giftClaimsHandled),
-    S.activityRow(
-      L.giftClaimsBreakdown,
-      `${a.giftClaimsApproved} / ${a.giftClaimsRejected} / ${a.giftClaimsFulfilled} / ${a.giftClaimsReRequested}`,
-    ),
     S.activityRow(L.userWarningsIssued, a.userWarningsIssued),
     S.activityRow(L.staffWarningsIssued, a.staffWarningsIssued),
     S.activityRow(L.warningsRevoked, a.warningsRevoked),

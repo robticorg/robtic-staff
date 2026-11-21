@@ -1,10 +1,7 @@
 import { MessageFlags, type StringSelectMenuInteraction } from "discord.js";
 import { logger } from "../../../shared/utils/logger.ts";
 import { ticketMessages } from "../../../data/messages/tickets.ts";
-import { GIFT_CLAIM_PANEL_ID } from "../../../data/gift-claim/config.ts";
-import { giftClaimService } from "../../gift-claims/services/gift-claim.service.ts";
 import { isBlacklistedFor } from "../services/ticket-blacklist.ts";
-import { buildGiftClaimSubmitModal } from "../../gift-claims/render/modals.ts";
 import { runCreateTicket } from "../flow/create-ticket.flow.ts";
 import { buildTicketPanelMessage } from "../render/panel-message.ts";
 import { ticketConfigService } from "../services/ticket-config.service.ts";
@@ -51,19 +48,6 @@ export async function handlePanelSelect(interaction: StringSelectMenuInteraction
     } catch (err) {
       if (!(err instanceof IntakeClosedError)) throw err;
       await interaction.reply({ content: err.message, flags: MessageFlags.Ephemeral });
-      return;
-    }
-
-    if (panel.id === GIFT_CLAIM_PANEL_ID) {
-      const gate = await giftClaimService.canCreate(interaction.member);
-      if (!gate.ok) {
-        await interaction.reply({
-          content: gate.message ?? M.create.failed,
-          flags: MessageFlags.Ephemeral,
-        });
-        return;
-      }
-      await interaction.showModal(buildGiftClaimSubmitModal());
       return;
     }
 

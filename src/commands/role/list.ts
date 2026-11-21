@@ -28,8 +28,6 @@ const SINGLETON_SLOTS: readonly RoleConfigType[] = [
   RoleConfigType.GIRL_NOT_VERIFIED,
   RoleConfigType.GIRL_VERIFIED,
   RoleConfigType.TICKET_BLACKLIST,
-  RoleConfigType.GIFT_BLACKLIST,
-  RoleConfigType.GIFT_MANAGER,
   RoleConfigType.CHAT_MANAGER,
   RoleConfigType.WARN_1,
   RoleConfigType.WARN_2,

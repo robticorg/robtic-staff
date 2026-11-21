@@ -110,7 +110,6 @@ export interface StaffActionStats {
   userWarningsIssued: number;
   staffWarningsIssued: number;
   warningsRevoked: number;
-  giftClaimsHandled: number;
   vacationsDecided: number;
 }
 
@@ -320,7 +319,6 @@ export class StaffCardService {
       userWarningsIssued: a.userWarningsIssued,
       staffWarningsIssued: a.staffWarningsIssued,
       warningsRevoked: a.warningsRevoked,
-      giftClaimsHandled: a.giftClaimsHandled,
       vacationsDecided: a.vacationsApproved + a.vacationsRejected,
     };
   }

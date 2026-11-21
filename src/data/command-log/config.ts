@@ -14,8 +14,6 @@ export const PREFIX_COMMAND_LOG_SLOTS: Readonly<Record<string, ChannelConfigType
   demote: ChannelConfigType.STAFF_LOG,
   break: ChannelConfigType.STAFF_LOG,
   unbreak: ChannelConfigType.STAFF_LOG,
-  gift: ChannelConfigType.STAFF_LOG,
-  send: ChannelConfigType.STAFF_LOG,
   giveaway: ChannelConfigType.STAFF_LOG,
   done: ChannelConfigType.STAFF_LOG,
   bots: ChannelConfigType.STAFF_LOG,

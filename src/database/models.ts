@@ -18,10 +18,6 @@ import { PunishmentModel } from "../modules/punishment/models/punishment.model.t
 import { PunishmentAuditModel } from "../modules/punishment/models/punishment-audit.model.ts";
 import { VacationModel } from "../modules/vacation/models/vacation.model.ts";
 import { VacationPanelDeploymentModel } from "../modules/vacation/models/vacation-panel-deployment.model.ts";
-import { GiftClaimModel } from "../modules/gift-claims/models/gift-claim.model.ts";
-import { GiftClaimAuditModel } from "../modules/gift-claims/models/gift-claim-audit.model.ts";
-import { GiftDeliveryModel } from "../modules/gift-claims/models/gift-delivery.model.ts";
-import { GiftDeliveryProofModel } from "../modules/gift-claims/models/gift-delivery-proof.model.ts";
 import { StaffTagRestrictionModel } from "../modules/server-tag/models/staff-tag-restriction.model.ts";
 import { StaffSupportRequestModel } from "../modules/staff-support/models/staff-support-request.model.ts";
 import { PersistentMemberRoleModel } from "../modules/member-persistence/models/persistent-member-role.model.ts";
@@ -49,10 +45,6 @@ export const ALL_MODELS: Model<any>[] = [
   PunishmentAuditModel,
   VacationModel,
   VacationPanelDeploymentModel,
-  GiftClaimModel,
-  GiftClaimAuditModel,
-  GiftDeliveryModel,
-  GiftDeliveryProofModel,
   StaffTagRestrictionModel,
   StaffSupportRequestModel,
   PersistentMemberRoleModel,

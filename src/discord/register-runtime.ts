@@ -2,7 +2,6 @@ import type { Client } from "discord.js";
 import { attachTicketClient } from "../modules/tickets/index.ts";
 import { attachPunishmentClient } from "../modules/punishment/index.ts";
 import { attachVacationClient } from "../modules/vacation/index.ts";
-import { attachGiftClaimClient } from "../modules/gift-claims/index.ts";
 import { attachServerTagClient } from "../modules/server-tag/index.ts";
 import { attachWarningPanelClient } from "../modules/warning-panel/runtime.ts";
 import { warningPanelRefreshService } from "../modules/warning-panel/services/warning-panel-refresh.service.ts";
@@ -26,7 +25,6 @@ export function attachModuleClients(client: Client): void {
   attachTicketClient(client);
   attachPunishmentClient(client);
   attachVacationClient(client);
-  attachGiftClaimClient(client);
   attachServerTagClient(client);
   attachWarningPanelClient(client);
   attachResponsibilityClient(client);

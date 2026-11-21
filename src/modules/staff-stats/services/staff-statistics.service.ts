@@ -51,11 +51,6 @@ export interface StaffStatsResult {
     ticketsCompleted: number;
     ticketsAssignedNow: number;
     ticketsByPanel: Record<string, TicketPanelStat>;
-    giftClaimsHandled: number;
-    giftClaimsApproved: number;
-    giftClaimsRejected: number;
-    giftClaimsFulfilled: number;
-    giftClaimsReRequested: number;
     userWarningsIssued: number;
     staffWarningsIssued: number;
     warningsRevoked: number;
@@ -99,7 +94,6 @@ export class StaffStatisticsService {
       pPeriod,
       byType,
       tickets,
-      gift,
       warnings,
       recent,
       ladder,
@@ -112,7 +106,6 @@ export class StaffStatisticsService {
       statsRepository.pointsForStaff(staffObjId, range),
       statsRepository.activityByType(staffObjId, range),
       statsRepository.ticketStats(input.guildId, staffObjId, range),
-      statsRepository.giftClaimStats(input.guildId, input.staffId, range),
       statsRepository.warningStats(input.guildId, staffObjId, input.staffId, guildStaffIds, range),
       statsRepository.recentActivity(staffObjId, 10),
       roleConfigService.getStaffRoleLevels(input.guildId),
@@ -141,11 +134,6 @@ export class StaffStatisticsService {
         ticketsCompleted: tickets.completed,
         ticketsAssignedNow: tickets.assignedNow,
         ticketsByPanel: tickets.byPanel,
-        giftClaimsHandled: gift.handled,
-        giftClaimsApproved: gift.approved,
-        giftClaimsRejected: gift.rejected,
-        giftClaimsFulfilled: gift.fulfilled,
-        giftClaimsReRequested: gift.reRequested,
         userWarningsIssued: warnings.userWarningsIssued,
         staffWarningsIssued: warnings.staffWarningsIssued,
         warningsRevoked: warnings.warningsRevoked,
@@ -268,11 +256,6 @@ function zeroActivity(): StaffStatsResult["activity"] {
     ticketsCompleted: 0,
     ticketsAssignedNow: 0,
     ticketsByPanel: {},
-    giftClaimsHandled: 0,
-    giftClaimsApproved: 0,
-    giftClaimsRejected: 0,
-    giftClaimsFulfilled: 0,
-    giftClaimsReRequested: 0,
     userWarningsIssued: 0,
     staffWarningsIssued: 0,
     warningsRevoked: 0,

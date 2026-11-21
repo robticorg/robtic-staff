@@ -12,7 +12,6 @@ export const CommandName = {
   TICKET_STATS: "ticket-stats",
   PROMOTE_POINTS: "promote-points",
   WARN_SETUP: "warn-setup",
-  AUTOCLAIM: "autoclaim",
   INTAKE: "intake",
   INFO: "info",
   ADD_RES: "add-res",
@@ -167,11 +166,6 @@ export const commandCopy = bilingual(
         list: { description: "Show every role set in the staff system" },
       },
     },
-    autoclaim: {
-      description: "Turn automatic credits for gifts on or off",
-      options: { state: "State" },
-      choices: { on: "On", off: "Off", status: "Show status" },
-    },
     promotePoints: {
       description: "Set the weekly points staff need to be eligible for promotion",
       options: { points: "Minimum points per week (whole number)" },
@@ -252,11 +246,6 @@ export const commandCopy = bilingual(
         check: { description: "عرض مستوى الرتبة وتصنيفها في السلّم", option: "الرتبة" },
         list: { description: "عرض كل الرتب المضبوطة في نظام الطاقم" },
       },
-    },
-    autoclaim: {
-      description: "تشغيل أو إيقاف التحويل التلقائي للكريدتس في الهدايا",
-      options: { state: "الحالة" },
-      choices: { on: "تشغيل", off: "إيقاف", status: "عرض الحالة" },
     },
     promotePoints: {
       description: "ضبط النقاط الأسبوعية المطلوبة للتأهل للترقية",

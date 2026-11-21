@@ -3,7 +3,7 @@ import { bilingual } from "../../shared/utils/lang-context.ts";
 
 const E = emojis;
 const D = (date: Date, style: string) => `<t:${Math.floor(date.getTime() / 1000)}:${style}>`;
-type CaseCounts = { tickets: number; giftClaims: number };
+type CaseCounts = { tickets: number };
 
 const scopeEn = "Scope: regular staff up to ship (no admins or hidden staff)";
 const scopeAr = "النطاق: الطاقم من العادي إلى الشيب (بدون الأدمن والمخفيين)";
@@ -108,7 +108,6 @@ export const staffMessages = bilingual(
         [
           `${E.error} ${sourceMention} has open work to finish or hand over first:`,
           counts.tickets > 0 ? `• Tickets: ${counts.tickets}` : null,
-          counts.giftClaims > 0 ? `• Gifts to deliver: ${counts.giftClaims}` : null,
         ].filter(Boolean).join("\n"),
       problem: {
         NOT_AUTHORIZED: () => `${E.error} Transfers are for admins and the transfer manager.`,
@@ -232,7 +231,6 @@ export const staffMessages = bilingual(
         [
           `${E.error} ${sourceMention} عنده شغل مفتوح لازم ينتهي أو يتحوّل أول:`,
           counts.tickets > 0 ? `• تكتات: ${counts.tickets}` : null,
-          counts.giftClaims > 0 ? `• هدايا بانتظار التسليم: ${counts.giftClaims}` : null,
         ].filter(Boolean).join("\n"),
       problem: {
         NOT_AUTHORIZED: () => `${E.error} التحويل للأدمن ومانجر التحويل بس.`,

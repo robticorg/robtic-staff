@@ -73,7 +73,6 @@ describe.skipIf(!hasDb)("rejoin persistence (MongoDB)", () => {
     await RoleConfigModel.create([
       { guildId: GUILD, roleId: "ticket-bl", type: RoleConfigType.TICKET_BLACKLIST },
       { guildId: GUILD, roleId: "staff-bl", type: RoleConfigType.BLACKLIST },
-      { guildId: GUILD, roleId: "gift-bl", type: RoleConfigType.GIFT_BLACKLIST },
       { guildId: GUILD, roleId: "jail", type: RoleConfigType.JAIL },
     ]);
   });
@@ -92,7 +91,7 @@ describe.skipIf(!hasDb)("rejoin persistence (MongoDB)", () => {
     );
     const back = member("leaver", []);
     const restored = await memberPersistenceService.restoreOnJoin(back as never);
-    expect(restored.sort()).toEqual(["gift-bl", "ticket-bl"]);
+    expect(restored.sort()).toEqual(["ticket-bl"]);
     expect(back.roles.cache.has("community")).toBe(false);
   });
 

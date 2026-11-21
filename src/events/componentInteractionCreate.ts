@@ -4,7 +4,6 @@ import { routeTicketComponent } from "../modules/tickets/handlers/index.ts";
 import { routeFaqComponent } from "../modules/tickets/handlers/faq-add.handler.ts";
 import { routeVacationComponent } from "../modules/vacation/handlers/index.ts";
 import { routeStaffSupportComponent } from "../modules/staff-support/handlers/component-router.ts";
-import { routeGiftClaimComponent } from "../modules/gift-claims/handlers/index.ts";
 import { routeWarningPanelComponent } from "../modules/warning-panel/handlers/component-router.ts";
 import { routeStaffStatsComponent } from "../modules/staff-stats/handlers/component-router.ts";
 import { routeStaffInfoComponent } from "../modules/staff-info/handlers/component-router.ts";
@@ -26,7 +25,6 @@ const log = logger.child("feature-gate");
 /** Which system a button / menu / modal belongs to, by its custom-id namespace (each module's component-ids.ts). */
 const FEATURE_BY_NAMESPACE: Record<string, StaffFeatureKey> = {
   vac: "vacations",
-  gc: "giftClaims",
 };
 
 /**
@@ -50,7 +48,6 @@ const routers = [
   routeFaqComponent,
   routeVacationComponent,
   routeStaffSupportComponent,
-  routeGiftClaimComponent,
   routeWarningPanelComponent,
   routeStaffStatsComponent,
   routeStaffInfoComponent,

@@ -2,7 +2,6 @@ import { UNSET_ID, type TicketConfig, type TicketPanelConfig } from "./types.ts"
 import { ticketMain } from "./main.ts";
 import { verifiedPanel } from "./panels/verified.ts";
 import { supportPanel } from "./panels/support.ts";
-import { giftClaimPanel } from "./panels/gift-claim.ts";
 import { minecraftPanel } from "./panels/minecraft.ts";
 import { responsibilityApplyPanel } from "./panels/responsibility-apply.ts";
 import { staffSupportPanel } from "../staff-support/panels.ts";
@@ -19,7 +18,6 @@ export const tickets: TicketConfig = {
     supportPanel,
     minecraftPanel,
     verifiedPanel,
-    giftClaimPanel,
 
     staffSupportPanel,
     responsibilityApplyPanel,

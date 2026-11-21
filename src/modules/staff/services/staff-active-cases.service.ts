@@ -5,21 +5,16 @@ const log = logger.child("staff:active-cases");
 
 export interface ActiveCaseCounts {
   tickets: number;
-  giftClaims: number;
   total: number;
 }
 
 export function totalActiveCases(counts: Omit<ActiveCaseCounts, "total">): number {
-  return counts.tickets + counts.giftClaims;
+  return counts.tickets;
 }
 
 export class StaffActiveCasesService {
   async countForMember(guildId: GuildId, userId: UserId): Promise<ActiveCaseCounts> {
-    const [tickets, giftClaims] = await Promise.all([
-      this.countTickets(guildId, userId),
-      this.countGiftClaims(guildId, userId),
-    ]);
-    const counts = { tickets, giftClaims };
+    const counts = { tickets: await this.countTickets(guildId, userId) };
     return { ...counts, total: totalActiveCases(counts) };
   }
 
@@ -36,22 +31,6 @@ export class StaffActiveCasesService {
       }).exec();
     } catch (err) {
       return this.unavailable("tickets", err);
-    }
-  }
-
-  private async countGiftClaims(guildId: GuildId, userId: UserId): Promise<number> {
-    try {
-      const [{ GiftClaimModel }, { GiftClaimStatus }] = await Promise.all([
-        import("../../gift-claims/models/gift-claim.model.ts"),
-        import("../../gift-claims/types/enums.ts"),
-      ]);
-      return await GiftClaimModel.countDocuments({
-        guildId,
-        reviewedBy: userId,
-        status: GiftClaimStatus.APPROVED,
-      }).exec();
-    } catch (err) {
-      return this.unavailable("gift claims", err);
     }
   }
 

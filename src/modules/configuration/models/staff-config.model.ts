@@ -9,7 +9,6 @@ export interface StaffConfig {
   /** Minimum weekly points a staff member needs to count as promotion-eligible. */
   promotionPointsRequired?: number;
 
-  autoclaimEnabled?: boolean;
 
   /** Per-guild overrides of how many points each bot-awarded action is worth (/points values). */
   pointValues?: Record<string, number>;
@@ -27,7 +26,6 @@ const staffConfigSchema = new Schema<StaffConfig>(
   {
     guildId: { type: String, required: true },
     promotionPointsRequired: { type: Number, min: 1 },
-    autoclaimEnabled: { type: Boolean, default: false },
     pointValues: { type: Schema.Types.Mixed, default: undefined },
     levelStart: { type: Number, min: 0, max: 1 },
   },

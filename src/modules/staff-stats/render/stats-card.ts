@@ -247,7 +247,6 @@ export function buildActionStatsView(ids: StatsCardIds, a: StaffActionStats): Ba
     row(L.warningsRevoked, a.warningsRevoked),
     "",
     A.otherGroup,
-    row(L.giftClaimsHandled, a.giftClaimsHandled),
     row(A.vacationsDecided, a.vacationsDecided),
   ].join("\n");
 

@@ -29,7 +29,6 @@ export const RoleConfigType = {
   VACATION: "VACATION",
   /** Retired with appeals (2026-11-17): no longer offered anywhere; kept so a role still saved as it stays out of the ladder. */
   APPEAL_MANAGER: "APPEAL_MANAGER",
-  GIFT_MANAGER: "GIFT_MANAGER",
   APPLY_MANAGER: "APPLY_MANAGER",
   DEVELOPER_MANAGER: "DEVELOPER_MANAGER",
   DESIGNER_MANAGER: "DESIGNER_MANAGER",
@@ -38,7 +37,6 @@ export const RoleConfigType = {
   GIRL_NOT_VERIFIED: "GIRL_NOT_VERIFIED",
   GIRL_VERIFIED: "GIRL_VERIFIED",
   TICKET_BLACKLIST: "TICKET_BLACKLIST",
-  GIFT_BLACKLIST: "GIFT_BLACKLIST",
   TAG: "TAG",
 } as const;
 export type RoleConfigType = (typeof RoleConfigType)[keyof typeof RoleConfigType];
@@ -72,7 +70,6 @@ export const SINGLETON_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.CHAT_MANAGER,
   RoleConfigType.VACATION,
   RoleConfigType.APPEAL_MANAGER,
-  RoleConfigType.GIFT_MANAGER,
   RoleConfigType.APPLY_MANAGER,
   RoleConfigType.DEVELOPER_MANAGER,
   RoleConfigType.DESIGNER_MANAGER,
@@ -81,7 +78,6 @@ export const SINGLETON_ROLE_TYPES: readonly RoleConfigType[] = [
   RoleConfigType.GIRL_NOT_VERIFIED,
   RoleConfigType.GIRL_VERIFIED,
   RoleConfigType.TICKET_BLACKLIST,
-  RoleConfigType.GIFT_BLACKLIST,
   RoleConfigType.TAG,
   RoleConfigType.ACCEPTED,
 ];
@@ -111,16 +107,11 @@ export const ChannelConfigType = {
   WARN_PANEL: "WARN_PANEL",
   PUNISHMENT_LOG: "PUNISHMENT_LOG",
   VACATION_REQUESTS: "VACATION_REQUESTS",
-  GIFT_CLAIMS: "GIFT_CLAIMS",
   SUPPORT: "SUPPORT",
 
   APPLICATION_CATEGORY: "APPLICATION_CATEGORY",
   TRANSFER_CATEGORY: "TRANSFER_CATEGORY",
-
-  GIFT_DELIVERIES: "GIFT_DELIVERIES",
-  GIFT_DELIVERY_LOG: "GIFT_DELIVERY_LOG",
   TICKET_TRANSCRIPTS: "TICKET_TRANSCRIPTS",
-  GIFT_DELIVERY_CATEGORY: "GIFT_DELIVERY_CATEGORY",
 
   COMMAND_LOG: "COMMAND_LOG",
   JAIL_LOG: "JAIL_LOG",
@@ -134,7 +125,6 @@ export const CHANNEL_CONFIG_TYPE_VALUES = Object.values(ChannelConfigType);
 export const CATEGORY_CHANNEL_CONFIG_TYPES: readonly ChannelConfigType[] = [
   ChannelConfigType.APPLICATION_CATEGORY,
   ChannelConfigType.TRANSFER_CATEGORY,
-  ChannelConfigType.GIFT_DELIVERY_CATEGORY,
 ];
 
 export const FastAccessContext = {

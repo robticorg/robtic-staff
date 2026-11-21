@@ -411,7 +411,7 @@ export class StaffTransferService {
 }
 
 function emptyCounts(): ActiveCaseCounts {
-  return { tickets: 0, giftClaims: 0, total: 0 };
+  return { tickets: 0, total: 0 };
 }
 
 export const staffTransferService = new StaffTransferService();

@@ -5,7 +5,6 @@ import { ticketService, transcriptCache } from "../modules/tickets/index.ts";
 import { ladderSyncService } from "../modules/configuration/index.ts";
 import { hiddenStaffLevelSyncService } from "../modules/staff/hidden/index.ts";
 import { ticketPanelSettingsService } from "../modules/tickets/services/ticket-panel-settings.service.ts";
-import { giftDeliveryRecoveryService } from "../modules/gift-claims/services/delivery/gift-delivery-recovery.service.ts";
 import { ticketSetupService } from "../modules/tickets/services/ticket-setup.service.ts";
 import {
   serverTagAuditService,
@@ -44,10 +43,6 @@ export default defineEvent({
         .syncGuild(guild)
         .catch((err) => log.warn(`hidden staff sync failed for ${guild.id}`, err));
     }
-
-    await giftDeliveryRecoveryService
-      .reconcileOnStartup()
-      .catch((err) => log.warn("gift delivery startup reconcile failed", err));
 
     await serverTagExpirationService
       .reconcileActive()

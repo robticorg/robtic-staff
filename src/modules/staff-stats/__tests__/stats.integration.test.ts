@@ -1,7 +1,6 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "bun:test";
 import mongoose, { Types } from "mongoose";
 import { config } from "../../../config/index.ts";
-import { GiftClaimAuditModel } from "../../gift-claims/models/gift-claim-audit.model.ts";
 import { StaffModel } from "../../staff/models/staff.model.ts";
 import { StaffActivityModel } from "../../staff/models/staff-activity.model.ts";
 import { StaffPointTransactionModel } from "../../staff/models/staff-point-transaction.model.ts";
@@ -68,7 +67,6 @@ async function cleanup(): Promise<void> {
     StaffPointTransactionModel.deleteMany({ reason: "itest" }),
     StaffActivityModel.deleteMany({}),
     TicketModel.deleteMany({ guildId: { $in: [GUILD, GUILD2] } }),
-    GiftClaimAuditModel.deleteMany({ guildId: { $in: [GUILD, GUILD2] } }),
   ]);
 }
 
@@ -173,51 +171,6 @@ describe.skipIf(!hasDb)("Staff statistics (aggregation over existing data)", () 
     expect(lb.totalRanked).toBe(4);
     expect(lb.entries[0]?.rank).toBe(1);
     expect(lb.entries[1]?.rank).toBe(2);
-  });
-
-  it("a gift-claim ticket is one ticket AND its gift-claim audit is separate", async () => {
-    const now = new Date();
-    const staffId = await makeStaff("gc-staff");
-    await TicketModel.create({
-      ticketId: "ticket-gc-1",
-      guildId: GUILD,
-      channelId: "chan-1",
-      userId: "claimant",
-      panelId: "gift-claim",
-      claimedBy: staffId,
-      claimedByDiscordId: "gc-staff",
-      status: TicketStatus.CLAIMED,
-      claimedAt: now,
-    });
-    await GiftClaimAuditModel.create({
-      claimId: "claim-1",
-      guildId: GUILD,
-      actorId: "gc-staff",
-      action: "GIFT_CLAIM_FULFILLED",
-      createdAt: now,
-    });
-    await GiftClaimAuditModel.create({
-      claimId: "claim-1",
-      guildId: GUILD,
-      actorId: "gc-staff",
-      action: "GIFT_CLAIM_APPROVED",
-      createdAt: now,
-    });
-
-    const stats = await staffStatisticsService.getStaffStats({
-      guildId: GUILD,
-      staffId: "gc-staff",
-      period: StatsPeriod.ALL_TIME,
-    });
-    expect(stats.activity.ticketsClaimed).toBe(1);
-    expect(stats.activity.ticketsByPanel["gift-claim"]).toEqual({
-      claimed: 1,
-      completed: 0,
-      open: 1,
-    });
-    expect(stats.activity.giftClaimsFulfilled).toBe(1);
-    expect(stats.activity.giftClaimsApproved).toBe(1);
-    expect(stats.activity.giftClaimsHandled).toBe(1);
   });
 
   it("zero-activity staff → found with all-zero stats", async () => {
