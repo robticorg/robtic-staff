@@ -1,8 +1,10 @@
+# syntax=docker/dockerfile:1
 FROM oven/bun:1.4.2 AS deps
 WORKDIR /app
 
-COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile --production
+COPY package.json bun.lock bunfig.toml ./
+# The workflow passes its GITHUB_TOKEN as the npm_token secret: @robticorg/* packages come from GitHub Packages.
+RUN --mount=type=secret,id=npm_token NPM_TOKEN="$(cat /run/secrets/npm_token)" bun install --frozen-lockfile --production
 
 FROM oven/bun:1.4.2
 WORKDIR /app

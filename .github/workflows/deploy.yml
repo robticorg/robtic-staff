@@ -29,6 +29,8 @@ jobs:
           bun-version: 1.4.2
 
       - run: bun install --frozen-lockfile
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Typecheck
         run: bun run typecheck
@@ -55,6 +57,8 @@ jobs:
 
       - uses: docker/build-push-action@v6
         with:
+          secrets: |
+            npm_token=${{ secrets.GITHUB_TOKEN }}
           context: .
           file: Dockerfile
           push: true

@@ -20,6 +20,7 @@
     "typescript": "^7"
   },
   "dependencies": {
+    "@robticorg/bot-log": "^1.0.0",
     "discord.js": "^14.27.0",
     "luxon": "^3.7.2",
     "mongoose": "^9.9.5"

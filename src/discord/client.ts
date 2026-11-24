@@ -6,6 +6,7 @@ import { logger } from "../shared/utils/logger.ts";
 import { guildIdOf, runWithLang } from "../shared/utils/lang-context.ts";
 import { inGuildLang, langOf } from "../modules/configuration/services/guild-lang.ts";
 import { discordConfig } from "../config/discord.ts";
+import { botLog } from "../shared/services/bot-log.ts";
 
 const log = logger.child("client");
 
@@ -44,8 +45,10 @@ export function createClient(): Client {
   // to everyone). Leave on join, on start, and when either list changes. No list yet: only blocked servers are left.
   const leave = (guild: Guild) => {
     log.warn(`leaving server it may not be in: ${guild.name} (${guild.id})`);
+    botLog.leaving(guild.id, isGuildBlocked(guild.id) ? "blocked" : "not-allowed");
     void guild.leave().catch((err) => log.error(`could not leave ${guild.id}`, err));
   };
+  botLog.attach(client);
   const notAllowed = (id: string) => isGuildBlocked(id) || isGuildAllowed(id) === false;
   const sweep = () => { for (const g of client.guilds.cache.values()) if (notAllowed(g.id)) leave(g); };
   client.on(Events.GuildCreate, (guild) => { if (notAllowed(guild.id)) leave(guild); });
