@@ -5,6 +5,7 @@
     "": {
       "name": "staff-system",
       "dependencies": {
+        "@robticorg/bot-log": "^1.0.0",
         "discord.js": "^14.27.0",
         "luxon": "^3.7.2",
         "mongoose": "^9.9.5",
@@ -32,6 +33,8 @@
     "@discordjs/ws": ["@discordjs/ws@1.2.3", "", { "dependencies": { "@discordjs/collection": "^2.1.0", "@discordjs/rest": "^2.5.1", "@discordjs/util": "^1.1.0", "@sapphire/async-queue": "^1.5.2", "@types/ws": "^8.5.10", "@vladfrangu/async_event_emitter": "^2.2.4", "discord-api-types": "^0.38.1", "tslib": "^2.6.2", "ws": "^8.17.0" } }, "sha512-wPlQDxEmlDg5IxhJPuxXr3Vy9AjYq5xCvFWGJyD7w7Np8ZGu+Mc+97LCoEc/+AYCo2IDpKioiH0/c/mj5ZR9Uw=="],
 
     "@mongodb-js/saslprep": ["@mongodb-js/saslprep@1.5.4", "", { "dependencies": { "sparse-bitfield": "^3.0.3" } }, "sha512-05UC0jQsjKAOuXQ0H9Ud9vUTJpZIg+n/FinpR30tI5I8pY2inTfPOZ5OF/cg3Ce/N9MoD1xhRCeOsJtuTbFYlw=="],
+
+    "@robticorg/bot-log": ["@robticorg/bot-log@1.0.0", "https://npm.pkg.github.com/download/@robticorg/bot-log/1.0.0/b4cdf6aeb1b6762f028ff828ee5233637c85432e", {}, "sha512-i8nosVgWowqVADbslED88JG5jdZpOk2K4EPNuAm3NpEUQzaHfyLpY8jV3h7hW3XP/k2MPm0cJb5zRffyziJt8g=="],
 
     "@sapphire/async-queue": ["@sapphire/async-queue@1.5.5", "", {}, "sha512-cvGzxbba6sav2zZkH8GPf2oGk9yYoD5qrNWdu9fRehifgnFZJMV+nuy2nON2roRO4yQQ+v7MK/Pktl/HgfsUXg=="],
 
