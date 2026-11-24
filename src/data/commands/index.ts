@@ -20,6 +20,7 @@ export const CommandName = {
   TICKET: "ticket",
   START_COUNT: "start-count",
   PROFILE: "profile",
+  HELP: "help",
 } as const;
 export type CommandName = (typeof CommandName)[keyof typeof CommandName];
 
@@ -188,6 +189,7 @@ export const commandCopy = bilingual(
         values: { description: "Set how many points each action gives (ticket claim, warning, jail…)" },
       },
     },
+    help: { description: "What the bot does and how to start" },
     profile: {
       description: "The bot's profile in this server",
       subcommands: { config: "Edit the bot's avatar, banner, name and bio in this server" },
@@ -269,6 +271,7 @@ export const commandCopy = bilingual(
         values: { description: "تحديد نقاط كل عمل (استلام تكت، تحذير، سجن…)" },
       },
     },
+    help: { description: "وش يسوي البوت وكيف تبدأ" },
     profile: {
       description: "بروفايل البوت في هذا السيرفر",
       subcommands: { config: "تعديل صورة وبنر واسم وبايو البوت في هذا السيرفر" },

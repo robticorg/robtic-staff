@@ -1,4 +1,4 @@
-import { Events, type Client } from "discord.js";
+import { ActivityType, Events, type Client } from "discord.js";
 import { defineEvent } from "../discord/event.ts";
 import { logger } from "../shared/utils/logger.ts";
 import { ticketService, transcriptCache } from "../modules/tickets/index.ts";
@@ -18,6 +18,16 @@ export default defineEvent({
   once: true,
   async execute(client: Client<true>) {
     log.info(`Logged in as ${client.user.tag} — serving ${client.guilds.cache.size} guild(s)`);
+
+    // The same status as every public Robtic bot, in turn.
+    const status = ["Use /help to start", "Join us at robtic.org"];
+    let next = 0;
+    const show = () => {
+      const text = status[next++ % status.length]!;
+      client.user.setPresence({ activities: [{ name: text, state: text, type: ActivityType.Custom }] });
+    };
+    setTimeout(show, 2_000);
+    setInterval(show, 15_000);
 
     try {
       const channelIds = await ticketService.listAllActiveChannelIds();
