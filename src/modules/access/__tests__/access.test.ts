@@ -3,7 +3,6 @@ import { PermissionFlagsBits } from "discord.js";
 import mongoose from "mongoose";
 import { accessConfig } from "../../../config/access.ts";
 import { config } from "../../../config/index.ts";
-import { canManageTicket } from "../../tickets/services/ticket-permissions.ts";
 import { WhitelistModel } from "../models/whitelist.model.ts";
 import { hasAdminAccess, isBotOwner } from "../services/admin-access.ts";
 import { whitelistService } from "../services/whitelist.service.ts";
@@ -30,13 +29,6 @@ describe("bot owner", () => {
     expect(hasAdminAccess({ id: "1", permissions: noPerms })).toBe(false);
     expect(hasAdminAccess({ id: "1", permissions: "8" })).toBe(false);
     expect(hasAdminAccess(null)).toBe(false);
-  });
-
-  it("passes existing admin checks, e.g. managing any ticket", () => {
-    const owner = { id: OWNER, permissions: noPerms } as never;
-    const stranger = { id: "1", permissions: noPerms } as never;
-    expect(canManageTicket(owner, { claimedByDiscordId: "someone" })).toBe(true);
-    expect(canManageTicket(stranger, { claimedByDiscordId: "someone" })).toBe(false);
   });
 
   it("can always use restricted commands without a database lookup", async () => {

@@ -4,7 +4,6 @@ export const StatsView = {
   HOME: "home",
   WEEKS: "weeks",
   ACTIONS: "acts",
-  TICKETS: "tix",
   RECENT: "recent",
   /** The dropdown itself — the chosen view comes from its value. */
   MENU: "menu",
@@ -17,7 +16,6 @@ export const MENU_VIEWS: readonly StatsView[] = [
   StatsView.HOME,
   StatsView.WEEKS,
   StatsView.ACTIONS,
-  StatsView.TICKETS,
   StatsView.RECENT,
 ];
 

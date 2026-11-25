@@ -1,19 +1,6 @@
 import type { PrefixCommand } from "../../discord/prefix-command.ts";
 
-import ticketClaim from "./ticket/claim.ts";
-import ticketClose from "./ticket/close.ts";
-import ticketDelete from "./ticket/delete.ts";
-import ticketRename from "./ticket/rename.ts";
-import ticketTranscript from "./ticket/transcript.ts";
-import ticketAdd from "./ticket/add.ts";
-import ticketRemove from "./ticket/remove.ts";
-import ticketSleep from "./ticket/sleep.ts";
-import ticketHandover from "./ticket/handover.ts";
-import ticketInfo from "./ticket/info.ts";
-
-
 import staffAccept from "./staff/accept.ts";
-import staffRefuse from "./staff/refuse.ts";
 import staffGiveaway from "./staff/giveaway.ts";
 import staffDone from "./staff/done.ts";
 import staffBots from "./staff/bots.ts";
@@ -37,24 +24,11 @@ import staffProfileCheck from "./staff/staff-check.ts";
 import staffJail from "./staff/jail.ts";
 import staffUnjail from "./staff/unjail.ts";
 import staffBack from "./staff/back.ts";
-import staffResponsible from "./staff/responsible.ts";
 
+// Ticket commands moved to Robtic Tickets.
 export const prefixCommands: PrefixCommand[] = [
-  ticketClaim,
-  ticketClose,
-  ticketDelete,
-  ticketRename,
-  ticketTranscript,
-  ticketAdd,
-  ticketRemove,
-  ticketSleep,
-  ticketHandover,
-  ticketInfo,
-
-
   staffCome,
   staffAccept,
-  staffRefuse,
   staffGiveaway,
   staffDone,
   staffBots,
@@ -77,5 +51,4 @@ export const prefixCommands: PrefixCommand[] = [
   staffJail,
   staffUnjail,
   staffBack,
-  staffResponsible,
 ];

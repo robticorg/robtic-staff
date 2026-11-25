@@ -25,10 +25,9 @@ const COMMANDS_URL = "https://robtic.org/discord/commands#bot-staff";
 const IDLE_MS = 120_000;
 
 const CATEGORIES: { key: string; en: string; ar: string; emoji: string; names: string[] }[] = [
-  { key: "start", en: "Getting started", ar: "البداية", emoji: "🚀", names: ["help", "scan", "role", "channels", "profile"] },
-  { key: "ladder", en: "Staff ladder", ar: "سلّم الطاقم", emoji: "🪜", names: ["start-count", "lead", "intake", "whitelist", "warn-setup"] },
-  { key: "points", en: "Points and promotion", ar: "النقاط والترقية", emoji: "🏅", names: ["points", "promote-points", "ticket-stats"] },
-  { key: "tickets", en: "Tickets", ar: "التكتات", emoji: "🎫", names: ["ticket", "sleep", "faq"] },
+  { key: "start", en: "Getting started", ar: "البداية", emoji: "🚀", names: ["help", "scan"] },
+  { key: "ladder", en: "Staff team", ar: "الطاقم", emoji: "🪜", names: ["lead", "whitelist", "warn-setup"] },
+  { key: "points", en: "Points", ar: "النقاط", emoji: "🏅", names: ["points"] },
   { key: "tools", en: "Tools", ar: "أدوات", emoji: "🧰", names: [] },
 ];
 const label = (c: (typeof CATEGORIES)[number]) => L(c.en, c.ar);
@@ -55,10 +54,10 @@ function overview(groups: Map<string, Line[]>): EmbedBuilder {
     .setColor(COLOR)
     .setTitle(L(`📖 ${branding.moderationTitle}: commands`, `📖 ${branding.moderationTitle}: الأوامر`))
     .setDescription([
-      L("Runs your staff team: the staff ladder and its roles, points and promotions, tickets and warnings.",
-        "يدير طاقمك الإداري: سلّم الطاقم ورتبه، النقاط والترقيات، التكتات والتحذيرات."),
-      L("**Start here:** set your staff roles with `/role`, then run `/scan` to import your staff.",
-        "**ابدأ من هنا:** اضبط رتب الطاقم بـ `/role`، ثم شغّل `/scan` لاستيراد طاقمك."),
+      L("Runs your staff team: the staff ladder and its roles, points and promotions, and warnings.",
+        "يدير طاقمك الإداري: سلّم الطاقم ورتبه، النقاط والترقيات، والتحذيرات."),
+      L("**Start here:** set your staff roles and channels on the dashboard (robtic.org/discord), then run `/scan` to import your staff.",
+        "**ابدأ من هنا:** اضبط رتب الطاقم ورومات البوت من لوحة التحكم (robtic.org/discord)، ثم شغّل `/scan` لاستيراد طاقمك."),
       `${L("**Categories:**", "**الأقسام:**")} ${[...groups].map(([key, list]) => `${cat(key).emoji} ${label(cat(key))} \`${list.length}\``).join(" • ")}`,
       L("Use the menu below to browse a category.", "استخدم القائمة تحت لتصفح أوامر كل قسم."),
     ].join("\n\n"))

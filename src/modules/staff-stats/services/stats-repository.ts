@@ -4,8 +4,6 @@ import { StaffActivityModel } from "../../staff/models/staff-activity.model.ts";
 import { StaffPointTransactionModel } from "../../staff/models/staff-point-transaction.model.ts";
 import { StaffModel, type Staff } from "../../staff/models/staff.model.ts";
 import { StaffActivityType, StaffStatus } from "../../staff/types/enums.ts";
-import { TicketModel } from "../../tickets/models/ticket.model.ts";
-import { TicketStatus } from "../../tickets/types/enums.ts";
 import { StaffWarningModel } from "../../warnings/models/staff-warning.model.ts";
 import { UserWarningModel } from "../../warnings/models/user-warning.model.ts";
 import { WarningStatus } from "../../warnings/types/enums.ts";
@@ -17,19 +15,6 @@ export interface GuildStaffRow {
   userId: UserId;
   status: Staff["status"];
   currentRoleLevel: number;
-}
-
-export interface TicketPanelStat {
-  claimed: number;
-  completed: number;
-  open: number;
-}
-
-export interface TicketStatRow {
-  claimed: number;
-  completed: number;
-  assignedNow: number;
-  byPanel: Record<string, TicketPanelStat>;
 }
 
 export interface WarningStatRow {
@@ -119,64 +104,6 @@ export class StatsRepository {
       .limit(limit)
       .lean()
       .exec();
-  }
-
-  async ticketStats(
-    guildId: GuildId,
-    staffId: Types.ObjectId,
-    range: StatsRange,
-  ): Promise<TicketStatRow> {
-    const [claimed, completed, assignedNow, panelRows] = await Promise.all([
-      TicketModel.countDocuments({ guildId, claimedBy: staffId, ...rangeFilter(range, "claimedAt") }),
-      TicketModel.countDocuments({
-        guildId,
-        claimedBy: staffId,
-        status: { $in: [TicketStatus.CLOSED, TicketStatus.DELETED] },
-        ...rangeFilter(range, "closedAt"),
-      }),
-      TicketModel.countDocuments({
-        guildId,
-        claimedBy: staffId,
-        status: TicketStatus.CLAIMED,
-      }),
-      TicketModel.aggregate<{
-        _id: string;
-        claimed: number;
-        completed: number;
-        open: number;
-      }>([
-        { $match: { guildId, claimedBy: staffId, ...rangeFilter(range, "claimedAt") } },
-        {
-          $group: {
-            _id: "$panelId",
-            claimed: { $sum: 1 },
-            completed: {
-              $sum: {
-                $cond: [
-                  { $in: ["$status", [TicketStatus.CLOSED, TicketStatus.DELETED]] },
-                  1,
-                  0,
-                ],
-              },
-            },
-            open: {
-              $sum: { $cond: [{ $eq: ["$status", TicketStatus.CLAIMED] }, 1, 0] },
-            },
-          },
-        },
-      ]),
-    ]);
-    return {
-      claimed,
-      completed,
-      assignedNow,
-      byPanel: Object.fromEntries(
-        panelRows.map((r) => [
-          r._id,
-          { claimed: r.claimed, completed: r.completed, open: r.open },
-        ]),
-      ),
-    };
   }
 
   async warningStats(

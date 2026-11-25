@@ -17,7 +17,6 @@ describe("point values", () => {
 
   it("reads every automatic award from the config instead of a typed-in number", () => {
     for (const file of [
-      "modules/tickets/services/ticket-claim-credit.ts",
       "modules/warnings/services/warning-actions.service.ts",
     ]) {
       expect(src(file)).not.toMatch(/amount:\s*\d/);

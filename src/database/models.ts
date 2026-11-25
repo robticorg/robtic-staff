@@ -10,16 +10,11 @@ import { ChannelConfigModel } from "../modules/configuration/models/channel-conf
 import { FastAccessModel } from "../modules/configuration/models/fast-access.model.ts";
 import { StaffConfigModel } from "../modules/configuration/models/staff-config.model.ts";
 import { StaffPolicyModel } from "../modules/configuration/models/staff-policy.model.ts";
-import { TicketModel } from "../modules/tickets/models/ticket.model.ts";
-import { FaqModel } from "../modules/tickets/models/faq.model.ts";
-import { TicketTranscriptModel } from "../modules/tickets/models/ticket-transcript.model.ts";
-import { TicketPanelDeploymentModel } from "../modules/tickets/models/ticket-panel-deployment.model.ts";
 import { PunishmentModel } from "../modules/punishment/models/punishment.model.ts";
 import { PunishmentAuditModel } from "../modules/punishment/models/punishment-audit.model.ts";
 import { VacationModel } from "../modules/vacation/models/vacation.model.ts";
 import { VacationPanelDeploymentModel } from "../modules/vacation/models/vacation-panel-deployment.model.ts";
 import { StaffTagRestrictionModel } from "../modules/server-tag/models/staff-tag-restriction.model.ts";
-import { StaffSupportRequestModel } from "../modules/staff-support/models/staff-support-request.model.ts";
 import { PersistentMemberRoleModel } from "../modules/member-persistence/models/persistent-member-role.model.ts";
 import { WarningPanelDeploymentModel } from "../modules/warning-panel/models/warning-panel-deployment.model.ts";
 import { CounterModel } from "../shared/sequence.ts";
@@ -37,16 +32,11 @@ export const ALL_MODELS: Model<any>[] = [
   FastAccessModel,
   StaffConfigModel,
   StaffPolicyModel,
-  TicketModel,
-  FaqModel,
-  TicketTranscriptModel,
-  TicketPanelDeploymentModel,
   PunishmentModel,
   PunishmentAuditModel,
   VacationModel,
   VacationPanelDeploymentModel,
   StaffTagRestrictionModel,
-  StaffSupportRequestModel,
   PersistentMemberRoleModel,
   WarningPanelDeploymentModel,
   CounterModel,

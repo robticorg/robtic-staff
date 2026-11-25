@@ -40,19 +40,16 @@ describe("arabic prefix aliases", () => {
     for (const [name, aliases] of Object.entries(prefixCommandAliases)) {
       for (const alias of aliases) map.set(alias, name);
     }
-    expect(map.get("استلام")).toBe("claim");
-    expect(map.get("اغلاق")).toBe("close");
     expect(map.get("فصل")).toBe("fire");
     expect(map.get("ترقية")).toBe("prompt");
     expect(map.get("تحذير")).toBe("warn");
     expect(map.get("بريك")).toBe("break");
     expect(map.get("نقاطي")).toBe("points");
     expect(map.get("المتصدرين")).toBe("leaderboard");
-    expect(map.get("claim")).toBe("claim");
     expect(map.get("lb")).toBe("leaderboard");
   });
 
-  it("resolves the arabic triggers for come, sleep and handover", () => {
+  it("resolves the arabic triggers for come and transfer", () => {
     const map = new Map<string, string>();
     for (const command of prefixCommands) {
       map.set(command.name, command.name);
@@ -62,12 +59,6 @@ describe("arabic prefix aliases", () => {
       for (const alias of aliases) map.set(alias, name);
     }
     expect(map.get("تعال")).toBe("come");
-    expect(map.get("خمول")).toBe("sleep");
-    expect(map.get("نوم")).toBe("sleep");
-    expect(map.get("تسليم")).toBe("handover");
-    expect(map.get("سلم")).toBe("handover");
-
-    expect(map.get("تحويل")).toBe("handover");
     expect(map.get("نقل")).toBe("transfer");
   });
 });

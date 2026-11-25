@@ -20,10 +20,6 @@ import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
 import { hiddenStaffService } from "../../../modules/staff/hidden/index.ts";
 import { PrefixAbort, requireAcceptManager } from "../_shared/guards.ts";
 import { splitHiddenMode } from "../_shared/hidden-mode.ts";
-import {
-  ResponsibilityDecision,
-  responsibilityDecisionService,
-} from "../../../modules/tickets/responsibility-apply/decision.service.ts";
 import { extractUserIds } from "../_shared/parse.ts";
 import { requireTargetMember } from "../_shared/target.ts";
 import { getLevelStart, shownLevel } from "../../../modules/configuration/utils/level-start.ts";
@@ -60,19 +56,6 @@ export default definePrefixCommand({
   name: "accept",
   category: "staff",
   async execute(ctx) {
-    const responsibilityTicket = await responsibilityDecisionService.ticketFor(ctx.guild.id, ctx.channel.id);
-    if (responsibilityTicket) {
-      const result = await responsibilityDecisionService.decide({
-        guild: ctx.guild,
-        actor: ctx.member,
-        ticket: responsibilityTicket,
-        decision: ResponsibilityDecision.ACCEPTED,
-        reason: null,
-      });
-      await ctx.reply(responsibilityDecisionService.replyFor(result));
-      return;
-    }
-
     const { hidden, args } = splitHiddenMode(ctx.args);
     await requireAcceptManager(ctx);
     const target = await requireTargetMember(ctx, "!accept @user [level|tier|max] [type] [hidden]");

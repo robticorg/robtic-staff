@@ -1,7 +1,7 @@
 import { type GuildMember } from "discord.js";
 import type { GuildId } from "../../../shared/types/index.ts";
 import { staffMessages } from "../../../data/messages/staff.ts";
-import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
+import { managerRoleService } from "./manager-role.service.ts";
 import { RoleConfigType, StaffTier } from "../../configuration/types/enums.ts";
 import {
   getHierarchy,
@@ -116,15 +116,15 @@ export class StaffManagementAuthorizationService {
   }
 
   isOwnerManager(actor: GuildMember): Promise<boolean> {
-    return responsibilityPermissionService.holds(actor, RoleConfigType.OWNER_MANAGER);
+    return managerRoleService.holds(actor, RoleConfigType.OWNER_MANAGER);
   }
 
   isStaffManager(actor: GuildMember): Promise<boolean> {
-    return responsibilityPermissionService.holds(actor, RoleConfigType.STAFF_MANAGER);
+    return managerRoleService.holds(actor, RoleConfigType.STAFF_MANAGER);
   }
 
   isApplyManager(actor: GuildMember): Promise<boolean> {
-    return responsibilityPermissionService.holds(actor, RoleConfigType.APPLY_MANAGER);
+    return managerRoleService.holds(actor, RoleConfigType.APPLY_MANAGER);
   }
 
   /** Apply Managers and Transfer Managers can both accept. */
@@ -395,7 +395,7 @@ export class StaffManagementAuthorizationService {
   }
 
   isTransferManager(actor: GuildMember): Promise<boolean> {
-    return responsibilityPermissionService.holds(actor, RoleConfigType.TRANSFER_MANAGER);
+    return managerRoleService.holds(actor, RoleConfigType.TRANSFER_MANAGER);
   }
 
   decideWarnAuthorization(input: WarnContextInput): AuthorizationDecision {

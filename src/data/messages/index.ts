@@ -2,7 +2,6 @@ import { commonMessages } from "./common.ts";
 import { configMessages } from "./config.ts";
 import { staffMessages } from "./staff.ts";
 import { warningMessages } from "./warnings.ts";
-import { ticketMessages } from "./tickets.ts";
 import { prefixMessages } from "./prefix.ts";
 import { fastAccessMessages } from "./fast-access.ts";
 import { punishmentMessages } from "./punishment.ts";
@@ -12,7 +11,6 @@ export { commonMessages } from "./common.ts";
 export { configMessages } from "./config.ts";
 export { staffMessages } from "./staff.ts";
 export { warningMessages } from "./warnings.ts";
-export { ticketMessages } from "./tickets.ts";
 export { prefixMessages } from "./prefix.ts";
 export { botsMessages } from "./bots.ts";
 export { fastAccessMessages } from "./fast-access.ts";
@@ -24,7 +22,6 @@ export const messages = {
   config: configMessages,
   staff: staffMessages,
   warning: warningMessages,
-  ticket: ticketMessages,
   prefix: prefixMessages,
   fastAccess: fastAccessMessages,
   punishment: punishmentMessages,

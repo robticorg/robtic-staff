@@ -8,7 +8,7 @@ import {
 import { defineCommand } from "../../discord/command.ts";
 import { hiddenStaffLevelSyncService } from "../../modules/staff/hidden/index.ts";
 import { CommandName, commandCopy } from "../../data/commands/index.ts";
-import { hierarchyMessages } from "../../data/messages/hierarchy.ts";
+import { STAFF_TIER_LABELS, hierarchyMessages } from "../../data/messages/hierarchy.ts";
 import { commonMessages } from "../../data/messages/common.ts";
 import { staffPermissionService } from "../../modules/staff/services/staff-permissions.service.ts";
 import {
@@ -19,9 +19,27 @@ import {
 import type { HierarchyIssue } from "../../modules/configuration/utils/staff-levels.ts";
 import { CommandError, requireGuild, requireMember } from "../_shared/guards.ts";
 import { replyInfo, replySuccess } from "../_shared/responses.ts";
-import { describeHierarchyIssues } from "../role/check.ts";
 
 const M = hierarchyMessages.scan;
+const P = hierarchyMessages.problems;
+
+function describeHierarchyIssues(issues: readonly HierarchyIssue[]): string[] {
+  return issues.map((issue) => {
+    const label = issue.tier ? STAFF_TIER_LABELS[issue.tier] : "";
+    switch (issue.problem) {
+      case "START_NOT_CONFIGURED":
+        return P.START_NOT_CONFIGURED;
+      case "END_NOT_CONFIGURED":
+        return P.END_NOT_CONFIGURED;
+      case "STAFF_ROLE_NOT_CONFIGURED":
+        return P.STAFF_ROLE_NOT_CONFIGURED;
+      case "BOUNDARY_NOT_ON_LADDER":
+        return P.BOUNDARY_NOT_ON_LADDER(label);
+      case "BOUNDARY_OUT_OF_ORDER":
+        return P.BOUNDARY_OUT_OF_ORDER(label);
+    }
+  });
+}
 const MAX_INVALID_MENTIONS = 10;
 
 const data = new SlashCommandBuilder()

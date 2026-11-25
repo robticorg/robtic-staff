@@ -10,11 +10,6 @@ import { RoleConfigType, StaffTier } from "../../configuration/types/enums.ts";
 import { getHierarchy, getRoleForLevel } from "../../configuration/utils/staff-levels.ts";
 import { getLevelStart } from "../../configuration/utils/level-start.ts";
 import { PunishmentModel } from "../../punishment/models/punishment.model.ts";
-import {
-  StaffSupportRequestModel,
-  StaffSupportRequestStatus,
-  StaffSupportRequestType,
-} from "../../staff-support/models/staff-support-request.model.ts";
 import { PunishmentType } from "../../punishment/types/enums.ts";
 import { StaffActivityModel } from "../../staff/models/staff-activity.model.ts";
 import { StaffHistoryModel } from "../../staff/models/staff-history.model.ts";
@@ -33,7 +28,7 @@ import { StatsPeriod } from "../types/enums.ts";
 import { resolveStatsRange } from "../utils/date-range.ts";
 import { staffCardLeadsService, type CardLeads } from "./staff-card-leads.service.ts";
 import { staffStatisticsService, type RecentActivityItem } from "./staff-statistics.service.ts";
-import { statsRepository, type TicketStatRow } from "./stats-repository.ts";
+import { statsRepository } from "./stats-repository.ts";
 
 export const WEEKS_PER_PAGE = 3;
 
@@ -51,8 +46,7 @@ export const StaffExitKind = {
 } as const;
 export type StaffExitKind = (typeof StaffExitKind)[keyof typeof StaffExitKind];
 
-/** How close (ms) a completed resignation must be to the fire to count as its cause. */
-const DEMISSION_MATCH_WINDOW_MS = 5 * 60_000;
+
 const AVATAR_SIZE = 256;
 
 export interface StaffCardOverview {
@@ -247,21 +241,6 @@ export class StaffCardService {
         reason: typeof fireMetadata.reason === "string" ? fireMetadata.reason : null,
       };
     }
-    if (firedAt) {
-      const request = await StaffSupportRequestModel.findOne({
-        guildId,
-        staffId: userId,
-        type: StaffSupportRequestType.DEMISSION_APPLY,
-        status: StaffSupportRequestStatus.COMPLETED,
-        handledAt: {
-          $gte: new Date(firedAt.getTime() - DEMISSION_MATCH_WINDOW_MS),
-          $lte: new Date(firedAt.getTime() + DEMISSION_MATCH_WINDOW_MS),
-        },
-      })
-        .lean()
-        .exec();
-      if (request) return { kind: StaffExitKind.DEMISSION, reason: request.reason ?? null };
-    }
     return { kind: StaffExitKind.FIRED, reason: null };
   }
 
@@ -321,14 +300,6 @@ export class StaffCardService {
       warningsRevoked: a.warningsRevoked,
       vacationsDecided: a.vacationsApproved + a.vacationsRejected,
     };
-  }
-
-  tickets(guildId: GuildId, staff: StaffDocument): Promise<TicketStatRow> {
-    return statsRepository.ticketStats(
-      guildId,
-      staff._id as Types.ObjectId,
-      resolveStatsRange(StatsPeriod.ALL_TIME),
-    );
   }
 
   async recent(staff: StaffDocument, limit = 10): Promise<RecentActivityItem[]> {

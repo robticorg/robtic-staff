@@ -27,7 +27,7 @@ export const leadMessages = bilingual(
 
     errors: {
       adminOnly: `${E.error} Admins only.`,
-      oneTarget: `${E.error} Pick one target: a member, a role or a responsibility.`,
+      oneTarget: `${E.error} Pick one target: a member or a role.`,
       oneHolder: `${E.error} Pick one holder: a member or a role.`,
       holderRequired: `${E.error} Choose a member or role to hold it.`,
       nameTaken: (name: string) => `${E.error} **${name}** already exists.`,
@@ -99,7 +99,7 @@ export const leadMessages = bilingual(
 
     errors: {
       adminOnly: `${E.error} للأدمن بس.`,
-      oneTarget: `${E.error} اختر هدف واحد: عضو أو رتبة أو مسؤولية.`,
+      oneTarget: `${E.error} اختر هدف واحد: عضو أو رتبة.`,
       oneHolder: `${E.error} اختر ماسك واحد: عضو أو رتبة.`,
       holderRequired: `${E.error} اختر عضو أو رتبة يمسكه.`,
       nameTaken: (name: string) => `${E.error} **${name}** موجود أصلاً.`,

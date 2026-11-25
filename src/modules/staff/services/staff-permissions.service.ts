@@ -3,7 +3,7 @@ import type { GuildId, RoleId } from "../../../shared/types/index.ts";
 import { roleConfigService } from "../../configuration/index.ts";
 import { RoleConfigType, type StaffTier } from "../../configuration/types/enums.ts";
 import { getHierarchy, highestLevelFromRoleIds } from "../../configuration/utils/staff-levels.ts";
-import { responsibilityPermissionService } from "../../responsibilities/services/responsibility-permission.service.ts";
+import { managerRoleService } from "./manager-role.service.ts";
 import { hasAdminAccess } from "../../access/index.ts";
 
 export class StaffPermissionService {
@@ -45,7 +45,7 @@ export class StaffPermissionService {
 
   async isStaffManager(member: GuildMember): Promise<boolean> {
     if (this.isAdministrator(member)) return true;
-    return responsibilityPermissionService.holds(member, RoleConfigType.STAFF_MANAGER);
+    return managerRoleService.holds(member, RoleConfigType.STAFF_MANAGER);
   }
 
   canManageStaff(member: GuildMember): Promise<boolean> {
@@ -54,15 +54,15 @@ export class StaffPermissionService {
 
   async isApplyManager(member: GuildMember): Promise<boolean> {
     if (this.isAdministrator(member)) return true;
-    return responsibilityPermissionService.holds(member, RoleConfigType.APPLY_MANAGER);
+    return managerRoleService.holds(member, RoleConfigType.APPLY_MANAGER);
   }
 
   /** Who may use !accept: an Apply Manager or a Transfer Manager (or an administrator). */
   async isAcceptManager(member: GuildMember): Promise<boolean> {
     if (this.isAdministrator(member)) return true;
     return (
-      (await responsibilityPermissionService.holds(member, RoleConfigType.APPLY_MANAGER)) ||
-      (await responsibilityPermissionService.holds(member, RoleConfigType.TRANSFER_MANAGER))
+      (await managerRoleService.holds(member, RoleConfigType.APPLY_MANAGER)) ||
+      (await managerRoleService.holds(member, RoleConfigType.TRANSFER_MANAGER))
     );
   }
 }
