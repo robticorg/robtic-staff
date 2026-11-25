@@ -2,7 +2,6 @@ import type { Guild } from "discord.js";
 import type { GuildId, UserId } from "../../../shared/types/index.ts";
 import { isDuplicateKeyError } from "../../../shared/utils/errors.ts";
 import { leadMessages } from "../../../data/leads/messages.ts";
-import { responsibilityService } from "../../responsibilities/index.ts";
 import type { LeadDocument } from "../models/lead.model.ts";
 import { leadRepository } from "../repositories/lead.repository.ts";
 import { LeadError } from "../shared/lead-error.ts";
@@ -22,9 +21,9 @@ export class LeadService {
     if (target.type === LeadTargetType.ROLE && target.id === guild.id) {
       throw new LeadError("LEAD_EVERYONE", E.everyone);
     }
+    // Responsibilities were removed from the bot: a lead targets a member or a role.
     if (target.type === LeadTargetType.RESPONSIBILITY) {
-      const responsibility = await responsibilityService.getResponsibility(guild.id, target.id);
-      if (!responsibility) throw new LeadError("LEAD_RESPONSIBILITY_NOT_FOUND", E.responsibilityNotFound);
+      throw new LeadError("LEAD_RESPONSIBILITY_NOT_FOUND", E.responsibilityNotFound);
     }
   }
 
@@ -76,8 +75,7 @@ export class LeadService {
   async describeTarget(guildId: GuildId, target: LeadTarget): Promise<string> {
     if (target.type === LeadTargetType.USER) return leadMessages.targetUser(target.id);
     if (target.type === LeadTargetType.ROLE) return leadMessages.targetRole(target.id);
-    const responsibility = await responsibilityService.getResponsibility(guildId, target.id);
-    return leadMessages.targetResponsibility(responsibility?.title ?? target.id);
+    return leadMessages.targetResponsibility(target.id);
   }
 }
 

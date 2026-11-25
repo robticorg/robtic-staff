@@ -1,4 +1,3 @@
-import { L as tr } from "../../../shared/utils/lang-context.ts";
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -15,9 +14,7 @@ import { STAFF_TIER_LABELS } from "../../../data/messages/hierarchy.ts";
 import { ACTIVITY_LABELS, statsMessages as S } from "../../../data/messages/stats.ts";
 import { leadMessages } from "../../../data/leads/messages.ts";
 import { hiddenStaffMessages } from "../../../data/hidden-staff/messages.ts";
-import { responsibilityMessages } from "../../../data/responsibilities/messages.ts";
 import { staffTypeLabel } from "../../../data/staff-types/index.ts";
-import { ticketConfigService } from "../../tickets/services/ticket-config.service.ts";
 import { MENU_VIEWS, StatsView, statsCustomId } from "../handlers/component-ids.ts";
 import {
   StaffExitKind,
@@ -27,7 +24,6 @@ import {
 } from "../services/staff-card.service.ts";
 import type { CardLeads } from "../services/staff-card-leads.service.ts";
 import type { RecentActivityItem } from "../services/staff-statistics.service.ts";
-import type { TicketStatRow } from "../services/stats-repository.ts";
 
 const C = S.card;
 const B = C.buttons;
@@ -51,6 +47,14 @@ const POINT_TYPE_ORDER = [
 export interface StatsCardIds {
   viewerId: string;
   targetId: string;
+}
+
+/** A point type's name: the known label, or the raw type made readable (SOME_TYPE → Some type). */
+function pointTypeLabel(type: string): string {
+  const known = S.pointTypeLabels[type];
+  if (known) return known;
+  const words = type.toLowerCase().replace(/_/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
 }
 
 function rel(at: Date): string {
@@ -139,8 +143,7 @@ export function overviewLines(o: StaffCardOverview): string[] {
   } else {
     lines.push(C.levelRole(o.roleId, o.level + start));
   }
-  lines.push(C.acceptedBy(o.acceptedBy));
-  if (o.acceptedAt) lines.push(C.acceptedAt(o.acceptedAt));
+  lines.push(C.acceptedBy(o.acceptedBy, o.acceptedAt));
   lines.push(
     C.status(o.fired ? (C.exitStatuses[o.fired.kind] ?? o.status) : (C.statuses[o.status] ?? o.status)),
   );
@@ -155,17 +158,13 @@ export function overviewLines(o: StaffCardOverview): string[] {
   return lines;
 }
 
+/** Leads, only when the member has some: servers that don't use leads see nothing. */
 export function leadLines(leads: CardLeads): string[] {
-  const R = responsibilityMessages.stats;
   const L = leadMessages.stats;
-  const lines = ["", R.heading];
-  if (leads.responsibilities.length === 0) lines.push(R.none);
-  for (const r of leads.responsibilities) {
-    lines.push(R.row(r.title, r.leads.length ? r.leads.join(tr(", ", "، ")) : null, r.expiresAt));
-  }
+  const lines: string[] = [];
   if (leads.leadsOf.length) lines.push(L.yourLeads, ...leads.leadsOf.map((l) => L.leadRow(l.name, l.holder)));
   if (leads.leading.length) lines.push(L.leading, ...leads.leading.map((l) => L.leadingRow(l.name, l.target)));
-  return lines;
+  return lines.length ? ["", ...lines] : [];
 }
 
 export function buildStatsOverviewCard(ids: StatsCardIds, o: StaffCardOverview): BaseMessageOptions {
@@ -200,8 +199,13 @@ export function buildWeeklyPointsView(ids: StatsCardIds, data: WeeklyPointsPage)
 
   if (data.weeks.length === 0) blocks.push(C.weeks.none);
   for (const week of data.weeks) {
-    const rows = POINT_TYPE_ORDER.filter((type) => (week.breakdown[type] ?? 0) !== 0).map((type) =>
-      S.points.breakdownRow(S.pointTypeLabels[type] ?? type, week.breakdown[type] ?? 0),
+    // Every type the member earned in, known or not: types a server doesn't use never show.
+    const types = [
+      ...POINT_TYPE_ORDER,
+      ...Object.keys(week.breakdown).filter((t) => !POINT_TYPE_ORDER.includes(t)),
+    ];
+    const rows = types.filter((type) => (week.breakdown[type] ?? 0) !== 0).map((type) =>
+      S.points.breakdownRow(pointTypeLabel(type), week.breakdown[type] ?? 0),
     );
     blocks.push(
       "",
@@ -229,39 +233,29 @@ export function buildActionStatsView(ids: StatsCardIds, a: StaffActionStats): Ba
   const A = C.actions;
   const row = S.activityRow;
 
-  const staffLines = [
-    row(A.staffAccepted, a.staffAccepted),
-    row(A.staffFired, a.staffFired),
-    row(A.staffPromoted, a.staffPromoted),
-    row(A.staffDemoted, a.staffDemoted),
-  ];
-
-  const body = [
-    A.staffGroup,
-    ...staffLines,
-    "",
-    A.punishGroup,
-    row(A.jails, a.jails),
-    row(L.userWarningsIssued, a.userWarningsIssued),
-    row(L.staffWarningsIssued, a.staffWarningsIssued),
-    row(L.warningsRevoked, a.warningsRevoked),
-    "",
-    A.otherGroup,
-    row(A.vacationsDecided, a.vacationsDecided),
-  ].join("\n");
+  // Only what this member actually did: a server without jails or vacations never sees those lines.
+  const group = (heading: string, rows: [string, number][]): string[] => {
+    const shown = rows.filter(([, n]) => n > 0).map(([label, n]) => row(label, n));
+    return shown.length ? [heading, ...shown] : [];
+  };
+  const groups = [
+    group(A.staffGroup, [
+      [A.staffAccepted, a.staffAccepted],
+      [A.staffFired, a.staffFired],
+      [A.staffPromoted, a.staffPromoted],
+      [A.staffDemoted, a.staffDemoted],
+    ]),
+    group(A.punishGroup, [
+      [A.jails, a.jails],
+      [L.userWarningsIssued, a.userWarningsIssued],
+      [L.staffWarningsIssued, a.staffWarningsIssued],
+      [L.warningsRevoked, a.warningsRevoked],
+    ]),
+    group(A.otherGroup, [[A.vacationsDecided, a.vacationsDecided]]),
+  ].filter((g) => g.length);
+  const body = groups.length ? groups.map((g) => g.join("\n")).join("\n\n") : A.none;
 
   return subView(ids, StatsView.ACTIONS, A.heading(ids.targetId), body);
-}
-
-export function buildTicketStatsView(ids: StatsCardIds, t: TicketStatRow): BaseMessageOptions {
-  const T = C.tickets;
-  const panels = Object.entries(t.byPanel).sort((a, b) => b[1].claimed - a[1].claimed);
-  const body = [T.totals(t.claimed, t.completed, t.assignedNow)];
-  if (panels.length === 0) body.push("", T.empty);
-  for (const [panelId, stat] of panels) {
-    body.push("", T.panel(ticketConfigService.getPanel(panelId, null)?.name ?? panelId), T.panelRow(stat));
-  }
-  return subView(ids, StatsView.TICKETS, T.heading(ids.targetId), body.join("\n"));
 }
 
 export function buildRecentActivityView(

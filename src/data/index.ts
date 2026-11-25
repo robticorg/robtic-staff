@@ -6,5 +6,4 @@ export * from "./roles/index.ts";
 export * from "./channels/index.ts";
 export * from "./commands/index.ts";
 export * from "./enums/index.ts";
-export * from "./tickets/index.ts";
 export * from "./vacation/index.ts";

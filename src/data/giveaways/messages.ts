@@ -19,7 +19,7 @@ export const giveawayMessages = bilingual(
     },
 
     done: {
-      usage: `${E.warning} Usage: \`!done @member\`, or \`!done\` inside a ticket (for its owner). Add a giveaway's message ID to pick one.`,
+      usage: `${E.warning} Usage: \`!done @member\`. Add a giveaway's message ID to pick one.`,
       notStaff: `${E.error} Staff only.`,
       bot: `${E.error} Bots don't take part in giveaways.`,
       saved: (userId: string, channelId: string, endsAt: Date) => `${E.success} <@${userId}> met the giveaway condition in <#${channelId}> (ends ${relative(endsAt)}).`,
@@ -53,7 +53,7 @@ export const giveawayMessages = bilingual(
     },
 
     done: {
-      usage: `${E.warning} الطريقة: \`!done @عضو\`، أو \`!done\` داخل التكت (لصاحبه). أضف آيدي رسالة القيف أواي لاختيار واحد.`,
+      usage: `${E.warning} الطريقة: \`!done @عضو\`. أضف آيدي رسالة القيف أواي لاختيار واحد.`,
       notStaff: `${E.error} للطاقم بس.`,
       bot: `${E.error} البوتات ما تشارك في القيف أواي.`,
       saved: (userId: string, channelId: string, endsAt: Date) => `${E.success} <@${userId}> نفّذ شرط القيف أواي في <#${channelId}> (ينتهي ${relative(endsAt)}).`,

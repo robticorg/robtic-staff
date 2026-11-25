@@ -8,7 +8,6 @@ import {
 } from "../configuration/services/fast-access.service.ts";
 import { FastAccessContext } from "../configuration/types/enums.ts";
 import { staffPermissionService } from "../staff/services/staff-permissions.service.ts";
-import { memberIsAdministrator } from "../tickets/services/ticket-permissions.ts";
 import { detectFastAccessContext, type DetectedContext } from "./context-detect.ts";
 
 const log = logger.child("fast-access");
@@ -65,7 +64,7 @@ class FastAccessRunner {
       return { delivered: true, context: FastAccessContext.PUBLIC };
     }
 
-    // A ticket: posted in it.
+    // A special context: posted where it was used.
     if ("send" in channel) {
       await channel
         .send({ content, allowedMentions: { parse: [] }, ...reply })
@@ -78,16 +77,6 @@ class FastAccessRunner {
     member: GuildMember,
     detected: DetectedContext,
   ): Promise<"NOT_STAFF" | "NO_PERMISSION" | null> {
-    const ticket = detected.ticket;
-    if (ticket && ticket.claimableRoles.length > 0) {
-      const allowed =
-        memberIsAdministrator(member) ||
-        ticket.claimedByDiscordId === member.id ||
-        ticket.claimableRoles.some(
-          (slot) => slot.claimedBy === member.id || member.roles.cache.has(slot.roleId),
-        );
-      return allowed ? null : "NO_PERMISSION";
-    }
     return (await staffPermissionService.canActAsStaff(member)) ? null : "NOT_STAFF";
   }
 }
@@ -104,11 +93,15 @@ export function fastAccessArgs(content: string, prefix: string, token: string): 
   return content.slice(prefix.length).trimStart().slice(token.length).trim();
 }
 
+/**
+ * Whether a macro may be used here. Its context only mattered inside tickets, which moved to Robtic Tickets, so a
+ * macro saved for tickets or applications now works anywhere too instead of silently never firing.
+ */
 export function isFastAccessAllowedIn(
   macroContext: FastAccessContext,
   channelContext: FastAccessContext | null,
 ): boolean {
-  if (macroContext === FastAccessContext.PUBLIC) return true;
+  if (macroContext === FastAccessContext.PUBLIC || channelContext === null) return true;
   return channelContext === macroContext;
 }
 

@@ -40,7 +40,7 @@ const overview = (fired: StaffCardOverview["fired"]): StaffCardOverview => ({
   fired,
   totalPoints: 10,
   breakPoints: 0,
-  leads: { responsibilities: [], leadsOf: [], leading: [] },
+  leads: { leadsOf: [], leading: [] },
 });
 
 describe("!stats dropdown", () => {
@@ -94,24 +94,18 @@ describe("fired vs resigned", () => {
   });
 });
 
-describe("!stats responsibilities and leads", () => {
-  it("shows responsibilities with their lead, your leads and the leads held", () => {
+describe("!stats leads", () => {
+  it("shows your leads and the leads held", () => {
     const text = leadLines({
-      responsibilities: [{ title: "الدعم", expiresAt: null, leads: ["<@5>"] }],
       leadsOf: [{ name: "مسؤول الطاقم الاداري", holder: "<@6>" }],
       leading: [{ name: "مسؤول التكتات", target: "رتبة <@&7>" }],
     }).join("\n");
-    expect(text).toContain("### المسؤوليات");
-    expect(text).toContain("الدعم");
-    expect(text).toContain("<@5>");
     expect(text).toContain("### مسؤولك");
     expect(text).toContain("### مسؤول عن");
   });
 
-  it("says when there are no responsibilities and hides empty lead sections", () => {
-    const text = leadLines({ responsibilities: [], leadsOf: [], leading: [] }).join("\n");
-    expect(text).toContain("ما عنده مسؤوليات");
-    expect(text).not.toContain("### مسؤولك");
+  it("shows nothing at all when the member has no leads", () => {
+    expect(leadLines({ leadsOf: [], leading: [] })).toEqual([]);
   });
 });
 

@@ -7,7 +7,6 @@ import {
   getHierarchy,
   invalidateStaffHierarchy,
 } from "../../configuration/utils/staff-levels.ts";
-import { buildRoleCheckView } from "../../../commands/role/check.ts";
 import { StaffModel } from "../models/staff.model.ts";
 import { StaffActivityModel } from "../models/staff-activity.model.ts";
 import { StaffHistoryModel } from "../models/staff-history.model.ts";
@@ -364,77 +363,5 @@ describe.skipIf(!hasDb)("Staff scan (MongoDB + Discord fakes)", () => {
     const err = await scan(guild).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(StaffScanError);
     expect((err as StaffScanError).code).toBe("SCAN_STAFF_ROLE_UNSET");
-  });
-
-  it("stores exactly the level /role check reports for the same role (§18)", async () => {
-    addMember(guild, "u-1", [R_STAFF, R_HIGH]);
-    await scan(guild);
-
-    const hierarchy = await getHierarchy(GUILD);
-    const view = buildRoleCheckView(hierarchy, R_HIGH);
-    const staff = await StaffModel.findOne({ guildId: GUILD, userId: "u-1" }).exec();
-
-    expect(view.ok).toBe(true);
-    expect(view.lines.join("\n")).toContain(`المستوى: **${staff!.currentRoleLevel}**`);
-    expect(view.lines.join("\n")).toContain("ادارة عليا");
-  });
-});
-
-describe.skipIf(!hasDb)("/role check views", () => {
-  beforeEach(async () => {
-    await seedHierarchy();
-  });
-
-  afterAll(async () => {
-    await RoleConfigModel.deleteMany({ guildId: GUILD });
-  });
-
-  const view = async (roleId: string) => buildRoleCheckView(await getHierarchy(GUILD), roleId);
-
-  it("shows the START role at level 0 (§17)", async () => {
-    const text = (await view(R_START)).lines.join("\n");
-    expect(text).toContain("المستوى: **0**");
-    expect(text).toContain("اداري");
-    expect(text).toContain("بداية سلّم الطاقم الاداري");
-  });
-
-  it("shows a normal numbered role with its tier", async () => {
-    const text = (await view(R_L4)).lines.join("\n");
-    expect(text).toContain("المستوى: **4**");
-    expect(text).toContain("ادارة عليا");
-  });
-
-  it("labels the HIGHSTAFF, OWNER and SHIP boundary roles (§17)", async () => {
-    expect((await view(R_HIGH)).lines.join("\n")).toContain("بداية مستوى الادارة العليا");
-    expect((await view(R_OWNER)).lines.join("\n")).toContain("بداية مستوى الأونر");
-    expect((await view(R_SHIP)).lines.join("\n")).toContain("بداية مستوى الشيب");
-  });
-
-  it("shows the END role at the maximum level", async () => {
-    const text = (await view(R_END)).lines.join("\n");
-    expect(text).toContain("المستوى: **10**");
-    expect(text).toContain("نهاية سلّم الطاقم الاداري");
-  });
-
-  it("marks an ignored role as excluded with no level (§15)", async () => {
-    const text = (await view(R_IGNORE)).lines.join("\n");
-    expect(text).toContain("مستثناة");
-    expect(text).toContain("المستوى: لا يوجد");
-    expect(text).not.toContain("التصنيف");
-  });
-
-  it("marks a non-staff role as outside the ladder (§16)", async () => {
-    const text = (await view(R_COMMUNITY)).lines.join("\n");
-    expect(text).toContain("ليست ضمن مستويات الطاقم الاداري");
-    expect(text).not.toContain("المستوى: **");
-  });
-
-  it("refuses to show a level when the hierarchy is broken (§19)", async () => {
-    await RoleConfigModel.deleteOne({ guildId: GUILD, roleId: R_START });
-    invalidateStaffHierarchy(GUILD);
-
-    const result = await view(R_L4);
-    expect(result.ok).toBe(false);
-    expect(result.lines.join("\n")).toContain("رتبة البداية مو مضبوطة");
   });
 });

@@ -3,7 +3,6 @@ import {
   buildActionStatsView,
   buildRecentActivityView,
   buildStatsOverviewCard,
-  buildTicketStatsView,
   buildWeeklyPointsView,
   type StatsCardIds,
 } from "../render/stats-card.ts";
@@ -25,8 +24,6 @@ export async function renderStatsView(
       return buildWeeklyPointsView(ids, await staffCardService.weeklyPoints(staff, page));
     case StatsView.ACTIONS:
       return buildActionStatsView(ids, await staffCardService.actions(guild, staff));
-    case StatsView.TICKETS:
-      return buildTicketStatsView(ids, await staffCardService.tickets(guild.id, staff));
     case StatsView.RECENT:
       return buildRecentActivityView(ids, await staffCardService.recent(staff));
     case StatsView.HOME:

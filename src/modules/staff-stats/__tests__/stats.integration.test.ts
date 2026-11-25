@@ -5,8 +5,6 @@ import { StaffModel } from "../../staff/models/staff.model.ts";
 import { StaffActivityModel } from "../../staff/models/staff-activity.model.ts";
 import { StaffPointTransactionModel } from "../../staff/models/staff-point-transaction.model.ts";
 import { StaffActivityType, StaffPointTransactionType, StaffStatus } from "../../staff/types/enums.ts";
-import { TicketModel } from "../../tickets/models/ticket.model.ts";
-import { TicketStatus } from "../../tickets/types/enums.ts";
 import { StatsPeriod } from "../types/enums.ts";
 import { resolveStatsRange } from "../utils/date-range.ts";
 import { staffStatisticsService } from "../services/staff-statistics.service.ts";
@@ -66,7 +64,6 @@ async function cleanup(): Promise<void> {
     StaffModel.deleteMany({ guildId: { $in: [GUILD, GUILD2] } }),
     StaffPointTransactionModel.deleteMany({ reason: "itest" }),
     StaffActivityModel.deleteMany({}),
-    TicketModel.deleteMany({ guildId: { $in: [GUILD, GUILD2] } }),
   ]);
 }
 

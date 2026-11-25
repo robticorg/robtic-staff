@@ -11,7 +11,6 @@ import { prefixlessCommands } from "../../data/commands/prefixless.ts";
 import { prefixCommands } from "./index.ts";
 import { PrefixAbort } from "./_shared/guards.ts";
 import { extractUserIds, parseBareMessage, parsePrefixMessage } from "./_shared/parse.ts";
-import { recordTicketCommand } from "../../modules/tickets/services/ticket-history.ts";
 import {
   CommandLogOutcome,
   commandLogService,
@@ -95,8 +94,7 @@ export async function runPrefixCommand(message: Message): Promise<boolean> {
     await command.execute(ctx);
   } catch (err) {
     if (err instanceof PrefixAbort) {
-      // An empty abort means "not applicable here" (a ticket command outside a
-      // ticket, !warn outside warn rooms) — no reply and no command-log entry.
+      // An empty abort means "not applicable here" (!warn outside warn rooms) — no reply and no command-log entry.
       if (!err.message) return true;
       outcome = CommandLogOutcome.DENIED;
       detail = err.message;
@@ -113,8 +111,6 @@ export async function runPrefixCommand(message: Message): Promise<boolean> {
     }
   }
 
-  // A no-op outside tickets; inside one it feeds the "commands used" list of !ticket.
-  void recordTicketCommand(message.channelId, member.id, message.content);
 
   void commandLogService.record(message.guild, {
     slot: prefixLogSlot(command.name, command.category),

@@ -4,7 +4,6 @@ import { bilingual } from "../../shared/utils/lang-context.ts";
 const E = emojis;
 
 const d = (at: Date, style = "D") => `<t:${Math.floor(at.getTime() / 1000)}:${style}>`;
-type PanelStat = { claimed: number; completed: number; open: number };
 
 export const statsMessages = bilingual(
   {
@@ -26,7 +25,6 @@ export const statsMessages = bilingual(
     },
 
     pointTypeLabels: {
-      TICKET_CLAIM: "Tickets",
       GIFT_CLAIM: "Gifts",
       USER_WARNING: "Member warnings",
       STAFF_WARNING: "Staff warnings",
@@ -55,17 +53,6 @@ export const statsMessages = bilingual(
     activityHeading: (periodLabel: string) => `__Activity — ${periodLabel}__`,
     activityRow: (label: string, value: string | number) => `${label}: ${value}`,
 
-    reset: {
-      one: (mention: string, previous: number) => `${mention}'s ticket counters reset (were ${previous}).`,
-      nothingToDo: (mention: string) => `${mention}'s ticket counters are already zero.`,
-      all: (resetCount: number, totalStaff: number) => `Ticket counters reset for ${resetCount} of ${totalStaff} staff.`,
-      note: "Ticket history is unchanged; only the counters were reset.",
-    },
-
-    ticketsByPanelHeading: "__Tickets by section__",
-    ticketsByPanelEmpty: "• (none)",
-    ticketsByPanelRow: (panelName: string, stat: PanelStat) =>
-      `• ${panelName} — claimed **${stat.claimed}** · done **${stat.completed}** · open **${stat.open}**`,
 
     recentHeading: "__Recent activity__",
     recentRow: (rel: string, text: string) => `• ${rel} — ${text}`,
@@ -94,8 +81,7 @@ export const statsMessages = bilingual(
       staffType: (label: string) => `**Type:** ${label}`,
       levelRole: (roleId: string | null, level: number) => (roleId ? `**Level role:** <@&${roleId}> (level ${level})` : `**Level role:** level ${level}`),
       lastRoleBeforeFire: (roleId: string | null, level: number) => (roleId ? `**Last role before removal:** <@&${roleId}> (level ${level})` : `**Last role before removal:** level ${level}`),
-      acceptedBy: (userId: string | null) => `**Accepted by:** ${userId ? `<@${userId}>` : "System"}`,
-      acceptedAt: (at: Date) => `**Accepted:** ${d(at)}`,
+      acceptedBy: (userId: string | null, at: Date | null) => `**Accepted by:** ${userId ? `<@${userId}>` : "System"}${at ? ` · ${d(at)}` : ""}`,
       firedBy: (userId: string | null, at: Date | null) => `**Removed by:** ${userId ? `<@${userId}>` : "System"}${at ? ` — ${d(at)}` : ""}`,
       resignationApprovedBy: (userId: string | null, at: Date | null) => `**Resignation approved by:** ${userId ? `<@${userId}>` : "System"}${at ? ` — ${d(at)}` : ""}`,
       resignationReason: (reason: string) => `**Reason for leaving:** ${reason}`,
@@ -109,10 +95,9 @@ export const statsMessages = bilingual(
       menu: {
         placeholder: "Choose what to view",
         options: {
-          home: { label: "Profile", description: "Rank, status, who accepted them, total points" },
+          home: { label: "Profile", description: "Rank, status and total points" },
           weeks: { label: "Weekly points", description: "Points for every week since joining" },
           acts: { label: "Actions", description: "Accepts, removals, warnings, jails" },
-          tix: { label: "Tickets", description: "Claimed and completed tickets per section" },
           recent: { label: "Recent activity", description: "Their last 10 actions" },
           app: { label: "Application", description: "Age, city, department and result when they applied" },
         } as Record<string, { label: string; description: string }>,
@@ -167,7 +152,6 @@ export const statsMessages = bilingual(
       buttons: {
         weeks: "Weekly points",
         actions: "Actions",
-        tickets: "Tickets",
         recent: "Recent",
         back: "Back",
         prev: "Previous",
@@ -195,15 +179,9 @@ export const statsMessages = bilingual(
         girlsVerified: "Girls verified",
         jails: "Jails",
         vacationsDecided: "Vacations decided",
+        none: "Nothing yet.",
       },
 
-      tickets: {
-        heading: (userId: string) => `## Tickets — <@${userId}>`,
-        totals: (claimed: number, completed: number, open: number) => `Claimed **${claimed}** · done **${completed}** · open now **${open}**`,
-        panel: (name: string) => `### ${name}`,
-        panelRow: (stat: PanelStat) => `Claimed **${stat.claimed}** · done **${stat.completed}** · open **${stat.open}**`,
-        empty: "No tickets claimed.",
-      },
 
       recent: {
         heading: (userId: string) => `## Recent activity — <@${userId}>`,
@@ -218,9 +196,6 @@ export const statsMessages = bilingual(
       week: "This week",
       month: "This month",
       allTime: "All time",
-      ticketsClaimed: "Tickets claimed",
-      ticketsCompleted: "Tickets done",
-      ticketsAssignedNow: "Tickets assigned now",
       giftClaimsHandled: "Gift claims handled",
       giftClaimsBreakdown: "Gift claims (approved / rejected / delivered / more asked)",
       userWarningsIssued: "Member warnings given",
@@ -249,7 +224,6 @@ export const statsMessages = bilingual(
     },
 
     pointTypeLabels: {
-      TICKET_CLAIM: "التكتات",
       GIFT_CLAIM: "الهدايا",
       USER_WARNING: "تحذيرات الأعضاء",
       STAFF_WARNING: "تحذيرات الطاقم",
@@ -278,17 +252,6 @@ export const statsMessages = bilingual(
     activityHeading: (periodLabel: string) => `__النشاط — ${periodLabel}__`,
     activityRow: (label: string, value: string | number) => `${label}: ${value}`,
 
-    reset: {
-      one: (mention: string, previous: number) => `تم تصفير عدّادات تكتات ${mention} (كانت ${previous}).`,
-      nothingToDo: (mention: string) => `عدّادات تكتات ${mention} مصفّرة أصلاً.`,
-      all: (resetCount: number, totalStaff: number) => `تم تصفير عدّادات التكتات لـ ${resetCount} من ${totalStaff} إداري.`,
-      note: "سجل التكتات ما تغيّر، العدّادات بس.",
-    },
-
-    ticketsByPanelHeading: "__التكتات حسب القسم__",
-    ticketsByPanelEmpty: "• (لا شيء)",
-    ticketsByPanelRow: (panelName: string, stat: PanelStat) =>
-      `• ${panelName} — استلم **${stat.claimed}** · أكمل **${stat.completed}** · مفتوح **${stat.open}**`,
 
     recentHeading: "__آخر النشاطات__",
     recentRow: (rel: string, text: string) => `• ${rel} — ${text}`,
@@ -317,8 +280,7 @@ export const statsMessages = bilingual(
       staffType: (label: string) => `**النوع:** ${label}`,
       levelRole: (roleId: string | null, level: number) => (roleId ? `**رتبة المستوى:** <@&${roleId}> (المستوى ${level})` : `**رتبة المستوى:** المستوى ${level}`),
       lastRoleBeforeFire: (roleId: string | null, level: number) => (roleId ? `**آخر رتبة قبل الفصل:** <@&${roleId}> (المستوى ${level})` : `**آخر رتبة قبل الفصل:** المستوى ${level}`),
-      acceptedBy: (userId: string | null) => `**قبله:** ${userId ? `<@${userId}>` : "النظام"}`,
-      acceptedAt: (at: Date) => `**تاريخ القبول:** ${d(at)}`,
+      acceptedBy: (userId: string | null, at: Date | null) => `**قبله:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` · ${d(at)}` : ""}`,
       firedBy: (userId: string | null, at: Date | null) => `**فصله:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` — ${d(at)}` : ""}`,
       resignationApprovedBy: (userId: string | null, at: Date | null) => `**وافق على استقالته:** ${userId ? `<@${userId}>` : "النظام"}${at ? ` — ${d(at)}` : ""}`,
       resignationReason: (reason: string) => `**سبب الاستقالة:** ${reason}`,
@@ -332,10 +294,9 @@ export const statsMessages = bilingual(
       menu: {
         placeholder: "اختر اللي تبي تشوفه",
         options: {
-          home: { label: "الملف", description: "الرتبة والحالة ومن قبله وإجمالي النقاط" },
+          home: { label: "الملف", description: "الرتبة والحالة وإجمالي النقاط" },
           weeks: { label: "النقاط الأسبوعية", description: "نقاطه كل أسبوع من انضمامه" },
           acts: { label: "الأعمال", description: "القبول والفصل والتحذيرات والسجن" },
-          tix: { label: "التكتات", description: "المستلمة والمكتملة لكل قسم" },
           recent: { label: "آخر النشاطات", description: "آخر 10 أعمال" },
           app: { label: "طلب التقديم", description: "العمر والمدينة والقسم والنتيجة" },
         } as Record<string, { label: string; description: string }>,
@@ -390,7 +351,6 @@ export const statsMessages = bilingual(
       buttons: {
         weeks: "النقاط الأسبوعية",
         actions: "الأعمال",
-        tickets: "التكتات",
         recent: "آخر النشاطات",
         back: "رجوع",
         prev: "السابق",
@@ -418,15 +378,9 @@ export const statsMessages = bilingual(
         girlsVerified: "توثيق البنات",
         jails: "السجن",
         vacationsDecided: "الإجازات المقرّرة",
+        none: "ما فيه شي للحين.",
       },
 
-      tickets: {
-        heading: (userId: string) => `## التكتات — <@${userId}>`,
-        totals: (claimed: number, completed: number, open: number) => `استلم **${claimed}** · أكمل **${completed}** · مفتوح حالياً **${open}**`,
-        panel: (name: string) => `### ${name}`,
-        panelRow: (stat: PanelStat) => `استلم **${stat.claimed}** · أكمل **${stat.completed}** · مفتوح **${stat.open}**`,
-        empty: "ما استلم أي تكت.",
-      },
 
       recent: {
         heading: (userId: string) => `## آخر النشاطات — <@${userId}>`,
@@ -441,9 +395,6 @@ export const statsMessages = bilingual(
       week: "هذا الأسبوع",
       month: "هذا الشهر",
       allTime: "الكل",
-      ticketsClaimed: "التكتات المستلمة",
-      ticketsCompleted: "التكتات المكتملة",
-      ticketsAssignedNow: "التكتات المسندة حالياً",
       giftClaimsHandled: "طلبات الهدايا المعالجة",
       giftClaimsBreakdown: "طلبات الهدايا (موافقة / رفض / تسليم / طلب إضافي)",
       userWarningsIssued: "تحذيرات الأعضاء",

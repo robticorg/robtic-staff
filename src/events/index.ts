@@ -10,7 +10,6 @@ import guildMemberRemove from "./guildMemberRemove.ts";
 import roleCreate from "./roleCreate.ts";
 import roleUpdate from "./roleUpdate.ts";
 import roleDelete from "./roleDelete.ts";
-import channelDelete from "./channelDelete.ts";
 import messageDelete from "./messageDelete.ts";
 
 export const events: EventModule[] = [
@@ -25,6 +24,5 @@ export const events: EventModule[] = [
   roleCreate as EventModule,
   roleUpdate as EventModule,
   roleDelete as EventModule,
-  channelDelete as EventModule,
   messageDelete as EventModule,
 ];

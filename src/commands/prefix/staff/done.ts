@@ -3,8 +3,6 @@ import { giveawayMessages } from "../../../data/giveaways/messages.ts";
 import { giveawayService } from "../../../modules/giveaways/index.ts";
 import { buildGiveawayPickMenu } from "../../../modules/giveaways/render/pick-menu.ts";
 import { staffPermissionService } from "../../../modules/staff/services/staff-permissions.service.ts";
-import { ticketService } from "../../../modules/tickets/services/ticket.service.ts";
-import { ACTIVE_TICKET_STATUSES, type TicketStatus } from "../../../modules/tickets/types/enums.ts";
 import { PrefixAbort } from "../_shared/guards.ts";
 
 const M = giveawayMessages.done;
@@ -43,13 +41,7 @@ export default definePrefixCommand({
 
     if (!(await staffPermissionService.canActAsStaff(ctx.member))) throw new PrefixAbort(M.notStaff);
 
-    let userId = mentionedId;
-    if (!userId) {
-      const ticket = await ticketService.getTicketByChannel(ctx.channel.id);
-      const inTicket =
-        ticket?.guildId === ctx.guild.id && (ACTIVE_TICKET_STATUSES as TicketStatus[]).includes(ticket.status);
-      userId = inTicket ? ticket.userId : null;
-    }
+    const userId = mentionedId;
     if (!userId) throw new PrefixAbort(M.usage);
 
     const target = await ctx.guild.members.fetch(userId).catch(() => null);

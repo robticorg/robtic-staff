@@ -9,7 +9,7 @@ import {
   type StatsPeriod as Period,
 } from "../types/enums.ts";
 import { resolveStatsRange } from "../utils/date-range.ts";
-import { statsRepository, type TicketPanelStat } from "./stats-repository.ts";
+import { statsRepository } from "./stats-repository.ts";
 
 export interface PeriodPoints {
   today: number;
@@ -47,10 +47,6 @@ export interface StaffStatsResult {
   activity: {
     total: number;
     byType: Record<string, number>;
-    ticketsClaimed: number;
-    ticketsCompleted: number;
-    ticketsAssignedNow: number;
-    ticketsByPanel: Record<string, TicketPanelStat>;
     userWarningsIssued: number;
     staffWarningsIssued: number;
     warningsRevoked: number;
@@ -93,7 +89,6 @@ export class StaffStatisticsService {
       pAll,
       pPeriod,
       byType,
-      tickets,
       warnings,
       recent,
       ladder,
@@ -105,7 +100,6 @@ export class StaffStatisticsService {
       statsRepository.pointsForStaff(staffObjId, resolveStatsRange(StatsPeriod.ALL_TIME, undefined, staffPolicyService.peek(input.guildId).timezone)),
       statsRepository.pointsForStaff(staffObjId, range),
       statsRepository.activityByType(staffObjId, range),
-      statsRepository.ticketStats(input.guildId, staffObjId, range),
       statsRepository.warningStats(input.guildId, staffObjId, input.staffId, guildStaffIds, range),
       statsRepository.recentActivity(staffObjId, 10),
       roleConfigService.getStaffRoleLevels(input.guildId),
@@ -130,10 +124,6 @@ export class StaffStatisticsService {
       activity: {
         total,
         byType,
-        ticketsClaimed: tickets.claimed,
-        ticketsCompleted: tickets.completed,
-        ticketsAssignedNow: tickets.assignedNow,
-        ticketsByPanel: tickets.byPanel,
         userWarningsIssued: warnings.userWarningsIssued,
         staffWarningsIssued: warnings.staffWarningsIssued,
         warningsRevoked: warnings.warningsRevoked,
@@ -252,10 +242,6 @@ function zeroActivity(): StaffStatsResult["activity"] {
   return {
     total: 0,
     byType: {},
-    ticketsClaimed: 0,
-    ticketsCompleted: 0,
-    ticketsAssignedNow: 0,
-    ticketsByPanel: {},
     userWarningsIssued: 0,
     staffWarningsIssued: 0,
     warningsRevoked: 0,

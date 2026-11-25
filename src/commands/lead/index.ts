@@ -21,7 +21,6 @@ import {
   type LeadHolder,
   type LeadTarget,
 } from "../../modules/leads/index.ts";
-import { responsibilityService } from "../../modules/responsibilities/index.ts";
 import { CommandError, requireAdministrator, requireGuild } from "../_shared/guards.ts";
 
 const log = logger.child("command:lead");
@@ -54,12 +53,6 @@ const data = new SlashCommandBuilder()
       )
       .addUserOption((o) => o.setName(CommandOption.TARGET_USER).setDescription(M.targetUser))
       .addRoleOption((o) => o.setName(CommandOption.TARGET_ROLE).setDescription(M.targetRole))
-      .addStringOption((o) =>
-        o
-          .setName(CommandOption.TARGET_RESPONSIBILITY)
-          .setDescription(M.targetResponsibility)
-          .setAutocomplete(true),
-      )
       .addUserOption((o) => o.setName(CommandOption.LEAD_USER).setDescription(M.holderUser))
       .addRoleOption((o) => o.setName(CommandOption.LEAD_ROLE).setDescription(M.holderRole)),
   )
@@ -79,12 +72,9 @@ const data = new SlashCommandBuilder()
 function readTarget(interaction: ChatInputCommandInteraction): LeadTarget {
   const user = interaction.options.getUser(CommandOption.TARGET_USER);
   const role = interaction.options.getRole(CommandOption.TARGET_ROLE);
-  const responsibility = interaction.options.getString(CommandOption.TARGET_RESPONSIBILITY);
-  const picked = [user, role, responsibility].filter((v) => v !== null);
-  if (picked.length !== 1) throw new CommandError(E.oneTarget);
+  if ((user ? 1 : 0) + (role ? 1 : 0) !== 1) throw new CommandError(E.oneTarget);
   if (user) return { type: LeadTargetType.USER, id: user.id };
-  if (role) return { type: LeadTargetType.ROLE, id: role.id };
-  return { type: LeadTargetType.RESPONSIBILITY, id: responsibility! };
+  return { type: LeadTargetType.ROLE, id: role!.id };
 }
 
 function readHolder(interaction: ChatInputCommandInteraction, userOption: string, roleOption: string): LeadHolder | null {
@@ -251,16 +241,6 @@ export default defineCommand({
       if (!interaction.inGuild()) return void (await interaction.respond([]));
       const focused = interaction.options.getFocused(true);
       const query = String(focused.value).trim().toLowerCase();
-      if (focused.name === CommandOption.TARGET_RESPONSIBILITY) {
-        const all = await responsibilityService.getResponsibilities(interaction.guildId);
-        await interaction.respond(
-          all
-            .filter((r) => !query || r.title.toLowerCase().includes(query))
-            .slice(0, 25)
-            .map((r) => ({ name: r.title.slice(0, 100), value: r.responsibilityId })),
-        );
-        return;
-      }
       const leads = await leadService.search(interaction.guildId, query);
       await interaction.respond(leads.map((l) => ({ name: l.name.slice(0, 100), value: l.leadId })));
     } catch (err) {
