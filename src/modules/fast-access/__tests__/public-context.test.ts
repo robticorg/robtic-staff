@@ -13,8 +13,8 @@ describe("public fast-access macros", () => {
     expect(isFastAccessAllowedIn(FastAccessContext.PUBLIC, FastAccessContext.STAFF_APPLICATION)).toBe(true);
   });
 
-  it("keeps other macros in their own place", () => {
-    expect(isFastAccessAllowedIn(FastAccessContext.SUPPORT, null)).toBe(false);
+  it("runs ticket-era macros in plain channels, and keeps them apart inside a special context", () => {
+    expect(isFastAccessAllowedIn(FastAccessContext.SUPPORT, null)).toBe(true);
     expect(isFastAccessAllowedIn(FastAccessContext.SUPPORT, FastAccessContext.STAFF_APPLICATION)).toBe(false);
     expect(isFastAccessAllowedIn(FastAccessContext.SUPPORT, FastAccessContext.SUPPORT)).toBe(true);
   });

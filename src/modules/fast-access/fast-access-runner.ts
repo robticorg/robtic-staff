@@ -93,11 +93,15 @@ export function fastAccessArgs(content: string, prefix: string, token: string): 
   return content.slice(prefix.length).trimStart().slice(token.length).trim();
 }
 
+/**
+ * Whether a macro may be used here. Its context only mattered inside tickets, which moved to Robtic Tickets, so a
+ * macro saved for tickets or applications now works anywhere too instead of silently never firing.
+ */
 export function isFastAccessAllowedIn(
   macroContext: FastAccessContext,
   channelContext: FastAccessContext | null,
 ): boolean {
-  if (macroContext === FastAccessContext.PUBLIC) return true;
+  if (macroContext === FastAccessContext.PUBLIC || channelContext === null) return true;
   return channelContext === macroContext;
 }
 
